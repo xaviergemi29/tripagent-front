@@ -21,10 +21,10 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
 
   if (isError) {
     return (
-      <div className="p-8 max-w-4xl mx-auto">
-        <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-xl shadow-sm">
-          <h3 className="font-bold text-lg mb-2">Error cargando el Centro de Control</h3>
-          <p className="text-sm font-mono bg-red-100/50 p-3 rounded border border-red-200">
+      <div className="mx-auto max-w-4xl p-8">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
+          <h3 className="mb-2 text-lg font-bold">Error cargando el Centro de Control</h3>
+          <p className="rounded border border-red-200 bg-red-100/50 p-3 font-mono text-sm">
             {error instanceof Error ? error.message : "Error desconocido"}
           </p>
         </div>
@@ -37,13 +37,13 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
   }
 
   const foundTraveler = selectedTravelerId
-    ? tour.travelers
+    ? (tour.travelers
         .flatMap((titular) => [titular, ...titular.companions])
-        .find((traveler) => traveler.id === selectedTravelerId) ?? null
+        .find((traveler) => traveler.id === selectedTravelerId) ?? null)
     : null;
 
   return (
-    <main className="flex flex-col h-full bg-slate-50 min-h-screen">
+    <main className="flex h-full min-h-screen flex-col bg-slate-50">
       <TourDashboardHeader
         title={tour.title}
         date={tour.departureDateTime}
@@ -51,7 +51,7 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
         onNewReservation={() => setIsQuickReservationOpen(true)}
       />
 
-      <div className="flex-1 p-4 md:p-6 space-y-4">
+      <div className="flex-1 space-y-4 p-4 md:p-6">
         <TravelersTableToolbar
           travelers={tour.travelers}
           searchQuery={searchQuery}
@@ -100,10 +100,10 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
 
 function DashboardSkeleton() {
   return (
-    <div className="p-6 space-y-6 animate-pulse">
-      <div className="h-32 bg-slate-200 rounded-xl w-full"></div>
-      <div className="h-14 bg-slate-200 rounded-xl w-full"></div>
-      <div className="h-96 bg-slate-200 rounded-xl w-full"></div>
+    <div className="animate-pulse space-y-6 p-6">
+      <div className="h-32 w-full rounded-xl bg-slate-200"></div>
+      <div className="h-14 w-full rounded-xl bg-slate-200"></div>
+      <div className="h-96 w-full rounded-xl bg-slate-200"></div>
     </div>
   );
 }

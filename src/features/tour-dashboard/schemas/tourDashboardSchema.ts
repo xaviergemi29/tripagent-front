@@ -5,7 +5,6 @@ export const formStatusSchema = z.enum(["COMPLETED", "PENDING"]);
 export const paymentStatusSchema = z.enum(["PAID", "ADVANCE", "PENDING_VALIDATION", "PENDING"]);
 export const travelerRoleSchema = z.enum(["TITULAR", "COMPANION"]);
 
-
 export const baseTravelerRowSchema = z.object({
   id: z.uuid(),
   bookingId: z.uuid(),
@@ -25,7 +24,7 @@ export const travelerRowSchema = baseTravelerRowSchema.extend({
   groupSize: z.number().optional(),
   totalCost: z.number().optional(),
   // 👇 Aquí está la magia: un arreglo de acompañantes (que usan el esquema base)
-  companions: z.array(baseTravelerRowSchema).default([]), 
+  companions: z.array(baseTravelerRowSchema).default([]),
 });
 // 3. Esquema de Métricas
 export const tourMetricsSchema = z.object({

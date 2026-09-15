@@ -9,7 +9,7 @@ export function proxy(request: NextRequest) {
   const isDashboardRoute = pathname.startsWith("/tours");
 
   // 🛡️ Escape temprano para assets y rutas internas de auth
-  if (pathname.startsWith('/_next') || pathname.includes('/api/auth')) {
+  if (pathname.startsWith("/_next") || pathname.includes("/api/auth")) {
     return NextResponse.next();
   }
 
@@ -27,7 +27,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

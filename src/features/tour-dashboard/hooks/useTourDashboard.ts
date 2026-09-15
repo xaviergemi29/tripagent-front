@@ -2,13 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { TourDashboardOutput } from "../schemas/tourDashboardSchema";
 import { apiClient } from "@/lib/api-client";
 
-
 // ============================================================================
 // 2. CAPA DE RED (Axios API Client)
 // ============================================================================
 const fetchDashboardByTourId = async (tourId: string): Promise<TourDashboardOutput> => {
   return apiClient.get<never, TourDashboardOutput>(`/dashboards/${tourId}`);
-}
+};
 
 // ============================================================================
 // 3. HOOKS DE QUERIES (Lectura)

@@ -1,11 +1,13 @@
-import type { TourOutput } from "../schemas/tourSchema"
+import type { TourOutput } from "../schemas/tourSchema";
 
 export const MOCK_TOURS: TourOutput[] = [
   {
     id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     title: "Ruta del Café y Atardecer en Xalapa",
-    description: "Recorrido inmersivo por las fincas cafetaleras de la región. Incluye cata de café de especialidad, transporte en van climatizada y guía experto.",
-    tourRecommendations: "Llevar suéter ligero, repelente de insectos y calzado cerrado antiderrapante. Efectivo para compras en las fincas.",
+    description:
+      "Recorrido inmersivo por las fincas cafetaleras de la región. Incluye cata de café de especialidad, transporte en van climatizada y guía experto.",
+    tourRecommendations:
+      "Llevar suéter ligero, repelente de insectos y calzado cerrado antiderrapante. Efectivo para compras en las fincas.",
     price: 499,
     durationHours: 4,
     meetingPoint: "Frente a la fuente principal del Parque Juárez",
@@ -16,14 +18,17 @@ export const MOCK_TOURS: TourOutput[] = [
     bankDetails: "Banco: BBVA\nCLABE: 012345678901234567\nTitular: Operadora Turística Xalapa",
     acceptsCreditCard: true,
     paymentLink: "https://link.mercadopago.com.mx/cafexalapa",
-    postPaymentInstructions: "Realiza tu transferencia o depósito y sube tu comprobante o mándanos la captura por WhatsApp para apartar tus lugares formalmente.",
+    postPaymentInstructions:
+      "Realiza tu transferencia o depósito y sube tu comprobante o mándanos la captura por WhatsApp para apartar tus lugares formalmente.",
     acceptsCash: true,
   },
   {
     id: "a39b34e5-91ab-4d8e-9012-1234abcd5678",
     title: "Aventura Extrema: Rápidos de Jalcomulco",
-    description: "Descenso en balsa por el río Pescados (Clase III y IV). Incluye equipo de seguridad completo, seguro de gastos médicos, comida regional buffet y fotos digitales.",
-    tourRecommendations: "Traje de baño, short ligero, sandalias ajustables o zapatos de agua, toalla y cambio de ropa seca.",
+    description:
+      "Descenso en balsa por el río Pescados (Clase III y IV). Incluye equipo de seguridad completo, seguro de gastos médicos, comida regional buffet y fotos digitales.",
+    tourRecommendations:
+      "Traje de baño, short ligero, sandalias ajustables o zapatos de agua, toalla y cambio de ropa seca.",
     price: 950,
     durationHours: 8,
     meetingPoint: "Estacionamiento de CAXA",
@@ -34,14 +39,17 @@ export const MOCK_TOURS: TourOutput[] = [
     bankDetails: "Banco: Nu México\nCLABE: 638180000000000000\nTitular: Expediciones Jalcomulco",
     acceptsCreditCard: false,
     paymentLink: "",
-    postPaymentInstructions: "Envía la captura de tu transferencia. Una vez validada, te enviaremos tu responsiva digital.",
+    postPaymentInstructions:
+      "Envía la captura de tu transferencia. Una vez validada, te enviaremos tu responsiva digital.",
     acceptsCash: true,
   },
   {
     id: "b28c12f4-72cd-4f9a-8123-2345bcde6789",
     title: "Pueblos Mágicos: Coatepec y Xico Histórico",
-    description: "Tour cultural visitando la Parroquia de San Jerónimo, el museo del vestido de la Magdalena y cascada de Texolo. Incluye degustación de mole.",
-    tourRecommendations: "Zapato muy cómodo para caminar en empedrado, sombrilla y chamarra para la tarde.",
+    description:
+      "Tour cultural visitando la Parroquia de San Jerónimo, el museo del vestido de la Magdalena y cascada de Texolo. Incluye degustación de mole.",
+    tourRecommendations:
+      "Zapato muy cómodo para caminar en empedrado, sombrilla y chamarra para la tarde.",
     price: 650,
     durationHours: 6,
     meetingPoint: "Plaza Lerdo, Centro Histórico",
@@ -51,7 +59,8 @@ export const MOCK_TOURS: TourOutput[] = [
     acceptsBankTransfer: false,
     acceptsCreditCard: true,
     paymentLink: "https://buy.stripe.com/test_123456789",
-    postPaymentInstructions: "Tu pago a través del enlace nos notifica en automático. No es necesario enviar comprobante, solo confirma tu nombre.",
+    postPaymentInstructions:
+      "Tu pago a través del enlace nos notifica en automático. No es necesario enviar comprobante, solo confirma tu nombre.",
     acceptsCash: true,
-  }
-]
+  },
+];

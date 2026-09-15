@@ -33,9 +33,8 @@ export function ConfirmDialog({
   cancelText = "Cancelar",
   isDestructive = false,
 }: ConfirmDialogProps) {
-  
   const handleConfirm = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault(); 
+    e.preventDefault();
     onConfirm();
     onOpenChange(false);
   };
@@ -49,9 +48,13 @@ export function ConfirmDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction 
+          <AlertDialogAction
             onClick={handleConfirm}
-            className={isDestructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+            className={
+              isDestructive
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : ""
+            }
           >
             {confirmText}
           </AlertDialogAction>

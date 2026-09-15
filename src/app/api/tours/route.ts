@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     if (!result.success) {
       return NextResponse.json(
         { message: "Datos inválidos", errors: result.error.format() },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -26,9 +26,6 @@ export async function POST(request: Request) {
     return NextResponse.json(newTour, { status: 201 });
   } catch (error) {
     console.error("Error en POST /api/tours:", error);
-    return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 });
   }
 }

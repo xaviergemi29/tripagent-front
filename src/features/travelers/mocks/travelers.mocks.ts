@@ -1,4 +1,4 @@
-import type { TravelerOutput } from "../schemas/travelerSchema"
+import type { TravelerOutput } from "../schemas/travelerSchema";
 
 export const MOCK_TRAVELERS: TravelerOutput[] = [
   {
@@ -30,5 +30,5 @@ export const MOCK_TRAVELERS: TravelerOutput[] = [
     emergencyContactPhone: "+33140000000",
     medicalNotes: "Alergica a la penicilina",
     createdAt: new Date().toISOString(),
-  }
-]
+  },
+];

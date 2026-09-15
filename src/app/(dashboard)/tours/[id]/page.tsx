@@ -13,9 +13,9 @@ export default async function TourDashboardPage({ params }: PageProps) {
 
   // Validación rápida de formato UUID (Opcional pero recomendada)
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-  
+
   if (!id || !isUUID) {
-    notFound(); 
+    notFound();
   }
 
   return (

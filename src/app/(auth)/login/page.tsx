@@ -17,14 +17,14 @@ export default function LoginPage() {
   const {
     handleSubmit,
     register,
-    formState: { errors, isValid }
+    formState: { errors, isValid },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     mode: "onChange", // Valida en tiempo real mientras el usuario escribe
     defaultValues: {
       email: "",
       password: "",
-    }
+    },
   });
 
   const onSubmit = (data: LoginFormValues) => {
@@ -34,18 +34,19 @@ export default function LoginPage() {
   const handleForgotPassword = (e: React.MouseEvent) => {
     e.preventDefault();
     toast("Recuperación de contraseña", {
-      description: "Por favor, comunícate con el administrador del sistema para restablecer tu acceso.",
-      icon: <Info className="w-4 h-4 text-indigo-500" />
+      description:
+        "Por favor, comunícate con el administrador del sistema para restablecer tu acceso.",
+      icon: <Info className="h-4 w-4 text-indigo-500" />,
     });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl">
         {/* Banner Superior */}
         <div className="bg-indigo-600 px-8 py-10 text-center">
-          <h1 className="text-3xl font-bold text-white tracking-tight">TripAgent</h1>
-          <p className="text-indigo-200 mt-2 text-sm font-medium">Centro de Control Logístico</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">TripAgent</h1>
+          <p className="mt-2 text-sm font-medium text-indigo-200">Centro de Control Logístico</p>
         </div>
 
         {/* Formulario */}
@@ -57,7 +58,7 @@ export default function LoginPage() {
                 Correo Electrónico
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <Mail className="h-5 w-5 text-slate-400" />
                 </div>
                 <Input
@@ -65,7 +66,7 @@ export default function LoginPage() {
                   {...register("email")}
                   type="email"
                   autoComplete="email"
-                  className={`w-full pl-10 pr-3 py-2.5 bg-slate-50 text-sm focus-visible:ring-indigo-500 transition-colors ${
+                  className={`w-full bg-slate-50 py-2.5 pr-3 pl-10 text-sm transition-colors focus-visible:ring-indigo-500 ${
                     errors.email ? "border-red-300 focus-visible:ring-red-500" : "border-slate-200"
                   }`}
                   placeholder="admin@agencia.com"
@@ -74,7 +75,7 @@ export default function LoginPage() {
               {/* Contenedor de altura fija/mínima para evitar saltos bruscos */}
               <div className="min-h-[20px]">
                 {errors.email && (
-                  <p className="text-xs text-red-500 font-medium animate-in fade-in slide-in-from-top-1">
+                  <p className="animate-in fade-in slide-in-from-top-1 text-xs font-medium text-red-500">
                     {errors.email.message}
                   </p>
                 )}
@@ -83,20 +84,20 @@ export default function LoginPage() {
 
             {/* Campo: Contraseña */}
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <label htmlFor="password" className="text-sm font-semibold text-slate-700">
                   Contraseña
                 </label>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleForgotPassword}
-                  className="text-xs text-indigo-600 hover:text-indigo-800 font-medium focus:outline-none focus:underline"
+                  className="text-xs font-medium text-indigo-600 hover:text-indigo-800 focus:underline focus:outline-none"
                 >
                   ¿Olvidaste tu acceso?
                 </button>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <Lock className="h-5 w-5 text-slate-400" />
                 </div>
                 <Input
@@ -104,29 +105,27 @@ export default function LoginPage() {
                   {...register("password")}
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  className={`w-full pl-10 pr-10 py-2.5 bg-slate-50 text-sm focus-visible:ring-indigo-500 transition-colors ${
-                    errors.password ? "border-red-300 focus-visible:ring-red-500" : "border-slate-200"
+                  className={`w-full bg-slate-50 py-2.5 pr-10 pl-10 text-sm transition-colors focus-visible:ring-indigo-500 ${
+                    errors.password
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : "border-slate-200"
                   }`}
                   placeholder="••••••••"
                 />
-                
+
                 {/* 👁️ Toggle Password Visibility */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none"
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               <div className="min-h-[20px]">
                 {errors.password && (
-                  <p className="text-xs text-red-500 font-medium animate-in fade-in slide-in-from-top-1">
+                  <p className="animate-in fade-in slide-in-from-top-1 text-xs font-medium text-red-500">
                     {errors.password.message}
                   </p>
                 )}
@@ -134,14 +133,14 @@ export default function LoginPage() {
             </div>
 
             {/* Acción Principal */}
-            <Button 
-              type="submit" 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 mt-2 rounded-lg text-sm font-bold transition-all disabled:opacity-70"
+            <Button
+              type="submit"
+              className="mt-2 w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-bold text-white transition-all hover:bg-indigo-700 disabled:opacity-70"
               disabled={isPending || !isValid}
             >
               {isPending ? (
                 <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Verificando credenciales...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Verificando credenciales...
                 </span>
               ) : (
                 "Iniciar Sesión"

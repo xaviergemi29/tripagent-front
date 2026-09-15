@@ -12,12 +12,11 @@ export const TOUR_KEYS = {
   detail: (id: string) => [...TOUR_KEYS.all, "detail", id] as const,
 };
 
-
 // ============================================================================
 // 2. CAPA DE RED (Axios API Client)
 // ============================================================================
 const fetchTours = async (search?: string): Promise<TourOutput[]> => {
-  return apiClient.get<never, TourOutput[]>('/tours', {
+  return apiClient.get<never, TourOutput[]>("/tours", {
     params: search ? { search } : undefined,
   });
 };
@@ -30,7 +29,10 @@ const createTourApi = async (tourData: TourInput): Promise<TourOutput> => {
   return apiClient.post<never, TourOutput>(`/tours`, tourData);
 };
 
-const toggleTourStatus = async (payload: { id: string; isActive: boolean }): Promise<TourOutput> => {
+const toggleTourStatus = async (payload: {
+  id: string;
+  isActive: boolean;
+}): Promise<TourOutput> => {
   return apiClient.patch<never, TourOutput>(`/tours/${payload.id}`, {
     isActive: payload.isActive,
   });
@@ -40,7 +42,13 @@ const deleteTourApi = async (travelerId: string): Promise<void> => {
   return apiClient.delete(`/tours/${travelerId}`);
 };
 
-const updateTourApi = async ({ tourId, tourData }: { tourId: string; tourData: TourInput }): Promise<TourOutput> => {
+const updateTourApi = async ({
+  tourId,
+  tourData,
+}: {
+  tourId: string;
+  tourData: TourInput;
+}): Promise<TourOutput> => {
   return apiClient.patch<never, TourOutput>(`/tours/${tourId}`, tourData);
 };
 
@@ -119,8 +127,8 @@ export function useToggleTourStatus() {
         queryClient.setQueryData<TourOutput[]>(
           TOUR_KEYS.all,
           previousTours.map((tour) =>
-            tour.id === newStatus.id ? { ...tour, isActive: newStatus.isActive } : tour
-          )
+            tour.id === newStatus.id ? { ...tour, isActive: newStatus.isActive } : tour,
+          ),
         );
       }
 
@@ -152,7 +160,7 @@ export function useDeleteTour() {
       if (previousTours) {
         queryClient.setQueryData<TourOutput[]>(
           TOUR_KEYS.all,
-          previousTours.filter((tour) => tour.id !== deletedId)
+          previousTours.filter((tour) => tour.id !== deletedId),
         );
       }
 

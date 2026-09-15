@@ -23,15 +23,21 @@ export const TRAVELER_KEYS = {
 // ============================================================================
 const createTravalerApi = async (travelerData: TravelerInput): Promise<TravelerOutput> => {
   return apiClient.post<never, TravelerOutput>("travelers", travelerData);
-}
+};
 
 const fetchTravelersApi = async (search?: string): Promise<TravelerOutput[]> => {
-  return apiClient.get<never, TravelerOutput[]>('/travelers', {
-    params: search ? { search } : undefined
+  return apiClient.get<never, TravelerOutput[]>("/travelers", {
+    params: search ? { search } : undefined,
   });
 };
 
-const updateTravelerApi = async ({ travelerId, travelerUpdated }: { travelerId: string, travelerUpdated: TravelerInput }): Promise<TravelerOutput> => {
+const updateTravelerApi = async ({
+  travelerId,
+  travelerUpdated,
+}: {
+  travelerId: string;
+  travelerUpdated: TravelerInput;
+}): Promise<TravelerOutput> => {
   return apiClient.patch<never, TravelerOutput>(`/travelers/${travelerId}`, travelerUpdated);
 };
 
@@ -40,7 +46,7 @@ const deleteTravelerApi = async (travelerId: string): Promise<TravelerOutput> =>
 };
 
 const fetchHistoryTravelerApi = async (travelerId: string): Promise<any> => {
-  return apiClient.get<never, any>(`/travelers/${travelerId}/history`)
+  return apiClient.get<never, any>(`/travelers/${travelerId}/history`);
 };
 
 // ============================================================================
@@ -51,7 +57,7 @@ export function useTravelers(search?: string) {
     queryKey: TRAVELER_KEYS.lists(search),
     queryFn: () => fetchTravelersApi(search),
     staleTime: 1000 * 60, // 1 minuto de frescura
-    retry: 1
+    retry: 1,
   });
 }
 
@@ -70,8 +76,8 @@ export function useTravelerLookup() {
       const results = await queryClient.fetchQuery({
         queryKey: [...TRAVELER_KEYS.all, "lookup", cleanTerm],
         queryFn: async () => {
-          return await apiClient.get<never, TravelerOutput[]>('/travelers', {
-            params: { search: cleanTerm }
+          return await apiClient.get<never, TravelerOutput[]>("/travelers", {
+            params: { search: cleanTerm },
           });
         },
         staleTime: 1000 * 60 * 5, // 5 minutos de caché para resultados de búsqueda
@@ -93,7 +99,7 @@ export function useTravelerHistory(travelerId: string | null) {
     queryFn: () => fetchHistoryTravelerApi(travelerId!),
     enabled: !!travelerId, // 👈 LA MAGIA: Solo hace la petición HTTP si el ID no es nulo
     staleTime: 1000 * 60 * 5, // Cacheamos 5 minutos para evitar peticiones si abre y cierra el Drawer
-  })
+  });
 }
 
 // ============================================================================
@@ -114,7 +120,7 @@ export function useCreateTraveler() {
         description: error.message || "No se pudo guardar la información",
       });
     },
-  })
+  });
 }
 
 export function useUpdateTraveler() {
@@ -132,7 +138,7 @@ export function useUpdateTraveler() {
       toast.error("Error al actualizar viajero", {
         description: error.message || "Revisa tu conexión e intenta de nuevo.",
       });
-    }
+    },
   });
 }
 
@@ -147,12 +153,9 @@ export function useDeleteTraveler() {
       const previousQueries = queryClient.getQueriesData<TravelerOutput[]>({
         queryKey: TRAVELER_KEYS.all,
       });
-      queryClient.setQueriesData<TravelerOutput[]>(
-        { queryKey: TRAVELER_KEYS.all },
-        (oldData) => {
-          return oldData ? oldData.filter((traveler) => traveler.id !== deletedId) : [];
-        }
-      );
+      queryClient.setQueriesData<TravelerOutput[]>({ queryKey: TRAVELER_KEYS.all }, (oldData) => {
+        return oldData ? oldData.filter((traveler) => traveler.id !== deletedId) : [];
+      });
 
       return { previousQueries };
     },
@@ -168,7 +171,7 @@ export function useDeleteTraveler() {
     },
     onSuccess: () => {
       toast.success("Viajero eliminado", {
-        description: "El registro fue borrado permanentemente de la base de datos."
+        description: "El registro fue borrado permanentemente de la base de datos.",
       });
     },
     onSettled: () => {
@@ -176,4 +179,3 @@ export function useDeleteTraveler() {
     },
   });
 }
-

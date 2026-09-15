@@ -15,20 +15,30 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useCreatePayment } from "../hooks/usePayments";
-import { paymentFormSchema, type PaymentFormValues } from "@/features/travelers/schemas/enrollTravelerSchema";
-
+import {
+  paymentFormSchema,
+  type PaymentFormValues,
+} from "@/features/travelers/schemas/enrollTravelerSchema";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   bookingId: string;
   tourId: string;
-  balance: number; // Para sugerir el monto por defecto
+  balance: number;
+  correctionData?: { amount: number; method: string } | null;
 }
 
-export function RegisterPaymentModal({ isOpen, onClose, bookingId, tourId, balance }: Props) {
+export function RegisterPaymentModal({
+  isOpen,
+  onClose,
+  bookingId,
+  tourId,
+  balance,
+  correctionData,
+}: Props) {
   const { mutate: createPayment, isPending } = useCreatePayment(tourId);
-    console.log("hola")
+  console.log("hola");
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentFormSchema),
     defaultValues: {
@@ -39,10 +49,17 @@ export function RegisterPaymentModal({ isOpen, onClose, bookingId, tourId, balan
     },
   });
 
-  // Sincronizar el default value si el balance cambia
   useEffect(() => {
-    if (isOpen) form.reset({ amount: balance, method: "TRANSFER", type: "PAYMENT", referenceInfo: "" });
-  }, [isOpen, balance, form]);
+    if (isOpen) {
+      form.reset({
+        amount: correctionData ? correctionData.amount : balance,
+        method: (correctionData ? correctionData.method : "TRANSFER") as
+          "CASH" | "TRANSFER" | "CARD" | "OTHER",
+        type: "PAYMENT",
+        referenceInfo: "",
+      });
+    }
+  }, [isOpen, balance, correctionData, form]);
 
   const onSubmit = (data: PaymentFormValues) => {
     createPayment(
@@ -52,7 +69,7 @@ export function RegisterPaymentModal({ isOpen, onClose, bookingId, tourId, balan
           form.reset();
           onClose(); // Cerramos el modal solo si el backend respondió OK
         },
-      }
+      },
     );
   };
 
@@ -62,7 +79,8 @@ export function RegisterPaymentModal({ isOpen, onClose, bookingId, tourId, balan
         <DialogHeader>
           <DialogTitle>Registrar Abono</DialogTitle>
           <DialogDescription>
-            El saldo pendiente actual es de <span className="font-bold text-slate-800">${balance}</span>
+            El saldo pendiente actual es de{" "}
+            <span className="font-bold text-slate-800">${balance}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -73,18 +91,20 @@ export function RegisterPaymentModal({ isOpen, onClose, bookingId, tourId, balan
             render={({ field, fieldState }) => (
               <div className="space-y-2">
                 <Label htmlFor="amount">Monto a abonar (MXN)</Label>
-                <Input 
-                  {...field} 
-                  id="amount" 
-                  type="number" 
-                  step="0.01" 
+                <Input
+                  {...field}
+                  id="amount"
+                  type="number"
+                  step="0.01"
                   inputMode="decimal"
-                  className="text-2xl font-bold h-14" 
-                  autoFocus 
-                  onFocus={(e) => e.target.select()} 
+                  className="h-14 text-2xl font-bold"
+                  autoFocus
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                 />
-                {fieldState.error && <p className="text-xs text-red-500 font-medium">{fieldState.error.message}</p>}
+                {fieldState.error && (
+                  <p className="text-xs font-medium text-red-500">{fieldState.error.message}</p>
+                )}
               </div>
             )}
           />
@@ -96,17 +116,46 @@ export function RegisterPaymentModal({ isOpen, onClose, bookingId, tourId, balan
               <div className="space-y-2">
                 <Label>Método de cobro</Label>
                 <div className="grid grid-cols-3 gap-2">
-                  <label className={`border rounded-md p-2.5 text-center text-sm cursor-pointer transition-colors ${field.value === "CASH" ? "bg-indigo-50 border-indigo-300 font-semibold text-indigo-700 shadow-sm" : "hover:bg-slate-50 text-slate-600"}`}>
-                    <input type="radio" className="hidden" {...field} value="CASH" checked={field.value === "CASH"} /> Efectivo
+                  <label
+                    className={`cursor-pointer rounded-md border p-2.5 text-center text-sm transition-colors ${field.value === "CASH" ? "border-indigo-300 bg-indigo-50 font-semibold text-indigo-700 shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    <input
+                      type="radio"
+                      className="hidden"
+                      {...field}
+                      value="CASH"
+                      checked={field.value === "CASH"}
+                    />{" "}
+                    Efectivo
                   </label>
-                  <label className={`border rounded-md p-2.5 text-center text-sm cursor-pointer transition-colors ${field.value === "TRANSFER" ? "bg-indigo-50 border-indigo-300 font-semibold text-indigo-700 shadow-sm" : "hover:bg-slate-50 text-slate-600"}`}>
-                    <input type="radio" className="hidden" {...field} value="TRANSFER" checked={field.value === "TRANSFER"} /> SPEI / Transf.
+                  <label
+                    className={`cursor-pointer rounded-md border p-2.5 text-center text-sm transition-colors ${field.value === "TRANSFER" ? "border-indigo-300 bg-indigo-50 font-semibold text-indigo-700 shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    <input
+                      type="radio"
+                      className="hidden"
+                      {...field}
+                      value="TRANSFER"
+                      checked={field.value === "TRANSFER"}
+                    />{" "}
+                    SPEI / Transf.
                   </label>
-                  <label className={`border rounded-md p-2.5 text-center text-sm cursor-pointer transition-colors ${field.value === "CARD" ? "bg-indigo-50 border-indigo-300 font-semibold text-indigo-700 shadow-sm" : "hover:bg-slate-50 text-slate-600"}`}>
-                    <input type="radio" className="hidden" {...field} value="CARD" checked={field.value === "CARD"} /> Tarjeta
+                  <label
+                    className={`cursor-pointer rounded-md border p-2.5 text-center text-sm transition-colors ${field.value === "CARD" ? "border-indigo-300 bg-indigo-50 font-semibold text-indigo-700 shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    <input
+                      type="radio"
+                      className="hidden"
+                      {...field}
+                      value="CARD"
+                      checked={field.value === "CARD"}
+                    />{" "}
+                    Tarjeta
                   </label>
                 </div>
-                {fieldState.error && <p className="text-xs text-red-500 font-medium">{fieldState.error.message}</p>}
+                {fieldState.error && (
+                  <p className="text-xs font-medium text-red-500">{fieldState.error.message}</p>
+                )}
               </div>
             )}
           />
@@ -116,16 +165,30 @@ export function RegisterPaymentModal({ isOpen, onClose, bookingId, tourId, balan
             control={form.control}
             render={({ field }) => (
               <div className="space-y-2">
-                <Label htmlFor="reference" className="text-slate-600">Notas o Referencia <span className="text-slate-400 font-normal">(Opcional)</span></Label>
-                <Input {...field} id="reference" placeholder="Ej. Terminación 4599" className="bg-slate-50" />
+                <Label htmlFor="reference" className="text-slate-600">
+                  Notas o Referencia <span className="font-normal text-slate-400">(Opcional)</span>
+                </Label>
+                <Input
+                  {...field}
+                  id="reference"
+                  placeholder="Ej. Terminación 4599"
+                  className="bg-slate-50"
+                />
               </div>
             )}
           />
         </form>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={onClose} disabled={isPending}>Cancelar</Button>
-          <Button type="submit" form="payment-form" disabled={isPending} className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[140px]">
+          <Button variant="outline" onClick={onClose} disabled={isPending}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="payment-form"
+            disabled={isPending}
+            className="min-w-[140px] bg-emerald-600 text-white hover:bg-emerald-700"
+          >
             {isPending ? "Registrando..." : "Guardar Abono"}
           </Button>
         </DialogFooter>

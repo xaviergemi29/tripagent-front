@@ -27,5 +27,5 @@ export const MOCK_RESERVATIONS: ReservationOutput[] = [
     paymentStatus: "PENDING",
     seatsReserved: 1,
     createdAt: new Date().toISOString(),
-  }
-]
+  },
+];

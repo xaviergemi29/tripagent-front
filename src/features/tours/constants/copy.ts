@@ -15,23 +15,23 @@ export const TOUR_FORM_COPY = {
     pointOfOrigin: "Punto de Encuentro",
     paymentSection: {
       title: "Configuración de Cobro",
-      description: "Métodos de Pago y Anticipos."
+      description: "Métodos de Pago y Anticipos.",
     },
     paymentTypes: {
       spei: {
         title: "Acepta SPEI",
-        label: "Datos Bancarios (Banco, CLABE, Titular)"
+        label: "Datos Bancarios (Banco, CLABE, Titular)",
       },
       credit: {
         title: "Acepta Tarjeta",
-        label: "Enlace de Pago (Stripe / MercadoPago)"
+        label: "Enlace de Pago (Stripe / MercadoPago)",
       },
       cash: {
         title: "Acepta Efectivo",
         label: "Condiciones para pago en efectivo",
-        placholder: "Ej. Pago en efectivo directamente al abordar la van"
-      }
-    }
+        placholder: "Ej. Pago en efectivo directamente al abordar la van",
+      },
+    },
   },
   confirmInstruction: "Instrucciones Post-Pago / Confirmación",
   actions: {
@@ -41,5 +41,5 @@ export const TOUR_FORM_COPY = {
   errors: {
     titleMinLength: "El título debe tener al menos 5 caracteres",
     // ... otros errores mapeados en Zod
-  }
-} as const // Convierte el objeto en readonly y fija los tipos literales
+  },
+} as const; // Convierte el objeto en readonly y fija los tipos literales
