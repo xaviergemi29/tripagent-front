@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { TravelerInput, TravelerOutput } from "../schemas/travelerSchema";
+import type { TravelerInput, TravelerOutput } from "../schemas/traveler.schema";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 

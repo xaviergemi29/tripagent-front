@@ -1,4 +1,4 @@
-import { TourDashboardOutput } from "../schemas/tourDashboardSchema";
+import { TourDashboardOutput } from "../schemas/tour-dashboard.schema";
 
 export const MOCK_DASHBOARD_DATA: TourDashboardOutput[] = [
   {

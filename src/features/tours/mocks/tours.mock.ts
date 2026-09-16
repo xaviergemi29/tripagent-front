@@ -1,4 +1,4 @@
-import type { TourOutput } from "../schemas/tourSchema";
+import type { TourOutput } from "../schemas/tour.schema";
 
 export const MOCK_TOURS: TourOutput[] = [
   {

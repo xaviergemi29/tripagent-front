@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { MOCK_RESERVATIONS } from "../mocks/reservations.mock";
-import type { ReservationOutput } from "../schemas/reservationSchema";
+import type { ReservationOutput } from "../schemas/reservation.schema";
 
 // ============================================================================
 // 1. CONTRATOS (Tipos)

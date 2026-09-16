@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BookingInput, BookingOutput } from "../schemas/bookingSchema";
+import { BookingInput, BookingOutput } from "../schemas/booking.schema";
 
 // ============================================================================
 // 1. QUERY KEY FACTORY (Patrón de Arquitectura Limpia)
@@ -118,7 +118,7 @@ export function useQuickReservation(tourId: string) {
   return useMutation({
     mutationFn: (payload: QuickBookingPayload) => createQuickBookingApi({ tourId, payload }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tours", "detail", tourId] });
+      queryClient.invalidateQueries({ queryKey: ["tour-dashboard", tourId] });
     },
     onError: (error: Error) => {
       toast.error("Error al apartar lugares", {

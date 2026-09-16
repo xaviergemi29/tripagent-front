@@ -3,7 +3,7 @@
 import { Search, Download, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import type { TravelerRow } from "../schemas/tourDashboardSchema";
+import type { TravelerRow } from "../schemas/tour-dashboard.schema";
 
 interface Props {
   travelers: TravelerRow[]; // Recibimos la lista completa para exportar

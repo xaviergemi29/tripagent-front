@@ -18,7 +18,7 @@ import { useCreatePayment } from "../hooks/usePayments";
 import {
   paymentFormSchema,
   type PaymentFormValues,
-} from "@/features/travelers/schemas/enrollTravelerSchema";
+} from "@/features/travelers/schemas/enroll-traveler.schema";
 
 interface Props {
   isOpen: boolean;

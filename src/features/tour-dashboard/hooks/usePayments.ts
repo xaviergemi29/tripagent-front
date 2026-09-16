@@ -1,4 +1,4 @@
-import { PaymentFormValues } from "@/features/travelers/schemas/enrollTravelerSchema";
+import { PaymentFormValues } from "@/features/travelers/schemas/enroll-traveler.schema";
 import { apiClient } from "@/lib/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";

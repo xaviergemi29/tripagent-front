@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { travelerSchema } from "@/features/travelers/schemas/travelerSchema";
+import { travelerSchema } from "@/features/travelers/schemas/traveler.schema";
 
 export const PAYMENT_STATUS = ["PAID", "PENDING", "CASH_ON_ARRIVAL"] as const;
 

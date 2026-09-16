@@ -5,7 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Copy, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 
-import { bookingFormSchema, BookingOutput, type BookingFormValues } from "../schemas/bookingSchema";
+import {
+  bookingFormSchema,
+  BookingOutput,
+  type BookingFormValues,
+} from "../schemas/booking.schema";
 import { CompanionsManager } from "./CompanionsManager";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { TourDashboardOutput } from "../schemas/tourDashboardSchema";
+import { TourDashboardOutput } from "../schemas/tour-dashboard.schema";
 import { apiClient } from "@/lib/api-client";
 
 // ============================================================================

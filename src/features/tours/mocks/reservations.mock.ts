@@ -1,4 +1,4 @@
-import { ReservationOutput } from "../schemas/reservationSchema";
+import { ReservationOutput } from "../schemas/reservation.schema";
 
 export const MOCK_RESERVATIONS: ReservationOutput[] = [
   {

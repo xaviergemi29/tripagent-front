@@ -1,4 +1,4 @@
-import type { TravelerOutput } from "../schemas/travelerSchema";
+import type { TravelerOutput } from "../schemas/traveler.schema";
 
 export const MOCK_TRAVELERS: TravelerOutput[] = [
   {

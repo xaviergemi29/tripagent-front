@@ -7,7 +7,7 @@ import { X, UserPlus, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { enrollTravelerSchema, type EnrollTravelerInput } from "../schemas/enrollTravelerSchema";
+import { enrollTravelerSchema, type EnrollTravelerInput } from "../schemas/enroll-traveler.schema";
 import { useCreateTraveler } from "../hooks/useTravelers";
 
 interface Props {

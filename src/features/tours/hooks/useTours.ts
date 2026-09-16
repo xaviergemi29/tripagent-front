@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { TourOutput, TourInput } from "../schemas/tourSchema";
+import type { TourOutput, TourInput } from "../schemas/tour.schema";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 

@@ -1,5 +1,5 @@
 import { Users, DollarSign, AlertCircle, FileWarning, Plus } from "lucide-react";
-import type { TourMetrics } from "../schemas/tourDashboardSchema";
+import type { TourMetrics } from "../schemas/tour-dashboard.schema";
 import { Button } from "@/components/ui/button";
 
 interface Props {

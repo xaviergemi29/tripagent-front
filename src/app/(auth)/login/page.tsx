@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useLogin } from "../hooks/useAuth";
-import { loginSchema, type LoginFormValues } from "../schemas/loginSchema";
+import { loginSchema, type LoginFormValues } from "../schemas/login.schema";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);

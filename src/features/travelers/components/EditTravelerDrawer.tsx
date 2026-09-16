@@ -8,7 +8,11 @@ import { X, UserCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { travelerSchema, type TravelerInput, type TravelerOutput } from "../schemas/travelerSchema";
+import {
+  travelerSchema,
+  type TravelerInput,
+  type TravelerOutput,
+} from "../schemas/traveler.schema";
 import { useUpdateTraveler } from "../hooks/useTravelers";
 
 interface Props {

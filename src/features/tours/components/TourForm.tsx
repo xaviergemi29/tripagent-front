@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 
-import { tourSchema, type TourInput, type TourOutput } from "../schemas/tourSchema";
+import { tourSchema, type TourInput, type TourOutput } from "../schemas/tour.schema";
 import { useCreateTour, useUpdateTour } from "../hooks/useTours";
 import { useEffect } from "react";
 

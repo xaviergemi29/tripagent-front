@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TravelersTable } from "@/features/travelers/components/TravelersTable";
 import { useDeleteTraveler, useTravelers } from "@/features/travelers/hooks/useTravelers";
-import type { TravelerOutput } from "@/features/travelers/schemas/travelerSchema";
+import type { TravelerOutput } from "@/features/travelers/schemas/traveler.schema";
 import { EditTravelerDrawer } from "@/features/travelers/components/EditTravelerDrawer";
 import { TravelerHistoryDrawer } from "@/features/travelers/components/TravelerHistoryDrawer";
 

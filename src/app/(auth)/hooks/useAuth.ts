@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { LoginFormValues } from "../schemas/loginSchema";
+import { LoginFormValues } from "../schemas/login.schema";
 
 // 1. Capa de Red
 const loginApi = async (credentials: LoginFormValues) => {

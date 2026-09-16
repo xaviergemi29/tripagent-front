@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { tourSchema } from "@/features/tours/schemas/tourSchema";
+import { tourSchema } from "@/features/tours/schemas/tour.schema";
 
 export async function POST(request: Request) {
   try {

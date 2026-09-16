@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useTours, useToggleTourStatus, useDeleteTour } from "../hooks/useTours";
-import type { TourOutput } from "../schemas/tourSchema";
+import type { TourOutput } from "../schemas/tour.schema";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export function TourListTable() {
