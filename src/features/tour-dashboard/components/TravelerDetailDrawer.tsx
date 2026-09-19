@@ -50,6 +50,7 @@ interface Props {
   tourId: string;
   traveler: TravelerInfo | null;
   isOpen: boolean;
+  isAuditMode?: boolean;
   onClose: () => void;
 }
 
@@ -60,7 +61,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   OTHER: "OTRO",
 };
 
-export function TravelerDetailDrawer({ tourId, traveler, isOpen, onClose }: Props) {
+export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, onClose }: Props) {
   const [manualPenalty, setManualPenalty] = useState<string>("0");
   const [showCancellationConfirm, setShowCancellationConfirm] = useState(false);
   const [isFullRetention, setIsFullRetention] = useState(true);
@@ -156,14 +157,23 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, onClose }: Prop
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-slate-900">{traveler.fullName}</h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 shrink-0 rounded-full text-slate-400 hover:bg-indigo-50 hover:text-indigo-600"
-                    title="Editar Datos"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  {!isAuditMode ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 shrink-0 rounded-full text-slate-400 hover:bg-indigo-50 hover:text-indigo-600"
+                      title="Editar Datos"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <div
+                      title="Acción no disponible: El tour ya finalizó."
+                      className="cursor-help p-2"
+                    >
+                      <Pencil className="h-4 w-4 text-slate-300" />
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs font-semibold text-slate-500 uppercase">
                   {isTitular ? "Titular de Reserva" : "Acompañante"}
@@ -299,98 +309,101 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, onClose }: Prop
             )}
 
             {/* SEPARADOR VISUAL Y ZONA CRÍTICA */}
-            <div className="pt-8">
-              <hr className="mb-8 border-slate-200" />
 
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 text-sm font-bold tracking-wider text-red-600 uppercase">
-                  <AlertTriangle className="h-4 w-4" /> Peligro
-                </div>
+            {!isAuditMode && (
+              <div className="pt-8">
+                <hr className="mb-8 border-slate-200" />
 
-                {!showCancellationConfirm ? (
-                  <div className="space-y-1.5">
-                    <Button
-                      variant="outline"
-                      className="w-full border-red-200 font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
-                      onClick={() => setShowCancellationConfirm(true)}
-                    >
-                      {isTitular ? "Cancelar Reserva Completa" : "Dar de baja a pasajero"}
-                    </Button>
-
-                    {!isTitular && (
-                      <p className="text-center text-[11px] leading-tight text-slate-400">
-                        El costo total de la reserva de {traveler.fullName} se recalculará
-                        automáticamente.
-                      </p>
-                    )}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-bold tracking-wider text-red-600 uppercase">
+                    <AlertTriangle className="h-4 w-4" /> Peligro
                   </div>
-                ) : (
-                  <div className="animate-in fade-in space-y-4 rounded-lg border border-red-200 bg-white p-4 shadow-sm duration-200">
-                    <div className="space-y-2">
-                      <p className="text-sm font-bold text-slate-800">Confirmar Cancelación</p>
-                      <label className="group mt-3 flex cursor-pointer items-start gap-2 rounded p-2 transition-colors hover:bg-slate-50">
-                        <div className="mt-0.5 text-red-600">
-                          {isFullRetention ? (
-                            <CheckSquare className="h-4 w-4" />
-                          ) : (
-                            <Square className="h-4 w-4" />
-                          )}
-                        </div>
-                        <div
-                          className="flex-1"
-                          onClick={() => setIsFullRetention(!isFullRetention)}
-                        >
-                          <p className="text-xs font-bold text-slate-800">
-                            Aplicar política "Sin Devolución"
-                          </p>
-                          <p className="text-[11px] leading-tight text-slate-500">
-                            Se retendrá el 100% del costo del asiento.
-                          </p>
-                        </div>
-                      </label>
-                      {!isFullRetention && (
-                        <div className="animate-in slide-in-from-top-2 pt-2">
-                          <label className="text-xs font-bold text-slate-700">
-                            Retención manual (MXN)
-                          </label>
-                          <div className="relative mt-1">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                              <DollarSign className="h-3.5 w-3.5 text-slate-400" />
-                            </div>
-                            <input
-                              type="number"
-                              min="0"
-                              value={manualPenalty}
-                              onChange={(e) => setManualPenalty(e.target.value)}
-                              className="w-full rounded border border-slate-300 py-1.5 pr-3 pl-8 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
-                              placeholder="0.00"
-                            />
-                          </div>
-                        </div>
+
+                  {!showCancellationConfirm ? (
+                    <div className="space-y-1.5">
+                      <Button
+                        variant="outline"
+                        className="w-full border-red-200 font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={() => setShowCancellationConfirm(true)}
+                      >
+                        {isTitular ? "Cancelar Reserva Completa" : "Dar de baja a pasajero"}
+                      </Button>
+
+                      {!isTitular && (
+                        <p className="text-center text-[11px] leading-tight text-slate-400">
+                          El costo total de la reserva de {traveler.fullName} se recalculará
+                          automáticamente.
+                        </p>
                       )}
                     </div>
-                    <div className="flex flex-col gap-2 border-t border-slate-100 pt-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="w-full text-slate-600"
-                        onClick={() => setShowCancellationConfirm(false)}
-                      >
-                        Volver
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="w-full bg-red-600 text-white hover:bg-red-700"
-                        disabled={isPending}
-                        onClick={handleConfirmCancellation}
-                      >
-                        Confirmar Baja
-                      </Button>
+                  ) : (
+                    <div className="animate-in fade-in space-y-4 rounded-lg border border-red-200 bg-white p-4 shadow-sm duration-200">
+                      <div className="space-y-2">
+                        <p className="text-sm font-bold text-slate-800">Confirmar Cancelación</p>
+                        <label className="group mt-3 flex cursor-pointer items-start gap-2 rounded p-2 transition-colors hover:bg-slate-50">
+                          <div className="mt-0.5 text-red-600">
+                            {isFullRetention ? (
+                              <CheckSquare className="h-4 w-4" />
+                            ) : (
+                              <Square className="h-4 w-4" />
+                            )}
+                          </div>
+                          <div
+                            className="flex-1"
+                            onClick={() => setIsFullRetention(!isFullRetention)}
+                          >
+                            <p className="text-xs font-bold text-slate-800">
+                              Aplicar política "Sin Devolución"
+                            </p>
+                            <p className="text-[11px] leading-tight text-slate-500">
+                              Se retendrá el 100% del costo del asiento.
+                            </p>
+                          </div>
+                        </label>
+                        {!isFullRetention && (
+                          <div className="animate-in slide-in-from-top-2 pt-2">
+                            <label className="text-xs font-bold text-slate-700">
+                              Retención manual (MXN)
+                            </label>
+                            <div className="relative mt-1">
+                              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                <DollarSign className="h-3.5 w-3.5 text-slate-400" />
+                              </div>
+                              <input
+                                type="number"
+                                min="0"
+                                value={manualPenalty}
+                                onChange={(e) => setManualPenalty(e.target.value)}
+                                className="w-full rounded border border-slate-300 py-1.5 pr-3 pl-8 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2 border-t border-slate-100 pt-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="w-full text-slate-600"
+                          onClick={() => setShowCancellationConfirm(false)}
+                        >
+                          Volver
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="w-full bg-red-600 text-white hover:bg-red-700"
+                          disabled={isPending}
+                          onClick={handleConfirmCancellation}
+                        >
+                          Confirmar Baja
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </section>
-            </div>
+                  )}
+                </section>
+              </div>
+            )}
           </div>
         </div>
       </div>

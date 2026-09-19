@@ -20,7 +20,7 @@ export default function LoginPage() {
     formState: { errors, isValid },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    mode: "onChange", // Valida en tiempo real mientras el usuario escribe
+    mode: "onSubmit",
     defaultValues: {
       email: "",
       password: "",

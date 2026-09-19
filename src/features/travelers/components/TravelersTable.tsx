@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { TravelerOutput } from "../schemas/traveler.schema";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { toast } from "sonner";
+import { JSX } from "react";
 
 interface TravelersTableProps {
   travelers: TravelerOutput[];
@@ -40,6 +40,28 @@ interface TravelersTableProps {
   onDelete?: (travelerId: string) => void;
   onViewHistory?: (travelerId: string) => void; // 👈 Nueva prop
 }
+
+const renderFidelidadBadge = (trips: number): JSX.Element => {
+  if (trips >= 5) {
+    return (
+      <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-1 text-xs font-bold text-purple-700">
+        🌟 Cliente VIP ({trips})
+      </span>
+    );
+  }
+  if (trips >= 2) {
+    return (
+      <span className="rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-bold text-orange-700">
+        🔥 Frecuente ({trips})
+      </span>
+    );
+  }
+  return (
+    <span className="text-xs font-medium text-slate-500">
+      {trips} Viaje{trips !== 1 ? "s" : ""}
+    </span>
+  );
+};
 
 export function TravelersTable({
   travelers,
@@ -81,7 +103,7 @@ export function TravelersTable({
             <TableRow className="bg-slate-50/50">
               <TableHead className="w-[220px]">Viajero</TableHead>
               <TableHead>Contacto (WhatsApp / Email)</TableHead>
-              <TableHead>Contacto de Emergencia</TableHead>
+              <TableHead>Nivel de Fidelidad</TableHead>
               <TableHead className="w-[280px]">Notas Médicas</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
@@ -131,18 +153,8 @@ export function TravelersTable({
 
                   {/* Contacto de Emergencia */}
                   <TableCell>
-                    <div className="flex flex-col space-y-1.5 text-xs">
-                      <span
-                        className="line-clamp-1 font-medium text-slate-700"
-                        title={traveler.emergencyContactName}
-                      >
-                        {traveler.emergencyContactName}
-                      </span>
-                      <span className="flex items-center text-slate-500">
-                        <Phone className="mr-1.5 h-3.5 w-3.5 text-slate-400" />
-                        {traveler.emergencyContactPhone}
-                      </span>
-                    </div>
+                    {/* Asegúrate de inyectar tripCount en tu type TravelerOutput o ignorarlo temporalmente como (traveler as any).tripCount */}
+                    {renderFidelidadBadge((traveler as any).tripCount || 0)}
                   </TableCell>
 
                   {/* Notas Médicas: Fix de Overflow y Line Clamp */}

@@ -1,7 +1,7 @@
 // src/features/auth/hooks/useSession.ts
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-import { UserProfile } from "../schemas/sessionSchema";
+import { UserProfile } from "../schemas/session.schema";
 
 // ============================================================================
 // 1. QUERY KEY FACTORY

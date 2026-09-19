@@ -32,8 +32,8 @@ export default function TravelersPage() {
 
   const filteredTravelers = travelers?.filter(
     (t) =>
-      t.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.whatsappPhone.includes(searchQuery) ||
+      t.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.whatsappPhone?.includes(searchQuery) ||
       t.email?.toLowerCase().includes(searchQuery.toLowerCase()), // Ojo: email puede ser null, agregué optional chaining
   );
 
@@ -56,9 +56,6 @@ export default function TravelersPage() {
             Base de datos global de clientes, historial médico y contactos de emergencia.
           </p>
         </div>
-        <Button className="w-full sm:w-auto">
-          <UserPlus className="mr-2 h-4 w-4" /> Nuevo Viajero
-        </Button>
       </div>
 
       <div className="flex max-w-md items-center gap-2">

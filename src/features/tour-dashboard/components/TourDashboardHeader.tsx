@@ -6,7 +6,7 @@ interface Props {
   title: string;
   date: string;
   metrics: TourMetrics;
-  onNewReservation: () => void; // 👈 Prop para disparar el modal
+  onNewReservation?: () => void;
 }
 
 export function TourDashboardHeader({ title, date, metrics, onNewReservation }: Props) {
@@ -28,13 +28,15 @@ export function TourDashboardHeader({ title, date, metrics, onNewReservation }: 
           Salida: {new Date(date).toLocaleDateString("es-MX", { dateStyle: "long" })}
         </p>
         {/* Botón primario destacado contextualmente */}
-        <Button
-          size="lg"
-          className="w-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 sm:w-auto"
-          onClick={onNewReservation}
-        >
-          <Plus className="mr-2 h-5 w-5" /> Nueva Reserva
-        </Button>
+        {onNewReservation && (
+          <Button
+            size="lg"
+            className="mt-4 w-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 sm:w-auto"
+            onClick={onNewReservation}
+          >
+            <Plus className="mr-2 h-5 w-5" /> Nueva Reserva
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">

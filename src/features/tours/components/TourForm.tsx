@@ -21,11 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
 
 import { tourSchema, type TourInput, type TourOutput } from "../schemas/tour.schema";
-import { useCreateTour, useUpdateTour } from "../hooks/useTours";
-import { useEffect } from "react";
+import { useCreateTour, useUpdateTour, useUploadTourBrochure } from "../hooks/useTours";
+import { useEffect, useState } from "react";
 
 interface CreateTourFormProps {
   initialData?: TourOutput;
@@ -45,13 +44,15 @@ export const formatForDateInput = (dateString: string | Date | undefined): strin
 export function TourForm({ initialData, tourId, onSuccess }: CreateTourFormProps) {
   const isEditing = !!initialData;
   const router = useRouter();
-
+  const [brochureFile, setBrochureFile] = useState<File | null>(null);
   const { mutateAsync: createTour, isPending } = useCreateTour();
   const { mutateAsync: updateTour, isPending: isPendingUpdate } = useUpdateTour();
+  const { mutateAsync: uploadBrochureTour } = useUploadTourBrochure();
   const isProcessing = isPending || isPendingUpdate;
 
   const form = useForm<TourInput>({
     resolver: zodResolver(tourSchema),
+    mode: "onSubmit",
     defaultValues: initialData || {
       title: "",
       description: "",
@@ -109,12 +110,28 @@ export function TourForm({ initialData, tourId, onSuccess }: CreateTourFormProps
 
   async function onSubmit(data: TourInput) {
     try {
+      let currentTourId = tourId;
+
+      // PASO 1: Guardado de datos JSON (Crear o Actualizar)
       if (isEditing && tourId) {
         await updateTour({ tourId, tourData: data });
       } else {
-        await createTour(data);
+        const response = await createTour(data);
+        // Asegúrate de extraer bien el ID dependiendo de si tu API regresa { data: tour } o el tour directo
+        currentTourId = response.id ?? (response as any).data?.id;
       }
+
+      // PASO 2: Subida del archivo si el usuario seleccionó uno
+      if (brochureFile && currentTourId) {
+        // 🚀 Aquí pasamos el objeto limpio con la estructura que el hook espera
+        await uploadBrochureTour({
+          tourId: currentTourId,
+          file: brochureFile, // brochureFile es de tipo File (extraído del input type="file")
+        });
+      }
+
       form.reset();
+      setBrochureFile(null);
       if (onSuccess) onSuccess();
       router.push("/");
     } catch (error) {
@@ -488,6 +505,64 @@ export function TourForm({ initialData, tourId, onSuccess }: CreateTourFormProps
                 )}
               </div>
             )}
+
+            <div className="space-y-3 border-t border-slate-100 pt-4">
+              <div className="flex items-center justify-between">
+                <Label className="font-semibold text-slate-700">Folleto del Viaje (Opcional)</Label>
+                <span className="text-xs text-slate-400">PDF, Máx 5MB</span>
+              </div>
+              <p className="text-sm text-slate-500">
+                Sube el PDF con tu itinerario y políticas. Tus clientes podrán descargarlo
+                directamente desde WhatsApp.
+              </p>
+
+              <div className="flex w-full items-center justify-center">
+                <label
+                  htmlFor="dropzone-file"
+                  className="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 transition-colors hover:bg-slate-100"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg
+                      className="mb-2 h-8 w-8 text-slate-400"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 20 16"
+                    >
+                      <path
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                      />
+                    </svg>
+                    <p className="mb-1 text-sm font-semibold text-slate-600">
+                      {brochureFile ? brochureFile.name : "Haz clic para adjuntar el PDF"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {brochureFile
+                        ? `${(brochureFile.size / 1024 / 1024).toFixed(2)} MB`
+                        : "Solo formato .PDF"}
+                    </p>
+                  </div>
+                  <input
+                    id="dropzone-file"
+                    type="file"
+                    className="hidden"
+                    accept="application/pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && file.size <= 5242880) {
+                        setBrochureFile(file);
+                      } else {
+                        toast.error("El archivo supera el límite de 5MB");
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
 
             {/* 🙈 OCULTO (MVP): postPaymentInstructions */}
           </div>

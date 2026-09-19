@@ -14,6 +14,8 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
   const [formFilter, setFormFilter] = useState("ALL");
+  const isAuditMode = tour?.temporalStatus === "FINALIZADO" || tour?.temporalStatus === "CANCELADO";
+  // const isAuditMode = true;
 
   const [selectedTravelerId, setSelectedTravelerId] = useState<string | null>(null);
   const [validatingPaymentId, setValidatingPaymentId] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
         title={tour.title}
         date={tour.departureDateTime}
         metrics={tour.metrics}
-        onNewReservation={() => setIsQuickReservationOpen(true)}
+        onNewReservation={isAuditMode ? undefined : () => setIsQuickReservationOpen(true)}
       />
 
       <div className="flex-1 space-y-4 p-4 md:p-6">
@@ -60,7 +62,7 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
           onPaymentFilterChange={setPaymentFilter}
           formFilter={formFilter}
           onFormFilterChange={setFormFilter}
-          onAddTravelerClick={() => alert("Abrir modal")}
+          onAddTravelerClick={isAuditMode ? undefined : () => alert("Abrir modal")}
         />
 
         <TravelersTable
@@ -70,6 +72,7 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
           formFilter={formFilter}
           onRowClick={(id) => setSelectedTravelerId(id)}
           onValidatePaymentClick={(id) => setValidatingPaymentId(id)}
+          isAuditMode={isAuditMode}
         />
       </div>
 
@@ -79,6 +82,7 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
         traveler={foundTraveler}
         isOpen={!!selectedTravelerId}
         onClose={() => setSelectedTravelerId(null)}
+        isAuditMode={isAuditMode}
       />
 
       {validatingPaymentId && (

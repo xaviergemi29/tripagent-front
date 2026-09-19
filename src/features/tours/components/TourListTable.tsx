@@ -9,11 +9,13 @@ import {
   Users,
   Landmark,
   CreditCard,
-  LinkIcon,
+  PauseCircle,
   LayoutDashboard,
   Bus,
   Footprints,
   Banknote,
+  PlayCircle,
+  Share2,
 } from "lucide-react";
 
 import {
@@ -39,6 +41,46 @@ import {
 import { useTours, useToggleTourStatus, useDeleteTour } from "../hooks/useTours";
 import type { TourOutput } from "../schemas/tour.schema";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { toast } from "sonner";
+
+const getStatusBadge = (isActive: boolean, temporalStatus?: string) => {
+  if (!isActive) {
+    return (
+      <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
+        Pausado / Cancelado
+      </Badge>
+    );
+  }
+
+  switch (temporalStatus) {
+    case "EN_CURSO":
+      return (
+        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+          En Curso Hoy
+        </Badge>
+      );
+    case "FINALIZADO":
+      return (
+        <Badge variant="outline" className="border-slate-200 bg-slate-100 text-slate-600">
+          Finalizado
+        </Badge>
+      );
+    case "PRÓXIMO":
+    default:
+      return (
+        <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+          Próximo
+        </Badge>
+      );
+  }
+};
+
+const handleShareLink = (tourId: string): void => {
+  // Reemplaza '/p/' por la ruta pública que definas en Next.js (ej. /public/tours/)
+  const publicUrl = `${window.location.origin}/p/${tourId}`;
+  navigator.clipboard.writeText(publicUrl);
+  toast.success("Enlace del folleto copiado. ¡Pégalo en WhatsApp!");
+};
 
 export function TourListTable() {
   const { data: tours = [], isLoading } = useTours();
@@ -126,7 +168,7 @@ export function TourListTable() {
                 <TableCell>
                   <div className="flex flex-col gap-1.5">
                     <span className="text-sm font-medium text-slate-900">
-                      ${tour.price.toLocaleString("es-MX")}
+                      {tour.price.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}
                     </span>
                     <div className="flex gap-1">
                       {tour.acceptsBankTransfer && (
@@ -172,15 +214,21 @@ export function TourListTable() {
 
                 {/* 5. Toggle de Estado Activo */}
                 <TableCell className="text-center">
-                  <Switch
-                    checked={tour.isActive}
-                    onCheckedChange={() => handleToggle(tour.id!, tour.isActive)}
-                    aria-label="Activar o desactivar tour"
-                  />
+                  {getStatusBadge(tour.isActive, tour?.temporalStatus)}
                 </TableCell>
 
                 {/* 6. Acciones (Dropdown) */}
                 <TableCell className="text-right">
+                  {/* 🚀 Botón Quick Action para Compartir */}
+                  <Button
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-indigo-600 hover:bg-indigo-50"
+                    onClick={() => handleShareLink(tour.id!)}
+                    title="Copiar link público"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-100">
@@ -205,6 +253,26 @@ export function TourListTable() {
                         <Link href={`/tours/${tour.id}/edit`}>
                           <Edit className="mr-2 h-4 w-4 text-slate-500" /> Editar Tour
                         </Link>
+                      </DropdownMenuItem>
+
+                      {/* 🚀 Movemos el Toggle aquí, más seguro y contextual */}
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          handleToggle(tour.id!, tour.isActive);
+                        }}
+                      >
+                        {tour.isActive ? (
+                          <>
+                            <PauseCircle className="mr-2 h-4 w-4 text-amber-600" /> Pausar Ventas
+                          </>
+                        ) : (
+                          <>
+                            <PlayCircle className="mr-2 h-4 w-4 text-emerald-600" /> Reactivar
+                            Ventas
+                          </>
+                        )}
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />

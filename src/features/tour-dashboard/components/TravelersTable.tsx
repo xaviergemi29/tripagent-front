@@ -48,6 +48,7 @@ interface Props {
   searchQuery: string;
   paymentFilter: string;
   formFilter: string;
+  isAuditMode?: boolean;
   onRowClick: (id: string) => void;
   onValidatePaymentClick: (id: string, e: React.MouseEvent) => void;
 }
@@ -57,6 +58,7 @@ export function TravelersTable({
   searchQuery,
   paymentFilter,
   formFilter,
+  isAuditMode,
   onRowClick,
 }: Props) {
   // Estado para controlar qué IDs de titulares tienen su acordeón abierto
@@ -264,13 +266,26 @@ export function TravelersTable({
                             Cubierto por titular
                           </span>
                         </td>
-                        <td className="px-6 py-3 text-right">
+                        <td className="space-x-2 px-6 py-4 text-right">
+                          {titular.formStatus === "PENDING" &&
+                            titular.magicToken &&
+                            !isAuditMode && (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="border-slate-200 text-slate-500 hover:text-indigo-600"
+                                onClick={(e) => handleCopyLink(e, titular.magicToken)}
+                                title="Copiar enlace de registro"
+                              >
+                                <LinkIcon className="h-4 w-4" />
+                              </Button>
+                            )}
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-slate-400 hover:text-indigo-600"
+                            className="text-slate-400 hover:text-indigo-600"
                           >
-                            <Eye className="h-3.5 w-3.5" />
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </td>
                       </tr>

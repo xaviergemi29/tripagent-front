@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { type QuickBookingFormValues, quickBookingSchema } from "../schemas/QuickBookingSchema";
+import { type QuickBookingFormValues, quickBookingSchema } from "../schemas/quick-booking.schema";
 import { useTravelerLookup } from "@/features/travelers/hooks/useTravelers";
 import { useQuickReservation } from "@/features/external-registration/hooks/useBookings";
 

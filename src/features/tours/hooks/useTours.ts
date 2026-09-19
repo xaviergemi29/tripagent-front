@@ -52,6 +52,21 @@ const updateTourApi = async ({
   return apiClient.patch<never, TourOutput>(`/tours/${tourId}`, tourData);
 };
 
+const uploadTourBrochureApi = async ({
+  tourId,
+  file,
+}: {
+  tourId: string;
+  file: File;
+}): Promise<TourOutput> => {
+  const formData = new FormData();
+  formData.append("brochure", file);
+  console.log("formData", formData);
+  return apiClient.post<never, TourOutput>(`/tours/${tourId}/brochure`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
 // ============================================================================
 // 3. HOOKS DE QUERIES (Lectura)
 // ============================================================================
@@ -181,6 +196,26 @@ export function useDeleteTour() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: TOUR_KEYS.all });
+    },
+  });
+}
+
+export function useUploadTourBrochure() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: uploadTourBrochureApi,
+    onSuccess: (data) => {
+      // Actualizamos la caché del detalle y la lista
+      console.log("dataId", data);
+      queryClient.setQueryData(TOUR_KEYS.detail(data.id!), data);
+      queryClient.invalidateQueries({ queryKey: TOUR_KEYS.all });
+    },
+    onError: (error: Error) => {
+      toast.error("Error al subir el PDF", {
+        description:
+          error?.message || "El tour se guardó, pero el folleto falló. Intenta editarlo.",
+      });
     },
   });
 }
