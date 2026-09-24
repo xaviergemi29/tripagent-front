@@ -3,6 +3,8 @@ import { z } from "zod";
 // 1. Enums para Estados (Protege la UI de strings inválidos)
 export const formStatusSchema = z.enum(["COMPLETED", "PENDING"]);
 export const paymentStatusSchema = z.enum(["PAID", "ADVANCE", "PENDING_VALIDATION", "PENDING"]);
+export const titularRoleSchema = z.enum(["TITULAR"]);
+export const companionRoleSchema = z.enum(["COMPANION"]);
 export const travelerRoleSchema = z.enum(["TITULAR", "COMPANION"]);
 
 export const baseTravelerRowSchema = z.object({
@@ -21,11 +23,18 @@ export const baseTravelerRowSchema = z.object({
 
 // 2. Esquema de la Fila del Viajero
 export const travelerRowSchema = baseTravelerRowSchema.extend({
+  role: titularRoleSchema,
   groupSize: z.number().optional(),
   totalCost: z.number().optional(),
-  // 👇 Aquí está la magia: un arreglo de acompañantes (que usan el esquema base)
-  companions: z.array(baseTravelerRowSchema).default([]),
+  companions: z
+    .array(
+      baseTravelerRowSchema.extend({
+        role: companionRoleSchema,
+      }),
+    )
+    .default([]),
 });
+
 // 3. Esquema de Métricas
 export const tourMetricsSchema = z.object({
   occupancy: z.object({
@@ -45,8 +54,16 @@ export const tourDashboardDataSchema = z.object({
   id: z.string(),
   title: z.string(),
   departureDateTime: z.iso.datetime(), // Valida que sea un ISO String válido
+  temporalStatus: z.string().optional(),
   metrics: tourMetricsSchema,
   travelers: z.array(travelerRowSchema),
+  vehicle: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      layoutMap: z.array(z.array(z.string().nullable())),
+    })
+    .optional(),
 });
 
 // 5. Exportamos las interfaces inferidas para usarlas en los Props de React

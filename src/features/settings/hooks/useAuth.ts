@@ -2,7 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { LoginFormValues } from "../schemas/login.schema";
+import { LoginFormValues } from "../../../app/(auth)/schemas/login.schema";
+import { ChangePasswordInput } from "../schemas/security.schema";
 
 // 1. Capa de Red
 const loginApi = async (credentials: LoginFormValues) => {
@@ -10,8 +11,12 @@ const loginApi = async (credentials: LoginFormValues) => {
   return apiClient.post<{ token: string }>("/auth/login", credentials);
 };
 
-const logoutApi = async () => {
+const logoutApi = async (): Promise<void> => {
   return apiClient.post("/auth/logout");
+};
+
+const changePasswordApi = async (newCredentials: ChangePasswordInput): Promise<void> => {
+  return apiClient.post("auth/change-password", newCredentials);
 };
 
 // 2. Hook de UI
@@ -43,13 +48,29 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: logoutApi,
     onSuccess: () => {
-      queryClient.clear(); // Limpiamos toda la caché de React Query
+      queryClient.clear();
       toast.success("Sesión cerrada correctamente");
       router.replace("/login");
     },
     onError: () => {
-      // Incluso si el BE falla, forzamos la salida del cliente
       router.replace("/login");
+    },
+  });
+};
+
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: changePasswordApi,
+    onSuccess: () => {
+      toast.success("Contraseña actualizada", {
+        description: "Tu contraseña ha sido cambiada exitosamente.",
+      });
+    },
+    onError: (error: any) => {
+      const errorMsg = error?.response?.data?.error || "Error al actualizar la contraseña";
+      toast.error("No se pudo cambiar la contraseña", {
+        description: errorMsg,
+      });
     },
   });
 };

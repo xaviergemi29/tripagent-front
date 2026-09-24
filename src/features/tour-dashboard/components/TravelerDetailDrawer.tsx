@@ -31,6 +31,7 @@ export type PaymentRecordDTO = {
   type: string;
   createdAt: string;
   referenceInfo?: string;
+  registeredBy?: string;
 };
 
 interface TravelerInfo {
@@ -282,6 +283,11 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, on
                               minute: "2-digit",
                             })}
                           </p>
+                          {payment?.registeredBy && (
+                            <p className="mt-0.5 text-[10px] font-medium text-slate-400 italic">
+                              Registrado por {payment?.registeredBy}
+                            </p>
+                          )}
                         </div>
 
                         {/* REG LA UX: Ocultar botón de anular si el monto es negativo o si ya fue anulado */}

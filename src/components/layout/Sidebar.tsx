@@ -2,15 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Calendar, PlusCircle, Users, LogOut } from "lucide-react";
+import { Compass, Calendar, Users, LogOut, Settings } from "lucide-react";
 import { useSession } from "@/app/(auth)/hooks/useSession";
-import { useLogout } from "@/app/(auth)/hooks/useAuth";
+import { useLogout } from "@/features/settings/hooks/useAuth";
 import { Button } from "../ui/button";
 
 const navigationItems = [
-  { name: "Mis Viajes", href: "/tours", icon: Calendar },
+  { name: "Tours", href: "/tours", icon: Calendar },
   { name: "Viajeros", href: "/travelers", icon: Users },
-  { name: "Crear Tour", href: "/tours/new", icon: PlusCircle },
 ];
 
 export function Sidebar() {
@@ -70,6 +69,23 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        <div className="mt-6 border-t border-slate-800 pt-4">
+          <p className="mb-3 px-3 text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            Sistema
+          </p>
+          <Link
+            href="/settings"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              pathname.startsWith("/settings")
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "text-slate-400 hover:bg-slate-800 hover:text-white"
+            }`}
+          >
+            <Settings className="h-5 w-5 shrink-0" />
+            <span>Configuración</span>
+          </Link>
+        </div>
       </nav>
 
       {/* Footer / User Session Info */}

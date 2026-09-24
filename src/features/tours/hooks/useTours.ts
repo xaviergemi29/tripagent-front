@@ -96,11 +96,9 @@ export const useCreateTour = () => {
 
   return useMutation({
     mutationFn: createTourApi,
-    onSuccess: (_, __, context: any) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TOUR_KEYS.all });
       toast.success("Tour creado exitosamente");
-      // Si el componente pasó un callback, lo ejecutamos
-      if (context?.onSuccess) context.onSuccess();
     },
     onError: (error: Error) => {
       toast.error("Error al crear el tour", {
@@ -115,11 +113,11 @@ export function useUpdateTour() {
 
   return useMutation({
     mutationFn: updateTourApi,
-    onSuccess: (data, _, context: any) => {
-      queryClient.setQueryData(TOUR_KEYS.detail(data.id!), data);
+    onSuccess: (data) => {
+      const id = ("data" in data ? (data as any).data.id : data.id) as string;
+      queryClient.setQueryData(TOUR_KEYS.detail(id), data);
       queryClient.invalidateQueries({ queryKey: TOUR_KEYS.lists() });
       toast.success("Tour actualizado exitosamente");
-      if (context?.onSuccess) context.onSuccess();
     },
     onError: (error: Error) => {
       toast.error("Error al actualizar", {

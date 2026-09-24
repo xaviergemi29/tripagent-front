@@ -22,7 +22,10 @@ const baseTourSchema = z.object({
     .union([z.string(), z.number()], { message: "El precio debe ser un número válido" })
     .transform((val) => (val === "" ? 0 : Number(val)))
     .pipe(z.number().positive({ message: "El precio debe ser mayor a 0" })),
-
+  depositPerPerson: z
+    .union([z.number(), z.literal("")])
+    .transform((val) => (val === "" ? 0 : val))
+    .pipe(z.number().min(0, "El anticipo no puede ser negativo")),
   durationHours: z.coerce.number().default(0),
   // durationHours: z
   //     .union([z.string(), z.number()], { message: "La duración debe ser un número válido" })
@@ -77,9 +80,18 @@ const baseTourSchema = z.object({
       }),
     )
     .min(1, "Debes agregar al menos un punto de abordaje"),
+  brochureUrl: z.string().nullable().optional(),
 });
 
 export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
+  if (data.depositPerPerson > data.price) {
+    ctx.addIssue({
+      code: "custom",
+      message: "El anticipo no puede ser mayor al precio total del tour",
+      path: ["depositPerPerson"],
+    });
+  }
+
   // Validación SPEI
   if (data.acceptsBankTransfer && (!data.bankDetails || data.bankDetails.length < 15)) {
     ctx.addIssue({

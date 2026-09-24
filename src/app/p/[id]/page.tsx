@@ -3,15 +3,29 @@ import { MapPin, Calendar, FileText } from "lucide-react";
 
 async function getPublicTour(id: string): Promise<PublicTourOutput | null> {
   try {
-    console.log("id", id);
+    // const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/public/tours/${id}`;
+    const apiUrl = `http://localhost:3001/api/tour-brochure/public/tours/${id}`;
 
-    // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/public/tours/${id}`, {
-    const res = await fetch(`http://localhost:3001/api/tour-brochure/public/tours/${id}`, {
-      cache: "no-store", // O "force-cache" con revalidation si quieres optimizar
+    const res = await fetch(apiUrl, {
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
     });
-    if (!res.ok) return null;
-    return res.json();
+
+    if (!res.ok) {
+      console.error(`[Next.js Server] Error HTTP ${res.status} - ${res.statusText}`);
+
+      const errorBody = await res.text();
+      console.error(`[Next.js Server] Detalles del backend:`, errorBody);
+
+      return null;
+    }
+
+    return await res.json();
   } catch (error) {
+    console.error("[Next.js Server] Error crítico de red en fetch:", error);
     return null;
   }
 }
@@ -25,7 +39,6 @@ interface PageProps {
 export default async function PublicTourLanding({ params }: PageProps) {
   const { id } = await params;
   const tour = await getPublicTour(id);
-  console.log("tour", tour);
 
   if (!tour) {
     return (

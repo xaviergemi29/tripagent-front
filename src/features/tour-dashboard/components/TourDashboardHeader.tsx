@@ -22,20 +22,23 @@ export function TourDashboardHeader({ title, date, metrics, onNewReservation }: 
 
   return (
     <div className="space-y-6 border-b bg-white px-6 py-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
-        <p className="font-medium text-slate-500">
-          Salida: {new Date(date).toLocaleDateString("es-MX", { dateStyle: "long" })}
-        </p>
-        {/* Botón primario destacado contextualmente */}
+      <div className="flex justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+          <p className="font-medium text-slate-500">
+            Salida: {new Date(date).toLocaleDateString("es-MX", { dateStyle: "long" })}
+          </p>
+        </div>
         {onNewReservation && (
-          <Button
-            size="lg"
-            className="mt-4 w-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 sm:w-auto"
-            onClick={onNewReservation}
-          >
-            <Plus className="mr-2 h-5 w-5" /> Nueva Reserva
-          </Button>
+          <div>
+            <Button
+              size="lg"
+              className="w-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 sm:w-auto"
+              onClick={onNewReservation}
+            >
+              <Plus className="mr-2 h-5 w-5" /> Nueva Reserva
+            </Button>
+          </div>
         )}
       </div>
 

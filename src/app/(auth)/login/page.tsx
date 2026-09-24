@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { useLogin } from "../hooks/useAuth";
+import { useLogin } from "../../../features/settings/hooks/useAuth";
 import { loginSchema, type LoginFormValues } from "../schemas/login.schema";
 
 export default function LoginPage() {

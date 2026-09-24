@@ -18,24 +18,19 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.response.use(
-  (response) =>
-    // Retornamos directamente el payload útil para no anidar .data.data en los componentes
-    response.data?.data || response.data,
+  (response) => response.data?.data || response.data,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // 🎯 LA CLAVE: Obtenemos la URL de la petición que originó el error
       const requestUrl = error.config?.url || "";
 
-      // Si el 401 viene del intento de login, NO hacemos la redirección dura.
-      // Dejamos que el error pase hacia el hook para que TanStack Query y Sonner hagan su trabajo.
       if (!requestUrl.includes("/auth/login")) {
         if (typeof window !== "undefined") {
-          window.location.href = "/login";
+          // Avisamos al middleware que la sesión expiró
+          window.location.href = "/login?expired=true";
         }
       }
     }
 
-    // Estandarizamos el error para que TanStack Query lo consuma de forma predecible
     const customError: ApiError = {
       status: error.response?.status || 500,
       message: (error.response?.data as any)?.error || "Error de conexión con el servidor",

@@ -7,13 +7,12 @@ export function Header() {
         </h2>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Indicador de Estado del Sistema */}
+      {/* <div className="flex items-center gap-3">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
           <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span>
           Bot WhatsApp Activo
         </span>
-      </div>
+      </div> */}
     </header>
   );
 }

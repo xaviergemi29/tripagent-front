@@ -1,30 +1,38 @@
 "use client";
 
-import { Search, Download, Plus } from "lucide-react";
+import { Search, FileText, FileSpreadsheet, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { TravelerRow } from "../schemas/tour-dashboard.schema";
 
 interface Props {
-  travelers: TravelerRow[]; // Recibimos la lista completa para exportar
+  travelers: TravelerRow[];
+  tourId: string;
   searchQuery: string;
   onSearchChange: (val: string) => void;
   paymentFilter: string;
   onPaymentFilterChange: (val: string) => void;
   formFilter: string;
   onFormFilterChange: (val: string) => void;
-  onAddTravelerClick: () => void;
+  isAuditMode?: boolean;
 }
 
 export function TravelersTableToolbar({
   travelers,
+  tourId,
   searchQuery,
   onSearchChange,
   paymentFilter,
   onPaymentFilterChange,
   formFilter,
   onFormFilterChange,
-  onAddTravelerClick,
+  isAuditMode,
 }: Props) {
   // Función de Exportación CSV ligera para el Guía
   const handleExportCSV = () => {
@@ -60,6 +68,17 @@ export function TravelersTableToolbar({
     link.click();
     document.body.removeChild(link);
   };
+
+  const handlePrintPDF = () => {
+    // Pro-Tip: Abrir el HTML de impresión en una nueva pestaña que se cierra sola
+    const printWindow = window.open(`/pdf-tour/${tourId}`, "_blank");
+    // En la página destino (/manifest/page.tsx) pondremos un useEffect que lance window.print()
+  };
+
+  // 🚀 Lógica de Smart Default: Si el tour terminó, la acción principal es CSV.
+  const PrimaryAction = isAuditMode ? handleExportCSV : handlePrintPDF;
+  const PrimaryIcon = isAuditMode ? FileSpreadsheet : FileText;
+  const primaryLabel = isAuditMode ? "Exportar Contabilidad (CSV)" : "Imprimir Lista de Guía";
 
   return (
     <div className="flex flex-col items-start justify-between gap-4 rounded-xl border bg-white p-4 shadow-sm xl:flex-row xl:items-center">
@@ -98,9 +117,31 @@ export function TravelersTableToolbar({
       </div>
 
       <div className="flex w-full flex-wrap justify-end gap-2 xl:w-auto">
-        <Button variant="outline" size="sm" className="text-slate-700" onClick={handleExportCSV}>
-          <Download className="mr-2 h-4 w-4" /> Exportar Lista Guía
-        </Button>
+        <DropdownMenu>
+          <div className="flex rounded-md shadow-sm">
+            <Button
+              className="rounded-r-none bg-indigo-600 text-white hover:bg-indigo-700"
+              onClick={PrimaryAction}
+            >
+              <PrimaryIcon className="mr-2 h-4 w-4" /> {primaryLabel}
+            </Button>
+            <DropdownMenuTrigger asChild>
+              <Button className="rounded-l-none border-l border-indigo-700 bg-indigo-600 px-2 text-white hover:bg-indigo-700">
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+          </div>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={handlePrintPDF} className="cursor-pointer">
+              <FileText className="mr-2 h-4 w-4 text-slate-500" />
+              <span>Lista para Guía (Imprimible)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer">
+              <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-600" />
+              <span>Reporte Contable (CSV)</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
