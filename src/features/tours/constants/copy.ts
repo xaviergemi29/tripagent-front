@@ -1,6 +1,6 @@
 export const TOUR_FORM_COPY = {
   title: "Configurar Nuevo Tour",
-  description: "Define el precio y cómo prefieres recibir los pagos.",
+  description: "Define el itinerario, número de asientos, moneda base y pasarelas de cobranza.",
   fields: {
     title: {
       label: "Título del Tour",

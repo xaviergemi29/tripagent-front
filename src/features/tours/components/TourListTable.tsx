@@ -42,6 +42,7 @@ import { useTours, useToggleTourStatus, useDeleteTour } from "../hooks/useTours"
 import type { TourOutput } from "../schemas/tour.schema";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
+import { formatLocalDate } from "@/shared/utils/tour-date.util";
 
 const getStatusBadge = (isActive: boolean, temporalStatus?: string) => {
   if (!isActive) {
@@ -76,7 +77,6 @@ const getStatusBadge = (isActive: boolean, temporalStatus?: string) => {
 };
 
 const handleShareLink = (tourId: string): void => {
-  // Reemplaza '/p/' por la ruta pública que definas en Next.js (ej. /public/tours/)
   const publicUrl = `${window.location.origin}/p/${tourId}`;
   navigator.clipboard.writeText(publicUrl);
   toast.success("Enlace del folleto copiado. ¡Pégalo en WhatsApp!");
@@ -86,8 +86,6 @@ export function TourListTable() {
   const { data: tours = [], isLoading } = useTours();
   const { mutate: toggleStatus } = useToggleTourStatus();
   const { mutate: deleteTour } = useDeleteTour();
-
-  // Estado para el modal de confirmación limpio
   const [tourToDelete, setTourToDelete] = React.useState<string | null>(null);
 
   const handleToggle = (tourId: string, currentStatus: boolean) => {
@@ -132,13 +130,7 @@ export function TourListTable() {
                       {tour.title}
                     </span>
                     <span className="mt-0.5 text-xs text-slate-500">
-                      {new Date(tour.departureDateTime).toLocaleString("es-MX", {
-                        weekday: "short",
-                        day: "2-digit",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatLocalDate(tour.departureDateTime)}
                     </span>
                   </div>
                 </TableCell>

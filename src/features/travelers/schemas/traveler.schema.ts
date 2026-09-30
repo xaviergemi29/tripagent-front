@@ -21,8 +21,8 @@ export const travelerSchema = z.object({
 
   customFields: z.record(z.string(), z.unknown()).default({}),
   createdAt: z.iso.datetime().optional(),
+  birthDate: z.union([z.iso.date("Formato YYYY-MM-DD"), z.literal("")]),
 });
 
-// Inferimos los tipos. Como usamos .default(), Input y Output tienen diferencias sutiles
 export type TravelerInput = z.input<typeof travelerSchema>;
 export type TravelerOutput = z.output<typeof travelerSchema>;

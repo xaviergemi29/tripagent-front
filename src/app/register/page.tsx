@@ -3,7 +3,7 @@ import { AlertTriangle, Clock, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PageProps {
-  searchParams: Promise<{ token?: string; group_id?: string }>;
+  searchParams: Promise<{ token: string }>;
 }
 
 async function validateTokenOnServer(token: string) {
@@ -18,7 +18,7 @@ async function validateTokenOnServer(token: string) {
 }
 
 export default async function RegistroPage({ searchParams }: PageProps) {
-  const { token, group_id } = await searchParams;
+  const { token } = await searchParams;
 
   if (!token) {
     return (
@@ -63,8 +63,9 @@ export default async function RegistroPage({ searchParams }: PageProps) {
 
       <TourRegistrationView
         token={token}
-        initialGroupId={group_id}
         boardingPoints={validation.data?.tour?.boardingPoints || []}
+        tourInfo={validation.data?.tour}
+        agencyName={validation.data?.tour?.agency?.name} // 🚀 Pasamos el nombre real
       />
     </main>
   );

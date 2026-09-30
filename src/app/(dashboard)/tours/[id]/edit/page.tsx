@@ -1,4 +1,4 @@
-"use client"; // Necesitamos "use client" porque consumiremos un hook de TanStack Query
+"use client";
 
 import { TourForm } from "@/features/tours/components/TourForm";
 import { useTourById } from "@/features/tours/hooks/useTours";
@@ -18,7 +18,7 @@ export default function EditTourPage() {
 
   return (
     <main className="container mx-auto flex justify-center px-4 py-12">
-      <div className="w-full max-w-2xl space-y-6">
+      <div className="w-full max-w-3xl space-y-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">
             Editar Tour: {tour.title}

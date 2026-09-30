@@ -3,6 +3,10 @@ import { z } from "zod";
 export const publicTourSchema = z.object({
   id: z.string(),
   title: z.string(),
+  currency: z.string(),
+  transportModality: z.string(),
+  durationHours: z.number(),
+  depositPerPerson: z.number(),
   price: z.string().or(z.number()),
   departureDateTime: z.string(),
   brochureUrl: z.string().nullable(),
