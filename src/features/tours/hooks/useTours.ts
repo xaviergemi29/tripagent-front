@@ -15,7 +15,7 @@ export const TOUR_KEYS = {
 // ============================================================================
 // 2. CAPA DE RED (Axios API Client)
 // ============================================================================
-const fetchTours = async (search?: string): Promise<TourOutput[]> => {
+const fetchToursApi = async (search?: string): Promise<TourOutput[]> => {
   return apiClient.get<never, TourOutput[]>("/tours", {
     params: search ? { search } : undefined,
   });
@@ -73,7 +73,7 @@ const uploadTourBrochureApi = async ({
 export function useTours(search?: string) {
   return useQuery({
     queryKey: TOUR_KEYS.lists(search),
-    queryFn: () => fetchTours(search),
+    queryFn: () => fetchToursApi(search),
     retry: 1,
   });
 }
@@ -147,12 +147,13 @@ export function useToggleTourStatus() {
 
       return { previousTours };
     },
-    onError: (err, newStatus, context) => {
+    onError: (error: ApiError, _, context) => {
       if (context?.previousTours) {
         queryClient.setQueryData(TOUR_KEYS.all, context.previousTours);
       }
+
       toast.error("Error al actualizar estado", {
-        description: "No se pudo sincronizar el cambio con el servidor.",
+        description: error.message || "No se pudo sincronizar el cambio con el servidor.",
       });
     },
     onSettled: () => {
@@ -184,12 +185,13 @@ export function useDeleteTour() {
         description: "El registro fue borrado permanentemente de la base de datos.",
       });
     },
-    onError: (err, _, context) => {
+    onError: (error: ApiError, _, context) => {
       if (context?.previousTours) {
         queryClient.setQueryData(TOUR_KEYS.all, context.previousTours);
       }
+
       toast.error("Error al eliminar el tour", {
-        description: err.message || "La operación no pudo completarse.",
+        description: error.message || "La operación no pudo completarse.",
       });
     },
     onSettled: () => {
@@ -204,8 +206,6 @@ export function useUploadTourBrochure() {
   return useMutation({
     mutationFn: uploadTourBrochureApi,
     onSuccess: (data) => {
-      // Actualizamos la caché del detalle y la lista
-      console.log("dataId", data);
       queryClient.setQueryData(TOUR_KEYS.detail(data.id!), data);
       queryClient.invalidateQueries({ queryKey: TOUR_KEYS.all });
     },

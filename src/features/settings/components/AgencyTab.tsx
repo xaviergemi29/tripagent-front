@@ -15,29 +15,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAgency, useUpdateAgency } from "../hooks/useAgency";
-import { UpdateAgencyBody, updateAgencyBodySchema } from "../schemas/agency.schema";
+import { AgencyInput, updateAgencyFormSchema } from "../schemas/agency.schema";
 
 export function AgencyTab() {
   const { data: agencyData, isLoading: isFetching, isError } = useAgency();
   const { mutateAsync: updateAgency, isPending: isUpdating } = useUpdateAgency();
-
-  const form = useForm<UpdateAgencyBody>({
-    resolver: zodResolver(updateAgencyBodySchema),
+  const form = useForm<AgencyInput>({
+    resolver: zodResolver(updateAgencyFormSchema),
+    mode: "onChange",
     values: agencyData
       ? {
           ...agencyData,
-          phone: agencyData.phone?.replace("+52", "") || "",
         }
       : undefined,
   });
 
-  const onSubmit = async (data: UpdateAgencyBody) => {
-    const payload: UpdateAgencyBody = {
-      ...data,
-      phone: `+52${data.phone}`,
-    };
-
-    await updateAgency({ tourData: payload });
+  const onSubmit = async (formData: AgencyInput): Promise<void> => {
+    await updateAgency({ agencyData: formData });
   };
 
   if (isError) {
@@ -70,6 +64,21 @@ export function AgencyTab() {
             <Input id="name" {...form.register("name")} disabled={isFormLocked} />
             {form.formState.errors.name && (
               <p className="text-xs text-red-500">{form.formState.errors.name.message}</p>
+            )}
+          </div>
+
+          {/* Correo Electrónico */}
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Correo Electrónico Público</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="contacto@tuagencia.com"
+              {...form.register("email")}
+              disabled={isFormLocked}
+            />
+            {form.formState.errors.email && (
+              <p className="text-xs text-red-500">{form.formState.errors.email.message}</p>
             )}
           </div>
 
@@ -140,8 +149,7 @@ export function AgencyTab() {
           <Button
             type="submit"
             className="w-full bg-indigo-600 hover:bg-indigo-700 sm:w-auto"
-            // disabled={isFormLocked || !form.formState.isValid}
-            disabled={isFormLocked}
+            disabled={isFormLocked || !form.formState.isValid}
           >
             {isUpdating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

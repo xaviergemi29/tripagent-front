@@ -1,24 +1,38 @@
 import z from "zod";
 
-export const baseAgencySchema = z.object({
+export const subscriptionStatusSchema = z.enum(["trialing", "active", "past_due", "canceled"]);
+
+const agencyFormFields = {
   name: z.string().trim().min(3, "La agencia debe tener al menos 3 caracteres"),
   phone: z
     .string()
     .trim()
-    .regex(/^(\+)?\d{10,14}$/, "Debe ser un teléfono válido de al menos 10 dígitos"),
-  isActive: z.boolean().default(true),
-  bankName: z.string().optional().nullable(),
+    .regex(/^(\+)?\d{10}$/, "Debe ser un teléfono válido de al menos 10 dígitos"),
+  bankName: z.string().trim().nullish(),
+  email: z.email("Debe ser un correo electrónico válido").trim(),
   bankAccountHolder: z.string().optional().nullable(),
-  clabeNumber: z.string().max(18, "Máximo 18 dígitos").optional().nullable(),
+  clabeNumber: z
+    .string()
+    .trim()
+    .regex(/^\d{18}$/, "La CLABE debe tener exactamente 18 dígitos")
+    .nullish()
+    .or(z.literal("")),
+};
+
+export const agencySchema = z.object({
+  id: z.uuid(),
+  isActive: z.boolean().default(true),
+  slug: z.string(),
+  logoUrl: z.url().nullable().or(z.string().nullable()),
+  subscriptionStatus: subscriptionStatusSchema,
+  trialEndsAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  deletedAt: z.string().nullable(),
+  ...agencyFormFields,
 });
 
-export const createAgencyBodySchema = baseAgencySchema;
-export const updateAgencyBodySchema = baseAgencySchema.partial();
+export const updateAgencyFormSchema = z.object(agencyFormFields).partial();
 
-export const getAgencybyIdParamSchema = z.object({
-  id: z.uuid("El ID de la agencia debe ser un UUID válido"),
-});
-
-export type CreateAgencyBody = z.infer<typeof createAgencyBodySchema>;
-export type UpdateAgencyBody = z.infer<typeof updateAgencyBodySchema>;
-export type GetAgencyByIdParams = z.infer<typeof getAgencybyIdParamSchema>;
+export type AgencyOutput = z.infer<typeof agencySchema>;
+export type AgencyInput = z.infer<typeof updateAgencyFormSchema>;

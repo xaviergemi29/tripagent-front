@@ -35,7 +35,6 @@ export const useLogin = () => {
       router.replace("/tours");
     },
     onError: (error: ApiError) => {
-      console.log("Error", error.status);
       toast.error("Error al iniciar sesión", {
         description: error.message || "No se pudo guardar la información",
       });

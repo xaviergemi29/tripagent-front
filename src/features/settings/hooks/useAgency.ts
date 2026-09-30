@@ -1,23 +1,43 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { apiClient } from "@/lib/api-client";
-import { UpdateAgencyBody } from "../schemas/agency.schema";
+import { apiClient, type ApiError } from "@/lib/api-client";
+import { AgencyInput, AgencyOutput } from "../schemas/agency.schema";
 
-const getAgencyApi = async (): Promise<UpdateAgencyBody> => {
-  return apiClient.get<never, UpdateAgencyBody>(`/agencies`);
+// ============================================================================
+// 1. QUERY KEY FACTORY (Patrón de Arquitectura Limpia)
+// ============================================================================
+export const AGENCY_KEYS = {
+  all: ["agencies"] as const, // Cambié TOUR_KEYS a AGENCY_KEYS por semántica
 };
 
+// ============================================================================
+// 2. CAPA DE RED (Axios API Client)
+// ============================================================================
+const getAgencyApi = async (): Promise<AgencyOutput> => {
+  return apiClient.get<never, AgencyOutput>(`/agencies`);
+};
+
+const updateAgencyApi = async ({
+  agencyData,
+}: {
+  agencyData: AgencyInput;
+}): Promise<AgencyOutput> => {
+  return apiClient.patch<never, AgencyOutput>(`/agencies/`, agencyData);
+};
+
+// ============================================================================
+// 3. HOOKS DE QUERIES (Lectura)
+// ============================================================================
 export function useAgency() {
   return useQuery({
-    queryKey: ["agency"],
-    queryFn: () => getAgencyApi(),
+    queryKey: AGENCY_KEYS.all,
+    queryFn: getAgencyApi,
   });
 }
 
-const updateAgencyApi = async ({ tourData }: { tourData: UpdateAgencyBody }): Promise<any> => {
-  return apiClient.patch<never, any>(`/agencies/`, tourData);
-};
-
+// ============================================================================
+// 4. HOOKS DE MUTACIONES (Escritura y Optimistic UI)
+// ============================================================================
 export function useUpdateAgency() {
   const queryClient = useQueryClient();
 
@@ -25,11 +45,12 @@ export function useUpdateAgency() {
     mutationFn: updateAgencyApi,
     onSuccess: () => {
       toast.success("Configuración actualizada correctamente");
-      queryClient.invalidateQueries({ queryKey: ["agency"] });
+      queryClient.invalidateQueries({ queryKey: AGENCY_KEYS.all });
     },
-    onError: (error) => {
-      toast.error("Ocurrió un error al guardar los datos.");
-      console.error(error);
+    onError: (error: ApiError) => {
+      toast.error("Ocurrió un error al guardar los datos.", {
+        description: error.message || "No se pudo actualizar la información de la agencia.",
+      });
     },
   });
 }
