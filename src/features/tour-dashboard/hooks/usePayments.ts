@@ -1,5 +1,5 @@
 import { PaymentFormValues } from "@/features/travelers/schemas/enroll-traveler.schema";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, ApiError } from "@/lib/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -34,7 +34,7 @@ export const useCreatePayment = (tourId: string) => {
       queryClient.invalidateQueries({ queryKey: ["tour-dashboard", tourId] });
       toast.success("Abono registrado correctamente");
     },
-    onError: (error: Error) => {
+    onError: (error: ApiError) => {
       toast.error("Error al registrar el abono", {
         description: error.message || "Revisa los datos e intenta de nuevo.",
       });
@@ -51,7 +51,7 @@ export const useVoidPayment = (tourId: string) => {
       queryClient.invalidateQueries({ queryKey: ["tour-dashboard", tourId] });
       toast.success("Abono anulado exitosamente");
     },
-    onError: (error: Error) => {
+    onError: (error: ApiError) => {
       toast.error("Error al anular el abono", {
         description: error.message || "No se pudo anular el registro.",
       });

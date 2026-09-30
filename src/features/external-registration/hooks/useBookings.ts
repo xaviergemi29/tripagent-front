@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api-client";
+import { apiClient, ApiError } from "@/lib/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { BookingInput, BookingOutput } from "../schemas/booking.schema";
@@ -86,7 +86,7 @@ export const useCreateBooking = () => {
       // }
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all });
     },
-    onError: (error: Error) => {
+    onError: (error: ApiError) => {
       toast.error("Error al crear la reserva", {
         description: error.message || "No se pudo guardar la información",
       });
@@ -104,7 +104,7 @@ export const useCancelPassenger = () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all });
       queryClient.invalidateQueries({ queryKey: ["tour-dashboard"] });
     },
-    onError: (error: Error) => {
+    onError: (error: ApiError) => {
       toast.error("Error al cancelar el pasajero", {
         description: error.message || "No se pudo cancelar el pasajero",
       });
@@ -120,7 +120,7 @@ export function useQuickReservation(tourId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tour-dashboard", tourId] });
     },
-    onError: (error: Error) => {
+    onError: (error: ApiError) => {
       toast.error("Error al apartar lugares", {
         description: error?.message || "Error al generar la reserva rápida",
       });

@@ -52,23 +52,7 @@ export default function LoginPage() {
     setAuthError(null);
 
     // Inyectamos los callbacks directamente en la llamada a la mutación para controlar la UI local
-    login(data, {
-      onError: (error: any) => {
-        // Asumiendo que tu cliente Axios/Fetch expone el status HTTP en error.status o error.response.status
-        const statusCode = error?.response?.status || error?.status;
-
-        if (statusCode === 401) {
-          setAuthError(
-            "El correo electrónico o la contraseña son incorrectos. Por favor, verifica tus datos.",
-          );
-        } else {
-          setAuthError(
-            error?.response?.data?.message ||
-              "No pudimos conectar con el servidor. Intenta de nuevo en unos momentos.",
-          );
-        }
-      },
-    });
+    login(data);
   };
 
   return (

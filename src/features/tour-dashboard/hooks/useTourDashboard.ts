@@ -1,26 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TourDashboardOutput } from "../schemas/tour-dashboard.schema";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
 
 // ============================================================================
-// 2. CAPA DE RED (Axios API Client)
+// 1. CAPA DE RED (Axios API Client)
 // ============================================================================
-const fetchDashboardByTourId = async (tourId: string): Promise<TourDashboardOutput> => {
+const fetchDashboardByTourIdApi = async (tourId: string): Promise<TourDashboardOutput> => {
   return apiClient.get<never, TourDashboardOutput>(`/dashboards/${tourId}`);
 };
 
-const fetchVehicles = async (): Promise<TourDashboardOutput> => {
+const fetchVehiclesApi = async (): Promise<TourDashboardOutput> => {
   return apiClient.get(`/vehicles`);
 };
 
 // ============================================================================
-// 3. HOOKS DE QUERIES (Lectura)
+// 2. HOOKS DE QUERIES (Lectura)
 // ============================================================================
 export function useTourDashboardByTourId(tourId: string) {
   return useQuery({
     queryKey: ["tour-dashboard", tourId],
-    queryFn: () => fetchDashboardByTourId(tourId),
+    queryFn: () => fetchDashboardByTourIdApi(tourId),
     enabled: !!tourId,
     staleTime: 1000 * 60 * 5, // 5 minutos de frescura
     retry: 1,
@@ -29,10 +29,13 @@ export function useTourDashboardByTourId(tourId: string) {
 export function useVehicles() {
   return useQuery({
     queryKey: ["vehicles"],
-    queryFn: fetchVehicles,
+    queryFn: fetchVehiclesApi,
   });
 }
 
+// ============================================================================
+// 3. HOOKS DE MUTACIONES (Escritura y Optimistic UI)
+// ============================================================================
 export function useAssignVehicleToTour() {
   const queryClient = useQueryClient();
 
@@ -43,7 +46,11 @@ export function useAssignVehicleToTour() {
       queryClient.invalidateQueries({ queryKey: ["tour-dashboard", variables.tourId] });
       toast.success("Vehículo asignado correctamente");
     },
-    onError: () => toast.error("Error al asignar el vehículo"),
+    onError: (error: ApiError) => {
+      toast.error("Error al asignar el vehículo", {
+        description: error.message || "No se pudo asignar el asiento",
+      });
+    },
   });
 }
 
@@ -57,6 +64,10 @@ export function useCreateVehicle() {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       toast.success("Plantilla de vehículo creada");
     },
-    onError: () => toast.error("Error al crear la plantilla"),
+    onError: (error: ApiError) => {
+      toast.error("Error al crear la plantilla", {
+        description: error.message || "No se pudo crear la plantilla",
+      });
+    },
   });
 }

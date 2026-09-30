@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TourOutput, TourInput } from "../schemas/tour.schema";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
 
 // ============================================================================
@@ -100,7 +100,7 @@ export const useCreateTour = () => {
       queryClient.invalidateQueries({ queryKey: TOUR_KEYS.all });
       toast.success("Tour creado exitosamente");
     },
-    onError: (error: Error) => {
+    onError: (error: ApiError) => {
       toast.error("Error al crear el tour", {
         description: error?.message || "No se pudo crear el tour",
       });
@@ -119,7 +119,7 @@ export function useUpdateTour() {
       queryClient.invalidateQueries({ queryKey: TOUR_KEYS.lists() });
       toast.success("Tour actualizado exitosamente");
     },
-    onError: (error: Error) => {
+    onError: (error: ApiError) => {
       toast.error("Error al actualizar", {
         description: error?.message || "Revisa al actualizar el tour.",
       });
@@ -209,7 +209,7 @@ export function useUploadTourBrochure() {
       queryClient.setQueryData(TOUR_KEYS.detail(data.id!), data);
       queryClient.invalidateQueries({ queryKey: TOUR_KEYS.all });
     },
-    onError: (error: Error) => {
+    onError: (error: ApiError) => {
       toast.error("Error al subir el PDF", {
         description:
           error?.message || "El tour se guardó, pero el folleto falló. Intenta editarlo.",

@@ -25,7 +25,6 @@ apiClient.interceptors.response.use(
 
       if (!requestUrl.includes("/auth/login")) {
         if (typeof window !== "undefined") {
-          // Avisamos al middleware que la sesión expiró
           window.location.href = "/login?expired=true";
         }
       }

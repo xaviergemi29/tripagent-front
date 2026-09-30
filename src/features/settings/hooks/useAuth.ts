@@ -1,14 +1,16 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { LoginFormValues } from "../../../app/(auth)/schemas/login.schema";
 import { ChangePasswordInput } from "../schemas/security.schema";
 
-// 1. Capa de Red
-const loginApi = async (credentials: LoginFormValues) => {
+// ============================================================================
+// 1. CAPA DE RED (Axios API Client)
+// ============================================================================
+const loginApi = async (credentials: LoginFormValues): Promise<void> => {
   // Tu BE deberá devolver un token (JWT) o setear una cookie httpOnly
-  return apiClient.post<{ token: string }>("/auth/login", credentials);
+  return apiClient.post("/auth/login", credentials);
 };
 
 const logoutApi = async (): Promise<void> => {
@@ -19,23 +21,23 @@ const changePasswordApi = async (newCredentials: ChangePasswordInput): Promise<v
   return apiClient.post("auth/change-password", newCredentials);
 };
 
-// 2. Hook de UI
+// ============================================================================
+// 2. HOOKS DE MUTACIONES (Escritura y Optimistic UI)
+// ============================================================================
 export const useLogin = () => {
   const router = useRouter();
 
   return useMutation({
     mutationFn: loginApi,
-    onSuccess: (data) => {
-      // Nota de Arquitectura: Si el BE devuelve el JWT en el JSON, lo guardas aquí en memoria o localStorage.
-      // Si el BE usa Cookies httpOnly (mejor práctica), no necesitas hacer nada con 'data'.
-      console.log("data login", data);
+    // Si el BE usa Cookies httpOnly (mejor práctica), no necesitas hacer nada con 'data'.
+    onSuccess: () => {
       toast.success("Bienvenido al sistema");
       router.replace("/tours");
     },
-    onError: (error: Error) => {
-      console.log("error", error);
-      toast.error("Credenciales incorrectas", {
-        description: "Verifica tu correo y contraseña e intenta de nuevo.",
+    onError: (error: ApiError) => {
+      console.log("Error", error.status);
+      toast.error("Error al iniciar sesión", {
+        description: error.message || "No se pudo guardar la información",
       });
     },
   });
@@ -66,10 +68,9 @@ export const useChangePassword = () => {
         description: "Tu contraseña ha sido cambiada exitosamente.",
       });
     },
-    onError: (error: any) => {
-      const errorMsg = error?.response?.data?.error || "Error al actualizar la contraseña";
-      toast.error("No se pudo cambiar la contraseña", {
-        description: errorMsg,
+    onError: (error: ApiError) => {
+      toast.error("Error al cambiar la contraseña", {
+        description: error?.message || "Error al actualizar la contraseña",
       });
     },
   });
