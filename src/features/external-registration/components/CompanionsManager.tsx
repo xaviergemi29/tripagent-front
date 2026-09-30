@@ -1,15 +1,17 @@
 "use client";
 
-import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
+import { useFormContext, useFieldArray, useWatch, Controller } from "react-hook-form";
 import { Users, User, Plus, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { BookingFormValues } from "../schemas/booking.schema";
 import { useTravelerLookup } from "@/features/travelers/hooks/useTravelers";
 import { useState } from "react";
+
+import { PassengerTypeSwitch, type PassengerCategory } from "./PassengerTypeSwitch";
+import { PickupPointSelector } from "./PickupPointSelector";
 
 interface CompanionsManagerProps {
   boardingPoints: { id: string; location: string; time: string }[];
@@ -33,27 +35,22 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
   const mainEmergencyName = useWatch({ control, name: "mainClient.emergencyContactName" });
   const mainEmergencyPhone = useWatch({ control, name: "mainClient.emergencyContactPhone" });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "companions",
-  });
-
+  const { fields, append, remove } = useFieldArray({ control, name: "companions" });
   const watchedCompanions = useWatch({ control, name: "companions" }) || [];
 
-  // Búsqueda inteligente cuando el teléfono de acompañante es VÁLIDO (10 dígitos)
   const handleCompanionPhoneBlur = async (index: number, phoneValue: string) => {
     const cleanPhone = phoneValue.trim();
     if (!cleanPhone || cleanPhone.length !== 10 || lockedCompanions[index]) return;
 
     const traveler = await lookupTraveler(cleanPhone);
-
     if (traveler) {
       setValue(`companions.${index}.fullName`, traveler.fullName, { shouldValidate: true });
-      setValue(`companions.${index}.email`, traveler.email || "", { shouldValidate: true });
       setValue(`companions.${index}.medicalNotes`, traveler.medicalNotes || "", {
         shouldValidate: true,
       });
-
+      if (traveler.birthDate) {
+        setValue(`companions.${index}.birthDate`, traveler.birthDate, { shouldValidate: true });
+      }
       setLockedCompanions((prev) => ({ ...prev, [index]: true }));
       toast.success(`Acompañante ${index + 1} encontrado`, {
         description: "Se cargaron sus datos históricos.",
@@ -65,13 +62,13 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
     const defaultBp = mainBoardingPoint || "";
     const defaultEmName = mainEmergencyName || "";
     const defaultEmPhone = mainEmergencyPhone || "";
-
     const newIndex = fields.length;
 
     append({
       fullName: "",
       whatsappPhone: "",
       email: "",
+      birthDate: "",
       emergencyContactName: defaultEmName,
       emergencyContactPhone: defaultEmPhone,
       medicalNotes: "",
@@ -79,13 +76,19 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
       boardingPoint: defaultBp,
     });
 
-    // 🚀 UX: Por defecto copiamos punto de abordaje y contacto de emergencia del titular
     setSameEmergencyContact((prev) => ({ ...prev, [newIndex]: true }));
     setSameBoardingPoint((prev) => ({ ...prev, [newIndex]: true }));
   };
 
+  const mappedPoints = boardingPoints.map((point) => ({
+    id: `${point.location} (${point.time})`,
+    name: point.location,
+    reference: "Punto de abordaje",
+    time: point.time,
+  }));
+
   return (
-    <div className="space-y-6 rounded-2xl border bg-white p-4 shadow-sm sm:p-6">
+    <div className="space-y-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
       <div className="space-y-4">
         <div className="space-y-1">
           <Label className="text-base font-bold text-slate-900">¿Cómo viajas esta vez?</Label>
@@ -139,12 +142,12 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
             const isSameEmergency = !!sameEmergencyContact[index];
             const isSameBp = !!sameBoardingPoint[index];
             const currentCompanion = watchedCompanions[index] || field;
-            const passengerType = currentCompanion.passengerType || "ADULT";
+            const isAdult = currentCompanion.passengerType === "ADULT";
 
             return (
               <div
                 key={field.id}
-                className="relative space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 shadow-sm sm:p-5"
+                className="relative space-y-4 rounded-xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-sm sm:p-5"
               >
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <div className="flex items-center gap-2">
@@ -152,8 +155,8 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
                       Acompañante {index + 1}
                     </span>
                     {isLocked && (
-                      <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
-                        <Lock className="h-3 w-3 text-amber-600" /> Verificado
+                      <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
+                        <Lock className="h-3 w-3 text-emerald-600" /> Verificado
                       </span>
                     )}
                   </div>
@@ -168,41 +171,22 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
                   </Button>
                 </div>
 
-                {/* Selección Adulto / Niño */}
-                <div className="flex items-center justify-between rounded-lg border bg-white p-3">
-                  <span className="text-xs font-semibold text-slate-700">Tipo de pasajero:</span>
-                  <RadioGroup
-                    value={passengerType}
-                    onValueChange={(val: "ADULT" | "CHILD") => {
-                      setValue(`companions.${index}.passengerType`, val, { shouldValidate: true });
-                      if (val === "CHILD") {
-                        // 🚀 Limpiamos los campos opcionales para evitar ruido visual y errores de validación
-                        setValue(`companions.${index}.whatsappPhone`, "");
-                        setValue(`companions.${index}.email`, "");
-                      }
-                    }}
-                    className="flex gap-4"
-                  >
-                    <div className="flex items-center space-x-1.5">
-                      <RadioGroupItem value="ADULT" id={`adult-${index}`} />
-                      <Label
-                        htmlFor={`adult-${index}`}
-                        className="cursor-pointer text-xs font-medium"
-                      >
-                        Adulto
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      <RadioGroupItem value="CHILD" id={`child-${index}`} />
-                      <Label
-                        htmlFor={`child-${index}`}
-                        className="cursor-pointer text-xs font-medium"
-                      >
-                        Niño
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+                {/* Categoría Adulto / Niño */}
+                <Controller
+                  control={control}
+                  name={`companions.${index}.passengerType`}
+                  render={({ field }) => (
+                    <PassengerTypeSwitch
+                      value={field.value as PassengerCategory}
+                      onChange={(val) => {
+                        field.onChange(val);
+                        if (val === "CHILD") {
+                          setValue(`companions.${index}.whatsappPhone`, "");
+                        }
+                      }}
+                    />
+                  )}
+                />
 
                 {/* Nombre Completo */}
                 <div className="space-y-1">
@@ -211,7 +195,7 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
                     {...register(`companions.${index}.fullName`)}
                     disabled={isLocked}
                     placeholder="Ej. Lizeth Colorado"
-                    className="h-11 bg-white text-base sm:text-sm" // 🚀 44px de alto táctil
+                    className="h-11 bg-white text-base sm:text-sm"
                   />
                   {errors.companions?.[index]?.fullName && (
                     <p className="text-xs text-red-500">
@@ -220,8 +204,47 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
                   )}
                 </div>
 
-                {/* Punto de abordaje con Checkbox por defecto */}
-                <div className="space-y-2 rounded-lg border bg-white p-3">
+                {/* Grid Dinámico para Datos Personales */}
+                <div
+                  className={`grid grid-cols-1 gap-3 ${
+                    isAdult ? "sm:grid-cols-2" : "sm:grid-cols-1"
+                  }`}
+                >
+                  {/* WhatsApp Solo para Adultos */}
+                  {isAdult && (
+                    <div className="animate-in fade-in space-y-1 duration-200">
+                      <Label className="text-xs font-semibold text-slate-600">WhatsApp</Label>
+                      <Input
+                        {...register(`companions.${index}.whatsappPhone`)}
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="10 dígitos"
+                        className="h-11 bg-white text-base sm:text-sm"
+                        onBlur={(e) => handleCompanionPhoneBlur(index, e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  {/* Fecha de Nacimiento (OBLIGATORIO PARA AMBOS) */}
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-700">
+                      Fecha de Nacimiento *
+                    </Label>
+                    <Input
+                      {...register(`companions.${index}.birthDate`)}
+                      type="date"
+                      className="h-11 bg-white text-base sm:text-sm"
+                    />
+                    {errors.companions?.[index]?.birthDate && (
+                      <p className="text-xs text-red-500">
+                        {errors.companions[index]?.birthDate?.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Punto de abordaje */}
+                <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs">
                   <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-800">
                     <input
                       type="checkbox"
@@ -241,52 +264,25 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
                   </label>
 
                   {!isSameBp && (
-                    <select
-                      {...register(`companions.${index}.boardingPoint`)}
-                      className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-indigo-500"
-                    >
-                      <option value="">Selecciona punto de abordaje...</option>
-                      {boardingPoints.map((point) => (
-                        <option key={point.id} value={`${point.location} (${point.time})`}>
-                          {point.location} - {point.time}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="border-t border-slate-100 pt-2">
+                      <Controller
+                        control={control}
+                        name={`companions.${index}.boardingPoint`}
+                        render={({ field, fieldState }) => (
+                          <PickupPointSelector
+                            points={mappedPoints}
+                            value={field.value}
+                            onChange={field.onChange}
+                            error={fieldState.error?.message}
+                          />
+                        )}
+                      />
+                    </div>
                   )}
                 </div>
 
-                {/* WhatsApp y Email (Ocultos automáticamente si es NIÑO) */}
-                {passengerType === "ADULT" && (
-                  <div className="animate-in fade-in grid grid-cols-1 gap-3 duration-200 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">
-                        WhatsApp (Opcional)
-                      </Label>
-                      <Input
-                        {...register(`companions.${index}.whatsappPhone`)}
-                        type="tel"
-                        inputMode="numeric"
-                        placeholder="10 dígitos"
-                        className="h-11 bg-white text-base sm:text-sm"
-                        onBlur={(e) => handleCompanionPhoneBlur(index, e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">
-                        Email (Opcional)
-                      </Label>
-                      <Input
-                        {...register(`companions.${index}.email`)}
-                        type="email"
-                        placeholder="correo@ejemplo.com"
-                        className="h-11 bg-white text-base sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Contacto de emergencia con Checkbox por defecto */}
-                <div className="space-y-2 rounded-lg border bg-white p-3">
+                {/* Contacto de emergencia */}
+                <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs">
                   <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-800">
                     <input
                       type="checkbox"
@@ -313,7 +309,7 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
                   </label>
 
                   {!isSameEmergency && (
-                    <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 border-t border-slate-100 pt-2 sm:grid-cols-2">
                       <Input
                         {...register(`companions.${index}.emergencyContactName`)}
                         placeholder="Nombre del familiar"
@@ -329,6 +325,18 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
                     </div>
                   )}
                 </div>
+
+                {/* Notas Médicas */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-600">
+                    Notas Médicas (Opcional)
+                  </Label>
+                  <Input
+                    {...register(`companions.${index}.medicalNotes`)}
+                    placeholder="Ej. Alergias, mareos..."
+                    className="h-11 bg-white text-base sm:text-sm"
+                  />
+                </div>
               </div>
             );
           })}
@@ -337,7 +345,7 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
             type="button"
             variant="outline"
             onClick={handleAddCompanion}
-            className="w-full border-2 border-dashed border-indigo-200 bg-indigo-50/50 py-5 font-semibold text-indigo-600 hover:bg-indigo-50"
+            className="w-full border-2 border-dashed border-indigo-200 bg-indigo-50/50 py-5 font-semibold text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50"
           >
             <Plus className="mr-2 h-4 w-4" /> Añadir otro acompañante
           </Button>

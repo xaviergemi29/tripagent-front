@@ -15,6 +15,7 @@ export function PaymentValidationModal({ travelerId, isOpen, onClose }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
+      HOLA
       {/* Detenemos la propagación para que los clics dentro del modal no lo cierren */}
       <div
         className="animate-in zoom-in-95 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl duration-200"

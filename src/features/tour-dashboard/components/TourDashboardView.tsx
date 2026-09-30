@@ -70,8 +70,6 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
     return <DashboardSkeleton />;
   }
 
-  console.log("tour.vehicle", tour.vehicle);
-
   return (
     <main className="flex h-full min-h-screen flex-col bg-slate-50">
       <TourDashboardHeader

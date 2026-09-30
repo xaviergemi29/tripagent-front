@@ -23,3 +23,19 @@ export const formatForDateInput = (dateInput: string | Date | undefined | null):
 
   return `${year}-${month}-${day}`;
 };
+
+/**
+ * Parsea y formatea una fecha en formato "YYYY-MM-DD" evitando
+ * el desfase de zona horaria UTC del motor de JavaScript.
+ */
+export const formatLocalDate = (departureDateTime: string) => {
+  const [year, month, day] = departureDateTime.split("-").map(Number);
+
+  const localDate = new Date(year, month - 1, day);
+
+  return new Intl.DateTimeFormat("es-MX", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  }).format(localDate);
+};
