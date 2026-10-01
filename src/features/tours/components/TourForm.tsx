@@ -31,18 +31,16 @@ import { TourBoardingSection } from "./form-sections/TourBoardingSection";
 import { TourAssetSection } from "./form-sections/TourAssetSection";
 
 interface CreateTourFormProps {
-  initialData?: TourOutput;
-  tourId?: string;
-  onSuccess?: () => void;
+  tour: TourOutput;
 }
 
-export function TourForm({ initialData, tourId, onSuccess }: CreateTourFormProps) {
-  const isEditing = !!initialData;
+export function TourForm({ tour }: CreateTourFormProps) {
+  const isEditing = !!tour;
   const router = useRouter();
 
   const [brochureFile, setBrochureFile] = useState<File | null>(null);
   const [existingBrochure, setExistingBrochure] = useState<string | null>(
-    initialData?.brochureUrl ? `http://localhost:3001/public${initialData.brochureUrl}` : null,
+    tour?.brochureUrl ? `http://localhost:3001/public${tour.brochureUrl}` : null,
   );
 
   const { mutateAsync: createTour, isPending: isCreating } = useCreateTour();
@@ -55,18 +53,16 @@ export function TourForm({ initialData, tourId, onSuccess }: CreateTourFormProps
   const form = useForm<TourInput>({
     resolver: zodResolver(tourSchema),
     mode: "onChange",
-    defaultValues: initialData
+    defaultValues: tour
       ? {
-          ...initialData,
-          depositPerPerson: initialData.depositPerPerson ?? 0,
-          currency: initialData.currency ?? "MXN",
+          ...tour,
+          depositPerPerson: tour.depositPerPerson ?? 0,
+          currency: tour.currency ?? "MXN",
         }
       : {
           title: "",
           description: "",
-          tourRecommendations: "",
           price: 0,
-          durationHours: 0,
           currency: "MXN",
           departureDateTime: "",
           maxCapacity: 0,
@@ -94,42 +90,53 @@ export function TourForm({ initialData, tourId, onSuccess }: CreateTourFormProps
   }, [price, form]);
 
   useEffect(() => {
-    if (initialData) {
+    if (tour) {
       form.reset({
-        ...initialData,
-        currency: initialData.currency ?? "MXN",
-        departureDateTime: formatForDateInput(initialData?.departureDateTime),
-        paymentLink: initialData.paymentLink ?? "",
-        cashInstructions: initialData.cashInstructions ?? "",
+        ...tour,
+        currency: tour.currency ?? "MXN",
+        departureDateTime: formatForDateInput(tour?.departureDateTime),
+        paymentLink: tour.paymentLink ?? "",
+        cashInstructions: tour.cashInstructions ?? "",
       });
     }
-  }, [initialData, form]);
+  }, [tour, form]);
 
-  const onSubmit = async (data: TourInput) => {
+  const onSubmit = async (formData: TourInput): Promise<void> => {
     try {
-      let currentTourId = tourId;
-      const payload = {
-        ...data,
-        removeBrochure: isEditing && initialData?.brochureUrl && !existingBrochure && !brochureFile,
+      let currentTourId = tour.id;
+
+      // 1. Sanitización de capa de red: Convertir cadenas vacías ("") a explícito null
+      const basePayload = {
+        ...formData,
+        paymentLink: formData.paymentLink?.trim() || null,
+        cashInstructions: formData.cashInstructions?.trim() || null,
+        postPaymentInstructions: formData.postPaymentInstructions?.trim() || null,
+        returnDate: formData.returnDate?.trim() || null,
       };
 
-      if (isEditing && tourId) {
-        await updateTour({ tourId, tourData: payload });
+      if (isEditing && tour.id) {
+        // 2. Flujo de Edición: Inyectamos el flag operativo de eliminación de archivo
+        const updatePayload = {
+          ...basePayload,
+          removeBrochure: !!(tour?.brochureUrl && !existingBrochure && !brochureFile),
+        };
+        await updateTour({ tourId: tour.id, tourData: updatePayload });
       } else {
-        const response = await createTour(payload);
+        // 3. Flujo de Creación: Enviamos el payload limpio (sin removeBrochure)
+        const response = await createTour(basePayload);
         currentTourId =
           typeof response === "object" && "data" in response
             ? (response as any).data.id
             : response?.id;
       }
 
+      // Procesamiento de Asset (Folleto) post-persistencia
       if (brochureFile && currentTourId) {
         await uploadBrochureTour({ tourId: currentTourId, file: brochureFile });
       }
 
       form.reset();
       setBrochureFile(null);
-      if (onSuccess) onSuccess();
       router.push("/tours");
     } catch (error) {
       console.error("Mutation failed:", error);

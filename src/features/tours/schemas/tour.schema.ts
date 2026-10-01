@@ -6,7 +6,6 @@ const baseTourSchema = z.object({
   id: z.uuid().optional(),
   title: z.string().min(5, "El título debe tener al menos 5 caracteres").max(100),
   description: z.string().default(""),
-  tourRecommendations: z.string().default(""),
   transportModality: z
     .enum(TOUR_MODALITIES, {
       message: "Debes seleccionar una modalidad operativa válida",
@@ -20,8 +19,6 @@ const baseTourSchema = z.object({
     .union([z.number(), z.literal("")])
     .transform((val) => (val === "" ? 0 : val))
     .pipe(z.number().min(0, "El anticipo no puede ser negativo")),
-  durationHours: z.coerce.number().default(0),
-
   departureDateTime: z
     .string()
     .min(1, { message: "La fecha y hora de salida son obligatorias" })
@@ -33,11 +30,11 @@ const baseTourSchema = z.object({
 
   returnDate: z
     .string()
-    .optional()
+    .nullish()
     .transform((val) => {
-      if (!val) return val;
+      if (!val) return null;
       const date = new Date(val);
-      if (isNaN(date.getTime())) return val;
+      if (isNaN(date.getTime())) return null;
       return date.toISOString().slice(0, 10);
     }),
   currency: z.enum(["MXN", "USD"]).default("MXN"),
@@ -55,10 +52,10 @@ const baseTourSchema = z.object({
       z.literal(""),
       z.url({ message: "Debe ser una URL válida (ej. https://mercadopago.com/...)" }),
     ])
-    .optional(),
-  postPaymentInstructions: z.string().default(""),
+    .nullish(),
+  postPaymentInstructions: z.string().nullish(),
   acceptsCash: z.boolean(),
-  cashInstructions: z.string().optional(),
+  cashInstructions: z.string().nullish(),
   boardingPoints: z
     .array(
       z.object({

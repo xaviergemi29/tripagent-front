@@ -7,7 +7,7 @@ import { AgencyInput, AgencyOutput } from "../schemas/agency.schema";
 // 1. QUERY KEY FACTORY (Patrón de Arquitectura Limpia)
 // ============================================================================
 export const AGENCY_KEYS = {
-  all: ["agencies"] as const, // Cambié TOUR_KEYS a AGENCY_KEYS por semántica
+  all: ["agencies"] as const,
 };
 
 // ============================================================================
@@ -17,11 +17,7 @@ const getAgencyApi = async (): Promise<AgencyOutput> => {
   return apiClient.get<never, AgencyOutput>(`/agencies`);
 };
 
-const updateAgencyApi = async ({
-  agencyData,
-}: {
-  agencyData: AgencyInput;
-}): Promise<AgencyOutput> => {
+const updateAgencyApi = async (agencyData: AgencyInput): Promise<AgencyOutput> => {
   return apiClient.patch<never, AgencyOutput>(`/agencies/`, agencyData);
 };
 

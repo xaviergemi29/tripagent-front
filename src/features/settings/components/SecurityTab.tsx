@@ -27,13 +27,9 @@ export function SecurityTab() {
     },
   });
 
-  const handlePasswordChange = async (data: ChangePasswordInput): Promise<void> => {
-    try {
-      await changePassword(data);
-      reset();
-    } catch (error) {
-      console.error("Mutation failed:", error);
-    }
+  const handlePasswordChange = async (formData: ChangePasswordInput): Promise<void> => {
+    await changePassword(formData);
+    reset();
   };
 
   return (

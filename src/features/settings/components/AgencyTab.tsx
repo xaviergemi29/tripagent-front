@@ -31,7 +31,7 @@ export function AgencyTab() {
   });
 
   const onSubmit = async (formData: AgencyInput): Promise<void> => {
-    await updateAgency({ agencyData: formData });
+    await updateAgency(formData);
   };
 
   if (isError) {

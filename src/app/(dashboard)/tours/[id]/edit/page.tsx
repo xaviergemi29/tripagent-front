@@ -24,7 +24,7 @@ export default function EditTourPage() {
             Editar Tour: {tour.title}
           </h2>
         </div>
-        <TourForm initialData={tour} tourId={params.id} />
+        <TourForm tour={tour} />
       </div>
     </main>
   );
