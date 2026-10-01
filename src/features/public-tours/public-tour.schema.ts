@@ -3,12 +3,13 @@ import { z } from "zod";
 export const publicTourSchema = z.object({
   id: z.string(),
   title: z.string(),
-  currency: z.string(),
+  currency: z.enum(["MXN", "USD"]).default("MXN"),
   transportModality: z.string(),
   durationHours: z.number(),
   depositPerPerson: z.number(),
   price: z.string().or(z.number()),
   departureDateTime: z.string(),
+  returnDate: z.string(),
   brochureUrl: z.string().nullable(),
   boardingPoints: z.array(
     z.object({
