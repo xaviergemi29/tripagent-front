@@ -1,9 +1,9 @@
-// src/features/dashboard/components/TravelersTable.tsx
 "use client";
 
-import { Fragment, useState } from "react";
-import { ChevronRight, ChevronDown, User, Users, Eye, CheckCircle2, LinkIcon } from "lucide-react";
+import { Fragment, JSX, useState } from "react";
+import { ChevronRight, ChevronDown, User, Users, Eye, LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 export type PaymentRecordDTO = {
@@ -25,6 +25,8 @@ export type CompanionDTO = {
   paidAmount: number;
   balance: number;
   formStatus: "PENDING" | "COMPLETED";
+  seatLabel?: string;
+  boardingPoint?: string;
 };
 
 export type TitularRowDTO = {
@@ -41,6 +43,8 @@ export type TitularRowDTO = {
   companions: CompanionDTO[];
   magicToken: string;
   payments?: PaymentRecordDTO[];
+  seatLabel?: string;
+  boardingPoint?: string;
 };
 
 interface Props {
@@ -53,7 +57,7 @@ interface Props {
   onValidatePaymentClick: (id: string, e: React.MouseEvent) => void;
 }
 
-export function TravelersTable({
+export function DashboardTravelerTable({
   travelers,
   searchQuery,
   paymentFilter,
@@ -64,7 +68,7 @@ export function TravelersTable({
   // Estado para controlar qué IDs de titulares tienen su acordeón abierto
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  const toggleRow = (id: string, e: React.MouseEvent) => {
+  const toggleRow = (id: string, e: React.MouseEvent): void => {
     e.stopPropagation();
     setExpandedGroups((prev) => ({ ...prev, [id]: !prev[id] }));
   };
@@ -89,7 +93,7 @@ export function TravelersTable({
     return matchesCompanion;
   });
 
-  const getPaymentBadge = (status: string) => {
+  const getPaymentBadge = (status: string): JSX.Element => {
     const styles: Record<string, string> = {
       PAID: "bg-emerald-100 text-emerald-800",
       PARTIAL: "bg-blue-100 text-blue-800",
@@ -104,7 +108,7 @@ export function TravelersTable({
     );
   };
 
-  const getFormBadge = (status: string) => {
+  const getFormBadge = (status: string): JSX.Element => {
     return status === "COMPLETED" ? (
       <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
         <span className="h-2 w-2 rounded-full bg-emerald-500"></span> Completo
@@ -144,6 +148,8 @@ export function TravelersTable({
             <tr>
               <th className="w-10 px-4 py-4"></th>
               <th className="px-6 py-4">Viajero</th>
+              <th className="px-6 py-4">Asiento</th>
+              <th className="px-6 py-4">Abordaje</th>
               <th className="px-6 py-4">Contacto</th>
               <th className="px-6 py-4">Datos del Pasajero</th>
               <th className="px-6 py-4">Estado Pago</th>
@@ -155,6 +161,7 @@ export function TravelersTable({
             {filteredTravelers?.map((titular) => {
               const isExpanded = !!expandedGroups[titular.id];
               const hasCompanions = titular.companions && titular.companions.length > 0;
+              const hasPaid = titular.paidAmount > 0 || titular.paymentStatus !== "PENDING";
 
               return (
                 <Fragment key={titular.id}>
@@ -192,6 +199,37 @@ export function TravelersTable({
                           </div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {hasPaid ? (
+                        titular.seatLabel ? (
+                          <Badge className="border-indigo-200 bg-indigo-100 text-indigo-800">
+                            {titular.seatLabel}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-slate-500">
+                            Sin asignar
+                          </Badge>
+                        )
+                      ) : (
+                        <div className="flex flex-col items-start gap-0.5">
+                          <Badge variant="outline" className="bg-slate-50 text-slate-400">
+                            Pendiente
+                          </Badge>
+                          <span className="text-muted-foreground text-[10px]">Requiere abono</span>
+                        </div>
+                      )}
+                    </td>
+
+                    {/* 🚀 COLUMNA: ABORDAJE */}
+                    <td className="px-6 py-4">
+                      {titular.boardingPoint ? (
+                        <span className="text-xs font-medium text-slate-700">
+                          {titular.boardingPoint}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs italic">Por definir</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 font-mono text-xs text-slate-600">
                       {titular.whatsapp}
@@ -253,6 +291,38 @@ export function TravelersTable({
                               </div>
                             </div>
                           </div>
+                        </td>
+                        <td className="px-6 py-3">
+                          {hasPaid ? (
+                            companion.seatLabel ? (
+                              <Badge className="border-indigo-200 bg-indigo-100 text-indigo-800">
+                                {companion.seatLabel}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-slate-500">
+                                Sin asignar
+                              </Badge>
+                            )
+                          ) : (
+                            <div className="flex flex-col items-start gap-0.5">
+                              <Badge variant="outline" className="bg-slate-50 text-slate-400">
+                                Pendiente
+                              </Badge>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* 🚀 COLUMNA: ABORDAJE ACOMPAÑANTE */}
+                        <td className="px-6 py-3">
+                          {companion.boardingPoint ? (
+                            <span className="text-xs font-medium text-slate-700">
+                              {companion.boardingPoint}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-500 italic">
+                              {titular.boardingPoint ? "Mismo punto" : "Por definir"}
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-3 font-mono text-xs text-slate-500">
                           {companion.whatsapp}

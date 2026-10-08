@@ -2,6 +2,10 @@ import { apiClient, ApiError } from "@/lib/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { BookingInput, BookingOutput } from "../schemas/booking.schema";
+import {
+  QuickBookingInput,
+  QuickBookingOutput,
+} from "@/features/tour-dashboard/schemas/quick-booking.schema";
 
 // ============================================================================
 // 1. QUERY KEY FACTORY (Patrón de Arquitectura Limpia)
@@ -21,24 +25,11 @@ export interface CancelPassengerPayload {
   penaltyAmount: number;
 }
 
-interface QuickBookingPayload {
-  fullName: string;
-  whatsapp: string;
-  email: string;
-  numberPassengers: number;
-}
-
-interface QuickBookingResponse {
-  bookingId: string;
-  token: string;
-  availableSeats: number;
-}
-
 // ============================================================================
 // 3. CAPA DE RED (Axios API Client)
 // ============================================================================
 const createBookingApi = async (bookingData: BookingInput): Promise<BookingOutput> => {
-  return apiClient.post<never, BookingOutput>(`/bookings`, bookingData);
+  return apiClient.post<never, BookingOutput>(`/bookings/public/register`, bookingData);
 };
 
 const cancelPassengerApi = async ({
@@ -54,17 +45,11 @@ const cancelPassengerApi = async ({
   );
 };
 
-const createQuickBookingApi = async ({
-  tourId,
-  payload,
-}: {
-  tourId: string;
-  payload: QuickBookingPayload;
-}) => {
-  return await apiClient.post<never, QuickBookingResponse>(
-    `/bookings/${tourId}/quick-booking`,
-    payload,
-  );
+const createQuickBookingApi = async (
+  newQuickBooking: QuickBookingInput,
+): Promise<QuickBookingOutput> => {
+  const { tourId, ...rest } = newQuickBooking;
+  return await apiClient.post<never, QuickBookingOutput>(`/bookings/${tourId}/quick-booking`, rest);
 };
 
 // ============================================================================
@@ -112,13 +97,13 @@ export const useCancelPassenger = () => {
   });
 };
 
-export function useQuickReservation(tourId: string) {
+export function useQuickReservation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: QuickBookingPayload) => createQuickBookingApi({ tourId, payload }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tour-dashboard", tourId] });
+    mutationFn: createQuickBookingApi,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tour-dashboard", variables.tourId] });
     },
     onError: (error: ApiError) => {
       toast.error("Error al apartar lugares", {

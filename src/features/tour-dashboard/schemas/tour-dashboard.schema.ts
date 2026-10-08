@@ -47,6 +47,7 @@ export const tourMetricsSchema = z.object({
   }),
   pendingValidations: z.number(),
   pendingForms: z.number(),
+  assignedSeats: z.array(z.number()).default([]),
 });
 
 // 4. Esquema del Payload Completo
@@ -65,6 +66,13 @@ export const tourDashboardDataSchema = z.object({
     })
     .optional(),
 });
+
+export const vehicleDTOSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  layoutMap: z.array(z.array(z.string().nullable())),
+});
+export type VehicleDTO = z.infer<typeof vehicleDTOSchema>;
 
 // 5. Exportamos las interfaces inferidas para usarlas en los Props de React
 export type FormStatus = z.infer<typeof formStatusSchema>;

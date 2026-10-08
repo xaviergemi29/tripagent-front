@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { TourDashboardOutput } from "../schemas/tour-dashboard.schema";
+import { TourDashboardOutput, VehicleDTO } from "../schemas/tour-dashboard.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
+
+interface AssignVehiclePayload {
+  tourId: string;
+  vehicleId: string;
+  resetOrphans?: boolean; // 🚀 Nueva flag para el backend
+}
 
 // ============================================================================
 // 1. CAPA DE RED (Axios API Client)
@@ -10,8 +16,8 @@ const fetchDashboardByTourIdApi = async (tourId: string): Promise<TourDashboardO
   return apiClient.get<never, TourDashboardOutput>(`/dashboards/${tourId}`);
 };
 
-const fetchVehiclesApi = async (): Promise<TourDashboardOutput> => {
-  return apiClient.get(`/vehicles`);
+const fetchVehiclesApi = async (): Promise<VehicleDTO[]> => {
+  return apiClient.get<never, VehicleDTO[]>(`/vehicles`);
 };
 
 // ============================================================================
@@ -22,7 +28,7 @@ export function useTourDashboardByTourId(tourId: string) {
     queryKey: ["tour-dashboard", tourId],
     queryFn: () => fetchDashboardByTourIdApi(tourId),
     enabled: !!tourId,
-    staleTime: 1000 * 60 * 5, // 5 minutos de frescura
+    staleTime: 1000 * 60 * 5,
     retry: 1,
   });
 }
@@ -40,15 +46,15 @@ export function useAssignVehicleToTour() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ tourId, vehicleId }: { tourId: string; vehicleId: string }) =>
-      apiClient.patch(`/tours/${tourId}/vehicle`, { vehicleId }),
+    mutationFn: ({ tourId, vehicleId, resetOrphans }: AssignVehiclePayload) =>
+      apiClient.patch(`/tours/${tourId}/vehicle`, { vehicleId, resetOrphans }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tour-dashboard", variables.tourId] });
-      toast.success("Vehículo asignado correctamente");
+      toast.success("Vehículo asignado y mapa actualizado");
     },
     onError: (error: ApiError) => {
       toast.error("Error al asignar el vehículo", {
-        description: error.message || "No se pudo asignar el asiento",
+        description: error.message || "No se pudo completar la asignación",
       });
     },
   });

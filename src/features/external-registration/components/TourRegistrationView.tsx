@@ -15,7 +15,6 @@ import { CompanionsManager } from "./CompanionsManager";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useTravelerLookup } from "@/features/travelers/hooks/useTravelers";
 import { useCreateBooking } from "../hooks/useBookings";
 import { BookingSuccessView } from "./BookingSuccessView";
 
@@ -24,6 +23,8 @@ import { RegistrationHeader } from "./RegistrationHeader";
 import { TourSummaryCard } from "./TourSummaryCard";
 import { PickupPointSelector } from "./PickupPointSelector";
 import { RegistrationFooter } from "./RegistrationFooter";
+import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
+import { useRouter } from "next/navigation";
 
 interface TourRegistrationViewProps {
   token: string;
@@ -32,8 +33,8 @@ interface TourRegistrationViewProps {
     title: string;
     departureDateTime: string;
     reservedSeats?: number;
-    priceTotalPerPassenger?: number; // Añadido para el resumen
-    depositPerPassenger?: number | null; // Añadido para el resumen
+    priceTotalPerPassenger?: number;
+    depositPerPassenger?: number | null;
   };
   agencyName?: string;
 }
@@ -42,15 +43,15 @@ export function TourRegistrationView({
   token,
   boardingPoints,
   tourInfo,
-  agencyName = "TripAgent",
+  agencyName,
 }: TourRegistrationViewProps) {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { mutateAsync: createBooking, isPending } = useCreateBooking();
   const [isMainClientFound, setIsMainClientFound] = useState(false);
   const [bookingResult, setBookingResult] = useState<BookingOutput>();
-
-  const { lookupTraveler } = useTravelerLookup();
+  const router = useRouter();
+  const { lookupTraveler } = usePublicTravelerLookup(token);
 
   const methods = useForm<BookingFormValues>({
     resolver: zodResolver(bookingFormSchema),
@@ -74,35 +75,41 @@ export function TourRegistrationView({
   });
 
   const handlePhoneBlur = async (phoneValue: string): Promise<void> => {
-    const cleanPhone = phoneValue.trim();
-    const isValidPhone = mainClientSchema.shape.whatsappPhone.safeParse(cleanPhone).success;
-    if (!isValidPhone || isMainClientFound) return;
+    const cleanPhone = phoneValue.replace(/\D/g, "").trim();
+    if (cleanPhone.length !== 10 || isMainClientFound) return;
 
     setIsLookingUp(true);
-    const traveler = await lookupTraveler(cleanPhone);
-    setIsLookingUp(false);
-
-    if (traveler) {
-      methods.setValue("mainClient.fullName", traveler.fullName, { shouldValidate: true });
-      methods.setValue("mainClient.email", traveler.email || "", { shouldValidate: true });
-      methods.setValue("mainClient.emergencyContactName", traveler.emergencyContactName || "", {
-        shouldValidate: true,
-      });
-      methods.setValue("mainClient.emergencyContactPhone", traveler.emergencyContactPhone || "", {
-        shouldValidate: true,
-      });
-      methods.setValue("mainClient.medicalNotes", traveler.medicalNotes || "", {
-        shouldValidate: true,
-      });
-      setIsMainClientFound(true);
+    try {
+      const traveler = await lookupTraveler(cleanPhone);
+      if (traveler) {
+        methods.setValue("mainClient.fullName", traveler.fullName, { shouldValidate: true });
+        methods.setValue("mainClient.email", traveler.email || "", { shouldValidate: true });
+        methods.setValue("mainClient.emergencyContactName", traveler.emergencyContactName || "", {
+          shouldValidate: true,
+        });
+        methods.setValue("mainClient.emergencyContactPhone", traveler.emergencyContactPhone || "", {
+          shouldValidate: true,
+        });
+        methods.setValue("mainClient.medicalNotes", traveler.medicalNotes || "", {
+          shouldValidate: true,
+        });
+        setIsMainClientFound(true);
+      }
+    } catch (error) {
+      // 🛡️ IMPORTANTE: Capturamos el error aquí para evitar que un 401/500
+      // de la API de búsqueda dispare un interceptor global que te mande al login.
+      console.warn("No se encontró viajero previo o la API no respondió:", error);
+    } finally {
+      setIsLookingUp(false);
     }
   };
 
-  const onSubmit = async (data: BookingFormValues) => {
+  const onSubmit = async (formData: BookingFormValues): Promise<void> => {
     try {
-      const result = await createBooking(data);
+      const result = await createBooking(formData);
       setBookingResult(result);
       setIsSuccess(true);
+      router.refresh();
     } catch (error) {
       console.error("Error procesando registro:", error);
     }
@@ -112,15 +119,15 @@ export function TourRegistrationView({
   const hasCompanions = useWatch({ control: methods.control, name: "hasCompanions" });
   const totalRegistered = 1 + (hasCompanions ? watchedCompanions.length : 0);
 
-  if (isSuccess && bookingResult) {
-    return (
-      <BookingSuccessView
-        booking={bookingResult}
-        tourInfo={tourInfo}
-        formData={methods.getValues()}
-      />
-    );
-  }
+  // if (isSuccess && bookingResult) {
+  //   return (
+  //     <BookingSuccessView
+  //       booking={bookingResult}
+  //       tourInfo={tourInfo}
+  //       formData={methods.getValues()}
+  //     />
+  //   );
+  // }
 
   // Adapter para inyectar el formato exacto que RHF y Zod esperan ("Lugar (Hora)")
   const mappedPoints = boardingPoints.map((point) => ({
@@ -139,6 +146,8 @@ export function TourRegistrationView({
         <form
           onSubmit={methods.handleSubmit(onSubmit)}
           className="mx-auto max-w-xl space-y-6 px-4 pt-5"
+          noValidate={true}
+          suppressHydrationWarning
         >
           {/* 2. Resumen del Tour con Finanzas */}
           <TourSummaryCard
@@ -174,7 +183,9 @@ export function TourRegistrationView({
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-slate-700">Teléfono de WhatsApp *</Label>
               <Input
-                {...methods.register("mainClient.whatsappPhone")}
+                {...methods.register("mainClient.whatsappPhone", {
+                  onBlur: (e) => handlePhoneBlur(e.target.value),
+                })}
                 type="tel"
                 inputMode="numeric"
                 placeholder="Ej. 2281234567"
@@ -184,7 +195,6 @@ export function TourRegistrationView({
                     ? "cursor-not-allowed border-slate-200 bg-slate-100/80 font-semibold text-slate-700"
                     : "border-slate-300 bg-white text-slate-900 focus:border-indigo-600"
                 }`}
-                onBlur={(e) => handlePhoneBlur(e.target.value)}
               />
               {methods.formState.errors.mainClient?.whatsappPhone && (
                 <p className="text-xs text-red-500">
@@ -227,10 +237,11 @@ export function TourRegistrationView({
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-slate-700">Fecha de Nacimiento</Label>
                 <Input
-                  {...methods.register("mainClient.birthDate")}
+                  suppressHydrationWarning
+                  {...methods.register("mainClient.birthDate")} // O "companions.${index}.birthDate"
                   type="date"
                   disabled={isMainClientFound && methods.getValues("mainClient.birthDate") != ""}
-                  className={`h-11 text-base transition-colors sm:text-sm ${
+                  className={`w-max-full h-11 appearance-none text-base transition-colors sm:text-sm ${
                     isMainClientFound
                       ? "cursor-not-allowed border-slate-200 bg-slate-100/80 font-semibold text-slate-700"
                       : "bg-white"

@@ -103,7 +103,7 @@ export function TourForm({ tour }: CreateTourFormProps) {
 
   const onSubmit = async (formData: TourInput): Promise<void> => {
     try {
-      let currentTourId = tour.id;
+      let currentTourId = tour?.id || "";
 
       // 1. Sanitización de capa de red: Convertir cadenas vacías ("") a explícito null
       const basePayload = {

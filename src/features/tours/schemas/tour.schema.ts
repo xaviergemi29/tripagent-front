@@ -104,7 +104,26 @@ export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
       path: ["cashInstructions"],
     });
   }
+
+  if (data.boardingPoints && data.boardingPoints.length > 1) {
+    for (let i = 1; i < data.boardingPoints.length; i++) {
+      const prevTime = data.boardingPoints[i - 1].time;
+      const currTime = data.boardingPoints[i].time;
+
+      if (prevTime && currTime && currTime <= prevTime) {
+        ctx.addIssue({
+          code: "custom",
+          message: "La hora debe ser posterior a la parada anterior",
+          path: ["boardingPoints", i, "time"],
+        });
+      }
+    }
+  }
+});
+
+export const tourOutputSchema = baseTourSchema.extend({
+  temporalStatus: z.string().optional(),
 });
 
 export type TourInput = z.input<typeof tourSchema>;
-export type TourOutput = z.output<typeof tourSchema>;
+export type TourOutput = z.infer<typeof tourOutputSchema>;

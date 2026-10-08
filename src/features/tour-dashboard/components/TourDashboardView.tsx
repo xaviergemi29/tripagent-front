@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { TravelersTable } from "./TravelersTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TravelerDetailDrawer } from "./TravelerDetailDrawer";
 import { TravelersTableToolbar } from "./TravelersTableToolbar";
@@ -14,8 +13,13 @@ import type { TravelerRow } from "../schemas/tour-dashboard.schema";
 import { Bus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VehicleSelectionModal } from "./VehicleSelectionModal";
+import { DashboardTravelerTable } from "./DashboardTravelerTable";
 
-export function TourDashboardView({ tourId }: { tourId: string }) {
+interface TourDashboardViewProps {
+  tourId: string;
+}
+
+export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   const { data: tour, isLoading, isError, error } = useTourDashboardByTourId(tourId);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,7 +30,25 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
   const [validatingPaymentId, setValidatingPaymentId] = useState<string | null>(null);
   const [isQuickReservationOpen, setIsQuickReservationOpen] = useState(false);
 
-  // 🚀 Transformación tipada estrictamente con TravelerRow
+  const logisticsMetrics = useMemo(() => {
+    if (!tour?.travelers) return { assigned: 0, total: 0, unassigned: 0 };
+
+    let assigned = 0;
+    let total = 0;
+
+    tour.travelers.forEach((titular: any) => {
+      total++;
+      if (titular.seatLabel) assigned++;
+
+      titular.companions?.forEach((companion: any) => {
+        total++;
+        if (companion.seatLabel) assigned++;
+      });
+    });
+
+    return { assigned, total, unassigned: total - assigned };
+  }, [tour?.travelers]);
+
   const flattenedPassengers = useMemo(() => {
     if (!tour?.travelers) return [];
     return tour.travelers.flatMap((titular) => {
@@ -43,7 +65,6 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
     });
   }, [tour?.travelers]);
 
-  // 🚀 Búsqueda unificada tipada correctamente
   const foundTraveler = useMemo(() => {
     if (!selectedTravelerId || !tour?.travelers) return null;
     const allTravelersList = tour.travelers.flatMap((titular: TravelerRow) => [
@@ -76,13 +97,14 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
         title={tour.title}
         date={tour.departureDateTime}
         metrics={tour.metrics}
+        logistics={logisticsMetrics}
         onNewReservation={isAuditMode ? undefined : () => setIsQuickReservationOpen(true)}
       />
 
       <div className="flex-1 p-4 md:p-6">
         <Tabs defaultValue="viajeros" className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="viajeros">Lista de Viajeros</TabsTrigger>
+            <TabsTrigger value="viajeros">Lista de Viajeros y reservas</TabsTrigger>
             <TabsTrigger value="asientos">Mapa de Asientos</TabsTrigger>
           </TabsList>
 
@@ -98,7 +120,7 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
               onFormFilterChange={setFormFilter}
             />
 
-            <TravelersTable
+            <DashboardTravelerTable
               travelers={tour.travelers} // 🚀 Limpio, sin casteos peligrosos (as TitularRowDTO)
               searchQuery={searchQuery}
               paymentFilter={paymentFilter}
@@ -149,7 +171,6 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
 
       {validatingPaymentId && (
         <PaymentValidationModal
-          travelerId={validatingPaymentId}
           isOpen={!!validatingPaymentId}
           onClose={() => setValidatingPaymentId(null)}
         />
@@ -160,6 +181,7 @@ export function TourDashboardView({ tourId }: { tourId: string }) {
         isOpen={isQuickReservationOpen}
         onClose={() => setIsQuickReservationOpen(false)}
       />
+
       <VehicleSelectionModal
         tourId={tourId}
         isOpen={isVehicleModalOpen}

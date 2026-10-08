@@ -2,12 +2,11 @@ import { X, Check, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Props {
-  travelerId: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function PaymentValidationModal({ travelerId, isOpen, onClose }: Props) {
+export function PaymentValidationModal({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
   return (
@@ -15,7 +14,6 @@ export function PaymentValidationModal({ travelerId, isOpen, onClose }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
-      HOLA
       {/* Detenemos la propagación para que los clics dentro del modal no lo cierren */}
       <div
         className="animate-in zoom-in-95 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl duration-200"
@@ -27,7 +25,6 @@ export function PaymentValidationModal({ travelerId, isOpen, onClose }: Props) {
             <X className="h-4 w-4" />
           </Button>
         </div>
-
         <div className="space-y-4 p-6">
           <div className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-100">
             {/* Aquí iría la etiqueta <img> real con la URL del comprobante */}
@@ -44,7 +41,6 @@ export function PaymentValidationModal({ travelerId, isOpen, onClose }: Props) {
             </p>
           </div>
         </div>
-
         <div className="flex justify-end gap-2 border-t bg-slate-50 p-4">
           <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700">
             Rechazar (Pedir otra foto)

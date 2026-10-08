@@ -87,7 +87,7 @@ export default async function PublicTourLanding({ params }: PageProps) {
       : null;
 
   return (
-    <div className="min-h-screen bg-[#faf8ff] pb-28 text-slate-800 selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="min-h-screen bg-[#faf8ff] pb-26 text-slate-800 selection:bg-indigo-100 selection:text-indigo-900">
       {/* 1. CABECERA PÚBLICA */}
       <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 px-4 py-3.5 backdrop-blur-md">
         <div className="mx-auto flex max-w-md items-center justify-between">
@@ -276,7 +276,7 @@ export default async function PublicTourLanding({ params }: PageProps) {
         </section>
 
         {/* Footer TripAgent */}
-        <div className="pt-2 pb-6 text-center">
+        <div className="pt-2 text-center">
           <a
             href="https://tripagent.mx"
             target="_blank"

@@ -12,4 +12,16 @@ export const quickBookingSchema = z.object({
     .min(1, "Debe apartar al menos 1 lugar"),
 });
 
+export const quickBookingBodySchema = quickBookingSchema.extend({
+  tourId: z.uuid().trim(),
+});
+
+export const quickBookingResultSchema = quickBookingSchema.extend({
+  bookingId: z.uuid(),
+  token: z.string(),
+  availableSeats: z.number().positive(),
+});
+
+export type QuickBookingInput = z.input<typeof quickBookingBodySchema>;
 export type QuickBookingFormValues = z.infer<typeof quickBookingSchema>;
+export type QuickBookingOutput = z.infer<typeof quickBookingResultSchema>;

@@ -10,6 +10,7 @@ import {
   User,
   ShieldAlert,
   Activity,
+  UserX,
 } from "lucide-react";
 
 import {
@@ -20,7 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,17 +31,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { TravelerOutput } from "../schemas/traveler.schema";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { JSX } from "react";
 
-interface TravelersTableProps {
-  travelers: TravelerOutput[];
-  isLoading?: boolean;
-  onEdit?: (traveler: TravelerOutput) => void;
-  onDelete?: (travelerId: string) => void;
-  onViewHistory?: (travelerId: string) => void; // 👈 Nueva prop
+export interface TravelerTableRow extends TravelerOutput {
+  tripCount?: number;
 }
 
-const renderFidelidadBadge = (trips: number): JSX.Element => {
+interface TravelersTableProps {
+  travelers: TravelerTableRow[];
+  isLoading?: boolean;
+  isFiltered?: boolean;
+  onEdit?: (traveler: TravelerOutput) => void;
+  onDelete?: (travelerId: string) => void;
+  onViewHistory?: (travelerId: string) => void;
+}
+
+const renderFidelidadBadge = (trips: number = 0): React.ReactNode => {
   if (trips >= 5) {
     return (
       <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-1 text-xs font-bold text-purple-700">
@@ -66,6 +70,7 @@ const renderFidelidadBadge = (trips: number): JSX.Element => {
 export function TravelersTable({
   travelers,
   isLoading = false,
+  isFiltered = false,
   onEdit,
   onDelete,
   onViewHistory,
@@ -74,16 +79,23 @@ export function TravelersTable({
 
   if (isLoading) {
     return (
-      <div className="animate-pulse p-8 text-center text-slate-500">
+      <div className="animate-pulse rounded-2xl border border-slate-100 bg-white p-8 text-center text-slate-500">
         Cargando lista de pasajeros...
       </div>
     );
   }
 
-  if (travelers.length === 0) {
+  // Estado vacío para búsquedas sin resultados (cuando sí existen pasajeros registrados)
+  if (travelers.length === 0 && isFiltered) {
     return (
-      <div className="rounded-md border bg-slate-50 p-8 text-center text-slate-500">
-        No hay viajeros registrados.
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center text-slate-500">
+        <UserX className="mb-3 h-10 w-10 text-slate-400" />
+        <p className="text-sm font-medium text-slate-700">
+          No se encontraron viajeros que coincidan con la búsqueda.
+        </p>
+        <p className="mt-1 text-xs text-slate-400">
+          Intenta buscar por otro nombre o número de WhatsApp.
+        </p>
       </div>
     );
   }
@@ -97,7 +109,7 @@ export function TravelersTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-md border bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/50">
@@ -109,15 +121,13 @@ export function TravelersTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {travelers.map((traveler: TravelerOutput) => {
+            {travelers.map((traveler) => {
               const hasMedicalNotes = Boolean(
                 traveler.medicalNotes && traveler.medicalNotes.trim().length > 0,
               );
-              const travelerKey = traveler.id || traveler.whatsappPhone;
 
               return (
-                <TableRow key={travelerKey} className="transition-colors hover:bg-slate-50">
-                  {/* Nombre: Limpio, sin ID técnico */}
+                <TableRow key={traveler.id} className="transition-colors hover:bg-slate-50">
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600">
@@ -132,7 +142,6 @@ export function TravelersTable({
                     </div>
                   </TableCell>
 
-                  {/* Contacto Principal */}
                   <TableCell>
                     <div className="flex flex-col space-y-1.5 text-xs">
                       <span className="flex items-center font-medium text-slate-700">
@@ -151,13 +160,8 @@ export function TravelersTable({
                     </div>
                   </TableCell>
 
-                  {/* Contacto de Emergencia */}
-                  <TableCell>
-                    {/* Asegúrate de inyectar tripCount en tu type TravelerOutput o ignorarlo temporalmente como (traveler as any).tripCount */}
-                    {renderFidelidadBadge((traveler as any).tripCount || 0)}
-                  </TableCell>
+                  <TableCell>{renderFidelidadBadge(traveler.tripCount)}</TableCell>
 
-                  {/* Notas Médicas: Fix de Overflow y Line Clamp */}
                   <TableCell>
                     {hasMedicalNotes ? (
                       <div className="flex w-full items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2.5 text-amber-700">
@@ -174,13 +178,16 @@ export function TravelersTable({
                     )}
                   </TableCell>
 
-                  {/* Acciones */}
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-200">
+                        <button
+                          type="button"
+                          className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-slate-200 focus:outline-none"
+                          aria-label="Abrir menú de opciones"
+                        >
                           <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                        </Button>
+                        </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuLabel className="text-xs text-slate-500">
@@ -202,7 +209,7 @@ export function TravelersTable({
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          className="text-destructive cursor-pointer font-medium focus:bg-red-50 focus:text-red-700"
+                          className="cursor-pointer font-medium text-red-600 focus:bg-red-50 focus:text-red-700"
                           onClick={(e) => {
                             e.preventDefault();
                             if (traveler.id) setDeletingId(traveler.id);

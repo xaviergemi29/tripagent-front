@@ -3,11 +3,10 @@
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AgencyTab } from "@/features/settings/components/AgencyTab";
-import { FleetTab } from "@/features/settings/components/FleetTab";
 import { SecurityTab } from "@/features/settings/components/SecurityTab";
-import { Bus, ShieldCheck, Building2 } from "lucide-react";
+import { ShieldCheck, Building2 } from "lucide-react";
 
-const VALID_TABS = ["fleet", "security", "agency"] as const;
+const VALID_TABS = ["security", "agency"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 export default function SettingsPage() {
@@ -17,7 +16,7 @@ export default function SettingsPage() {
 
   const currentTabParam = searchParams.get("tab") as TabValue | null;
   const activeTab: TabValue =
-    currentTabParam && VALID_TABS.includes(currentTabParam) ? currentTabParam : "fleet";
+    currentTabParam && VALID_TABS.includes(currentTabParam) ? currentTabParam : "security";
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -38,9 +37,6 @@ export default function SettingsPage() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="flex h-auto w-full rounded-xl bg-slate-100 p-1 md:w-auto">
-          <TabsTrigger value="fleet" className="gap-2 px-4 py-2">
-            <Bus className="h-4 w-4" /> Flota y Asientos
-          </TabsTrigger>
           <TabsTrigger value="security" className="gap-2 px-4 py-2">
             <ShieldCheck className="h-4 w-4" /> Seguridad
           </TabsTrigger>
@@ -48,10 +44,6 @@ export default function SettingsPage() {
             <Building2 className="h-4 w-4" /> Agencia
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="fleet" className="space-y-6 outline-none">
-          <FleetTab />
-        </TabsContent>
 
         <TabsContent value="security" className="outline-none">
           <SecurityTab />

@@ -97,6 +97,12 @@ export function TourBoardingSection() {
                   {...register(`boardingPoints.${index}.time`)}
                   className={`h-11 bg-white text-base sm:text-sm ${timeError ? "border-red-500 focus-visible:ring-red-400" : ""}`}
                 />
+                {timeError && (
+                  <p className="animate-in fade-in flex items-center gap-1 text-xs font-medium text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    {timeError.message}
+                  </p>
+                )}
               </div>
 
               {!isHiking && fields.length > 1 && (

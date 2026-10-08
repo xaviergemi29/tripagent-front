@@ -1,6 +1,7 @@
 import { TourRegistrationView } from "@/features/external-registration/components/TourRegistrationView";
 import { AlertTriangle, Clock, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BookingSuccessView } from "@/features/external-registration/components/BookingSuccessView";
 
 interface PageProps {
   searchParams: Promise<{ token: string }>;
@@ -8,7 +9,7 @@ interface PageProps {
 
 async function validateTokenOnServer(token: string) {
   try {
-    const res = await fetch(`http://localhost:3001/api/magic-tokens/${token}/validate`, {
+    const res = await fetch(`http://192.168.1.68:3001/api/magic-tokens/${token}/validate`, {
       cache: "no-store",
     });
     return await res.json();
@@ -16,6 +17,22 @@ async function validateTokenOnServer(token: string) {
     return { isValid: false, error: { message: "Error de conexión con el servidor." } };
   }
 }
+
+const FlowViews = {
+  PENDING_REGISTRATION: TourRegistrationView,
+
+  // Ambas vistas apuntan al mismo componente por ahora (Resume Financiero)
+  PENDING_PAYMENT: BookingSuccessView,
+  PARTIAL_PAYMENT: BookingSuccessView,
+  SEAT_SELECTION: () => (
+    <div className="flex min-h-[50vh] items-center justify-center p-8">
+      <div className="space-y-3 text-center">
+        <h2 className="text-xl font-bold text-slate-800">🗺️ Selección de Asientos</h2>
+        <p className="text-sm text-slate-500">Módulo en construcción...</p>
+      </div>
+    </div>
+  ),
+} as const;
 
 export default async function RegistroPage({ searchParams }: PageProps) {
   const { token } = await searchParams;
@@ -31,6 +48,8 @@ export default async function RegistroPage({ searchParams }: PageProps) {
   }
 
   const validation = await validateTokenOnServer(token);
+
+  console.log("validation", validation);
 
   if (!validation.isValid) {
     const errorMessage = validation.error?.message || "";
@@ -52,21 +71,30 @@ export default async function RegistroPage({ searchParams }: PageProps) {
     );
   }
 
+  const CurrentView = FlowViews[validation.flowState as keyof typeof FlowViews];
+
+  if (!CurrentView) {
+    return (
+      <ExpiredOrInvalidScreen
+        type="INVALID"
+        title="Estado desconocido"
+        message={`El viaje se encuentra en un estado no soportado (${validation.flowState}). Contacta a soporte.`}
+      />
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:py-12">
-      <div className="mx-auto mb-6 max-w-2xl text-center">
-        <p className="text-sm font-semibold tracking-wider text-indigo-600 uppercase">
-          Registro de Viajeros
-        </p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900">{validation.data?.tour?.title}</h1>
-      </div>
+      {validation.flowState === "PENDING_REGISTRATION" && (
+        <div className="mx-auto mb-6 max-w-2xl text-center">
+          <p className="text-sm font-semibold tracking-wider text-indigo-600 uppercase">
+            Registro de Viajeros
+          </p>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">{validation.data?.tour?.title}</h1>
+        </div>
+      )}
 
-      <TourRegistrationView
-        token={token}
-        boardingPoints={validation.data?.tour?.boardingPoints || []}
-        tourInfo={validation.data?.tour}
-        agencyName={validation.data?.tour?.agency?.name} // 🚀 Pasamos el nombre real
-      />
+      <CurrentView {...validation.data} token={token} />
     </main>
   );
 }

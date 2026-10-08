@@ -4,13 +4,23 @@ import { ChangeEvent, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Copy, Check, Loader2 } from "lucide-react";
+
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+
 import { type QuickBookingFormValues, quickBookingSchema } from "../schemas/quick-booking.schema";
 import { useTravelerLookup } from "@/features/travelers/hooks/useTravelers";
 import { useQuickReservation } from "@/features/external-registration/hooks/useBookings";
+import { copyToClipboard } from "@/shared/utils/clipboard";
 
 interface Props {
   tourId: string;
@@ -22,7 +32,7 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
   const [magicLink, setMagicLink] = useState<string | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [isTravelerFound, setIsTravelerFound] = useState(false);
-  const { mutate, isPending } = useQuickReservation(tourId);
+  const { mutate, isPending } = useQuickReservation();
   const { lookupTraveler } = useTravelerLookup();
 
   const {
@@ -43,26 +53,7 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
     },
   });
 
-  if (!isOpen) return null;
-
-  const onSubmit = (data: QuickBookingFormValues): void => {
-    mutate(data, {
-      onSuccess: (response) => {
-        const url = `${window.location.origin}/register?token=${response?.token}`;
-        setMagicLink(url);
-      },
-    });
-  };
-
-  const handleCopy = async () => {
-    if (magicLink) {
-      await navigator.clipboard.writeText(magicLink);
-      toast.success("Enlace copiado al portapapeles");
-      handleClose();
-    }
-  };
-
-  const handleClose = () => {
+  const handleClose = (): void => {
     setMagicLink(null);
     setIsLookingUp(false);
     setIsTravelerFound(false);
@@ -70,16 +61,44 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
     onClose();
   };
 
+  const onSubmit = (formData: QuickBookingFormValues): void => {
+    const payload = { ...formData, tourId };
+    mutate(payload, {
+      onSuccess: (response) => {
+        const url = `${window.location.origin}/register?token=${response?.token}`;
+        setMagicLink(url);
+      },
+    });
+  };
+
+  const handleCopy = async (): Promise<void> => {
+    if (magicLink) {
+      console.log("magicLink", magicLink);
+      const success = await copyToClipboard(magicLink);
+
+      if (success) {
+        toast.success("Enlace copiado al portapapeles");
+      } else {
+        toast.error("Error al copiar", {
+          description: "Por favor, copia la CLABE manualmente.",
+        });
+      }
+    }
+    // if (magicLink) {
+    //   await navigator.clipboard.writeText(magicLink);
+    //   toast.success("Enlace copiado al portapapeles");
+    //   handleClose();
+    // }
+  };
+
   const handleOpenWhatsApp = (): void => {
     if (!magicLink) return;
 
     const { fullName, whatsapp } = getValues();
     const cleanPhone = whatsapp.replace(/\D/g, "");
-    // Formatear código de país para México (52) si viene a 10 dígitos
-    const formattedPhone = cleanPhone.length === 10 ? `52${cleanPhone}` : cleanPhone;
 
     const message = `¡Hola ${fullName}! Apartamos tus lugares para el tour. Completa tu registro y datos aquí: ${magicLink}`;
-    const waUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 
     window.open(waUrl, "_blank", "noopener,noreferrer");
     handleClose();
@@ -132,29 +151,30 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
-      onClick={handleClose}
-    >
-      <div
-        className="animate-in zoom-in-95 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b p-5">
-          <h3 className="text-lg font-bold text-slate-900">Apartar Lugares (Rápido)</h3>
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <AlertDialogContent className="w-full max-w-md gap-0 overflow-hidden p-0 sm:rounded-2xl">
+        <AlertDialogDescription className="sr-only">
+          Formulario para reservar lugares rápidamente y generar un enlace mágico de pago.
+        </AlertDialogDescription>
+
+        <AlertDialogHeader className="flex flex-row items-center justify-between space-y-0 border-b p-5">
+          <AlertDialogTitle className="text-lg font-bold text-slate-900">
+            Apartar Lugares (Rápido)
+          </AlertDialogTitle>
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={handleClose}
             disabled={isPending}
+            className="h-8 w-8 text-slate-500 hover:text-slate-700"
           >
             <X className="h-5 w-5" />
           </Button>
-        </div>
+        </AlertDialogHeader>
 
         {!magicLink ? (
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
             <div className="space-y-4 p-6">
               <div className="space-y-1.5">
                 <Label>Nombre del Titular *</Label>
@@ -230,7 +250,7 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
                 className="bg-indigo-600 font-semibold text-white hover:bg-indigo-700"
                 disabled={isPending || !isValid}
               >
-                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Apartar y Crear Link
               </Button>
             </div>
@@ -280,7 +300,7 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

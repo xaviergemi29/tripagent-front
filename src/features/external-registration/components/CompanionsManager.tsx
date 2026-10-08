@@ -7,11 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { BookingFormValues } from "../schemas/booking.schema";
-import { useTravelerLookup } from "@/features/travelers/hooks/useTravelers";
 import { useState } from "react";
 
 import { PassengerTypeSwitch, type PassengerCategory } from "./PassengerTypeSwitch";
 import { PickupPointSelector } from "./PickupPointSelector";
+import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 
 interface CompanionsManagerProps {
   boardingPoints: { id: string; location: string; time: string }[];
@@ -22,14 +22,15 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
     control,
     register,
     setValue,
+    getValues,
     formState: { errors },
   } = useFormContext<BookingFormValues>();
-  const { lookupTraveler } = useTravelerLookup();
 
   const [lockedCompanions, setLockedCompanions] = useState<Record<number, boolean>>({});
   const [sameEmergencyContact, setSameEmergencyContact] = useState<Record<number, boolean>>({});
   const [sameBoardingPoint, setSameBoardingPoint] = useState<Record<number, boolean>>({});
-
+  const token = getValues("token");
+  const { lookupTraveler } = usePublicTravelerLookup(token);
   const hasCompanions = useWatch({ control, name: "hasCompanions", defaultValue: false });
   const mainBoardingPoint = useWatch({ control, name: "mainClient.boardingPoint" });
   const mainEmergencyName = useWatch({ control, name: "mainClient.emergencyContactName" });
@@ -100,9 +101,10 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() =>
-              setValue("hasCompanions", false, { shouldValidate: true, shouldDirty: true })
-            }
+            onClick={() => {
+              setValue("hasCompanions", false, { shouldValidate: true, shouldDirty: true });
+              remove();
+            }}
             className={`flex min-h-[72px] flex-col items-center justify-center rounded-xl border-2 p-4 transition-all ${
               !hasCompanions
                 ? "border-indigo-600 bg-indigo-50/60 font-bold text-indigo-700 shadow-sm"
@@ -119,7 +121,21 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
             type="button"
             onClick={() => {
               setValue("hasCompanions", true, { shouldValidate: true, shouldDirty: true });
-              if (fields.length === 0) handleAddCompanion();
+              if (fields.length === 0) {
+                append({
+                  fullName: "",
+                  whatsappPhone: "",
+                  email: "",
+                  birthDate: "",
+                  emergencyContactName: mainEmergencyName || "",
+                  emergencyContactPhone: mainEmergencyPhone || "",
+                  medicalNotes: "",
+                  passengerType: "ADULT",
+                  boardingPoint: mainBoardingPoint || "",
+                });
+                setSameEmergencyContact({ 0: true });
+                setSameBoardingPoint({ 0: true });
+              }
             }}
             className={`flex min-h-[72px] flex-col items-center justify-center rounded-xl border-2 p-4 transition-all ${
               hasCompanions
@@ -233,7 +249,7 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
                     <Input
                       {...register(`companions.${index}.birthDate`)}
                       type="date"
-                      className="h-11 bg-white text-base sm:text-sm"
+                      className="w-max-full h-11 appearance-none bg-white text-base sm:text-sm"
                     />
                     {errors.companions?.[index]?.birthDate && (
                       <p className="text-xs text-red-500">

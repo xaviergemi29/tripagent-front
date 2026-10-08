@@ -8,15 +8,18 @@ import {
   MessageCircle,
   AlertCircle,
   Users,
+  MapPin, // 🚀 Añadido
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge"; // 🚀 Añadido
+import { copyToClipboard } from "@/shared/utils/clipboard";
 
 interface BookingSuccessViewProps {
   booking: {
     bookingId: string;
     agencyName: string;
-    agencyPhone: string | null;
+    agencyPhone: string;
     titularName?: string;
     companionNames?: string[];
     totalAmount: number;
@@ -37,7 +40,7 @@ export function BookingSuccessView({ booking, tourInfo, titularName }: BookingSu
   const amountDueToday = hasAdvancePayment ? booking.depositAmount! : booking.totalAmount;
   const remainingBalance = hasAdvancePayment ? booking.totalAmount - booking.depositAmount! : 0;
 
-  const agencyPhone = booking.agencyPhone || "522281234567";
+  const agencyPhone = booking.agencyPhone;
   const mainTitular = booking.titularName || titularName;
   const companions = booking.companionNames || [];
   const totalRegistered = 1 + companions.length;
@@ -46,11 +49,18 @@ export function BookingSuccessView({ booking, tourInfo, titularName }: BookingSu
     `Hola, acabo de registrar mis lugares para el ${tourInfo.title}. Adjunto mi comprobante de pago a nombre de ${mainTitular}.`,
   );
 
-  const handleCopyClabe = (clabe: string) => {
-    navigator.clipboard.writeText(clabe);
-    toast.success("CLABE copiada al portapapeles", {
-      description: "Abre la app de tu banco y pégala para transferir.",
-    });
+  const handleCopyClabe = async (clabe: string): Promise<void> => {
+    const success = await copyToClipboard(clabe);
+
+    if (success) {
+      toast.success("CLABE copiada al portapapeles", {
+        description: "Abre la app de tu banco y pégala para transferir.",
+      });
+    } else {
+      toast.error("Error al copiar", {
+        description: "Por favor, copia la CLABE manualmente.",
+      });
+    }
   };
 
   return (
@@ -80,39 +90,66 @@ export function BookingSuccessView({ booking, tourInfo, titularName }: BookingSu
           </p>
         </div>
 
-        {/* DESGLOSE DE PASAJEROS CONFIRMADOS */}
-        <div className="space-y-2 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-left">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-              <Users className="h-3 w-3" /> Pasajeros registrados ({totalRegistered})
-            </span>
+        {/* 🚀 NUEVA SECCIÓN: DESGLOSE DE VIAJEROS REGISTRADOS */}
+        <div className="mt-6 text-left">
+          <div className="mb-3 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-indigo-900/80 uppercase">
+            <Users className="h-3.5 w-3.5 text-indigo-600" />
+            <span>Viajeros Registrados ({totalRegistered})</span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2.5 py-1 text-xs font-bold text-indigo-950">
-              👤 {mainTitular}{" "}
-              <span className="text-[10px] font-semibold text-indigo-600">(Titular)</span>
-            </span>
+          <div className="space-y-2">
+            {/* Tarjeta del Titular */}
+            <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+              <div className="flex items-center justify-between">
+                <span className="text-foreground text-sm font-semibold">{mainTitular}</span>
+                <Badge
+                  variant="secondary"
+                  className="bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700 uppercase dark:bg-indigo-950 dark:text-indigo-300"
+                >
+                  Titular
+                </Badge>
+              </div>
+              <div className="text-muted-foreground mt-1.5 flex items-center gap-1.5 text-xs">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                <span>{tourInfo.departureDateTime}</span>
+              </div>
+            </div>
+
+            {/* Tarjetas de Acompañantes */}
             {companions.map((name, idx) => (
-              <span
+              <div
                 key={idx}
-                className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700"
+                className="rounded-lg border border-slate-100 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/40"
               >
-                {name}
-              </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-foreground text-sm font-semibold">{name}</span>
+                  <Badge
+                    variant="secondary"
+                    className="bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-400"
+                  >
+                    Acompañante
+                  </Badge>
+                </div>
+                <div className="text-muted-foreground mt-1.5 flex items-center gap-1.5 text-xs">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  <span>{tourInfo.departureDateTime}</span>
+                </div>
+              </div>
             ))}
           </div>
         </div>
+        {/* FIN SECCIÓN VIAJEROS */}
 
-        <div className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-3 text-xs font-bold text-amber-800">
+        <div className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-3 text-xs font-bold text-amber-800">
           <Clock className="h-4 w-4 text-amber-600" />
           <span>Lugares apartados por las próximas 24 horas</span>
         </div>
       </div>
 
-      {/* TARJETA 2: DATOS BANCARIOS */}
+      {/* TARJETA 2: DATOS BANCARIOS (Intacta) */}
       {booking.acceptsBankTransfer && booking.clabeNumber ? (
         <div className="space-y-5 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+          {/* ... (Código intacto para la transferencia) */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-1.5 w-1.5 rounded-full bg-indigo-600"></div>
@@ -170,9 +207,7 @@ export function BookingSuccessView({ booking, tourInfo, titularName }: BookingSu
                 <span className="block text-[9px] font-bold tracking-wider text-slate-400 uppercase">
                   Beneficiario
                 </span>
-                <span className="block font-medium text-slate-900">
-                  {booking.accountHolder || booking.agencyName}
-                </span>
+                <span className="block font-medium text-slate-900">{booking.accountHolder}</span>
               </div>
             </div>
 
@@ -207,8 +242,17 @@ export function BookingSuccessView({ booking, tourInfo, titularName }: BookingSu
         </div>
       )}
 
-      {/* TARJETA 3: ACCIÓN WHATSAPP */}
+      {/* 🚀 TARJETA 3: ACCIÓN WHATSAPP CON TEXTOS INFORMATIVOS */}
       <div className="space-y-4 rounded-3xl border border-slate-100 bg-white p-6 text-center shadow-sm">
+        {/* Nuevos Textos Agregados */}
+        <h3 className="text-foreground mb-1 text-center text-sm font-bold">
+          ¿Ya realizaste tu transferencia?
+        </h3>
+        <p className="text-muted-foreground mx-auto mb-4 max-w-xs text-center text-xs leading-relaxed">
+          Envíanos la foto o captura de tu comprobante para validar tu pago y confirmar tus lugares.
+        </p>
+
+        {/* Botón intacto */}
         <a
           href={`https://wa.me/${agencyPhone.replace(/\D/g, "")}?text=${whatsappText}`}
           target="_blank"

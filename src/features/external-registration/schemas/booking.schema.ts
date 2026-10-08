@@ -36,12 +36,14 @@ export const bookingFormSchema = z.object({
 
 export const bookingResultSchema = z.object({
   bookingId: z.string(),
+  titularName: z.string().optional(),
+  companionNames: z.array(z.string()).optional(),
   acceptsBankTransfer: z.boolean(),
   bankDetails: z.string().nullable(),
   bankName: z.string().optional(),
   clabeNumber: z.string().optional(),
   accountHolder: z.string().optional(),
-  depositAmount: z.number().nonnegative().optional(),
+  depositAmount: z.number().nullable().optional(),
   totalAmount: z.number().nonnegative().optional(),
   acceptsCreditCard: z.boolean(),
   paymentLink: z.string().nullable(),
