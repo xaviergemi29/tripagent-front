@@ -23,33 +23,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import type {
+  TitularRowDTO,
+  CompanionDTO,
+  PaymentRecordDTO,
+} from "../schemas/tour-dashboard.schema";
 
-export type PaymentRecordDTO = {
-  id: string;
-  amount: number;
-  method: string;
-  type: string;
-  createdAt: string;
-  referenceInfo?: string;
-  registeredBy?: string;
-};
-
-interface TravelerInfo {
-  id: string;
-  fullName: string;
-  whatsapp: string;
-  role: "TITULAR" | "COMPANION";
-  bookingId: string;
-  paymentStatus: string;
-  paidAmount: number;
-  unitPrice: number;
-  balance: number;
-  payments?: PaymentRecordDTO[];
-}
-
-interface Props {
+interface TravelerDetailDrawerProps {
   tourId: string;
-  traveler: TravelerInfo | null;
+  tourCurrency?: "MXN" | "USD";
+  traveler: TitularRowDTO | CompanionDTO | null;
   isOpen: boolean;
   isAuditMode?: boolean;
   onClose: () => void;
@@ -62,7 +45,14 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   OTHER: "OTRO",
 };
 
-export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, onClose }: Props) {
+export function TravelerDetailDrawer({
+  tourId,
+  traveler,
+  isOpen,
+  isAuditMode,
+  tourCurrency,
+  onClose,
+}: TravelerDetailDrawerProps) {
   const [manualPenalty, setManualPenalty] = useState<string>("0");
   const [showCancellationConfirm, setShowCancellationConfirm] = useState(false);
   const [isFullRetention, setIsFullRetention] = useState(true);
@@ -76,13 +66,17 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, on
   );
 
   if (!isOpen || !traveler) return null;
-
+  const isUSD = tourCurrency === "USD";
   const isTitular = traveler.role === "TITULAR";
 
-  // Identificar qué IDs de pagos originales fueron anulados mediante su referencia en los registros de compensación
+  const titularPayments = traveler.role === "TITULAR" ? traveler.payments : [];
+  const titularBalance = traveler.role === "TITULAR" ? traveler.balance : 0;
+  const titularPaidAmount = traveler.role === "TITULAR" ? traveler.paidAmount : 0;
+  const titularUnitPrice = traveler.role === "TITULAR" ? traveler.unitPrice : 0;
+
   const voidedOriginalIds = new Set(
-    traveler.payments
-      ?.filter((p) => p.type === "REFUND" && p.referenceInfo?.includes("Ref:"))
+    titularPayments
+      .filter((p) => p.type === "REFUND" && p.referenceInfo?.includes("Ref:"))
       .map((p) => {
         const match = p.referenceInfo?.match(/Ref:\s*([a-f0-9-]+)/i);
         return match ? match[1] : null;
@@ -121,7 +115,7 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, on
   };
 
   const handleConfirmCancellation = (): void => {
-    const penaltyAmount = isFullRetention ? traveler.unitPrice : parseFloat(manualPenalty) || 0;
+    const penaltyAmount = isFullRetention ? titularUnitPrice : parseFloat(manualPenalty) || 0;
 
     cancelPassenger(
       {
@@ -204,34 +198,31 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, on
             {/* ESTADO DE CUENTA E HISTORIAL (Solo Titular) */}
             {isTitular && (
               <section className="space-y-4 border-t border-slate-200 pt-4">
-                <h3 className="text-sm font-bold tracking-wider text-slate-400 uppercase">
-                  Estado de Cuenta
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold tracking-wider text-slate-400 uppercase">
+                    Estado de Cuenta
+                  </h3>
+                  {/* 🚀 Badge de moneda si es USD */}
+                  {isUSD && (
+                    <span className="rounded-md border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
+                      Cotizado en USD
+                    </span>
+                  )}
+                </div>
 
-                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-xs font-semibold text-slate-500">Costo Total</p>
-                      <p className="text-lg font-bold text-slate-900">
-                        ${traveler.paidAmount + traveler.balance}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-semibold text-slate-500">Falta por pagar</p>
-                      <p className="text-lg font-bold text-orange-600">${traveler.balance}</p>
-                    </div>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500">Costo Total</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {(titularPaidAmount + titularBalance).toLocaleString("es-MX")}{" "}
+                      {isUSD ? "USD" : ""}
+                    </p>
                   </div>
-                  <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
-                    <div
-                      className="h-2.5 bg-emerald-500 transition-all duration-500"
-                      style={{
-                        width: `${(traveler.paidAmount / (traveler.paidAmount + traveler.balance)) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                  <div className="text-xs font-medium text-slate-600">
-                    Abonado:{" "}
-                    <span className="font-bold text-emerald-700">${traveler.paidAmount}</span>
+                  <div className="text-right">
+                    <p className="text-xs font-semibold text-slate-500">Falta por pagar</p>
+                    <p className="text-lg font-bold text-orange-600">
+                      ${titularBalance.toLocaleString("es-MX")} {isUSD ? "USD" : ""}
+                    </p>
                   </div>
                 </div>
 
@@ -249,9 +240,11 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, on
                   <h4 className="text-xs font-semibold text-slate-500 uppercase">
                     Historial de Movimientos
                   </h4>
-                  {traveler?.payments?.map((payment) => {
+                  {titularPayments.map((payment) => {
                     const isNegative = payment.amount < 0;
                     const isVoided = voidedOriginalIds.has(payment.id);
+                    // 🚀 Determinamos si el pago individual es USD
+                    const isPaymentUSD = isUSD || payment.amountUSD !== undefined;
 
                     return (
                       <div
@@ -262,10 +255,15 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, on
                       >
                         <div>
                           <div className="flex items-center gap-2">
+                            {/* Renderizado de Monto Principal */}
                             <p
                               className={`font-semibold ${isVoided ? "text-slate-500 line-through" : isNegative ? "text-red-600" : "text-slate-800"}`}
                             >
-                              ${payment.amount}
+                              $
+                              {isPaymentUSD && payment.amountUSD
+                                ? payment.amountUSD.toLocaleString("es-MX")
+                                : payment.amount.toLocaleString("es-MX")}{" "}
+                              {isPaymentUSD ? "USD" : ""}
                             </p>
                             {isVoided && (
                               <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
@@ -273,7 +271,29 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, on
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-500">
+
+                          {/* 🚀 Detalle de Conversión si es USD */}
+                          {!isVoided && isPaymentUSD && payment.amountMXN && (
+                            <div className="mt-1">
+                              <p className="text-xs font-medium text-slate-600">
+                                Equivalente:{" "}
+                                <span className="font-semibold text-slate-900">
+                                  $
+                                  {payment.amountMXN.toLocaleString("es-MX", {
+                                    minimumFractionDigits: 2,
+                                  })}{" "}
+                                  MXN
+                                </span>
+                              </p>
+                              {payment.exchangeRate && (
+                                <p className="text-[11px] text-slate-500">
+                                  TC aplicado: ${payment.exchangeRate.toFixed(2)} MXN/USD
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          <p className={`text-xs text-slate-500 ${isPaymentUSD ? "mt-1.5" : ""}`}>
                             {PAYMENT_METHOD_LABELS[payment.method] || payment.method} •{" "}
                             {new Date(payment.createdAt).toLocaleString("es-MX", {
                               weekday: "short",
@@ -283,39 +303,26 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, on
                               minute: "2-digit",
                             })}
                           </p>
-                          {payment?.registeredBy && (
-                            <p className="mt-0.5 text-[10px] font-medium text-slate-400 italic">
-                              Registrado por {payment?.registeredBy}
-                            </p>
-                          )}
                         </div>
-
-                        {/* REG LA UX: Ocultar botón de anular si el monto es negativo o si ya fue anulado */}
-                        {!isNegative && !isVoided && (
+                        {!isVoided && !isAuditMode && payment.type === "PAYMENT" && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="group h-8 w-8 rounded-full text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                            className="ml-2 shrink-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
                             onClick={() => setPaymentToVoid(payment)}
-                            title="Anular abono"
+                            title="Anular este abono"
                           >
-                            <Trash2 className="h-4 w-4 transition-transform group-hover:scale-110" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
                     );
                   })}
-                  {(!traveler.payments || traveler.payments.length === 0) && (
-                    <p className="py-2 text-center text-xs text-slate-400 italic">
-                      Sin abonos registrados
-                    </p>
-                  )}
                 </div>
               </section>
             )}
 
             {/* SEPARADOR VISUAL Y ZONA CRÍTICA */}
-
             {!isAuditMode && (
               <div className="pt-8">
                 <hr className="mb-8 border-slate-200" />
@@ -423,6 +430,7 @@ export function TravelerDetailDrawer({ tourId, traveler, isOpen, isAuditMode, on
           }}
           bookingId={traveler.bookingId}
           tourId={tourId}
+          tourCurrency={tourCurrency}
           balance={traveler.balance}
           correctionData={correctionData}
         />

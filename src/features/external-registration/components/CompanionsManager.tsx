@@ -15,9 +15,13 @@ import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 
 interface CompanionsManagerProps {
   boardingPoints: { id: string; location: string; time: string }[];
+  maxAllowedCompanions?: number;
 }
 
-export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
+export function CompanionsManager({
+  boardingPoints,
+  maxAllowedCompanions,
+}: CompanionsManagerProps) {
   const {
     control,
     register,
@@ -39,7 +43,10 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
   const { fields, append, remove } = useFieldArray({ control, name: "companions" });
   const watchedCompanions = useWatch({ control, name: "companions" }) || [];
 
-  const handleCompanionPhoneBlur = async (index: number, phoneValue: string) => {
+  const isStrictlySingle = maxAllowedCompanions === 0;
+  const canAddMore = maxAllowedCompanions === undefined || fields.length < maxAllowedCompanions;
+
+  const handleCompanionPhoneBlur = async (index: number, phoneValue: string): Promise<void> => {
     const cleanPhone = phoneValue.trim();
     if (!cleanPhone || cleanPhone.length !== 10 || lockedCompanions[index]) return;
 
@@ -59,7 +66,7 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
     }
   };
 
-  const handleAddCompanion = () => {
+  const handleAddCompanion = (): void => {
     const defaultBp = mainBoardingPoint || "";
     const defaultEmName = mainEmergencyName || "";
     const defaultEmPhone = mainEmergencyPhone || "";
@@ -119,6 +126,7 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
 
           <button
             type="button"
+            disabled={isStrictlySingle}
             onClick={() => {
               setValue("hasCompanions", true, { shouldValidate: true, shouldDirty: true });
               if (fields.length === 0) {
@@ -140,7 +148,9 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
             className={`flex min-h-[72px] flex-col items-center justify-center rounded-xl border-2 p-4 transition-all ${
               hasCompanions
                 ? "border-indigo-600 bg-indigo-50/60 font-bold text-indigo-700 shadow-sm"
-                : "border-slate-200 bg-white font-medium text-slate-600 hover:bg-slate-50"
+                : isStrictlySingle
+                  ? "cursor-not-allowed border-slate-100 bg-slate-50 opacity-50" // UI de bloqueo
+                  : "border-slate-200 bg-white font-medium text-slate-600 hover:bg-slate-50"
             }`}
           >
             <Users
@@ -357,14 +367,16 @@ export function CompanionsManager({ boardingPoints }: CompanionsManagerProps) {
             );
           })}
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleAddCompanion}
-            className="w-full border-2 border-dashed border-indigo-200 bg-indigo-50/50 py-5 font-semibold text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Añadir otro acompañante
-          </Button>
+          {canAddMore && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAddCompanion}
+              className="w-full border-2 border-dashed border-indigo-200 bg-indigo-50/50 py-5 font-semibold text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50"
+            >
+              <Plus className="mr-2 h-4 w-4" /> Añadir otro acompañante
+            </Button>
+          )}
         </div>
       )}
     </div>

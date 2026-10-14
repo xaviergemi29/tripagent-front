@@ -119,6 +119,14 @@ export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
       }
     }
   }
+
+  if (!data.acceptsBankTransfer && !data.acceptsCreditCard && !data.acceptsCash) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Debes habilitar al menos un método de cobro para tus viajeros",
+      path: ["root.paymentMethods"],
+    });
+  }
 });
 
 export const tourOutputSchema = baseTourSchema.extend({

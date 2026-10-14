@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, FormProvider, Controller } from "react-hook-form";
-import Link from "next/link";
-import { Loader2, Save, Wallet, Info, AlertCircle, ArrowRight, Landmark } from "lucide-react";
+import { Loader2, Save, Wallet, Info, AlertCircle } from "lucide-react";
 
 import { TOUR_FORM_COPY } from "../constants/copy";
 import { Button } from "@/components/ui/button";
@@ -29,6 +28,7 @@ import { CurrencySelector } from "./CurrencySelector";
 import { TourGeneralSection } from "./form-sections/TourGeneralSection";
 import { TourBoardingSection } from "./form-sections/TourBoardingSection";
 import { TourAssetSection } from "./form-sections/TourAssetSection";
+import { AgencyBankDetailsBanner } from "./AgencyBankDetailsBanner";
 
 interface CreateTourFormProps {
   tour: TourOutput;
@@ -40,7 +40,7 @@ export function TourForm({ tour }: CreateTourFormProps) {
 
   const [brochureFile, setBrochureFile] = useState<File | null>(null);
   const [existingBrochure, setExistingBrochure] = useState<string | null>(
-    tour?.brochureUrl ? `http://localhost:3001/public${tour.brochureUrl}` : null,
+    tour?.brochureUrl ? `${process.env.NEXT_PUBLIC_API_URL}/public${tour.brochureUrl}` : null,
   );
 
   const { mutateAsync: createTour, isPending: isCreating } = useCreateTour();
@@ -279,6 +279,12 @@ export function TourForm({ tour }: CreateTourFormProps) {
 
               <div className="space-y-3 pt-2">
                 <Label className="font-semibold text-slate-700">Métodos de cobro habilitados</Label>
+                {form.formState.errors.root?.paymentMethods && (
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    {form.formState.errors.root?.paymentMethods.message as string}
+                  </p>
+                )}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {/* Transferencia */}
                   <Controller
@@ -355,26 +361,13 @@ export function TourForm({ tour }: CreateTourFormProps) {
               {(acceptsBankTransfer || acceptsCreditCard || acceptsCash) && (
                 <div className="space-y-4 border-t border-indigo-100 pt-3">
                   {acceptsBankTransfer && (
-                    <div className="space-y-3.5 rounded-xl border border-slate-200/90 bg-slate-50/60 p-4">
-                      <div className="flex items-center justify-between border-b pb-2.5">
-                        <div className="flex items-center gap-2 text-indigo-600">
-                          <Landmark className="h-4 w-4" />
-                          <span className="text-xs font-bold uppercase">
-                            Datos bancarios oficiales de tu agencia
-                          </span>
-                        </div>
-                        <Link
-                          href="/settings?tab=agency"
-                          className="text-xs font-semibold text-indigo-600 hover:underline"
-                        >
-                          Editar <ArrowRight className="inline h-3 w-3" />
-                        </Link>
-                      </div>
-                      <p className="text-xs text-slate-600">
-                        Banco: <strong>{agencyData?.bankName || "No configurado"}</strong> | CLABE:{" "}
-                        <strong>{agencyData?.clabeNumber || "No configurada"}</strong>
-                      </p>
-                    </div>
+                    <AgencyBankDetailsBanner
+                      bankName={agencyData?.bankName}
+                      accountHolder={agencyData?.bankAccountHolder}
+                      clabe={agencyData?.clabeNumber}
+                      cardNumber={null} // Pásalo si lo agregas a tu DB en el futuro
+                      settingsUrl="/settings?tab=agency"
+                    />
                   )}
 
                   {acceptsCreditCard && (

@@ -1,83 +1,128 @@
 import { z } from "zod";
 
-// 1. Enums para Estados (Protege la UI de strings inválidos)
+// ============================================================================
+// 1. ENUMS (Dominios Estrictos)
+// ============================================================================
+export const currencySchema = z.enum(["MXN", "USD"]);
 export const formStatusSchema = z.enum(["COMPLETED", "PENDING"]);
 export const paymentStatusSchema = z.enum(["PAID", "ADVANCE", "PENDING_VALIDATION", "PENDING"]);
-export const titularRoleSchema = z.enum(["TITULAR"]);
-export const companionRoleSchema = z.enum(["COMPANION"]);
 export const travelerRoleSchema = z.enum(["TITULAR", "COMPANION"]);
+export const temporalStatusSchema = z.enum(["ACTIVO", "FINALIZADO", "CANCELADO"]);
+export const paymentMethodSchema = z.enum(["CASH", "TRANSFER", "CARD", "OTHER"]);
+export const paymentTypeSchema = z.enum(["PAYMENT", "REFUND"]);
 
-export const baseTravelerRowSchema = z.object({
+// ============================================================================
+// 2. MODELOS BASE (Reutilizables)
+// ============================================================================
+
+// Historial de transacciones de un titular
+export const paymentRecordSchema = z.object({
+  id: z.uuid(),
+  amount: z.number(),
+  method: paymentMethodSchema,
+  type: paymentTypeSchema,
+  createdAt: z.string().datetime(),
+  referenceInfo: z.string().nullable().optional(),
+  registeredBy: z.string().nullable().optional(),
+  amountUSD: z.number().nullable().optional(),
+  amountMXN: z.number().nullable().optional(),
+  exchangeRate: z.number().nullable().optional(),
+});
+
+// Acompañantes (Estructura plana, dependen financieramente del titular)
+export const companionSchema = z.object({
+  id: z.uuid(),
+  bookingId: z.string().uuid(),
+  role: z.literal("COMPANION"),
+  fullName: z.string(),
+  whatsapp: z.string(),
+
+  // Logística
+  formStatus: formStatusSchema,
+  seatLabel: z.string().nullable(),
+  boardingPoint: z.string().nullable(),
+});
+
+// Titular (Dueño de la reserva y finanzas)
+export const titularSchema = z.object({
   id: z.uuid(),
   bookingId: z.uuid(),
+  role: z.literal("TITULAR"),
   fullName: z.string(),
-  role: travelerRoleSchema,
   whatsapp: z.string(),
+  groupSize: z.number().min(1),
+  unitPrice: z.number(),
+
+  // Logística y Registro
   formStatus: formStatusSchema,
+  seatLabel: z.string().nullable(),
+  boardingPoint: z.string().nullable(),
+  magicToken: z.string().nullable(),
+
+  // Finanzas consolidadas de la reserva
   paymentStatus: paymentStatusSchema,
   paidAmount: z.number(),
   balance: z.number(),
-  unitPrice: z.number(),
-  magicToken: z.string().optional(),
+  equivalentMXN: z.number().nullable().optional(),
+
+  // Relaciones
+  payments: z.array(paymentRecordSchema).default([]),
+  companions: z.array(companionSchema).default([]),
 });
 
-// 2. Esquema de la Fila del Viajero
-export const travelerRowSchema = baseTravelerRowSchema.extend({
-  role: titularRoleSchema,
-  groupSize: z.number().optional(),
-  totalCost: z.number().optional(),
-  companions: z
-    .array(
-      baseTravelerRowSchema.extend({
-        role: companionRoleSchema,
-      }),
-    )
-    .default([]),
-});
-
-// 3. Esquema de Métricas
+// ============================================================================
+// 3. MÉTRICAS Y AGREGACIONES (Calculadas 100% en el Back-End)
+// ============================================================================
 export const tourMetricsSchema = z.object({
   occupancy: z.object({
-    current: z.number(),
     max: z.number(),
+    current: z.number(),
   }),
   revenue: z.object({
     projected: z.number(),
     collected: z.number(),
   }),
   pendingValidations: z.number(),
-  pendingForms: z.number(),
-  assignedSeats: z.array(z.number()).default([]),
+  logistics: z.object({
+    total: z.number(),
+    assigned: z.number(),
+    unassigned: z.number(),
+  }),
 });
 
-// 4. Esquema del Payload Completo
-export const tourDashboardDataSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  departureDateTime: z.iso.datetime(), // Valida que sea un ISO String válido
-  temporalStatus: z.string().optional(),
-  metrics: tourMetricsSchema,
-  travelers: z.array(travelerRowSchema),
-  vehicle: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      layoutMap: z.array(z.array(z.string().nullable())),
-    })
-    .optional(),
-});
-
+// ============================================================================
+// 4. PAYLOAD PRINCIPAL (Respuesta del Endpoint)
+// ============================================================================
 export const vehicleDTOSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   layoutMap: z.array(z.array(z.string().nullable())),
 });
-export type VehicleDTO = z.infer<typeof vehicleDTOSchema>;
 
-// 5. Exportamos las interfaces inferidas para usarlas en los Props de React
+export const tourDashboardDataSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  currency: currencySchema.default("MXN"),
+  departureDateTime: z.string().datetime(),
+  temporalStatus: temporalStatusSchema.default("ACTIVO"),
+
+  // Agregaciones de negocio
+  metrics: tourMetricsSchema,
+
+  // Recursos anidados
+  vehicle: vehicleDTOSchema.nullable().optional(),
+  travelers: z.array(titularSchema),
+});
+
+// ============================================================================
+// 5. INFERENCIA DE TIPOS (Para consumir en Props de React)
+// ============================================================================
+export type Currency = z.infer<typeof currencySchema>;
 export type FormStatus = z.infer<typeof formStatusSchema>;
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
-export type TravelerRole = z.infer<typeof travelerRoleSchema>;
-export type TravelerRow = z.infer<typeof travelerRowSchema>;
+export type PaymentRecordDTO = z.infer<typeof paymentRecordSchema>;
+export type CompanionDTO = z.infer<typeof companionSchema>;
+export type TitularRowDTO = z.infer<typeof titularSchema>;
 export type TourMetrics = z.infer<typeof tourMetricsSchema>;
+export type VehicleDTO = z.infer<typeof vehicleDTOSchema>;
 export type TourDashboardOutput = z.infer<typeof tourDashboardDataSchema>;

@@ -1,5 +1,5 @@
 import { Calendar, RefreshCw, Moon, Bus, Flag } from "lucide-react";
-import { formatLocalDate } from "@/shared/utils/tour-date.util";
+import { formatLocalDate, formatPickupTime } from "@/shared/utils/tour-date.util";
 
 interface TourScheduleProps {
   startDate: string;
@@ -53,9 +53,6 @@ function getTripDuration(
   return { days, nights };
 }
 
-// 🚀 Helper visual para capitalizar el resultado de formatLocalDate ("vie., 02 oct." -> "Vie., 02 oct.")
-const capitalizeDate = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
-
 export function TourSchedule({ startDate, endDate, departureTime, returnTime }: TourScheduleProps) {
   const isSameDayTrip = !endDate || startDate === endDate;
 
@@ -65,7 +62,7 @@ export function TourSchedule({ startDate, endDate, departureTime, returnTime }: 
       <div className="flex flex-wrap items-center gap-2 pt-1">
         <div className="inline-flex items-center gap-2 rounded-xl border border-indigo-100/70 bg-indigo-50/70 px-3.5 py-2 text-xs font-semibold text-indigo-900 shadow-sm">
           <Calendar className="h-4 w-4 shrink-0 text-indigo-600" />
-          <span>{capitalizeDate(formatLocalDate(startDate))}</span>
+          <span>{formatLocalDate(startDate)}</span>
         </div>
         <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 shadow-sm">
           <RefreshCw className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
@@ -98,8 +95,8 @@ export function TourSchedule({ startDate, endDate, departureTime, returnTime }: 
             Salida Programada
           </span>
           <p className="text-xs leading-tight font-bold text-slate-900">
-            {capitalizeDate(formatLocalDate(startDate))}
-            {departureTime ? ` • ${departureTime}` : ""}
+            {formatLocalDate(startDate)}
+            {departureTime ? ` • ${formatPickupTime(departureTime)}` : ""}
           </p>
         </div>
       </div>
@@ -111,11 +108,11 @@ export function TourSchedule({ startDate, endDate, departureTime, returnTime }: 
         </div>
         <div>
           <span className="mb-1 block text-[10px] leading-none font-bold tracking-wider text-slate-400 uppercase">
-            Regreso Estimado
+            Regreso
           </span>
           <p className="text-xs leading-tight font-bold text-slate-900">
-            {capitalizeDate(formatLocalDate(endDate))}
-            {returnTime ? ` • ${returnTime}` : ""}
+            {formatLocalDate(endDate)}
+            {returnTime ? ` • ${formatPickupTime(returnTime)}` : ""}
           </p>
         </div>
       </div>

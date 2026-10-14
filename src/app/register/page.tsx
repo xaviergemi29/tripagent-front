@@ -2,6 +2,7 @@ import { TourRegistrationView } from "@/features/external-registration/component
 import { AlertTriangle, Clock, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BookingSuccessView } from "@/features/external-registration/components/BookingSuccessView";
+import { PartialPaymentView } from "@/features/external-registration/components/PartialPaymentView";
 
 interface PageProps {
   searchParams: Promise<{ token: string }>;
@@ -9,7 +10,7 @@ interface PageProps {
 
 async function validateTokenOnServer(token: string) {
   try {
-    const res = await fetch(`http://192.168.1.68:3001/api/magic-tokens/${token}/validate`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/magic-tokens/${token}/validate`, {
       cache: "no-store",
     });
     return await res.json();
@@ -20,10 +21,10 @@ async function validateTokenOnServer(token: string) {
 
 const FlowViews = {
   PENDING_REGISTRATION: TourRegistrationView,
-
-  // Ambas vistas apuntan al mismo componente por ahora (Resume Financiero)
   PENDING_PAYMENT: BookingSuccessView,
-  PARTIAL_PAYMENT: BookingSuccessView,
+  PARTIAL_PAYMENT: PartialPaymentView,
+  PAID: PartialPaymentView,
+
   SEAT_SELECTION: () => (
     <div className="flex min-h-[50vh] items-center justify-center p-8">
       <div className="space-y-3 text-center">

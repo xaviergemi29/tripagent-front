@@ -1,24 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Users,
-  DollarSign,
-  AlertCircle,
-  Bus,
-  Banknote,
-  CheckCircle2,
-  Plus,
-  Calendar,
-} from "lucide-react";
+import { Users, AlertCircle, Bus, Banknote, CheckCircle2, Plus, Calendar } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { TourMetrics } from "../schemas/tour-dashboard.schema";
+import type { TourMetrics, Currency } from "../schemas/tour-dashboard.schema";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
 
-// 🛡️ Helper centralizado para formateo seguro de moneda
-const formatCurrency = (amount: number, currency: string = "MXN") => {
+const formatCurrency = (amount: number, currency: Currency | string = "MXN") => {
   return new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: currency,
@@ -28,92 +18,49 @@ const formatCurrency = (amount: number, currency: string = "MXN") => {
 
 interface TourDashboardHeaderProps {
   title: string;
-  date: string;
+  departureDateTime: string;
+  currency: Currency;
   metrics: TourMetrics;
-  tour?: any; // DTO completo del tour para datos adicionales (currency, price, boardingPoints)
-  bookings?: any[]; // Opcional: si se pasan bookings para derivar cobranza granular
-  passengers?: any[]; // Opcional: si se pasan pasajeros aplanados para derivar paradas
-  logistics?: { assigned: number; total: number; unassigned: number };
+  logistics: { assigned: number; total: number; unassigned: number };
   onNewReservation?: () => void;
 }
 
 export function TourDashboardHeader({
   title,
-  date,
+  departureDateTime,
+  currency,
   metrics,
-  tour,
-  bookings = [],
-  passengers = [],
   logistics,
   onNewReservation,
 }: TourDashboardHeaderProps) {
-  // ==========================================================================
-  // 1. ESTADO DERIVADO: OCUPACIÓN & CUPOS
-  // ==========================================================================
-  const ocupacion = useMemo(() => {
-    const capacidadTotal = metrics?.occupancy?.max || tour?.maxCapacity || 0;
-    const lugaresOcupados = metrics?.occupancy?.current || 0;
-    const lugaresDisponibles = Math.max(0, capacidadTotal - lugaresOcupados);
-    const porcentaje =
-      capacidadTotal > 0 ? Math.round((lugaresOcupados / capacidadTotal) * 100) : 0;
+  const occupancyStats = useMemo(() => {
+    const maxCapacity = metrics.occupancy.max;
+    const currentOccupancy = metrics.occupancy.current;
+    const availableSeats = Math.max(0, maxCapacity - currentOccupancy);
+    const occupancyPercentage =
+      maxCapacity > 0 ? Math.round((currentOccupancy / maxCapacity) * 100) : 0;
 
-    return { capacidadTotal, lugaresOcupados, lugaresDisponibles, porcentaje };
-  }, [metrics, tour]);
+    return { maxCapacity, currentOccupancy, availableSeats, occupancyPercentage };
+  }, [metrics.occupancy]);
 
-  // ==========================================================================
-  // 2. ESTADO DERIVADO: FINANZAS & COBRANZA
-  // ==========================================================================
-  const finanzas = useMemo(() => {
-    const currency = tour?.currency || "MXN";
-    const precioUnitario = tour?.price || tour?.total_price || 0;
-    const capacidad = ocupacion.capacidadTotal;
+  const financeStats = useMemo(() => {
+    // Confiamos ciegamente en el BE. Adiós a iterar .reduce() en el FE.
+    const totalCollected = metrics.revenue.collected;
+    const totalProjected = metrics.revenue.projected;
+    const balanceDue = Math.max(0, totalProjected - totalCollected);
 
-    // Total ingresado en firme desde metrics o reduciendo bookings
-    const totalCobrado =
-      metrics?.revenue?.collected ??
-      bookings.reduce((acc, b) => acc + (b.amountPaid || b.total_paid || 0), 0);
+    return { totalCollected, totalProjected, balanceDue };
+  }, [metrics.revenue]);
 
-    // Proyección al 100% de aforo
-    const proyectadoTotal = metrics?.revenue?.projected ?? capacidad * precioUnitario;
-
-    // Deuda por recaudar de los pasajeros actualmente registrados
-    const totalComprometido =
-      bookings.length > 0
-        ? bookings.reduce((acc, b) => acc + (b.totalPrice || b.total_amount || 0), 0)
-        : proyectadoTotal;
-
-    const porRecaudar = Math.max(0, totalComprometido - totalCobrado);
-
-    return { totalCobrado, proyectadoTotal, porRecaudar, currency };
-  }, [metrics, tour, bookings, ocupacion.capacidadTotal]);
-
-  // ==========================================================================
-  // 3. ESTADO DERIVADO: LOGÍSTICA DE ABORDAJE
-  // ==========================================================================
-  const logistica = useMemo(() => {
-    if (logistics) return logistics;
-
-    const pasajerosConAbono = passengers.filter(
-      (p) => p.has_deposit || p.paymentStatus !== "PENDING",
-    );
-
-    const unassigned = pasajerosConAbono.filter(
-      (p) => !p.seatLabel && !p.seat_number && !p.assigned_seat,
-    ).length;
-
-    const total = passengers.length;
-    const assigned = total - unassigned;
-
-    return { assigned, total, unassigned };
-  }, [logistics, passengers]);
-
-  // Formateo de fecha de salida sin desfase UTC
-  const formattedDate = date ? formatLocalDate(date) : "Fecha por definir";
+  // Formateo de fecha
+  const formattedDate = departureDateTime
+    ? formatLocalDate(departureDateTime)
+    : "Fecha por definir";
   const displayDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
   return (
     <div className="space-y-6 border-b bg-white px-6 py-8">
-      {/* CABECERA PRINCIPAL Y BOTÓN DE ACCIÓN */}
+      {/* HEADER SECTION */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
@@ -136,9 +83,9 @@ export function TourDashboardHeader({
         )}
       </div>
 
-      {/* GRID DE KPIs (4 COLUMNAS SIMÉTRICAS) */}
+      {/* KPI GRID */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* KPI 1: OCUPACIÓN & CUPOS */}
+        {/* KPI 1: OCCUPANCY */}
         <Card className="flex flex-col justify-between border border-slate-200/80 bg-white p-5 shadow-sm">
           <div>
             <div className="flex items-center justify-between">
@@ -152,49 +99,49 @@ export function TourDashboardHeader({
 
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black text-slate-900">
-                {ocupacion.lugaresOcupados}
+                {occupancyStats.currentOccupancy}
               </span>
               <span className="text-lg font-semibold text-slate-400">
-                / {ocupacion.capacidadTotal}
+                / {occupancyStats.maxCapacity}
               </span>
               <Badge
                 variant="secondary"
                 className={`ml-auto border font-bold ${
-                  ocupacion.porcentaje >= 100
+                  occupancyStats.occupancyPercentage >= 100
                     ? "border-red-200 bg-red-50 text-red-700"
-                    : ocupacion.porcentaje > 70
+                    : occupancyStats.occupancyPercentage > 70
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                       : "border-indigo-200 bg-indigo-50 text-indigo-700"
                 }`}
               >
-                {ocupacion.porcentaje}%
+                {occupancyStats.occupancyPercentage}%
               </Badge>
             </div>
 
             <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  ocupacion.porcentaje >= 100
+                  occupancyStats.occupancyPercentage >= 100
                     ? "bg-red-500"
-                    : ocupacion.porcentaje > 70
+                    : occupancyStats.occupancyPercentage > 70
                       ? "bg-emerald-500"
                       : "bg-indigo-600"
                 }`}
-                style={{ width: `${Math.min(100, ocupacion.porcentaje)}%` }}
+                style={{ width: `${Math.min(100, occupancyStats.occupancyPercentage)}%` }}
               />
             </div>
           </div>
 
           <p className="mt-3 text-xs font-medium text-slate-500">
-            {ocupacion.capacidadTotal === 0
+            {occupancyStats.maxCapacity === 0
               ? "⚠️ Asigna un vehículo para fijar cupo"
-              : ocupacion.lugaresDisponibles > 0
-                ? `${ocupacion.lugaresDisponibles} lugares libres para vender`
+              : occupancyStats.availableSeats > 0
+                ? `${occupancyStats.availableSeats} lugares libres para vender`
                 : "Cupo completo (100% vendido)"}
           </p>
         </Card>
 
-        {/* KPI 2: FINANZAS & COBRANZA */}
+        {/* KPI 2: FINANCES */}
         <Card className="flex flex-col justify-between border border-slate-200/80 bg-white p-5 shadow-sm">
           <div>
             <div className="flex items-center justify-between">
@@ -208,15 +155,15 @@ export function TourDashboardHeader({
 
             <div className="mt-3 flex items-baseline gap-1.5">
               <span className="text-3xl font-black tracking-tight text-slate-900">
-                {formatCurrency(finanzas.totalCobrado, finanzas.currency)}
+                {formatCurrency(financeStats.totalCollected, currency)}
               </span>
-              <span className="text-xs font-bold text-slate-400">{finanzas.currency}</span>
+              <span className="text-xs font-bold text-slate-400">{currency}</span>
             </div>
 
             <p className="mt-1 text-xs font-medium text-slate-500">
               Proyectado total:{" "}
               <span className="font-semibold text-slate-700">
-                {formatCurrency(finanzas.proyectadoTotal, finanzas.currency)} {finanzas.currency}
+                {formatCurrency(financeStats.totalProjected, currency)} {currency}
               </span>
             </p>
           </div>
@@ -224,15 +171,15 @@ export function TourDashboardHeader({
           <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs">
             <span className="font-medium text-slate-500">Por recaudar:</span>
             <span className="font-bold text-rose-600">
-              {formatCurrency(finanzas.porRecaudar, finanzas.currency)} {finanzas.currency}
+              {formatCurrency(financeStats.balanceDue, currency)} {currency}
             </span>
           </div>
         </Card>
 
-        {/* KPI 3: PAGOS POR VALIDAR */}
+        {/* KPI 3: PENDING VALIDATIONS */}
         <Card
           className={`flex flex-col justify-between border p-5 shadow-sm ${
-            metrics?.pendingValidations > 0
+            metrics.pendingValidations > 0
               ? "border-orange-200 bg-orange-50/50"
               : "border-slate-200/80 bg-white"
           }`}
@@ -250,23 +197,23 @@ export function TourDashboardHeader({
             <div className="mt-3 flex items-baseline gap-2">
               <span
                 className={`text-3xl font-black tracking-tight ${
-                  metrics?.pendingValidations > 0 ? "text-orange-700" : "text-slate-900"
+                  metrics.pendingValidations > 0 ? "text-orange-700" : "text-slate-900"
                 }`}
               >
-                {metrics?.pendingValidations || 0}
+                {metrics.pendingValidations}
               </span>
               <span className="text-sm font-semibold text-slate-500">Pagos</span>
             </div>
           </div>
 
           <p className="mt-3 text-xs font-medium text-slate-500">
-            {metrics?.pendingValidations > 0
+            {metrics.pendingValidations > 0
               ? "Requiere revisión manual de comprobantes"
               : "Sin pagos pendientes de validación"}
           </p>
         </Card>
 
-        {/* KPI 4: LOGÍSTICA DE ABORDAJE */}
+        {/* KPI 4: LOGISTICS */}
         <Card className="flex flex-col justify-between border border-slate-200/80 bg-white p-5 shadow-sm">
           <div>
             <div className="flex items-center justify-between">
@@ -280,19 +227,19 @@ export function TourDashboardHeader({
 
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black tracking-tight text-slate-900">
-                {logistica.unassigned}
+                {logistics.unassigned}
               </span>
               <span className="text-sm font-semibold text-slate-500">Sin Asiento</span>
             </div>
 
             <div className="mt-1 flex items-center gap-1 text-xs font-semibold">
-              {logistica.unassigned === 0 ? (
+              {logistics.unassigned === 0 ? (
                 <span className="flex items-center gap-1 text-emerald-600">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> 100% asignados con abono
+                  <CheckCircle2 className="h-3.5 w-3.5" /> 100% asignados
                 </span>
               ) : (
                 <span className="flex items-center gap-1 text-amber-600">
-                  <AlertCircle className="h-3.5 w-3.5" /> {logistica.unassigned} asignación
+                  <AlertCircle className="h-3.5 w-3.5" /> {logistics.unassigned} asignación
                   pendiente
                 </span>
               )}
@@ -300,8 +247,8 @@ export function TourDashboardHeader({
           </div>
 
           <p className="mt-3 border-t border-slate-100 pt-2.5 text-xs font-medium text-slate-500">
-            Asignados: <strong className="text-slate-800">{logistica.assigned}</strong> de{" "}
-            <strong className="text-slate-800">{logistica.total}</strong> pasajeros
+            Asignados: <strong className="text-slate-800">{logistics.assigned}</strong> de{" "}
+            <strong className="text-slate-800">{logistics.total}</strong> pasajeros
           </p>
         </Card>
       </div>

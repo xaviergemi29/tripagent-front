@@ -5,7 +5,7 @@ import { Bus } from "lucide-react";
 interface TourSummaryCardProps {
   tour: {
     name: string;
-    departureDate: string; // Formateada legible, ej: "Sábado, 21 de Septiembre 2026"
+    departureDate: string;
     priceTotalPerPassenger: number;
     depositPerPassenger?: number | null;
   };

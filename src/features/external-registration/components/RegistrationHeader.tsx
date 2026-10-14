@@ -3,10 +3,10 @@
 import { Compass, CheckCircle2, Lock } from "lucide-react";
 
 interface RegistrationHeaderProps {
-  agencyName?: string;
+  agencyName: string;
 }
 
-export function RegistrationHeader({ agencyName = "Brujitours" }: RegistrationHeaderProps) {
+export function RegistrationHeader({ agencyName }: RegistrationHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 px-4 py-3 backdrop-blur-md">
       <div className="mx-auto flex max-w-xl items-center justify-between">

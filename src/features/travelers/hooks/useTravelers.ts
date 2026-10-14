@@ -104,22 +104,6 @@ export function useTravelerHistory(travelerId: string | null) {
 // ============================================================================
 // 4. HOOKS DE MUTACIONES (Escritura y Optimistic UI)
 // ============================================================================
-export function useCreateTraveler() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: createTravalerApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TRAVELER_KEYS.all });
-      toast.success("Viajero creado exitosamente");
-    },
-    onError: (error: ApiError) => {
-      toast.error("Error al crear el tour", {
-        description: error.message || "No se pudo guardar la información",
-      });
-    },
-  });
-}
-
 export function useUpdateTraveler() {
   const queryClient = useQueryClient();
 

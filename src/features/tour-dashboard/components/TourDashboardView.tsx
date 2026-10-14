@@ -9,11 +9,11 @@ import { PaymentValidationModal } from "./PaymentValidationModal";
 import { useTourDashboardByTourId } from "../hooks/useTourDashboard";
 import { QuickReservationModal } from "./QuickReservationModal";
 import { SeatMapCanvas } from "@/features/tours/components/SeatMapCanvas";
-import type { TravelerRow } from "../schemas/tour-dashboard.schema";
 import { Bus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VehicleSelectionModal } from "./VehicleSelectionModal";
 import { DashboardTravelerTable } from "./DashboardTravelerTable";
+import { CompanionDTO, TitularRowDTO } from "../schemas/tour-dashboard.schema";
 
 interface TourDashboardViewProps {
   tourId: string;
@@ -30,29 +30,9 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   const [validatingPaymentId, setValidatingPaymentId] = useState<string | null>(null);
   const [isQuickReservationOpen, setIsQuickReservationOpen] = useState(false);
 
-  const logisticsMetrics = useMemo(() => {
-    if (!tour?.travelers) return { assigned: 0, total: 0, unassigned: 0 };
-
-    let assigned = 0;
-    let total = 0;
-
-    tour.travelers.forEach((titular: any) => {
-      total++;
-      if (titular.seatLabel) assigned++;
-
-      titular.companions?.forEach((companion: any) => {
-        total++;
-        if (companion.seatLabel) assigned++;
-      });
-    });
-
-    return { assigned, total, unassigned: total - assigned };
-  }, [tour?.travelers]);
-
   const flattenedPassengers = useMemo(() => {
     if (!tour?.travelers) return [];
     return tour.travelers.flatMap((titular) => {
-      // 🚀 Inyectamos el bookingId a todos para agruparlos visualmente
       const allPassengers = [
         { id: titular.id, fullName: titular.fullName, bookingId: titular.bookingId },
       ];
@@ -67,10 +47,11 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
 
   const foundTraveler = useMemo(() => {
     if (!selectedTravelerId || !tour?.travelers) return null;
-    const allTravelersList = tour.travelers.flatMap((titular: TravelerRow) => [
-      titular,
-      ...(titular.companions || []),
-    ]);
+
+    const allTravelersList: Array<TitularRowDTO | CompanionDTO> = tour.travelers.flatMap(
+      (titular) => [titular, ...(titular.companions || [])],
+    );
+
     return allTravelersList.find((t) => t.id === selectedTravelerId) ?? null;
   }, [selectedTravelerId, tour?.travelers]);
 
@@ -95,12 +76,12 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
     <main className="flex h-full min-h-screen flex-col bg-slate-50">
       <TourDashboardHeader
         title={tour.title}
-        date={tour.departureDateTime}
+        departureDateTime={tour.departureDateTime}
+        currency={tour.currency}
         metrics={tour.metrics}
-        logistics={logisticsMetrics}
+        logistics={tour.metrics.logistics}
         onNewReservation={isAuditMode ? undefined : () => setIsQuickReservationOpen(true)}
       />
-
       <div className="flex-1 p-4 md:p-6">
         <Tabs defaultValue="viajeros" className="w-full">
           <TabsList className="mb-4">
@@ -121,8 +102,9 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
             />
 
             <DashboardTravelerTable
-              travelers={tour.travelers} // 🚀 Limpio, sin casteos peligrosos (as TitularRowDTO)
+              travelers={tour.travelers}
               searchQuery={searchQuery}
+              tourCurrency={tour.currency}
               paymentFilter={paymentFilter}
               formFilter={formFilter}
               onRowClick={(id) => setSelectedTravelerId(id)}
@@ -163,7 +145,8 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
 
       <TravelerDetailDrawer
         tourId={tourId}
-        traveler={foundTraveler} // 🚀 Tipado ya resuelto con el useMemo
+        traveler={foundTraveler}
+        tourCurrency={tour.currency}
         isOpen={!!selectedTravelerId}
         onClose={() => setSelectedTravelerId(null)}
         isAuditMode={isAuditMode}

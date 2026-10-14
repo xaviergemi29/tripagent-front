@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   MoreHorizontal,
@@ -14,7 +14,7 @@ import {
   Share2,
   Calendar,
   InfoIcon,
-  Search, // 🚀 Añadido
+  Search,
 } from "lucide-react";
 
 import {
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input"; // 🚀 Añadido
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,51 +41,13 @@ import { useToggleTourStatus, useDeleteTour } from "../hooks/useTours";
 import type { TourOutput } from "../schemas/tour.schema";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
+import { copyToClipboard } from "@/shared/utils/clipboard";
+import { formatTourDateTime, formatSpanishLongDate } from "@/shared/utils/tour-date.util";
 
 interface TourListTableProps {
   tours: TourOutput[];
   isLoading?: boolean;
 }
-
-const formatSpanishDate = (dateString: string): string => {
-  const [year, month, day] = dateString.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-
-  const formatter = new Intl.DateTimeFormat("es-MX", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-
-  const formatted = formatter.format(date);
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-};
-
-const formatTourDateTime = (dateString: string, boardingPoints?: any[]) => {
-  const [year, month, day] = dateString.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-
-  const formatter = new Intl.DateTimeFormat("es-MX", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-
-  let formattedDate = formatter.format(date);
-  formattedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
-
-  let timeStr = "";
-  if (boardingPoints && boardingPoints.length > 0 && boardingPoints[0].time) {
-    const timeParts = boardingPoints[0].time.split(":");
-    let hours = parseInt(timeParts[0], 10);
-    const minutes = timeParts[1];
-    const ampm = hours >= 12 ? "PM" : "AM";
-    hours = hours % 12 || 12;
-    timeStr = ` • ${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
-  }
-
-  return `${formattedDate}${timeStr}`;
-};
 
 const getStatusBadge = (isActive: boolean, temporalStatus?: string) => {
   if (!isActive) {
@@ -119,9 +81,9 @@ const getStatusBadge = (isActive: boolean, temporalStatus?: string) => {
   }
 };
 
-const handleShareLink = (tour: TourOutput): void => {
+const handleShareLink = async (tour: TourOutput): Promise<void> => {
   const publicUrl = tour.brochureUrl || `${window.location.origin}/p/${tour.id}`;
-  const formattedDate = formatSpanishDate(tour.departureDateTime);
+  const formattedDate = formatSpanishLongDate(tour.departureDateTime);
   const deposit = tour.depositPerPerson || 0;
 
   const depositLine =
@@ -134,10 +96,19 @@ ${depositLine}Revisa todos los detalles (horarios, fotos y qué incluye) en nues
 
 📲 Cualquier duda, respóndeme a este mensaje.`;
 
-  navigator.clipboard.writeText(shareText);
-  toast.success(
-    "Información del folleto copiada al portapapeles. ¡Lista para enviar por WhatsApp!",
-  );
+  // 2. Delegamos la ejecución a nuestra utilidad blindada
+  const success = await copyToClipboard(shareText);
+
+  // 3. Manejamos el estado resultante para dar feedback real al usuario
+  if (success) {
+    toast.success(
+      "Información del folleto copiada al portapapeles. ¡Lista para enviar por WhatsApp!",
+    );
+  } else {
+    toast.error("Error al copiar", {
+      description: "No pudimos acceder al portapapeles. Intenta copiarlo manualmente.",
+    });
+  }
 };
 
 export function TourListTable({ tours, isLoading = false }: TourListTableProps) {

@@ -5,20 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Edit2 } from "lucide-react";
 import { useState } from "react";
 
-import {
-  bookingFormSchema,
-  mainClientSchema,
-  BookingOutput,
-  type BookingFormValues,
-} from "../schemas/booking.schema";
+import { bookingFormSchema, type BookingFormValues } from "../schemas/booking.schema";
 import { CompanionsManager } from "./CompanionsManager";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useCreateBooking } from "../hooks/useBookings";
-import { BookingSuccessView } from "./BookingSuccessView";
 
-// Nuevos componentes UI
 import { RegistrationHeader } from "./RegistrationHeader";
 import { TourSummaryCard } from "./TourSummaryCard";
 import { PickupPointSelector } from "./PickupPointSelector";
@@ -36,7 +29,7 @@ interface TourRegistrationViewProps {
     priceTotalPerPassenger?: number;
     depositPerPassenger?: number | null;
   };
-  agencyName?: string;
+  agencyName: string;
 }
 
 export function TourRegistrationView({
@@ -46,10 +39,8 @@ export function TourRegistrationView({
   agencyName,
 }: TourRegistrationViewProps) {
   const [isLookingUp, setIsLookingUp] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const { mutateAsync: createBooking, isPending } = useCreateBooking();
   const [isMainClientFound, setIsMainClientFound] = useState(false);
-  const [bookingResult, setBookingResult] = useState<BookingOutput>();
   const router = useRouter();
   const { lookupTraveler } = usePublicTravelerLookup(token);
 
@@ -107,8 +98,7 @@ export function TourRegistrationView({
   const onSubmit = async (formData: BookingFormValues): Promise<void> => {
     try {
       const result = await createBooking(formData);
-      setBookingResult(result);
-      setIsSuccess(true);
+      console.log("result", result);
       router.refresh();
     } catch (error) {
       console.error("Error procesando registro:", error);
@@ -117,19 +107,10 @@ export function TourRegistrationView({
 
   const watchedCompanions = useWatch({ control: methods.control, name: "companions" }) || [];
   const hasCompanions = useWatch({ control: methods.control, name: "hasCompanions" });
-  const totalRegistered = 1 + (hasCompanions ? watchedCompanions.length : 0);
+  const currentPassengersCount = 1 + (hasCompanions ? watchedCompanions.length : 0);
+  const lockedSeats = tourInfo.reservedSeats || currentPassengersCount;
+  const maxAllowedCompanions = tourInfo.reservedSeats ? tourInfo.reservedSeats - 1 : undefined;
 
-  // if (isSuccess && bookingResult) {
-  //   return (
-  //     <BookingSuccessView
-  //       booking={bookingResult}
-  //       tourInfo={tourInfo}
-  //       formData={methods.getValues()}
-  //     />
-  //   );
-  // }
-
-  // Adapter para inyectar el formato exacto que RHF y Zod esperan ("Lugar (Hora)")
   const mappedPoints = boardingPoints.map((point) => ({
     id: `${point.location} (${point.time})`,
     name: point.location,
@@ -157,7 +138,7 @@ export function TourRegistrationView({
               priceTotalPerPassenger: tourInfo.priceTotalPerPassenger || 0,
               depositPerPassenger: tourInfo.depositPerPassenger,
             }}
-            lockedSeatsCount={totalRegistered}
+            lockedSeatsCount={lockedSeats}
           />
 
           <div className="relative space-y-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
@@ -306,12 +287,15 @@ export function TourRegistrationView({
             </div>
           </div>
 
-          <CompanionsManager boardingPoints={boardingPoints} />
+          <CompanionsManager
+            boardingPoints={boardingPoints}
+            maxAllowedCompanions={maxAllowedCompanions}
+          />
 
           {/* 5. Sticky Footer (Se encarga de ejecutar el submit del form) */}
           <RegistrationFooter
-            totalAmount={totalRegistered * (tourInfo.priceTotalPerPassenger || 0)}
-            travelersCount={totalRegistered}
+            totalAmount={lockedSeats * (tourInfo.priceTotalPerPassenger || 0)}
+            travelersCount={lockedSeats}
             isSubmitting={isPending}
             disabled={!methods.formState.isValid}
             onSubmit={methods.handleSubmit(onSubmit)}

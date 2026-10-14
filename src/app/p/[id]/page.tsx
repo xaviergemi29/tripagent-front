@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { TourSchedule } from "@/features/public-tours/components/TourSchedule";
+import { notFound } from "next/navigation";
 
 function buildWhatsAppBrochureUrl({
   agencyPhone,
@@ -33,7 +34,7 @@ function buildWhatsAppBrochureUrl({
 
 async function getPublicTour(tourId: string): Promise<PublicTourOutput | null> {
   try {
-    const apiUrl = `http://localhost:3001/api/tour-brochure/public/tours/${tourId}`;
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/tour-brochure/public/tours/${tourId}`;
     const res = await fetch(apiUrl, {
       cache: "no-store",
       headers: {
@@ -46,7 +47,7 @@ async function getPublicTour(tourId: string): Promise<PublicTourOutput | null> {
     return await res.json();
   } catch (error) {
     console.error("[Next.js Server] Error crítico de red en fetch:", error);
-    return null;
+    return notFound();
   }
 }
 
