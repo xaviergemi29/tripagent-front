@@ -84,7 +84,7 @@ export function TravelerDetailDrawer({
       .filter(Boolean),
   );
 
-  const handleVoidOnly = () => {
+  const handleVoidOnly = (): void => {
     if (!paymentToVoid) return;
     voidPayment(
       {
@@ -96,7 +96,7 @@ export function TravelerDetailDrawer({
     );
   };
 
-  const handleVoidAndCorrect = () => {
+  const handleVoidAndCorrect = (): void => {
     if (!paymentToVoid) return;
     voidPayment(
       {
@@ -202,7 +202,6 @@ export function TravelerDetailDrawer({
                   <h3 className="text-sm font-bold tracking-wider text-slate-400 uppercase">
                     Estado de Cuenta
                   </h3>
-                  {/* 🚀 Badge de moneda si es USD */}
                   {isUSD && (
                     <span className="rounded-md border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
                       Cotizado en USD
@@ -215,13 +214,13 @@ export function TravelerDetailDrawer({
                     <p className="text-xs font-semibold text-slate-500">Costo Total</p>
                     <p className="text-lg font-bold text-slate-900">
                       {(titularPaidAmount + titularBalance).toLocaleString("es-MX")}{" "}
-                      {isUSD ? "USD" : ""}
+                      {isUSD ? "USD" : "MXN"}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-semibold text-slate-500">Falta por pagar</p>
                     <p className="text-lg font-bold text-orange-600">
-                      ${titularBalance.toLocaleString("es-MX")} {isUSD ? "USD" : ""}
+                      ${titularBalance.toLocaleString("es-MX")} {isUSD ? "USD" : "MXN"}
                     </p>
                   </div>
                 </div>
@@ -243,9 +242,7 @@ export function TravelerDetailDrawer({
                   {titularPayments.map((payment) => {
                     const isNegative = payment.amount < 0;
                     const isVoided = voidedOriginalIds.has(payment.id);
-                    // 🚀 Determinamos si el pago individual es USD
-                    const isPaymentUSD = isUSD || payment.amountUSD !== undefined;
-
+                    const isPaymentUSD = isUSD || payment.amountUSD;
                     return (
                       <div
                         key={payment.id}
@@ -255,7 +252,6 @@ export function TravelerDetailDrawer({
                       >
                         <div>
                           <div className="flex items-center gap-2">
-                            {/* Renderizado de Monto Principal */}
                             <p
                               className={`font-semibold ${isVoided ? "text-slate-500 line-through" : isNegative ? "text-red-600" : "text-slate-800"}`}
                             >
@@ -263,7 +259,7 @@ export function TravelerDetailDrawer({
                               {isPaymentUSD && payment.amountUSD
                                 ? payment.amountUSD.toLocaleString("es-MX")
                                 : payment.amount.toLocaleString("es-MX")}{" "}
-                              {isPaymentUSD ? "USD" : ""}
+                              {isPaymentUSD ? "USD" : "MXN"}
                             </p>
                             {isVoided && (
                               <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">

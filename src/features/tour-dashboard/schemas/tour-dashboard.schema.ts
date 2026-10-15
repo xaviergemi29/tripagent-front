@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-// ============================================================================
-// 1. ENUMS (Dominios Estrictos)
-// ============================================================================
 export const currencySchema = z.enum(["MXN", "USD"]);
 export const formStatusSchema = z.enum(["COMPLETED", "PENDING"]);
 export const paymentStatusSchema = z.enum(["PAID", "ADVANCE", "PENDING_VALIDATION", "PENDING"]);
@@ -10,10 +7,6 @@ export const travelerRoleSchema = z.enum(["TITULAR", "COMPANION"]);
 export const temporalStatusSchema = z.enum(["ACTIVO", "FINALIZADO", "CANCELADO"]);
 export const paymentMethodSchema = z.enum(["CASH", "TRANSFER", "CARD", "OTHER"]);
 export const paymentTypeSchema = z.enum(["PAYMENT", "REFUND"]);
-
-// ============================================================================
-// 2. MODELOS BASE (Reutilizables)
-// ============================================================================
 
 // Historial de transacciones de un titular
 export const paymentRecordSchema = z.object({
@@ -24,8 +17,8 @@ export const paymentRecordSchema = z.object({
   createdAt: z.string().datetime(),
   referenceInfo: z.string().nullable().optional(),
   registeredBy: z.string().nullable().optional(),
-  amountUSD: z.number().nullable().optional(),
-  amountMXN: z.number().nullable().optional(),
+  amountUSD: z.number().nullable(),
+  amountMXN: z.number().nullable(),
   exchangeRate: z.number().nullable().optional(),
 });
 
@@ -70,9 +63,6 @@ export const titularSchema = z.object({
   companions: z.array(companionSchema).default([]),
 });
 
-// ============================================================================
-// 3. MÉTRICAS Y AGREGACIONES (Calculadas 100% en el Back-End)
-// ============================================================================
 export const tourMetricsSchema = z.object({
   occupancy: z.object({
     max: z.number(),
@@ -90,20 +80,17 @@ export const tourMetricsSchema = z.object({
   }),
 });
 
-// ============================================================================
-// 4. PAYLOAD PRINCIPAL (Respuesta del Endpoint)
-// ============================================================================
 export const vehicleDTOSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string(),
   layoutMap: z.array(z.array(z.string().nullable())),
 });
 
 export const tourDashboardDataSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   title: z.string(),
   currency: currencySchema.default("MXN"),
-  departureDateTime: z.string().datetime(),
+  departureDateTime: z.iso.datetime(),
   temporalStatus: temporalStatusSchema.default("ACTIVO"),
 
   // Agregaciones de negocio
@@ -114,9 +101,6 @@ export const tourDashboardDataSchema = z.object({
   travelers: z.array(titularSchema),
 });
 
-// ============================================================================
-// 5. INFERENCIA DE TIPOS (Para consumir en Props de React)
-// ============================================================================
 export type Currency = z.infer<typeof currencySchema>;
 export type FormStatus = z.infer<typeof formStatusSchema>;
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;

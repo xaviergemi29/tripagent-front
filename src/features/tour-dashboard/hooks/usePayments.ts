@@ -1,28 +1,22 @@
-import { PaymentFormValues } from "@/features/travelers/schemas/enroll-traveler.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import {
+  PaymentInput,
+  PaymentOutput,
+  VoidPaymentInput,
+  VoidPaymentOutput,
+} from "../schemas/payment.schema";
 
-interface CreatePaymentVariables {
-  bookingId: string;
-  payload: PaymentFormValues;
-}
-
-interface VoidPaymentVariables {
-  bookingId: string;
-  paymentId: string;
-  data: { reason: string };
-}
-
-const createPaymentApi = ({
-  bookingId,
-  payload: data,
-}: CreatePaymentVariables): Promise<unknown> => {
-  return apiClient.post(`/payments/${bookingId}/payments`, data);
+const createPaymentApi = ({ bookingId, payload: data }: PaymentInput): Promise<PaymentOutput> => {
+  return apiClient.post<PaymentOutput, never>(`/payments/${bookingId}/payments`, data);
 };
 
-const voidPaymentApi = ({ bookingId, paymentId, data }: VoidPaymentVariables): Promise<unknown> => {
-  return apiClient.post(`/payments/${bookingId}/payments/${paymentId}/void`, data);
+const voidPaymentApi = ({ bookingId, paymentId, data }: VoidPaymentInput): Promise<unknown> => {
+  return apiClient.post<VoidPaymentOutput, never>(
+    `/payments/${bookingId}/payments/${paymentId}/void`,
+    data,
+  );
 };
 
 export const useCreatePayment = (tourId: string) => {

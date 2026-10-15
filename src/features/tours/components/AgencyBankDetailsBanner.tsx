@@ -51,7 +51,6 @@ export function AgencyBankDetailsBanner({
         </Link>
       </div>
 
-      {/* 2. Cuerpo: Grid 2x2 para darle espacio vital a los datos largos */}
       {hasBankData ? (
         <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 sm:gap-4">
           <div className="flex flex-col justify-center rounded-lg border border-slate-100 bg-white/90 p-3 shadow-sm">
@@ -61,7 +60,6 @@ export function AgencyBankDetailsBanner({
             <span className="text-sm font-bold text-slate-800">{bankName || "No registrado"}</span>
           </div>
 
-          {/* 🚀 ELIMINADO EL 'truncate'. Agregado 'line-clamp-2' y 'leading-tight' */}
           <div className="flex flex-col justify-center rounded-lg border border-slate-100 bg-white/90 p-3 shadow-sm">
             <span className="mb-1 block text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
               Titular de la Cuenta
@@ -75,7 +73,6 @@ export function AgencyBankDetailsBanner({
             <span className="mb-1 block text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
               CLABE Interbancaria
             </span>
-            {/* break-all previene que el número rompa el contenedor en móviles muy pequeños */}
             <span className="font-mono text-sm font-bold tracking-widest break-all text-slate-800">
               {clabe || "No registrada"}
             </span>
@@ -107,7 +104,6 @@ export function AgencyBankDetailsBanner({
         </div>
       )}
 
-      {/* 3. Microcopy */}
       <div className="flex items-start gap-1.5 pt-1 text-[11px] text-indigo-700/70">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <p className="leading-relaxed font-medium">

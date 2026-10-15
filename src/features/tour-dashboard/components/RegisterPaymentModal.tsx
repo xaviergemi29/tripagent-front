@@ -38,7 +38,7 @@ export function RegisterPaymentModal({
   onClose,
   bookingId,
   tourId,
-  tourCurrency = "MXN",
+  tourCurrency,
   balance,
   correctionData,
 }: RegisterPaymentModalProps) {
