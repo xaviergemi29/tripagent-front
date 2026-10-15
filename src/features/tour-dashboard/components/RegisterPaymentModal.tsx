@@ -9,19 +9,19 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useCreatePayment } from "../hooks/usePayments";
 import {
   paymentFormSchema,
   type PaymentFormValues,
 } from "@/features/travelers/schemas/enroll-traveler.schema";
-import { Badge } from "@/components/ui/badge";
-import { Info } from "lucide-react";
+import { Info, Check, X } from "lucide-react";
 import { CreatePaymentPayload } from "../schemas/payment.schema";
+import { formatCurrency } from "@/shared/utils/currency.util";
 
 interface RegisterPaymentModalProps {
   isOpen: boolean;
@@ -104,51 +104,58 @@ export function RegisterPaymentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Registrar Abono</DialogTitle>
-          {isUSD && (
-            <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
-              Tour en USD
-            </Badge>
-          )}
-          <DialogDescription>
+      <DialogContent className="sm:max-w-md [&>button]:hidden">
+        <DialogHeader className="border-b border-slate-100 pb-4 text-left">
+          <div className="flex items-center gap-2.5 pr-6">
+            {" "}
+            <DialogTitle className="text-lg font-bold text-slate-900">Registrar Abono</DialogTitle>
+            {isUSD && (
+              <span className="inline-flex items-center rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                Tour en USD
+              </span>
+            )}
+          </div>
+          <DialogDescription className="mt-0.5 text-xs text-slate-500">
             El saldo pendiente actual es de{" "}
-            <span className="font-bold text-slate-800">${balance}</span>
+            <span className="font-semibold text-slate-800">
+              {formatCurrency(balance, { currency: tourCurrency })}
+            </span>
           </DialogDescription>
         </DialogHeader>
 
-        <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+        <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
           <Controller
             name="amount"
             control={form.control}
             render={({ field, fieldState }) => (
-              <div className="space-y-2">
-                <Label htmlFor="amount">
-                  {isUSD ? "Monto del abono en dólares (USD) *" : "Monto a abonar (MXN)"}
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="amount"
+                  className="block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
+                >
+                  {isUSD ? "Monto del abono en dólares (USD) *" : "Monto a abonar (MXN) *"}
                 </Label>
-
-                {/* 🚀 FIX: Contenedor 'relative' añadido aquí */}
-                <div className="relative">
+                <div className="relative rounded-lg shadow-2xs">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <span className="font-medium text-slate-400 sm:text-sm">$</span>
+                  </div>
                   <Input
                     {...field}
                     id="amount"
                     type="number"
                     step="0.01"
                     inputMode="decimal"
-                    /* 🚀 FIX: pr-14 para que el texto no pise el sufijo, y clases para ocultar el spinner nativo */
-                    className="h-14 [appearance:textfield] pr-14 text-2xl font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     autoFocus
                     onFocus={(e) => e.target.select()}
+                    className="block w-full [appearance:textfield] rounded-lg border border-slate-200 py-2 pr-12 pl-7 text-sm font-medium text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                   />
                   {isUSD && (
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                       <span className="text-sm font-semibold text-slate-400">USD</span>
                     </div>
                   )}
                 </div>
-
                 {fieldState.error && (
                   <p className="text-xs font-medium text-red-500">{fieldState.error.message}</p>
                 )}
@@ -157,44 +164,57 @@ export function RegisterPaymentModal({
           />
 
           {isUSD && (
-            <div className="animate-in fade-in slide-in-from-top-2 space-y-3 rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-              <div className="space-y-2">
-                <Label htmlFor="amountMXN">
-                  Equivalente en pesos mexicanos (MXN) *
-                  <span className="ml-1 block text-[10px] font-normal text-slate-500">
-                    Monto cobrado en ventanilla o banco
-                  </span>
+            <div className="animate-in fade-in slide-in-from-top-2 space-y-4">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="amountMXN"
+                  className="block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
+                >
+                  Monto recibido en pesos (MXN) *
                 </Label>
-                <div className="relative">
+                <div className="relative rounded-lg shadow-2xs">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <span className="font-medium text-slate-400 sm:text-sm">$</span>
+                  </div>
                   <Input
                     id="amountMXN"
                     type="number"
                     step="0.01"
                     inputMode="decimal"
                     value={amountMXN}
-                    placeholder="Ej. 2000"
                     required
-                    className="[appearance:textfield] pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="block w-full [appearance:textfield] rounded-lg border border-slate-200 py-2 pr-12 pl-7 text-sm font-medium text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     onChange={(e) => setAmountMXN(e.target.value)}
                   />
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                     <span className="text-sm font-semibold text-slate-400">MXN</span>
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-400">
-                  Ingresa el monto recibido en pesos según el tipo de cambio pactado.
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Ingresa el monto exacto cobrado según la tasa acordada o la boleta del banco.
                 </p>
               </div>
 
               {Number(amountMXN) > 0 && watchAmountUSD > 0 && (
-                <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-indigo-50/50 p-2.5 text-xs text-slate-600">
-                  <span className="flex items-center gap-1.5">
-                    <Info className="h-3.5 w-3.5 text-indigo-600" />
-                    Tipo de cambio resultante:
-                  </span>
-                  <span className="font-mono font-semibold text-slate-800">
-                    ${resultingRate} MXN / USD
-                  </span>
+                <div className="flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50/60 p-3.5 transition-all">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100/80">
+                      <Info className="h-3.5 w-3.5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold text-slate-800">
+                        Tipo de cambio aplicado:
+                      </span>
+                      <span className="block text-[11px] text-slate-500">
+                        Equivalente en moneda nacional
+                      </span>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-indigo-200/80 bg-white px-3 py-1.5 shadow-2xs">
+                    <span className="font-mono text-sm font-bold tracking-tight text-slate-900">
+                      ${resultingRate} MXN / USD
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -204,7 +224,7 @@ export function RegisterPaymentModal({
             name="method"
             control={form.control}
             render={({ field, fieldState }) => (
-              <div className="space-y-2">
+              <div className="space-y-2 pt-2">
                 <Label>Método de cobro</Label>
                 <div className="grid grid-cols-3 gap-2">
                   <label
@@ -270,17 +290,18 @@ export function RegisterPaymentModal({
           />
         </form>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={onClose} disabled={isPending}>
+        <DialogFooter className="gap-2 border-t border-slate-100 pt-3 sm:gap-0">
+          <Button variant="outline" onClick={onClose} disabled={isPending} className="text-xs">
             Cancelar
           </Button>
           <Button
             type="submit"
             form="payment-form"
             disabled={isPending || (isUSD && !amountMXN)}
-            className="min-w-[140px] bg-emerald-600 text-white hover:bg-emerald-700"
+            className="inline-flex min-w-[140px] items-center justify-center gap-1.5 bg-emerald-600 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
           >
-            {isPending ? "Registrando..." : "Guardar Abono"}
+            <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+            <span>{isPending ? "Guardando..." : "Guardar Abono"}</span>
           </Button>
         </DialogFooter>
       </DialogContent>

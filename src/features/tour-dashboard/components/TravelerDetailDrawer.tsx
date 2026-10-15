@@ -15,19 +15,13 @@ import { Button } from "@/components/ui/button";
 import { useCancelPassenger } from "@/features/external-registration/hooks/useBookings";
 import { RegisterPaymentModal } from "./RegisterPaymentModal";
 import { useVoidPayment } from "../hooks/usePayments";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import type {
   TitularRowDTO,
   CompanionDTO,
   PaymentRecordDTO,
 } from "../schemas/tour-dashboard.schema";
+import { formatCurrency } from "@/shared/utils/currency.util";
+import { VoidPaymentModal } from "./VoidPaymentModal";
 
 interface TravelerDetailDrawerProps {
   tourId: string;
@@ -213,14 +207,15 @@ export function TravelerDetailDrawer({
                   <div>
                     <p className="text-xs font-semibold text-slate-500">Costo Total</p>
                     <p className="text-lg font-bold text-slate-900">
-                      {(titularPaidAmount + titularBalance).toLocaleString("es-MX")}{" "}
-                      {isUSD ? "USD" : "MXN"}
+                      {formatCurrency(titularPaidAmount + titularBalance, {
+                        currency: tourCurrency,
+                      })}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-semibold text-slate-500">Falta por pagar</p>
                     <p className="text-lg font-bold text-orange-600">
-                      ${titularBalance.toLocaleString("es-MX")} {isUSD ? "USD" : "MXN"}
+                      {formatCurrency(titularBalance, { currency: tourCurrency })}
                     </p>
                   </div>
                 </div>
@@ -255,11 +250,9 @@ export function TravelerDetailDrawer({
                             <p
                               className={`font-semibold ${isVoided ? "text-slate-500 line-through" : isNegative ? "text-red-600" : "text-slate-800"}`}
                             >
-                              $
                               {isPaymentUSD && payment.amountUSD
-                                ? payment.amountUSD.toLocaleString("es-MX")
-                                : payment.amount.toLocaleString("es-MX")}{" "}
-                              {isPaymentUSD ? "USD" : "MXN"}
+                                ? formatCurrency(payment.amountUSD, { currency: "USD" })
+                                : formatCurrency(payment.amount, { currency: "MXN" })}{" "}
                             </p>
                             {isVoided && (
                               <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
@@ -274,11 +267,7 @@ export function TravelerDetailDrawer({
                               <p className="text-xs font-medium text-slate-600">
                                 Equivalente:{" "}
                                 <span className="font-semibold text-slate-900">
-                                  $
-                                  {payment.amountMXN.toLocaleString("es-MX", {
-                                    minimumFractionDigits: 2,
-                                  })}{" "}
-                                  MXN
+                                  {formatCurrency(payment.amountMXN, { currency: "MXN" })}
                                 </span>
                               </p>
                               {payment.exchangeRate && (
@@ -432,45 +421,24 @@ export function TravelerDetailDrawer({
         />
       )}
 
-      {/* 2. MODAL DE ANULACIÓN (Ajustes de Microcopy & UX) */}
-      <Dialog open={!!paymentToVoid} onOpenChange={(open) => !open && setPaymentToVoid(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="h-5 w-5" /> Anular Abono
-            </DialogTitle>
-            <DialogDescription asChild className="space-y-2 pt-2 text-base text-slate-600">
-              <div>
-                <p>
-                  ¿Deseas anular este abono de{" "}
-                  <span className="font-bold text-slate-900">${paymentToVoid?.amount}</span>?
-                </p>
-                <p className="rounded border bg-slate-100 p-2.5 text-xs text-slate-500">
-                  ℹ️ Esta acción restará <strong>${paymentToVoid?.amount}</strong> del saldo abonado
-                  de <strong>{traveler.fullName}</strong>.
-                </p>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-col gap-2 pt-4 sm:flex-row sm:gap-0">
-            <Button
-              variant="outline"
-              className="border-red-200 text-red-600 hover:bg-red-50"
-              onClick={handleVoidOnly}
-              disabled={isVoiding}
-            >
-              Anular definitivamente
-            </Button>
-            <Button
-              className="bg-indigo-600 text-white hover:bg-indigo-700"
-              onClick={handleVoidAndCorrect}
-              disabled={isVoiding}
-            >
-              {isVoiding ? "Procesando..." : "Anular y volver a capturar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <VoidPaymentModal
+        isOpen={!!paymentToVoid}
+        onClose={() => setPaymentToVoid(null)}
+        onConfirmVoid={handleVoidOnly}
+        onVoidAndRecapture={handleVoidAndCorrect}
+        isSubmitting={isVoiding}
+        travelerName={traveler.fullName}
+        amountFormatted={
+          paymentToVoid
+            ? formatCurrency(
+                (isUSD || paymentToVoid.amountUSD) && paymentToVoid.amountUSD
+                  ? paymentToVoid.amountUSD
+                  : paymentToVoid.amount,
+                { currency: isUSD || paymentToVoid.amountUSD ? "USD" : "MXN" },
+              )
+            : "$0.00"
+        }
+      />
     </>
   );
 }

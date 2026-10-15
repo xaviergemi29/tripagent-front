@@ -7,14 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { TourMetrics, Currency } from "../schemas/tour-dashboard.schema";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
-
-const formatCurrency = (amount: number, currency: Currency | string = "MXN") => {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: currency,
-    minimumFractionDigits: 2,
-  }).format(amount || 0);
-};
+import { formatCurrency } from "@/shared/utils/currency.util";
 
 interface TourDashboardHeaderProps {
   title: string;
@@ -155,15 +148,14 @@ export function TourDashboardHeader({
 
             <div className="mt-3 flex items-baseline gap-1.5">
               <span className="text-3xl font-black tracking-tight text-slate-900">
-                {formatCurrency(financeStats.totalCollected, currency)}
+                {formatCurrency(financeStats.totalCollected, { currency })}
               </span>
-              <span className="text-xs font-bold text-slate-400">{currency}</span>
             </div>
 
             <p className="mt-1 text-xs font-medium text-slate-500">
               Proyectado total:{" "}
               <span className="font-semibold text-slate-700">
-                {formatCurrency(financeStats.totalProjected, currency)} {currency}
+                {formatCurrency(financeStats.totalProjected, { currency })}
               </span>
             </p>
           </div>
@@ -171,7 +163,7 @@ export function TourDashboardHeader({
           <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs">
             <span className="font-medium text-slate-500">Por recaudar:</span>
             <span className="font-bold text-rose-600">
-              {formatCurrency(financeStats.balanceDue, currency)} {currency}
+              {formatCurrency(financeStats.balanceDue, { currency })}
             </span>
           </div>
         </Card>
