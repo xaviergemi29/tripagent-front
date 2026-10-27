@@ -84,6 +84,9 @@ export function TourRegistrationView({
         methods.setValue("mainClient.medicalNotes", traveler.medicalNotes || "", {
           shouldValidate: true,
         });
+        methods.setValue("mainClient.birthDate", traveler.birthDate || "", {
+          shouldValidate: true,
+        });
         setIsMainClientFound(true);
       }
     } catch (error) {

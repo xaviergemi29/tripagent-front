@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, JSX } from "react";
 import Link from "next/link";
 import {
   MoreHorizontal,
@@ -49,7 +49,7 @@ interface TourListTableProps {
   isLoading?: boolean;
 }
 
-const getStatusBadge = (isActive: boolean, temporalStatus?: string) => {
+const getStatusBadge = (isActive: boolean, temporalStatus?: string): JSX.Element => {
   if (!isActive) {
     return (
       <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
@@ -89,6 +89,7 @@ const handleShareLink = async (tour: TourOutput): Promise<void> => {
   const depositLine =
     deposit > 0 ? `💰 Aparta desde: $${deposit.toLocaleString("es-MX")} MXN\n` : "";
 
+  // UI Copy en español (permitido)
   const shareText = `🎒 ¡Hola! Te comparto la información completa para el ${tour.title}
 🗓️ Salida: ${formattedDate}
 ${depositLine}Revisa todos los detalles (horarios, fotos y qué incluye) en nuestro folleto digital:
@@ -96,10 +97,8 @@ ${depositLine}Revisa todos los detalles (horarios, fotos y qué incluye) en nues
 
 📲 Cualquier duda, respóndeme a este mensaje.`;
 
-  // 2. Delegamos la ejecución a nuestra utilidad blindada
   const success = await copyToClipboard(shareText);
 
-  // 3. Manejamos el estado resultante para dar feedback real al usuario
   if (success) {
     toast.success(
       "Información del folleto copiada al portapapeles. ¡Lista para enviar por WhatsApp!",
@@ -116,21 +115,21 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
   const { mutate: deleteTour } = useDeleteTour();
   const [tourToDelete, setTourToDelete] = useState<string | null>(null);
 
-  // 🚀 1. Estado y Lógica del Buscador
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredTours = useMemo(() => {
     if (!searchTerm.trim()) return tours;
+
     const term = searchTerm.toLowerCase().trim();
+
     return tours.filter((tour: TourOutput) => {
-      // Utilizamos type casting (any) temporal para evitar advertencias de TS si el tipo no declara explícitamente "name" o "destination"
-      const name = ((tour as any).name || tour.title || "").toLowerCase();
-      const destination = ((tour as any).destination || "").toLowerCase();
-      return name.includes(term) || destination.includes(term);
+      // 🚀 FIX: Eliminado el 'any'. Dependemos estrictamente del schema validado
+      const title = (tour.title || "").toLowerCase();
+      return title.includes(term);
     });
   }, [tours, searchTerm]);
 
-  const handleToggle = (tourId: string, currentStatus: boolean) => {
+  const handleToggle = (tourId: string, currentStatus: boolean): void => {
     toggleStatus({ id: tourId, isActive: !currentStatus });
   };
 
@@ -144,17 +143,14 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
 
   return (
     <div className="space-y-4">
-      {/* 🚀 2. Barra Superior del Listado (Título y Buscador) */}
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Título de la sección */}
         <h2 className="text-lg font-semibold tracking-tight text-slate-900">Listado de Salidas</h2>
 
-        {/* Buscador */}
         <div className="relative w-full sm:w-80">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             type="text"
-            placeholder="Buscar por tour o destino..."
+            placeholder="Buscar por tour..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="h-10 w-full rounded-lg border-slate-200 bg-white py-2 pr-4 pl-9 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-indigo-600"
@@ -187,7 +183,6 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* 🚀 3. Estado Vacío de Búsqueda y renderizado condicional */}
             {filteredTours.length === 0 && tours.length > 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-8 text-center text-sm text-slate-500">
@@ -196,11 +191,23 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
               </TableRow>
             ) : (
               filteredTours.map((tour: TourOutput) => {
-                // Lógica simulada basada en tu actual `0 / {tour.maxCapacity}`
-                const ocupados = 0;
-                const total = tour.maxCapacity;
-                const disponibles = Math.max(0, total - ocupados);
-                const isAgotado = ocupados >= total;
+                const occupiedSeats = tour.currentOccupancy || 0;
+                const totalCapacity = tour.maxCapacity;
+                const availableSeats = Math.max(0, totalCapacity - occupiedSeats);
+                const isSoldOut = occupiedSeats >= totalCapacity;
+
+                const availablePercentage =
+                  totalCapacity > 0 ? (availableSeats / totalCapacity) * 100 : 0;
+
+                let badgeStyle = "border-emerald-200 bg-emerald-50 text-emerald-700"; // > 20% free
+                let badgeText = `${availableSeats} Disponibles`;
+
+                if (isSoldOut) {
+                  badgeStyle = "border-red-200 bg-red-50 text-red-700";
+                  badgeText = "Agotado";
+                } else if (availablePercentage <= 20) {
+                  badgeStyle = "border-amber-200 bg-amber-50 text-amber-700"; // <= 20% free
+                }
 
                 return (
                   <TableRow key={tour.id} className="transition-colors hover:bg-slate-50/50">
@@ -252,17 +259,17 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
                     <TableCell>
                       <div className="flex flex-col items-start gap-1">
                         <span className="text-sm font-medium text-slate-700">
-                          {ocupados} de {total} lugares
+                          <strong>
+                            {occupiedSeats} / {totalCapacity}
+                          </strong>{" "}
+                          Ocupados
                         </span>
-                        {isAgotado ? (
-                          <Badge className="pointer-events-none bg-slate-100 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400">
-                            Agotado
-                          </Badge>
-                        ) : (
-                          <Badge className="pointer-events-none border-emerald-200 bg-emerald-50 text-xs font-medium text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300">
-                            {disponibles} disponibles
-                          </Badge>
-                        )}
+                        <Badge
+                          variant="outline"
+                          className={`pointer-events-none text-xs font-medium ${badgeStyle}`}
+                        >
+                          {badgeText}
+                        </Badge>
                       </div>
                     </TableCell>
 
@@ -271,7 +278,6 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
                     </TableCell>
 
                     <TableCell className="text-right">
-                      {/* Botones Unificados (Intactos) */}
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="default"
@@ -351,7 +357,6 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
         </Table>
       </div>
 
-      {/* Banner Informativo Inferior (Intacto) */}
       <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3.5 text-sm text-blue-900">
         <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
         <div>

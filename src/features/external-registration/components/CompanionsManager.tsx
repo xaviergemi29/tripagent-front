@@ -56,9 +56,9 @@ export function CompanionsManager({
       setValue(`companions.${index}.medicalNotes`, traveler.medicalNotes || "", {
         shouldValidate: true,
       });
-      if (traveler.birthDate) {
-        setValue(`companions.${index}.birthDate`, traveler.birthDate, { shouldValidate: true });
-      }
+      setValue(`companions.${index}.birthDate`, traveler.birthDate || "", {
+        shouldValidate: true,
+      });
       setLockedCompanions((prev) => ({ ...prev, [index]: true }));
       toast.success(`Acompañante ${index + 1} encontrado`, {
         description: "Se cargaron sus datos históricos.",

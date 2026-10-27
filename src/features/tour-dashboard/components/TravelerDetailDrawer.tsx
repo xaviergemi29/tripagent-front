@@ -12,7 +12,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCancelPassenger } from "@/features/external-registration/hooks/useBookings";
+import {
+  useCancelPassenger,
+  useCancelFullBooking,
+} from "@/features/external-registration/hooks/useBookings";
 import { RegisterPaymentModal } from "./RegisterPaymentModal";
 import { useVoidPayment } from "../hooks/usePayments";
 import type {
@@ -22,6 +25,8 @@ import type {
 } from "../schemas/tour-dashboard.schema";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { VoidPaymentModal } from "./VoidPaymentModal";
+import { formatShortDateTime } from "@/shared/utils/tour-date.util";
+import { PAYMENT_METHOD_DICT } from "@/shared/utils/config/status-dictionaries.config";
 
 interface TravelerDetailDrawerProps {
   tourId: string;
@@ -31,13 +36,6 @@ interface TravelerDetailDrawerProps {
   isAuditMode?: boolean;
   onClose: () => void;
 }
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  CASH: "EFECTIVO",
-  TRANSFER: "SPEI",
-  CARD: "TARJETA",
-  OTHER: "OTRO",
-};
 
 export function TravelerDetailDrawer({
   tourId,
@@ -53,6 +51,8 @@ export function TravelerDetailDrawer({
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
   const { mutate: cancelPassenger, isPending } = useCancelPassenger();
   const { mutate: voidPayment, isPending: isVoiding } = useVoidPayment(tourId);
+  const { mutate: cancelFullBooking, isPending: isCancellingFull } = useCancelFullBooking();
+  const [isFullCancellationMode, setIsFullCancellationMode] = useState(false);
 
   const [paymentToVoid, setPaymentToVoid] = useState<PaymentRecordDTO | null>(null);
   const [correctionData, setCorrectionData] = useState<{ amount: number; method: string } | null>(
@@ -111,20 +111,14 @@ export function TravelerDetailDrawer({
   const handleConfirmCancellation = (): void => {
     const penaltyAmount = isFullRetention ? titularUnitPrice : parseFloat(manualPenalty) || 0;
 
-    cancelPassenger(
-      {
-        bookingId: traveler.bookingId,
-        travelerId: traveler.id,
-        penaltyAmount,
-      },
-      {
-        onSuccess: () => {
-          onClose();
-          setShowCancellationConfirm(false);
-          setIsFullRetention(true);
-        },
-      },
-    );
+    if (isFullCancellationMode) {
+      cancelFullBooking({ bookingId: traveler.bookingId, penaltyAmount });
+    } else {
+      cancelPassenger({ bookingId: traveler.bookingId, travelerId: traveler.id, penaltyAmount });
+    }
+
+    onClose();
+    setShowCancellationConfirm(false);
   };
 
   return (
@@ -279,14 +273,8 @@ export function TravelerDetailDrawer({
                           )}
 
                           <p className={`text-xs text-slate-500 ${isPaymentUSD ? "mt-1.5" : ""}`}>
-                            {PAYMENT_METHOD_LABELS[payment.method] || payment.method} •{" "}
-                            {new Date(payment.createdAt).toLocaleString("es-MX", {
-                              weekday: "short",
-                              day: "2-digit",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {PAYMENT_METHOD_DICT[payment.method] || payment.method} •{" "}
+                            {formatShortDateTime(payment.createdAt)}
                           </p>
                         </div>
                         {!isVoided && !isAuditMode && payment.type === "PAYMENT" && (
@@ -318,21 +306,29 @@ export function TravelerDetailDrawer({
                   </div>
 
                   {!showCancellationConfirm ? (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
+                      {isTitular && (
+                        <Button
+                          variant="outline"
+                          className="w-full border-red-200 font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={() => {
+                            setShowCancellationConfirm(true);
+                            setIsFullCancellationMode(true);
+                          }}
+                        >
+                          Cancelar Reserva Completa (Todos)
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
-                        className="w-full border-red-200 font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
-                        onClick={() => setShowCancellationConfirm(true)}
+                        className="w-full border-orange-200 font-medium text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                        onClick={() => {
+                          setShowCancellationConfirm(true);
+                          setIsFullCancellationMode(false);
+                        }}
                       >
-                        {isTitular ? "Cancelar Reserva Completa" : "Dar de baja a pasajero"}
+                        Dar de baja solo a este pasajero
                       </Button>
-
-                      {!isTitular && (
-                        <p className="text-center text-[11px] leading-tight text-slate-400">
-                          El costo total de la reserva de {traveler.fullName} se recalculará
-                          automáticamente.
-                        </p>
-                      )}
                     </div>
                   ) : (
                     <div className="animate-in fade-in space-y-4 rounded-lg border border-red-200 bg-white p-4 shadow-sm duration-200">

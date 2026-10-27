@@ -9,17 +9,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { TravelerRow } from "../schemas/tour-dashboard.schema";
+import { TitularRowDTO } from "../schemas/tour-dashboard.schema";
+import type { PaymentFilter, RegistrationFilter, SeatFilter } from "./DashboardTravelerTable";
 
-interface Props {
-  travelers: TravelerRow[];
+interface TravelersTableToolbarProps {
+  travelers: TitularRowDTO[];
   tourId: string;
   searchQuery: string;
   onSearchChange: (val: string) => void;
-  paymentFilter: string;
-  onPaymentFilterChange: (val: string) => void;
-  formFilter: string;
-  onFormFilterChange: (val: string) => void;
+  paymentFilter: PaymentFilter | string;
+  onPaymentFilterChange: (val: PaymentFilter | string) => void;
+  formFilter: RegistrationFilter | string;
+  onFormFilterChange: (val: RegistrationFilter | string) => void;
+  seatFilter: SeatFilter | string;
+  onSeatFilterChange: (val: SeatFilter | string) => void;
   isAuditMode?: boolean;
 }
 
@@ -32,9 +35,10 @@ export function TravelersTableToolbar({
   onPaymentFilterChange,
   formFilter,
   onFormFilterChange,
+  seatFilter,
+  onSeatFilterChange,
   isAuditMode,
-}: Props) {
-  // Función de Exportación CSV ligera para el Guía
+}: TravelersTableToolbarProps) {
   const handleExportCSV = () => {
     if (!travelers || travelers.length === 0) return;
 
@@ -47,15 +51,29 @@ export function TravelersTableToolbar({
       "Saldo Pendiente",
       "Formulario Salud",
     ];
-    const rows = travelers.map((t) => [
-      `"${t.fullName}"`,
-      `"${t.role}"`,
-      `"${t.whatsapp}"`,
-      `"${t.paymentStatus}"`,
-      t.paidAmount,
-      t.balance,
-      `"${t.formStatus}"`,
-    ]);
+
+    // Aplanamos pasajeros para el CSV
+    const allPassengers = travelers.flatMap((t) => [t, ...(t.companions || [])]);
+
+    const rows = allPassengers.map((t) => {
+      // 🚀 Type Guard: Usamos el rol como llave discriminadora
+      const isTitular = t.role === "TITULAR";
+
+      // TypeScript ahora sabe que si es Titular, las propiedades existen.
+      const paymentStatus = isTitular ? t.paymentStatus : "Cubierto por titular";
+      const paidAmount = isTitular ? t.paidAmount : 0;
+      const balance = isTitular ? t.balance : 0;
+
+      return [
+        `"${t.fullName}"`,
+        `"${t.role}"`,
+        `"${t.whatsapp}"`,
+        `"${paymentStatus}"`,
+        paidAmount,
+        balance,
+        `"${t.formStatus}"`,
+      ];
+    });
 
     const csvContent =
       "data:text/csv;charset=utf-8," +
@@ -70,19 +88,16 @@ export function TravelersTableToolbar({
   };
 
   const handlePrintPDF = () => {
-    // Pro-Tip: Abrir el HTML de impresión en una nueva pestaña que se cierra sola
-    const printWindow = window.open(`/pdf-tour/${tourId}`, "_blank");
-    // En la página destino (/manifest/page.tsx) pondremos un useEffect que lance window.print()
+    window.open(`/pdf-tour/${tourId}`, "_blank");
   };
 
-  // 🚀 Lógica de Smart Default: Si el tour terminó, la acción principal es CSV.
   const PrimaryAction = isAuditMode ? handleExportCSV : handlePrintPDF;
   const PrimaryIcon = isAuditMode ? FileSpreadsheet : FileText;
   const primaryLabel = isAuditMode ? "Exportar Contabilidad (CSV)" : "Imprimir Lista de Guía";
 
   return (
     <div className="flex flex-col items-start justify-between gap-4 rounded-xl border bg-white p-4 shadow-sm xl:flex-row xl:items-center">
-      <div className="flex w-full flex-col gap-3 sm:flex-row xl:w-auto">
+      <div className="flex w-full flex-wrap gap-3 xl:w-auto">
         <div className="relative w-full sm:w-64">
           <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-slate-400" />
           <Input
@@ -99,10 +114,9 @@ export function TravelersTableToolbar({
           onChange={(e) => onPaymentFilterChange(e.target.value)}
         >
           <option value="ALL">Pagos: Todos</option>
-          <option value="PENDING_VALIDATION">Pendiente Validar</option>
+          <option value="UNPAID">Sin Pago</option>
+          <option value="PARTIAL">Abono Parcial / Validando</option>
           <option value="PAID">Liquidados</option>
-          <option value="ADVANCE">Con Anticipo</option>
-          <option value="PENDING">Sin Pago</option>
         </select>
 
         <select
@@ -112,7 +126,17 @@ export function TravelersTableToolbar({
         >
           <option value="ALL">Formularios: Todos</option>
           <option value="PENDING">Pendientes (Alerta)</option>
-          <option value="COMPLETED">Capturados</option>
+          <option value="COMPLETED">Completos</option>
+        </select>
+
+        <select
+          className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          value={seatFilter}
+          onChange={(e) => onSeatFilterChange(e.target.value)}
+        >
+          <option value="ALL">Asientos: Todos</option>
+          <option value="UNASSIGNED">Sin Asignar</option>
+          <option value="ASSIGNED">Asignados</option>
         </select>
       </div>
 

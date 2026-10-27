@@ -1,20 +1,28 @@
 import { X, Check, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/shared/utils/currency.util";
 
-interface Props {
+interface PaymentValidationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  detectedAmount: number;
+  currency?: "MXN" | "USD";
 }
 
-export function PaymentValidationModal({ isOpen, onClose }: Props) {
+export function PaymentValidationModal({
+  isOpen,
+  onClose,
+  detectedAmount,
+  currency,
+}: PaymentValidationModalProps) {
   if (!isOpen) return null;
 
+  alert("hola");
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
-      {/* Detenemos la propagación para que los clics dentro del modal no lo cierren */}
       <div
         className="animate-in zoom-in-95 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl duration-200"
         onClick={(e) => e.stopPropagation()}
@@ -27,7 +35,6 @@ export function PaymentValidationModal({ isOpen, onClose }: Props) {
         </div>
         <div className="space-y-4 p-6">
           <div className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-100">
-            {/* Aquí iría la etiqueta <img> real con la URL del comprobante */}
             <span className="font-medium text-slate-400">
               [Imagen del Ticket enviado por WhatsApp]
             </span>
@@ -36,7 +43,8 @@ export function PaymentValidationModal({ isOpen, onClose }: Props) {
           <div className="flex gap-2 rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-800">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
-              El sistema detectó un pago de <strong>$500 MXN</strong>. Revisa la imagen para
+              El sistema detectó un pago de{" "}
+              <strong>{formatCurrency(detectedAmount, { currency })}</strong>. Revisa la imagen para
               confirmar que la transferencia fue exitosa.
             </p>
           </div>

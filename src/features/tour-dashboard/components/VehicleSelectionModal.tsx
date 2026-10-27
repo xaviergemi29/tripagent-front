@@ -28,19 +28,24 @@ import {
 } from "../hooks/useTourDashboard";
 import type { VehicleDTO } from "../schemas/tour-dashboard.schema";
 
-interface Props {
+interface VehicleSelectionModalProps {
   tourId: string;
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 interface ConflictData {
   newVehicle: VehicleDTO;
   orphanSeatsCount: number;
-  orphanSeatNumbers: number[];
 }
 
-export function VehicleSelectionModal({ tourId, isOpen, onClose }: Props) {
+export function VehicleSelectionModal({
+  tourId,
+  isOpen,
+  onClose,
+  onSuccess,
+}: VehicleSelectionModalProps) {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [isCapacityAlertOpen, setIsCapacityAlertOpen] = useState(false);
   const [conflictData, setConflictData] = useState<ConflictData | null>(null);
@@ -49,8 +54,7 @@ export function VehicleSelectionModal({ tourId, isOpen, onClose }: Props) {
   const { data: tourData } = useTourDashboardByTourId(tourId);
   const { mutateAsync: assignVehicle, isPending: isSubmitting } = useAssignVehicleToTour();
 
-  const totalPassengers = tourData?.metrics?.occupancy?.current || 0;
-  const assignedSeatNumbers = tourData?.metrics?.assignedSeats || [];
+  const totalAssignedSeats = tourData?.metrics?.logistics?.assigned || 0;
 
   const getVehicleCapacity = (layoutMap: (string | null)[][]): number => {
     return layoutMap.flat().filter((cell) => cell && cell !== "AISLE").length;
@@ -64,14 +68,10 @@ export function VehicleSelectionModal({ tourId, isOpen, onClose }: Props) {
 
     const newCapacity = getVehicleCapacity(selectedVehicle.layoutMap);
 
-    // Validación simplificada gracias al backend
-    const orphanSeats = assignedSeatNumbers.filter((seatNum) => seatNum > newCapacity);
-
-    if (orphanSeats.length > 0) {
+    if (newCapacity < totalAssignedSeats) {
       setConflictData({
         newVehicle: selectedVehicle,
-        orphanSeatsCount: orphanSeats.length,
-        orphanSeatNumbers: orphanSeats,
+        orphanSeatsCount: totalAssignedSeats - newCapacity,
       });
       setIsCapacityAlertOpen(true);
       return;
@@ -86,6 +86,7 @@ export function VehicleSelectionModal({ tourId, isOpen, onClose }: Props) {
   ): Promise<void> => {
     try {
       await assignVehicle({ tourId, vehicleId, resetOrphans });
+      onSuccess?.();
       onCloseModal();
     } catch (error) {
       console.error(error);
@@ -111,12 +112,14 @@ export function VehicleSelectionModal({ tourId, isOpen, onClose }: Props) {
 
           <div className="mt-4 mb-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-500">Pasajeros registrados:</span>
-              <span className="font-bold text-slate-800">{totalPassengers}</span>
+              <span className="text-slate-500">Pasajeros elegibles (con anticipo):</span>
+              <span className="font-bold text-slate-800">
+                {tourData?.metrics?.logistics?.total || 0}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Asientos ya asignados:</span>
-              <span className="font-bold text-slate-800">{assignedSeatNumbers.length}</span>
+              <span className="font-bold text-slate-800">{totalAssignedSeats}</span>
             </div>
           </div>
 
@@ -135,7 +138,7 @@ export function VehicleSelectionModal({ tourId, isOpen, onClose }: Props) {
             ) : (
               vehicles.map((v) => {
                 const capacity = getVehicleCapacity(v.layoutMap);
-                const isInsufficient = capacity < totalPassengers;
+                const isInsufficient = capacity < (tourData?.metrics?.logistics?.total || 0);
                 const isSelected = selectedVehicleId === v.id;
 
                 return (
@@ -164,7 +167,8 @@ export function VehicleSelectionModal({ tourId, isOpen, onClose }: Props) {
                         </span>
                         {isInsufficient && (
                           <span className="mt-1 text-[10px] font-bold text-rose-600">
-                            Capacidad insuficiente (requiere {totalPassengers})
+                            Capacidad insuficiente (requiere{" "}
+                            {tourData?.metrics?.logistics?.total || 0})
                           </span>
                         )}
                       </div>

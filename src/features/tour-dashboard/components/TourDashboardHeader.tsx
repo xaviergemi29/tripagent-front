@@ -77,7 +77,7 @@ export function TourDashboardHeader({
       </div>
 
       {/* KPI GRID */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* KPI 1: OCCUPANCY */}
         <Card className="flex flex-col justify-between border border-slate-200/80 bg-white p-5 shadow-sm">
           <div>
@@ -169,48 +169,11 @@ export function TourDashboardHeader({
         </Card>
 
         {/* KPI 3: PENDING VALIDATIONS */}
-        <Card
-          className={`flex flex-col justify-between border p-5 shadow-sm ${
-            metrics.pendingValidations > 0
-              ? "border-orange-200 bg-orange-50/50"
-              : "border-slate-200/80 bg-white"
-          }`}
-        >
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-                Por Validar
-              </span>
-              <div className="rounded-lg bg-orange-100 p-2 text-orange-700">
-                <AlertCircle className="h-4 w-4" />
-              </div>
-            </div>
-
-            <div className="mt-3 flex items-baseline gap-2">
-              <span
-                className={`text-3xl font-black tracking-tight ${
-                  metrics.pendingValidations > 0 ? "text-orange-700" : "text-slate-900"
-                }`}
-              >
-                {metrics.pendingValidations}
-              </span>
-              <span className="text-sm font-semibold text-slate-500">Pagos</span>
-            </div>
-          </div>
-
-          <p className="mt-3 text-xs font-medium text-slate-500">
-            {metrics.pendingValidations > 0
-              ? "Requiere revisión manual de comprobantes"
-              : "Sin pagos pendientes de validación"}
-          </p>
-        </Card>
-
-        {/* KPI 4: LOGISTICS */}
         <Card className="flex flex-col justify-between border border-slate-200/80 bg-white p-5 shadow-sm">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-                Logística de Abordaje
+                Asignación Pendiente
               </span>
               <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
                 <Bus className="h-4 w-4" />
@@ -231,8 +194,7 @@ export function TourDashboardHeader({
                 </span>
               ) : (
                 <span className="flex items-center gap-1 text-amber-600">
-                  <AlertCircle className="h-3.5 w-3.5" /> {logistics.unassigned} asignación
-                  pendiente
+                  <AlertCircle className="h-3.5 w-3.5" /> Faltan {logistics.unassigned} por asignar
                 </span>
               )}
             </div>

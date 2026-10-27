@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { User, ShieldAlert, Link as LinkIcon, RefreshCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTourSeats, useUpdateSeat, SeatInfo } from "../hooks/useTourSeats";
@@ -17,27 +17,38 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface Passenger {
   id: string;
   fullName: string;
-  bookingId: string; // 🚀 Requerido para el contexto de grupo
+  bookingId: string;
 }
 
-interface Props {
+interface SeatMapCanvasProps {
   tourId: string;
   layoutMap: (string | null | undefined)[][];
   activePassengers: Passenger[];
+  initialSelectedPassengerId?: string | null;
 }
 
-// Helper para extraer iniciales ("Xavier Ramos" -> "XR")
-const getInitials = (name: string) => {
+const getInitials = (name: string): string => {
   const parts = name.trim().split(" ");
   if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   return name.substring(0, 2).toUpperCase();
 };
 
-export function SeatMapCanvas({ tourId, layoutMap, activePassengers }: Props) {
+export function SeatMapCanvas({
+  tourId,
+  layoutMap,
+  activePassengers,
+  initialSelectedPassengerId,
+}: SeatMapCanvasProps) {
   const { data: assignedSeats = [] } = useTourSeats(tourId);
   const { mutate: updateSeat } = useUpdateSeat(tourId);
 
   const [selectedPassengerId, setSelectedPassengerId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialSelectedPassengerId) {
+      setSelectedPassengerId(initialSelectedPassengerId);
+    }
+  }, [initialSelectedPassengerId]);
 
   const getSeatInfo = (label: string): SeatInfo | undefined =>
     assignedSeats.find((s: any) => s.seatLabel === label);
@@ -66,7 +77,6 @@ export function SeatMapCanvas({ tourId, layoutMap, activePassengers }: Props) {
   };
 
   const handleChangeSeat = (passengerId: string) => {
-    // Ponemos al pasajero en la mano del operador para que toque un nuevo asiento
     setSelectedPassengerId(passengerId);
     toast.info("Toca un asiento vacío para reubicarlo.");
   };
@@ -87,7 +97,6 @@ export function SeatMapCanvas({ tourId, layoutMap, activePassengers }: Props) {
                 const isBlocked = info?.status === "BLOCKED";
                 const isAssigned = info?.status === "ASSIGNED";
 
-                // ESTADO 1: Ocupado (Dropdown Menu para editar)
                 if (isAssigned && info?.passenger) {
                   return (
                     <TooltipProvider key={seatLabel} delayDuration={200}>
@@ -106,7 +115,6 @@ export function SeatMapCanvas({ tourId, layoutMap, activePassengers }: Props) {
                             </DropdownMenuTrigger>
                           </TooltipTrigger>
 
-                          {/* Tooltip visible en Desktop al hacer hover */}
                           <TooltipContent
                             side="top"
                             className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg"
@@ -115,9 +123,7 @@ export function SeatMapCanvas({ tourId, layoutMap, activePassengers }: Props) {
                             <span className="text-[10px] text-indigo-300">Asiento {seatLabel}</span>
                           </TooltipContent>
 
-                          {/* Menú desplegable / Action sheet visible en Desktop y Mobile al hacer TAP */}
                           <DropdownMenuContent align="center" className="w-56">
-                            {/* 🚀 Encabezado para Mobile: Revela la información al hacer tap */}
                             <DropdownMenuLabel className="text-xs font-normal text-slate-500">
                               Pasajero:{" "}
                               <strong className="block text-sm text-slate-900">
@@ -146,7 +152,6 @@ export function SeatMapCanvas({ tourId, layoutMap, activePassengers }: Props) {
                   );
                 }
 
-                // ESTADO 2 y 3: Vacío o Bloqueado (Tap-to-Assign)
                 return (
                   <button
                     key={seatLabel}
@@ -179,7 +184,6 @@ export function SeatMapCanvas({ tourId, layoutMap, activePassengers }: Props) {
         <div className="flex flex-col gap-2">
           {benchPassengers.map((p) => {
             const isSelected = selectedPassengerId === p.id;
-            // Destello visual para acompañantes del mismo grupo
             const isSameGroup = selectedBookingId === p.bookingId && !isSelected;
 
             return (
@@ -198,7 +202,6 @@ export function SeatMapCanvas({ tourId, layoutMap, activePassengers }: Props) {
                     {p.fullName}
                   </span>
                 </div>
-                {/* Indicador de familia/grupo visual */}
                 {isSameGroup && (
                   <span
                     title="Viaja con la persona seleccionada"

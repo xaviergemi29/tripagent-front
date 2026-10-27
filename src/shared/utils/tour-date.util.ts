@@ -119,3 +119,24 @@ export const formatTourDateTime = (
 
   return baseDate;
 };
+
+/**
+ * Formatea un timestamp a fecha y hora corta. Ej: "sáb., 21 sept. 15:30"
+ */
+export const formatShortDateTime = (dateString: string): string => {
+  if (!dateString) return "";
+  return new Date(dateString).toLocaleString("es-MX", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+/**
+ * Devuelve la fecha actual en formato YYYY-MM-DD para nombres de archivos o inputs.
+ */
+export const getTodayIsoString = (): string => {
+  return new Date().toISOString().split("T")[0];
+};

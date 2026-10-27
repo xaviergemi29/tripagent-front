@@ -131,6 +131,7 @@ export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
 
 export const tourOutputSchema = baseTourSchema.extend({
   temporalStatus: z.string().optional(),
+  currentOccupancy: z.number().optional(),
 });
 
 export type TourInput = z.input<typeof tourSchema>;

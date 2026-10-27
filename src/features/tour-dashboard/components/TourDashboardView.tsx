@@ -25,23 +25,53 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
   const [formFilter, setFormFilter] = useState("ALL");
+  const [seatFilter, setSeatFilter] = useState("ALL");
   const isAuditMode = tour?.temporalStatus === "FINALIZADO" || tour?.temporalStatus === "CANCELADO";
   const [selectedTravelerId, setSelectedTravelerId] = useState<string | null>(null);
-  const [validatingPaymentId, setValidatingPaymentId] = useState<string | null>(null);
   const [isQuickReservationOpen, setIsQuickReservationOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"viajeros" | "asientos">("viajeros");
+  const [pendingSeatPassengerId, setPendingSeatPassengerId] = useState<string | null>(null);
+
+  const handleAssignSeatIntent = (passengerId: string): void => {
+    setPendingSeatPassengerId(passengerId); // Guardamos el contexto
+
+    if (!tour?.vehicle) {
+      setIsVehicleModalOpen(true);
+    } else {
+      setActiveTab("asientos");
+    }
+  };
+
+  const handleClearFilters = (): void => {
+    setSearchQuery("");
+    setPaymentFilter("ALL");
+    setFormFilter("ALL");
+    setSeatFilter("ALL");
+  };
 
   const flattenedPassengers = useMemo(() => {
     if (!tour?.travelers) return [];
+
     return tour.travelers.flatMap((titular) => {
-      const allPassengers = [
+      // 🚀 1. Regla Matemática: ¿Tienen derecho a asiento?
+      const hasPaid = titular.paidAmount > 0 || titular.paymentStatus !== "PENDING";
+
+      // Si no han pagado, devolvemos un arreglo vacío (se ignoran por completo)
+      if (!hasPaid) return [];
+
+      // 🚀 2. Si pagaron, agregamos al Titular
+      const eligiblePassengers = [
         { id: titular.id, fullName: titular.fullName, bookingId: titular.bookingId },
       ];
+
+      // 🚀 3. Y a sus acompañantes
       if (titular.companions) {
         titular.companions.forEach((c) => {
-          allPassengers.push({ id: c.id, fullName: c.fullName, bookingId: titular.bookingId });
+          eligiblePassengers.push({ id: c.id, fullName: c.fullName, bookingId: titular.bookingId });
         });
       }
-      return allPassengers;
+
+      return eligiblePassengers;
     });
   }, [tour?.travelers]);
 
@@ -83,7 +113,11 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
         onNewReservation={isAuditMode ? undefined : () => setIsQuickReservationOpen(true)}
       />
       <div className="flex-1 p-4 md:p-6">
-        <Tabs defaultValue="viajeros" className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => setActiveTab(val as "viajeros" | "asientos")}
+          className="w-full"
+        >
           <TabsList className="mb-4">
             <TabsTrigger value="viajeros">Lista de Viajeros y reservas</TabsTrigger>
             <TabsTrigger value="asientos">Mapa de Asientos</TabsTrigger>
@@ -99,6 +133,8 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
               onPaymentFilterChange={setPaymentFilter}
               formFilter={formFilter}
               onFormFilterChange={setFormFilter}
+              seatFilter={seatFilter}
+              onSeatFilterChange={setSeatFilter}
             />
 
             <DashboardTravelerTable
@@ -107,9 +143,11 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
               tourCurrency={tour.currency}
               paymentFilter={paymentFilter}
               formFilter={formFilter}
-              onRowClick={(id) => setSelectedTravelerId(id)}
-              onValidatePaymentClick={(id) => setValidatingPaymentId(id)}
+              seatFilter={seatFilter}
               isAuditMode={isAuditMode}
+              onRowClick={(id) => setSelectedTravelerId(id)}
+              onAssignSeatClick={handleAssignSeatIntent}
+              onClearFilters={handleClearFilters}
             />
           </TabsContent>
 
@@ -119,6 +157,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                 tourId={tourId}
                 layoutMap={tour.vehicle.layoutMap}
                 activePassengers={flattenedPassengers}
+                initialSelectedPassengerId={pendingSeatPassengerId}
               />
             ) : (
               <div className="flex h-64 flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center">
@@ -152,13 +191,6 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
         isAuditMode={isAuditMode}
       />
 
-      {validatingPaymentId && (
-        <PaymentValidationModal
-          isOpen={!!validatingPaymentId}
-          onClose={() => setValidatingPaymentId(null)}
-        />
-      )}
-
       <QuickReservationModal
         tourId={tourId}
         isOpen={isQuickReservationOpen}
@@ -169,6 +201,9 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
         tourId={tourId}
         isOpen={isVehicleModalOpen}
         onClose={() => setIsVehicleModalOpen(false)}
+        onSuccess={() => {
+          setActiveTab("asientos");
+        }}
       />
     </main>
   );

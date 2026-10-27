@@ -1,60 +1,33 @@
 "use client";
 
-import { Fragment, JSX, useState } from "react";
+import { Fragment, JSX, useMemo, useState } from "react";
 import { ChevronRight, ChevronDown, User, Users, Eye, LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { copyToClipboard } from "@/shared/utils/clipboard";
+import { FormStatus, TitularRowDTO } from "../schemas/tour-dashboard.schema";
+import { formatCurrency } from "@/shared/utils/currency.util";
+import {
+  FORM_STATUS_DICT,
+  PAYMENT_STATUS_DICT,
+} from "@/shared/utils/config/status-dictionaries.config";
 
-export type PaymentRecordDTO = {
-  id: string;
-  amount: number;
-  method: string;
-  type: string;
-  createdAt: string;
-};
+export type PaymentFilter = "ALL" | "UNPAID" | "PARTIAL" | "PAID";
+export type RegistrationFilter = "ALL" | "PENDING" | "COMPLETED";
+export type SeatFilter = "ALL" | "UNASSIGNED" | "ASSIGNED";
 
-// Tipado estricto alineado al DTO jerárquico que regresa tu Backend
-export type CompanionDTO = {
-  id: string;
-  bookingId: string;
-  fullName: string;
-  whatsapp: string;
-  role: "COMPANION";
-  paymentStatus: string;
-  paidAmount: number;
-  balance: number;
-  formStatus: "PENDING" | "COMPLETED";
-  seatLabel?: string;
-  boardingPoint?: string;
-};
-
-export type TitularRowDTO = {
-  id: string;
-  bookingId: string;
-  fullName: string;
-  whatsapp: string;
-  role: "TITULAR";
-  groupSize: number;
-  paymentStatus: string;
-  paidAmount: number;
-  balance: number;
-  formStatus: "PENDING" | "COMPLETED";
-  companions: CompanionDTO[];
-  magicToken: string;
-  payments?: PaymentRecordDTO[];
-  seatLabel?: string;
-  boardingPoint?: string;
-};
-
-interface Props {
+interface DashboardTravelerTableProps {
   travelers: TitularRowDTO[];
   searchQuery: string;
-  paymentFilter: string;
-  formFilter: string;
+  paymentFilter: PaymentFilter | string;
+  formFilter: RegistrationFilter | string;
+  seatFilter: SeatFilter | string;
   isAuditMode?: boolean;
+  tourCurrency?: "MXN" | "USD";
   onRowClick: (id: string) => void;
-  onValidatePaymentClick: (id: string, e: React.MouseEvent) => void;
+  onAssignSeatClick: (passengerId: string) => void;
+  onClearFilters?: () => void;
 }
 
 export function DashboardTravelerTable({
@@ -62,10 +35,13 @@ export function DashboardTravelerTable({
   searchQuery,
   paymentFilter,
   formFilter,
+  seatFilter,
   isAuditMode,
+  tourCurrency,
   onRowClick,
-}: Props) {
-  // Estado para controlar qué IDs de titulares tienen su acordeón abierto
+  onAssignSeatClick,
+  onClearFilters,
+}: DashboardTravelerTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const toggleRow = (id: string, e: React.MouseEvent): void => {
@@ -73,71 +49,131 @@ export function DashboardTravelerTable({
     setExpandedGroups((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // 1. Filtrado inteligente en el cliente
-  const filteredTravelers = travelers?.filter((titular) => {
-    const matchesTitular =
-      titular.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      titular.whatsapp.includes(searchQuery);
-    const matchesPayment = paymentFilter === "ALL" || titular.paymentStatus === paymentFilter;
-    const matchesForm = formFilter === "ALL" || titular.formStatus === formFilter;
-
-    if (matchesTitular && matchesPayment && matchesForm) return true;
-
-    // Si el titular no hace match, revisamos si alguno de sus acompañantes lo hace
-    const matchesCompanion = titular.companions?.some(
-      (comp) =>
-        comp.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        comp.whatsapp.includes(searchQuery),
-    );
-
-    return matchesCompanion;
-  });
-
-  const getPaymentBadge = (status: string): JSX.Element => {
-    const styles: Record<string, string> = {
-      PAID: "bg-emerald-100 text-emerald-800",
-      PARTIAL: "bg-blue-100 text-blue-800",
-      PENDING: "bg-slate-100 text-slate-600",
-    };
-    return (
-      <span
-        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${styles[status] || "bg-slate-100"}`}
-      >
-        {status}
-      </span>
-    );
-  };
-
-  const getFormBadge = (status: string): JSX.Element => {
-    return status === "COMPLETED" ? (
-      <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
-        <span className="h-2 w-2 rounded-full bg-emerald-500"></span> Completo
-      </span>
-    ) : (
-      <span className="flex items-center gap-1 text-xs font-medium text-red-600">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-red-500"></span> Pendiente
-      </span>
-    );
-  };
-
-  const handleCopyLink = (e: React.MouseEvent, token?: string): void => {
+  const handleCopyLink = async (e: React.MouseEvent, token?: string): Promise<void> => {
     e.stopPropagation();
     if (!token) return;
 
     const magicLinkUrl = `${window.location.origin}/register?token=${token}`;
+    const success = await copyToClipboard(magicLinkUrl);
 
-    navigator.clipboard
-      .writeText(magicLinkUrl)
-      .then(() => {
-        toast.success("Enlace copiado", {
-          description: "El Magic Link está listo para enviarse por WhatsApp.",
-        });
-      })
-      .catch(() => {
-        toast.error("Error al copiar", {
-          description: "No se pudo acceder al portapapeles.",
-        });
+    if (success) {
+      toast.success("Enlace copiado", {
+        description: "El enlace está listo para pegarse en WhatsApp.",
       });
+    } else {
+      toast.error("Error al copiar", { description: "Por favor, copia el enlace manualmente." });
+    }
+  };
+
+  const filteredTravelers = useMemo(() => {
+    if (!travelers) return [];
+
+    return travelers.filter((titular) => {
+      // Regla 1: Búsqueda. Verifica titular O acompañantes de manera aislada.
+      const matchSearch = () => {
+        if (!searchQuery.trim()) return true;
+        const query = searchQuery.toLowerCase().trim();
+
+        const titularMatch =
+          titular.fullName.toLowerCase().includes(query) || titular.whatsapp.includes(query);
+
+        if (titularMatch) return true;
+
+        return (
+          titular.companions?.some(
+            (comp) => comp.fullName.toLowerCase().includes(query) || comp.whatsapp.includes(query),
+          ) ?? false
+        );
+      };
+
+      // Regla 2: Finanzas (Defensive Programming contra inconsistencias de DB)
+      const matchPayment = () => {
+        if (paymentFilter === "ALL") return true;
+
+        let resolvedStatus = "UNPAID";
+        if (titular.paymentStatus === "PAID" || (titular.paidAmount > 0 && titular.balance <= 0)) {
+          resolvedStatus = "PAID";
+        } else if (
+          titular.paidAmount > 0 ||
+          ["ADVANCE", "PARTIAL", "PENDING_VALIDATION"].includes(titular.paymentStatus)
+        ) {
+          resolvedStatus = "PARTIAL";
+        }
+
+        return resolvedStatus === paymentFilter;
+      };
+
+      // 🚀 Escenario 2 PM: Evaluación de Grupo para el Formulario
+      const matchRegistration = () => {
+        if (formFilter === "ALL") return true;
+
+        const isTitularCompleted = titular.formStatus === "COMPLETED";
+        const areCompanionsCompleted =
+          titular.companions?.every((c) => c.formStatus === "COMPLETED") ?? true;
+
+        // La cadena es tan fuerte como su eslabón más débil
+        const groupStatus = isTitularCompleted && areCompanionsCompleted ? "COMPLETED" : "PENDING";
+
+        return groupStatus === formFilter;
+      };
+
+      // Regla 4: Filtro de Asientos (Evaluación de Grupo)
+      const matchSeat = () => {
+        if (seatFilter === "ALL") return true;
+
+        const groupMembers = [titular, ...(titular.companions || [])];
+
+        if (seatFilter === "UNASSIGNED") {
+          // Si AL MENOS UNO no tiene asiento, el grupo requiere atención
+          return groupMembers.some((member) => !member.seatLabel);
+        }
+
+        if (seatFilter === "ASSIGNED") {
+          // Solo si TODOS tienen asiento, el grupo está completo
+          return groupMembers.every((member) => !!member.seatLabel);
+        }
+
+        return true;
+      };
+
+      // 🚀 Escenario 1 PM: Short-circuit evaluation estricta (AND)
+      return matchSearch() && matchPayment() && matchRegistration() && matchSeat();
+    });
+  }, [travelers, searchQuery, paymentFilter, formFilter, seatFilter]);
+
+  const getFinancialBadge = (status: string, paidAmount: number, balance: number): JSX.Element => {
+    let resolvedKey = "PENDING";
+
+    if (status === "PAID" || (paidAmount > 0 && balance <= 0)) {
+      resolvedKey = "PAID";
+    } else if (paidAmount > 0 || ["ADVANCE", "PARTIAL", "PENDING_VALIDATION"].includes(status)) {
+      resolvedKey = "PARTIAL";
+    }
+
+    const config = PAYMENT_STATUS_DICT[resolvedKey] || PAYMENT_STATUS_DICT.PENDING;
+
+    return (
+      <span
+        className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-wide uppercase ${config.style}`}
+      >
+        {config.label}
+      </span>
+    );
+  };
+
+  const getRegistrationBadge = (status: FormStatus | string): JSX.Element => {
+    const safeStatus = (status as FormStatus) || "PENDING";
+    const config = FORM_STATUS_DICT[safeStatus] || FORM_STATUS_DICT.PENDING;
+    const isCompleted = safeStatus === "COMPLETED";
+
+    return (
+      <span className={`flex items-center gap-1.5 text-xs font-medium ${config.style}`}>
+        <span
+          className={`h-2 w-2 rounded-full ${isCompleted ? "bg-emerald-500" : "animate-pulse bg-red-500"}`}
+        />
+        {config.label}
+      </span>
+    );
   };
 
   return (
@@ -147,35 +183,33 @@ export function DashboardTravelerTable({
           <thead className="border-b bg-slate-50 font-semibold text-slate-600">
             <tr>
               <th className="w-10 px-4 py-4"></th>
-              <th className="px-6 py-4">Viajero</th>
+              <th className="px-6 py-4">Viajero / Grupo</th>
               <th className="px-6 py-4">Asiento</th>
               <th className="px-6 py-4">Abordaje</th>
               <th className="px-6 py-4">Contacto</th>
-              <th className="px-6 py-4">Datos del Pasajero</th>
-              <th className="px-6 py-4">Estado Pago</th>
-              <th className="px-6 py-4">Finanzas</th>
+              <th className="px-6 py-4">Registro</th>
+              <th className="px-6 py-4">Estado Financiero</th>
               <th className="px-6 py-4 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {filteredTravelers?.map((titular) => {
+            {filteredTravelers.map((titular) => {
               const isExpanded = !!expandedGroups[titular.id];
               const hasCompanions = titular.companions && titular.companions.length > 0;
               const hasPaid = titular.paidAmount > 0 || titular.paymentStatus !== "PENDING";
+              const registeredCount = 1 + (titular.companions?.length || 0);
+              const missingCount = Math.max(0, titular.groupSize - registeredCount);
+              const isGroupIncomplete = missingCount > 0;
 
               return (
                 <Fragment key={titular.id}>
-                  {/* Fila del Titular (Padre) */}
+                  {/* FILA DEL TITULAR */}
                   <tr
-                    key={titular.id}
                     className="cursor-pointer transition-colors hover:bg-slate-50"
                     onClick={() => onRowClick(titular.id)}
                   >
-                    <td
-                      className="px-4 py-4"
-                      onClick={(e) => hasCompanions && toggleRow(titular.id, e)}
-                    >
-                      {hasCompanions ? (
+                    <td className="px-4 py-4" onClick={(e) => toggleRow(titular.id, e)}>
+                      {(hasCompanions || isGroupIncomplete) && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -187,15 +221,17 @@ export function DashboardTravelerTable({
                             <ChevronRight className="h-4 w-4" />
                           )}
                         </Button>
-                      ) : null}
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-indigo-600" />
                         <div>
                           <div className="font-medium text-slate-900">{titular.fullName}</div>
-                          <div className="text-[10px] tracking-wider text-slate-400 uppercase">
-                            Titular (Grupo de {titular.groupSize})
+                          <div
+                            className={`text-[10px] font-semibold tracking-wider uppercase ${isGroupIncomplete ? "text-amber-600" : "text-slate-400"}`}
+                          >
+                            Grupo: {registeredCount}/{titular.groupSize} Registrados
                           </div>
                         </div>
                       </div>
@@ -207,21 +243,23 @@ export function DashboardTravelerTable({
                             {titular.seatLabel}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-slate-500">
-                            Sin asignar
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAssignSeatClick(titular.id);
+                            }}
+                          >
+                            [ Asignar Asiento ]
                           </Badge>
                         )
                       ) : (
-                        <div className="flex flex-col items-start gap-0.5">
-                          <Badge variant="outline" className="bg-slate-50 text-slate-400">
-                            Pendiente
-                          </Badge>
-                          <span className="text-muted-foreground text-[10px]">Requiere abono</span>
-                        </div>
+                        <Badge variant="outline" className="bg-slate-50 text-slate-400 opacity-60">
+                          🔒 Requiere anticipo
+                        </Badge>
                       )}
                     </td>
-
-                    {/* 🚀 COLUMNA: ABORDAJE */}
                     <td className="px-6 py-4">
                       {titular.boardingPoint ? (
                         <span className="text-xs font-medium text-slate-700">
@@ -234,19 +272,25 @@ export function DashboardTravelerTable({
                     <td className="px-6 py-4 font-mono text-xs text-slate-600">
                       {titular.whatsapp}
                     </td>
-                    <td className="px-6 py-4">{getFormBadge(titular.formStatus)}</td>
-                    <td className="px-6 py-4">{getPaymentBadge(titular.paymentStatus)}</td>
+                    <td className="px-6 py-4">{getRegistrationBadge(titular.formStatus)}</td>
                     <td className="px-6 py-4">
-                      <div className="text-xs font-medium text-slate-900">
-                        Pagado: ${titular.paidAmount}
+                      <div className="flex flex-col items-start gap-1">
+                        {getFinancialBadge(
+                          titular.paymentStatus,
+                          titular.paidAmount,
+                          titular.balance,
+                        )}
+                        {titular.balance > 0 ? (
+                          <span className="text-[11px] font-bold text-slate-500">
+                            Debe:{" "}
+                            {formatCurrency(titular.balance, { currency: tourCurrency || "MXN" })}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-medium text-slate-400">
+                            Sin adeudos
+                          </span>
+                        )}
                       </div>
-                      {titular.balance > 0 ? (
-                        <div className="text-[10px] font-bold text-orange-600">
-                          Debe: ${titular.balance}
-                        </div>
-                      ) : (
-                        <div className="text-[10px] font-medium text-emerald-600">Liquidado</div>
-                      )}
                     </td>
                     <td className="space-x-2 px-6 py-4 text-right">
                       {titular.formStatus === "PENDING" && titular.magicToken && (
@@ -254,8 +298,7 @@ export function DashboardTravelerTable({
                           variant="outline"
                           size="icon"
                           className="border-slate-200 text-slate-500 hover:text-indigo-600"
-                          onClick={(e) => handleCopyLink(e, titular.magicToken)}
-                          title="Copiar enlace de registro"
+                          onClick={(e) => handleCopyLink(e, titular?.magicToken || "")}
                         >
                           <LinkIcon className="h-4 w-4" />
                         </Button>
@@ -270,7 +313,7 @@ export function DashboardTravelerTable({
                     </td>
                   </tr>
 
-                  {/* Filas de Acompañantes (Hijos / Acordeón expandido) */}
+                  {/* FILAS DE ACOMPAÑANTES REALES */}
                   {isExpanded &&
                     titular.companions?.map((companion) => (
                       <tr
@@ -299,57 +342,45 @@ export function DashboardTravelerTable({
                                 {companion.seatLabel}
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-slate-500">
-                                Sin asignar
+                              <Badge
+                                variant="outline"
+                                className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onAssignSeatClick(companion.id);
+                                }}
+                              >
+                                [ Asignar Asiento ]
                               </Badge>
                             )
                           ) : (
-                            <div className="flex flex-col items-start gap-0.5">
-                              <Badge variant="outline" className="bg-slate-50 text-slate-400">
-                                Pendiente
-                              </Badge>
-                            </div>
+                            <Badge
+                              variant="outline"
+                              className="bg-slate-50 text-slate-400 opacity-60"
+                            >
+                              🔒 Requiere anticipo
+                            </Badge>
                           )}
                         </td>
-
-                        {/* 🚀 COLUMNA: ABORDAJE ACOMPAÑANTE */}
                         <td className="px-6 py-3">
                           {companion.boardingPoint ? (
                             <span className="text-xs font-medium text-slate-700">
                               {companion.boardingPoint}
                             </span>
                           ) : (
-                            <span className="text-xs text-slate-500 italic">
-                              {titular.boardingPoint ? "Mismo punto" : "Por definir"}
-                            </span>
+                            <span className="text-xs text-slate-500 italic">Por definir</span>
                           )}
                         </td>
                         <td className="px-6 py-3 font-mono text-xs text-slate-500">
                           {companion.whatsapp}
                         </td>
-                        <td className="px-6 py-3">{getFormBadge(companion.formStatus)}</td>
-                        <td className="px-6 py-3">
-                          <span className="text-xs text-slate-400 italic">—</span>
-                        </td>
+                        <td className="px-6 py-3">{getRegistrationBadge(companion.formStatus)}</td>
                         <td className="px-6 py-3">
                           <span className="text-xs text-slate-400 italic">
                             Cubierto por titular
                           </span>
                         </td>
-                        <td className="space-x-2 px-6 py-4 text-right">
-                          {titular.formStatus === "PENDING" &&
-                            titular.magicToken &&
-                            !isAuditMode && (
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="border-slate-200 text-slate-500 hover:text-indigo-600"
-                                onClick={(e) => handleCopyLink(e, titular.magicToken)}
-                                title="Copiar enlace de registro"
-                              >
-                                <LinkIcon className="h-4 w-4" />
-                              </Button>
-                            )}
+                        <td className="px-6 py-3 text-right">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -360,14 +391,107 @@ export function DashboardTravelerTable({
                         </td>
                       </tr>
                     ))}
+
+                  {/* PLACEHOLDERS PARA REGISTROS FALTANTES */}
+                  {isExpanded &&
+                    isGroupIncomplete &&
+                    Array.from({ length: missingCount }).map((_, index) => (
+                      <tr
+                        key={`ghost-${titular.id}-${index}`}
+                        className="border-t border-slate-100 bg-slate-50/40 opacity-70"
+                      >
+                        <td className="px-4 py-3"></td>
+                        <td className="px-6 py-3 pl-10">
+                          <div className="flex items-center gap-2">
+                            <User className="h-3.5 w-3.5 text-slate-300" />
+                            <div>
+                              <div className="text-xs font-medium text-slate-500 italic">
+                                Acompañante pendiente de registro
+                              </div>
+                              <div className="text-[9px] tracking-wider text-slate-400 uppercase">
+                                Lugar reservado #{registeredCount + index + 1}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-3">
+                          {hasPaid ? (
+                            <Badge
+                              variant="outline"
+                              className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAssignSeatClick(titular.id);
+                              }}
+                            >
+                              [ Asignar Asiento ]
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="bg-slate-50 text-slate-400 opacity-60"
+                            >
+                              🔒 Requiere anticipo
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-6 py-3">
+                          <span className="text-xs text-slate-400">—</span>
+                        </td>
+                        <td className="px-6 py-3">
+                          <span className="text-xs text-slate-400">—</span>
+                        </td>
+                        <td className="px-6 py-3">{getRegistrationBadge("PENDING")}</td>
+                        <td className="px-6 py-3">
+                          <span className="text-xs text-slate-400 italic">
+                            Cubierto por titular
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-right">
+                          {titular.magicToken && !isAuditMode && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 border-amber-200 bg-amber-50 text-[10px] text-amber-700 hover:bg-amber-100"
+                              onClick={(e) => handleCopyLink(e, titular?.magicToken || "")}
+                            >
+                              Enviar Link
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
                 </Fragment>
               );
             })}
 
-            {filteredTravelers?.length === 0 && (
+            {/* 🚀 Escenario 3 PM: Empty State Resolutivo */}
+            {filteredTravelers.length === 0 && travelers?.length > 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
-                  No se encontraron viajeros o grupos con los filtros actuales.
+                <td colSpan={8} className="px-6 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center gap-3 text-slate-500">
+                    <p className="text-sm font-medium">
+                      No se encontraron viajeros con los filtros actuales.
+                    </p>
+                    {onClearFilters && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onClearFilters}
+                        className="text-slate-600 hover:text-slate-900"
+                      >
+                        Limpiar filtros
+                      </Button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            )}
+
+            {travelers?.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                  Aún no hay viajeros registrados en este tour.
                 </td>
               </tr>
             )}
