@@ -31,9 +31,10 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   const [isQuickReservationOpen, setIsQuickReservationOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"viajeros" | "asientos">("viajeros");
   const [pendingSeatPassengerId, setPendingSeatPassengerId] = useState<string | null>(null);
-
+  const freeSeatsCount =
+    (tour?.metrics?.occupancy?.max || 0) - (tour?.metrics?.occupancy?.current || 0);
   const handleAssignSeatIntent = (passengerId: string): void => {
-    setPendingSeatPassengerId(passengerId); // Guardamos el contexto
+    setPendingSeatPassengerId(passengerId);
 
     if (!tour?.vehicle) {
       setIsVehicleModalOpen(true);
@@ -138,6 +139,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
             />
 
             <DashboardTravelerTable
+              tourId={tourId}
               travelers={tour.travelers}
               searchQuery={searchQuery}
               tourCurrency={tour.currency}
@@ -145,6 +147,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
               formFilter={formFilter}
               seatFilter={seatFilter}
               isAuditMode={isAuditMode}
+              freeSeatsCount={freeSeatsCount}
               onRowClick={(id) => setSelectedTravelerId(id)}
               onAssignSeatClick={handleAssignSeatIntent}
               onClearFilters={handleClearFilters}
