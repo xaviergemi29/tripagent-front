@@ -72,11 +72,17 @@ export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
   if (data.depositPerPerson > data.price) {
     ctx.addIssue({
       code: "custom",
-      message: "El anticipo no puede ser mayor al precio total del tour",
+      message: "El anticipo no puede ser mayor al precio total",
       path: ["depositPerPerson"],
+    });
+    ctx.addIssue({
+      code: "custom",
+      message: "El precio total no puede ser menor al anticipo",
+      path: ["price"],
     });
   }
 
+  // 2. Fechas: Alertamos en ambos campos
   if (data.returnDate && data.departureDateTime) {
     const departure = new Date(data.departureDateTime);
     const returnD = new Date(data.returnDate);
@@ -85,6 +91,11 @@ export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
         code: "custom",
         message: "La fecha de regreso no puede ser anterior a la salida",
         path: ["returnDate"],
+      });
+      ctx.addIssue({
+        code: "custom",
+        message: "La salida no puede ser posterior al regreso",
+        path: ["departureDateTime"],
       });
     }
   }

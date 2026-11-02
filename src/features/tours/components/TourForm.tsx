@@ -84,10 +84,18 @@ export function TourForm({ tour }: CreateTourFormProps) {
   const acceptsCash = form.watch("acceptsCash");
   const depositPerPerson = form.watch("depositPerPerson") || 0;
   const price = form.watch("price");
+  const departureDateTime = form.watch("departureDateTime");
+  const returnDate = form.watch("returnDate");
 
   useEffect(() => {
-    form.trigger("depositPerPerson");
-  }, [price, form]);
+    form.trigger(["depositPerPerson", "price"]);
+  }, [price, depositPerPerson, form]);
+
+  useEffect(() => {
+    if (returnDate && departureDateTime) {
+      form.trigger(["returnDate", "departureDateTime"]);
+    }
+  }, [departureDateTime, returnDate, form]);
 
   useEffect(() => {
     if (tour) {

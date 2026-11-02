@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   MoreHorizontal,
-  Edit,
   Trash2,
   Phone,
   Mail,
@@ -11,6 +10,8 @@ import {
   ShieldAlert,
   Activity,
   UserX,
+  Baby,
+  Pencil,
 } from "lucide-react";
 
 import {
@@ -31,9 +32,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { TravelerOutput } from "../schemas/traveler.schema";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { calculateAge } from "@/shared/utils/calculate-age";
 
 export interface TravelerTableRow extends TravelerOutput {
   tripCount?: number;
+  passengerType?: "ADULT" | "CHILD";
 }
 
 interface TravelersTableProps {
@@ -75,7 +80,7 @@ export function TravelersTable({
   onDelete,
   onViewHistory,
 }: TravelersTableProps) {
-  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -85,7 +90,7 @@ export function TravelersTable({
     );
   }
 
-  // Estado vacío para búsquedas sin resultados (cuando sí existen pasajeros registrados)
+  // Estado vacío para búsquedas sin resultados
   if (travelers.length === 0 && isFiltered) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center text-slate-500">
@@ -113,7 +118,7 @@ export function TravelersTable({
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/50">
-              <TableHead className="w-[220px]">Viajero</TableHead>
+              <TableHead className="w-[260px]">Viajero</TableHead>
               <TableHead>Contacto (WhatsApp / Email)</TableHead>
               <TableHead>Nivel de Fidelidad</TableHead>
               <TableHead className="w-[280px]">Notas Médicas</TableHead>
@@ -126,27 +131,50 @@ export function TravelersTable({
                 traveler.medicalNotes && traveler.medicalNotes.trim().length > 0,
               );
 
+              const age = calculateAge(traveler.birthDate);
+              const isChild = traveler.passengerType === "CHILD" || (age !== null && age < 18);
+
               return (
                 <TableRow key={traveler.id} className="transition-colors hover:bg-slate-50">
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600">
-                        <User className="h-4 w-4" />
+                  {/* --- COLUMNA 1: VIAJERO --- */}
+                  <TableCell className="py-3">
+                    <div className="flex items-start gap-2.5">
+                      <div className="mt-0.5 rounded-md bg-slate-100/70 p-1 text-slate-500">
+                        {isChild ? (
+                          <Baby className="h-4 w-4 shrink-0 text-amber-600" />
+                        ) : (
+                          <User className="h-4 w-4 shrink-0 text-slate-500" />
+                        )}
                       </div>
-                      <span
-                        className="line-clamp-2 font-semibold text-slate-900"
-                        title={traveler.fullName}
-                      >
-                        {traveler.fullName}
-                      </span>
+
+                      <div className="flex flex-col">
+                        <span
+                          className="line-clamp-2 text-sm leading-tight font-semibold text-slate-900"
+                          title={traveler.fullName}
+                        >
+                          {traveler.fullName}
+                        </span>
+
+                        {isChild && (
+                          <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full border border-amber-200/70 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                            <span>Menor de edad</span>
+                            {age !== null && (
+                              <span className="font-bold text-amber-900">({age} años)</span>
+                            )}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
 
+                  {/* --- COLUMNA 2: CONTACTO --- */}
                   <TableCell>
                     <div className="flex flex-col space-y-1.5 text-xs">
                       <span className="flex items-center font-medium text-slate-700">
                         <Phone className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
-                        {traveler.whatsappPhone}
+                        {traveler.whatsappPhone || (
+                          <span className="text-slate-400 italic">Sin teléfono</span>
+                        )}
                       </span>
                       {traveler.email && (
                         <span
@@ -160,8 +188,10 @@ export function TravelersTable({
                     </div>
                   </TableCell>
 
+                  {/* --- COLUMNA 3: FIDELIDAD --- */}
                   <TableCell>{renderFidelidadBadge(traveler.tripCount)}</TableCell>
 
+                  {/* --- COLUMNA 4: NOTAS MÉDICAS --- */}
                   <TableCell>
                     {hasMedicalNotes ? (
                       <div className="flex w-full items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2.5 text-amber-700">
@@ -178,47 +208,60 @@ export function TravelersTable({
                     )}
                   </TableCell>
 
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-slate-200 focus:outline-none"
-                          aria-label="Abrir menú de opciones"
-                        >
-                          <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuLabel className="text-xs text-slate-500">
-                          Opciones
-                        </DropdownMenuLabel>
-                        <DropdownMenuItem
-                          className="cursor-pointer font-medium text-indigo-700 focus:bg-indigo-50"
-                          onClick={() => {
-                            if (traveler.id) onViewHistory?.(traveler.id);
-                          }}
-                        >
-                          <Activity className="mr-2 h-4 w-4" /> Ver Historial
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="cursor-pointer font-medium"
-                          onClick={() => onEdit?.(traveler)}
-                        >
-                          <Edit className="mr-2 h-4 w-4 text-slate-500" /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="cursor-pointer font-medium text-red-600 focus:bg-red-50 focus:text-red-700"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (traveler.id) setDeletingId(traveler.id);
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  {/* --- COLUMNA 5: ACCIONES --- */}
+                  <TableCell className="py-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {/* Acción Directa: Editar */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-500 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                        onClick={() => onEdit?.(traveler)}
+                        title="Editar viajero"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Editar {traveler.fullName}</span>
+                      </Button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-400 hover:text-slate-700"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Más opciones</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuLabel className="text-xs text-slate-500">
+                            Opciones
+                          </DropdownMenuLabel>
+
+                          <DropdownMenuItem
+                            className="cursor-pointer font-medium text-indigo-700 focus:bg-indigo-50"
+                            onClick={() => {
+                              if (traveler.id) onViewHistory?.(traveler.id);
+                            }}
+                          >
+                            <Activity className="mr-2 h-4 w-4" /> Ver Historial
+                          </DropdownMenuItem>
+
+                          <DropdownMenuSeparator />
+
+                          <DropdownMenuItem
+                            className="cursor-pointer font-medium text-red-600 focus:bg-red-50 focus:text-red-700"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (traveler.id) setDeletingId(traveler.id);
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
