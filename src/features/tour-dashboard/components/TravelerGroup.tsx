@@ -4,14 +4,24 @@ import {
   ChevronDown,
   User,
   Users,
-  Eye,
-  LinkIcon,
+  Wallet,
+  Link2,
   UserMinus,
   UserPlus,
   Trash2,
+  MoreVertical,
   Lock,
   CornerDownRight,
+  ArrowLeftRight,
 } from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -21,6 +31,7 @@ import {
 } from "@/shared/utils/config/status-dictionaries.config";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { copyToClipboard } from "@/shared/utils/clipboard";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TravelerGroupProps {
   titular: TitularRowDTO;
@@ -34,6 +45,7 @@ interface TravelerGroupProps {
   onAddPassengerClick: (titular: TitularRowDTO) => void;
   onRemovePassengerClick: (bookingId: string, passengerId: string, name: string) => void;
   onRemoveGhostSlotClick: (bookingId: string) => void;
+  onTransferBookingClick?: (titular: TitularRowDTO) => void;
 }
 
 const getFinancialBadge = (status: string, paidAmount: number, balance: number): JSX.Element => {
@@ -83,6 +95,7 @@ export function TravelerGroup({
   onAssignSeatClick,
   onAddPassengerClick,
   onRemovePassengerClick,
+  onTransferBookingClick,
 }: TravelerGroupProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -135,21 +148,15 @@ export function TravelerGroup({
               </div>
             )}
 
-            <div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-sm font-semibold text-slate-900">{titular.fullName}</span>
-
-                {isGroup && (
-                  <span className="inline-flex items-center rounded-md border border-indigo-200/60 bg-indigo-50 px-2 py-0.5 text-[11px] leading-none font-semibold text-indigo-700">
-                    Titular
-                  </span>
-                )}
+            <div className="flex flex-col">
+              <div className="flex flex-wrap items-center gap-1.5 font-medium text-slate-900">
+                <span>{titular.fullName}</span>
+                {isGroup && <span className="text-xs font-normal text-slate-400">Titular</span>}
               </div>
-
               {isGroup && (
-                <p className="mt-0.5 text-[11px] font-medium tracking-tight text-slate-500">
-                  GRUPO: {registeredCount}/{titular.groupSize} REGISTRADOS
-                </p>
+                <span className="mt-0.5 text-[11px] text-slate-500">
+                  Grupo: {titular.groupSize} viajeros ({registeredCount} registrados)
+                </span>
               )}
             </div>
           </div>
@@ -200,29 +207,85 @@ export function TravelerGroup({
             )}
           </div>
         </td>
-        <td className="space-x-2 px-6 py-3.5 text-right">
-          {titular.formStatus === "PENDING" && titular.magicToken && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="border-slate-200 text-slate-500 hover:text-indigo-600"
-              onClick={(e) => handleCopyLink(e, titular?.magicToken || "")}
-            >
-              <LinkIcon className="h-4 w-4" />
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-slate-400 hover:text-indigo-600"
-            onClick={(e) => {
-              e.stopPropagation(); // 🛡️ Evita que se cierre el acordeón
-              onRowClick(titular.id);
-            }}
-            title="Ver detalles del titular"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
+        <td className="px-6 py-3.5 text-right whitespace-nowrap">
+          <TooltipProvider delayDuration={150}>
+            <div className="flex items-center justify-end gap-1.5">
+              {/* MAGICAL LINK PERMANENTE (Registro y Estado de Cuenta) */}
+              {titular.magicToken && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-lg border border-transparent text-slate-500 transition-colors hover:border-indigo-100 hover:bg-indigo-50 hover:text-indigo-600"
+                      onClick={(e) => handleCopyLink(e, titular?.magicToken || "")}
+                      aria-label="Copiar Magic Link"
+                    >
+                      <Link2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
+                  >
+                    Copiar Magic Link del viajero
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-600 shadow-xs transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRowClick(titular.id);
+                    }}
+                    aria-label="Registrar abonos y pagos"
+                  >
+                    <Wallet className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
+                >
+                  Registrar abonos y pagos
+                </TooltipContent>
+              </Tooltip>
+
+              {!isAuditMode && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-52 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+                  >
+                    <DropdownMenuItem
+                      className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-indigo-50/70 hover:text-indigo-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onTransferBookingClick) onTransferBookingClick(titular);
+                      }}
+                    >
+                      <ArrowLeftRight className="h-4 w-4 text-indigo-600" />
+                      <span>Transferir titularidad</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </TooltipProvider>
         </td>
       </tr>
 
@@ -277,33 +340,62 @@ export function TravelerGroup({
             </td>
             <td className="px-6 py-3">{getRegistrationBadge(companion.formStatus)}</td>
             <td className="px-6 py-3 text-xs text-slate-400 italic">Cubierto por titular</td>
-            <td className="space-x-1 px-6 py-3 text-right">
-              {!isAuditMode && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemovePassengerClick(companion.bookingId, companion.id, companion.fullName);
-                  }}
-                  title="Dar de baja pasajero"
-                >
-                  <UserMinus className="h-4 w-4" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-slate-400 hover:text-indigo-600"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRowClick(companion.id);
-                }}
-                title="Ver detalles del acompañante"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
+            <td className="px-6 py-3 text-right whitespace-nowrap">
+              <TooltipProvider delayDuration={150}>
+                <div className="flex items-center justify-end gap-1.5">
+                  {!isAuditMode && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-400 shadow-xs transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemovePassengerClick(
+                              companion.bookingId,
+                              companion.id,
+                              companion.fullName,
+                            );
+                          }}
+                          title="Dar de baja pasajero"
+                        >
+                          <UserMinus className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
+                      >
+                        Dar de baja pasajero
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-600 shadow-xs transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRowClick(companion.id);
+                        }}
+                        aria-label="Registrar abonos y pagos"
+                      >
+                        <Wallet className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
+                    >
+                      Registrar abonos y pagos
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </TooltipProvider>
             </td>
           </tr>
         ))}
@@ -363,7 +455,7 @@ export function TravelerGroup({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                  className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-400 shadow-xs transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                   disabled={isRemovingGhost}
                   onClick={(e) => {
                     e.stopPropagation();

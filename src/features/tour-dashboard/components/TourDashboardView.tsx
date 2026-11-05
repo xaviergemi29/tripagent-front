@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TravelerDetailDrawer } from "./TravelerDetailDrawer";
 import { TravelersTableToolbar } from "./TravelersTableToolbar";
 import { TourDashboardHeader } from "./TourDashboardHeader";
-import { PaymentValidationModal } from "./PaymentValidationModal";
 import { useTourDashboardByTourId } from "../hooks/useTourDashboard";
 import { QuickReservationModal } from "./QuickReservationModal";
 import { SeatMapCanvas } from "@/features/tours/components/SeatMapCanvas";

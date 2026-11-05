@@ -273,6 +273,11 @@ export function TourRegistrationView({
                   placeholder="Nombre del familiar"
                   className="h-11 text-base sm:text-sm"
                 />
+                {methods.formState.errors.mainClient?.emergencyContactName && (
+                  <p className="text-xs text-red-500">
+                    {methods.formState.errors.mainClient.emergencyContactName.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -286,6 +291,11 @@ export function TourRegistrationView({
                   placeholder="Teléfono 10 dígitos"
                   className="h-11 text-base sm:text-sm"
                 />
+                {methods.formState.errors.mainClient?.emergencyContactPhone && (
+                  <p className="text-xs text-red-500">
+                    {methods.formState.errors.mainClient.emergencyContactPhone.message}
+                  </p>
+                )}
               </div>
             </div>
           </div>

@@ -12,11 +12,31 @@ import {
   ShieldCheck,
   Building2,
   Users,
+  User,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+
+// 🚀 1. Importamos las utilidades globales centralizadas
+import { formatCurrency } from "@/shared/utils/currency.util";
+import { formatSpanishLongDate, formatForDateInput } from "@/shared/utils/tour-date.util";
+
+// Mantenemos solo el helper específico de dominio de esta vista (si no tienes uno global para métodos de pago)
+const getMethodLabel = (method: string) => {
+  switch (method?.toUpperCase()) {
+    case "TRANSFER":
+      return "Transferencia";
+    case "CASH":
+      return "En efectivo";
+    case "CARD":
+      return "Tarjeta / Enlace";
+    default:
+      return method || "Pago";
+  }
+};
 
 interface PartialPaymentViewProps {
   bookingId: string;
@@ -40,6 +60,9 @@ interface PartialPaymentViewProps {
   passengers: {
     name: string;
     type: string;
+    boardingPoint?: string;
+    departureTime?: string;
+    pickupReference?: string;
   }[];
   agency: {
     name: string;
@@ -60,7 +83,7 @@ export function PartialPaymentView({
 }: PartialPaymentViewProps) {
   const [copied, setCopied] = useState(false);
 
-  // Cálculos defensivos
+  // Cálculos defensivos y Reglas de Avance
   const totalCost = financials.totalAmount || 0;
   const totalPaid = financials.amountPaid || 0;
   const remaining = Math.max(0, financials.remainingBalance || 0);
@@ -89,7 +112,7 @@ export function PartialPaymentView({
 
   return (
     <div className="min-h-screen bg-[#faf8ff] font-sans text-slate-800 antialiased">
-      {/* Header Web Ligero (Sin navegación nativa) */}
+      {/* Header Web Ligero */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-indigo-50 bg-white/95 px-4 py-3 shadow-xs backdrop-blur-md">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-indigo-600" />
@@ -118,194 +141,238 @@ export function PartialPaymentView({
           </p>
         </div>
 
-        {/* Card Principal: Resumen de Pagos y Barra de Avance */}
+        {/* 1. SECCIÓN: TUS PAGOS */}
         <Card className="overflow-hidden rounded-2xl border-indigo-100/70 bg-white shadow-sm">
           <CardContent className="space-y-4 p-4 sm:p-5">
             <div className="flex items-center gap-2 text-xs font-bold tracking-wide text-indigo-900 uppercase">
-              <ReceiptText className="h-4 w-4 text-indigo-600" /> Tus Pagos
+              <CreditCard className="h-4 w-4 text-indigo-600" /> Tus Pagos
             </div>
 
-            {/* Fila: Costo Total */}
-            <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-              <div>
-                <p className="text-[11px] font-medium text-slate-500 uppercase">
-                  Costo total del viaje
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  ${totalCost.toLocaleString("es-MX")}{" "}
-                  <span className="text-xs font-normal text-slate-500">MXN</span>
-                </p>
-              </div>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                <CreditCard className="h-5 w-5" />
-              </div>
-            </div>
-
-            {/* Fila: Lo que llevas pagado */}
-            <div className="flex items-center justify-between rounded-xl border border-emerald-100/60 bg-emerald-50/60 p-3">
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <p className="text-[11px] font-semibold text-emerald-800 uppercase">
-                    Lo que llevas pagado
-                  </p>
-                  <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] leading-none font-medium text-emerald-700">
-                    Abonado
+            <div className="space-y-2.5">
+              {/* Costo Total */}
+              <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/80 p-3.5">
+                <div>
+                  <span className="block text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+                    Costo total del viaje
+                  </span>
+                  {/* 🚀 Usamos formatCurrency */}
+                  <span className="text-xl font-extrabold text-slate-900">
+                    {formatCurrency(totalCost)}
                   </span>
                 </div>
-                <p className="mt-0.5 text-lg font-bold text-emerald-700">
-                  +${totalPaid.toLocaleString("es-MX")}{" "}
-                  <span className="text-xs font-normal text-emerald-600">MXN</span>
-                </p>
+                <div className="rounded-xl bg-slate-200/60 p-2 text-slate-600">
+                  <ReceiptText className="h-5 w-5" />
+                </div>
               </div>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
-                <Check className="h-5 w-5 stroke-[2.5]" />
-              </div>
-            </div>
 
-            {/* Fila: Te falta por pagar (O Liquidado) */}
-            <div
-              className={`flex items-center justify-between rounded-xl border p-3 ${
-                isFullyPaid
-                  ? "border-emerald-100 bg-emerald-50/50"
-                  : "border-indigo-100/60 bg-indigo-50/50"
-              }`}
-            >
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <p
-                    className={`text-[11px] font-semibold uppercase ${
-                      isFullyPaid ? "text-emerald-800" : "text-indigo-900"
-                    }`}
-                  >
-                    {isFullyPaid ? "Estado de cuenta" : "Te falta por pagar"}
-                  </p>
-                  <span
-                    className={`rounded px-1.5 py-0.5 text-[10px] leading-none font-medium ${
-                      isFullyPaid
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-indigo-100 text-indigo-700"
-                    }`}
-                  >
-                    {isFullyPaid ? "Liquidado" : "Pendiente"}
+              {/* Lo que llevas pagado */}
+              <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold tracking-wider text-emerald-800 uppercase">
+                      Lo que llevas pagado
+                    </span>
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                      Abonado
+                    </span>
+                  </div>
+                  {/* 🚀 Usamos formatCurrency */}
+                  <span className="text-xl font-extrabold text-emerald-700">
+                    +{formatCurrency(totalPaid)}
                   </span>
                 </div>
-                <p
-                  className={`mt-0.5 text-lg font-bold ${
-                    isFullyPaid ? "text-emerald-700" : "text-indigo-950"
-                  }`}
-                >
-                  ${remaining.toLocaleString("es-MX")}{" "}
-                  <span
-                    className={`text-xs font-normal ${
-                      isFullyPaid ? "text-emerald-600" : "text-indigo-600"
-                    }`}
-                  >
-                    MXN
-                  </span>
-                </p>
+                <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
               </div>
+
+              {/* Te falta por pagar / Liquidado */}
               <div
-                className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                  isFullyPaid ? "bg-emerald-100 text-emerald-600" : "bg-indigo-100 text-indigo-600"
+                className={`flex items-center justify-between rounded-xl border p-3.5 ${
+                  isFullyPaid
+                    ? "border-slate-200 bg-slate-50/60"
+                    : "border-indigo-100 bg-indigo-50/40"
                 }`}
               >
-                {isFullyPaid ? <Check className="h-5 w-5" /> : <Hourglass className="h-5 w-5" />}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
+                      Te falta por pagar
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        isFullyPaid
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-indigo-100 text-indigo-700"
+                      }`}
+                    >
+                      {isFullyPaid ? "Completado" : "Pendiente"}
+                    </span>
+                  </div>
+                  {/* 🚀 Usamos formatCurrency */}
+                  <span
+                    className={`text-xl font-extrabold ${
+                      isFullyPaid ? "text-slate-700" : "text-indigo-900"
+                    }`}
+                  >
+                    {formatCurrency(remaining)}
+                  </span>
+                </div>
+                <div
+                  className={`rounded-xl p-2 ${
+                    isFullyPaid ? "bg-slate-200/60 text-slate-500" : "bg-indigo-100 text-indigo-700"
+                  }`}
+                >
+                  {isFullyPaid ? <Check className="h-5 w-5" /> : <Hourglass className="h-5 w-5" />}
+                </div>
               </div>
             </div>
 
             {/* Barra de progreso */}
             <div className="space-y-1.5 pt-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-slate-700">
-                  {percentagePaid === 50
-                    ? "Llevas la mitad pagada (50%)"
-                    : isFullyPaid
-                      ? "¡Felicidades, tu viaje está liquidado!"
-                      : `Llevas ${percentagePaid}% liquidado`}
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <span className="text-slate-700">
+                  {isFullyPaid ? "Viaje 100% pagado" : `Llevas cubierto el ${percentagePaid}%`}
                 </span>
-                <span className="font-medium text-slate-500">{percentagePaid}% liquidado</span>
+                <span className="font-bold text-indigo-600">{percentagePaid}% liquidado</span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full bg-emerald-600 transition-all duration-500"
+                  className="h-full rounded-full bg-emerald-600 transition-all duration-500 ease-out"
                   style={{ width: `${percentagePaid}%` }}
                 />
               </div>
             </div>
 
-            {/* Lista de Abonos Registrados */}
-            {paymentHistory.length > 0 && (
-              <div className="space-y-2 border-t border-slate-100 pt-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" /> TUS ABONOS REGISTRADOS
-                  </span>
-                  <span className="text-[11px] text-slate-500">
-                    {paymentHistory.length} {paymentHistory.length === 1 ? "pago" : "pagos"}
-                  </span>
+            {/* 2. SECCIÓN: TUS ABONOS REGISTRADOS */}
+            <div className="space-y-2 border-t border-slate-100 pt-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-700 uppercase">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> Tus Abonos Registrados
                 </div>
-                <div className="space-y-1.5">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+                  {paymentHistory.length} {paymentHistory.length === 1 ? "pago" : "pagos"}
+                </span>
+              </div>
+
+              {paymentHistory.length === 0 ? (
+                <p className="py-3 text-center text-xs text-slate-400">
+                  Aún no se han registrado abonos en esta reservación.
+                </p>
+              ) : (
+                <div className="space-y-2 pt-1">
                   {paymentHistory.map((p, index) => (
                     <div
                       key={p.id}
-                      className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/70 p-2.5 text-xs"
+                      className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition-colors hover:bg-slate-50"
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-indigo-50 text-indigo-600">
-                          <ReceiptText className="h-3.5 w-3.5" />
+                      <div className="flex items-center gap-3">
+                        <div className="shrink-0 rounded-lg bg-indigo-50 p-2 text-indigo-600">
+                          <ReceiptText className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="font-medium text-slate-800">
-                            Abono {index + 1} • {p.method}
+                          <p className="text-xs font-bold text-slate-900">
+                            Abono {index + 1} • {getMethodLabel(p.method)}
                           </p>
-                          <p className="text-[10px] text-slate-500">
-                            {new Date(p.date).toLocaleDateString("es-MX")}
+                          {/* 🚀 Composición: Extraemos el YYYY-MM-DD y formateamos */}
+                          <p className="text-[11px] text-slate-500 capitalize">
+                            {formatSpanishLongDate(formatForDateInput(p.date))}
                           </p>
                         </div>
                       </div>
-                      <span className="font-bold text-emerald-600">
-                        +${Number(p.amount).toLocaleString("es-MX")} MXN
+                      {/* 🚀 Usamos formatCurrency */}
+                      <span className="text-xs font-bold whitespace-nowrap text-emerald-600">
+                        +{formatCurrency(p.amount)}
                       </span>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
 
-        {/* Personas en este viaje */}
+        {/* 3. SECCIÓN: PERSONAS EN ESTE VIAJE */}
         <Card className="rounded-2xl border-indigo-100/70 bg-white shadow-sm">
-          <CardContent className="space-y-3 p-4 sm:p-5">
+          <CardContent className="space-y-4 p-4 sm:p-5">
+            {/* Header de la sección */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase">
-                <Users className="h-4 w-4 text-indigo-600" /> Personas en este viaje (
-                {passengers.length})
+              <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-800 uppercase">
+                <Users className="h-4 w-4 text-indigo-700" />
+                <span>Personas en este viaje ({passengers.length})</span>
               </div>
+              <span className="flex items-center gap-1 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-600" />
+                Confirmados
+              </span>
             </div>
-            <div className="space-y-2 pt-1">
-              {passengers.map((pass, idx) => (
-                <div
-                  key={idx}
-                  className="space-y-1 rounded-xl border border-slate-100 bg-slate-50/70 p-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-slate-800">{pass.name}</p>
-                    <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                      {pass.type}
-                    </span>
+
+            {/* Lista de Pasajeros */}
+            <div className="space-y-3">
+              {passengers.map((pass, idx) => {
+                const isLead = pass.type?.toLowerCase() === "titular";
+
+                const meetingInfo =
+                  pass.pickupReference ||
+                  (pass.boardingPoint
+                    ? `${pass.boardingPoint}${
+                        pass.departureTime ? ` • Salida: ${pass.departureTime}` : ""
+                      }`
+                    : "Punto de abordaje: Por coordinar");
+
+                return (
+                  <div
+                    key={idx}
+                    className={`rounded-xl border p-3.5 transition-all sm:p-4 ${
+                      isLead
+                        ? "border-indigo-100 bg-gradient-to-r from-indigo-50/40 via-white to-white shadow-[0_2px_8px_-3px_rgba(99,102,241,0.08)]"
+                        : "border-slate-100 bg-slate-50/70"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <div
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform ${
+                            isLead
+                              ? "bg-gradient-to-br from-indigo-600 to-indigo-700 text-white ring-2 ring-indigo-200/80"
+                              : "bg-slate-200/80 text-slate-700"
+                          }`}
+                        >
+                          <User className="h-4 w-4" />
+                        </div>
+
+                        <div className="truncate">
+                          <span className="block truncate text-sm font-bold text-slate-900">
+                            {pass.name}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide ${
+                          isLead
+                            ? "border border-indigo-200/60 bg-indigo-100 text-indigo-800"
+                            : "bg-slate-200/80 text-slate-700"
+                        }`}
+                      >
+                        {pass.type}
+                      </span>
+                    </div>
+
+                    <div className="mt-2.5 flex items-start gap-2 border-t border-slate-100/80 pt-2 text-xs text-slate-600">
+                      <div className="mt-0.5 shrink-0 rounded-lg bg-emerald-50 p-1 text-emerald-700">
+                        <MapPin className="h-3.5 w-3.5" />
+                      </div>
+                      <div className="leading-tight">
+                        <span className="mb-0.5 block text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+                          Punto de abordaje
+                        </span>
+                        <span className="font-medium text-slate-800">{meetingInfo}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-1.5 pt-0.5 text-xs text-slate-600">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-500" />
-                    <span>
-                      Salida programada:{" "}
-                      <strong className="font-medium text-slate-800">
-                        {tourInfo.departureDateTime}
-                      </strong>
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

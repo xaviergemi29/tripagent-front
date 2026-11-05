@@ -6,11 +6,9 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  PauseCircle,
   LayoutDashboard,
   Bus,
   Footprints,
-  PlayCircle,
   Share2,
   Calendar,
   InfoIcon,
@@ -43,6 +41,8 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import { formatTourDateTime, formatSpanishLongDate } from "@/shared/utils/tour-date.util";
+import { formatCurrency } from "@/shared/utils/currency.util";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TourListTableProps {
   tours: TourOutput[];
@@ -85,11 +85,10 @@ const handleShareLink = async (tour: TourOutput): Promise<void> => {
   const publicUrl = tour.brochureUrl || `${window.location.origin}/p/${tour.id}`;
   const formattedDate = formatSpanishLongDate(tour.departureDateTime);
   const deposit = tour.depositPerPerson || 0;
-
-  const depositLine =
-    deposit > 0 ? `💰 Aparta desde: $${deposit.toLocaleString("es-MX")} MXN\n` : "";
-
-  // UI Copy en español (permitido)
+  const formattedDeposit = formatCurrency(deposit, {
+    currency: tour.currency || "MXN",
+  });
+  const depositLine = deposit > 0 ? `💰 Aparta desde: ${formattedDeposit}\n` : "";
   const shareText = `🎒 ¡Hola! Te comparto la información completa para el ${tour.title}
 🗓️ Salida: ${formattedDate}
 ${depositLine}Revisa todos los detalles (horarios, fotos y qué incluye) en nuestro folleto digital:
@@ -247,11 +246,9 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-slate-900">
-                          {new Intl.NumberFormat("es-MX", {
-                            style: "currency",
+                          {formatCurrency(tour.price, {
                             currency: tour.currency || "MXN",
-                          }).format(tour.price)}{" "}
-                          {tour.currency || "MXN"}
+                          })}
                         </span>
                       </div>
                     </TableCell>
@@ -289,11 +286,28 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
                         </Button>
 
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-100">
-                              <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                            </Button>
-                          </DropdownMenuTrigger>
+                          <TooltipProvider delayDuration={150}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 rounded-lg border border-slate-200/80 bg-white shadow-xs transition-colors hover:border-slate-300 hover:bg-slate-100"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
+                              >
+                                Más opciones de operación
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuLabel className="text-xs tracking-wider text-slate-500 uppercase">
                               Operaciones
@@ -312,26 +326,6 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
                               <Link href={`/tours/${tour.id}/edit`}>
                                 <Edit className="mr-2 h-4 w-4 text-slate-500" /> Editar Tour
                               </Link>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem
-                              className="cursor-pointer"
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                handleToggle(tour.id!, tour.isActive);
-                              }}
-                            >
-                              {tour.isActive ? (
-                                <>
-                                  <PauseCircle className="mr-2 h-4 w-4 text-amber-600" /> Pausar
-                                  Ventas
-                                </>
-                              ) : (
-                                <>
-                                  <PlayCircle className="mr-2 h-4 w-4 text-emerald-600" /> Reactivar
-                                  Ventas
-                                </>
-                              )}
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />

@@ -22,19 +22,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { TravelerOutput } from "../schemas/traveler.schema";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { calculateAge } from "@/shared/utils/calculate-age";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface TravelerTableRow extends TravelerOutput {
   tripCount?: number;
@@ -51,23 +44,9 @@ interface TravelersTableProps {
 }
 
 const renderFidelidadBadge = (trips: number = 0): React.ReactNode => {
-  if (trips >= 5) {
-    return (
-      <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-1 text-xs font-bold text-purple-700">
-        🌟 Cliente VIP ({trips})
-      </span>
-    );
-  }
-  if (trips >= 2) {
-    return (
-      <span className="rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-bold text-orange-700">
-        🔥 Frecuente ({trips})
-      </span>
-    );
-  }
   return (
-    <span className="text-xs font-medium text-slate-500">
-      {trips} Viaje{trips !== 1 ? "s" : ""}
+    <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">
+      {trips} {trips === 1 ? "viaje registrado" : "viajes registrados"}
     </span>
   );
 };
@@ -210,58 +189,76 @@ export function TravelersTable({
 
                   {/* --- COLUMNA 5: ACCIONES --- */}
                   <TableCell className="py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {/* Acción Directa: Editar */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-slate-500 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
-                        onClick={() => onEdit?.(traveler)}
-                        title="Editar viajero"
-                      >
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Editar {traveler.fullName}</span>
-                      </Button>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-slate-400 hover:text-slate-700"
+                    <TooltipProvider delayDuration={150}>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Botón Editar */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 rounded-lg border border-slate-200/80 bg-white text-slate-500 shadow-xs transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                              onClick={() => onEdit?.(traveler)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">Editar {traveler.fullName}</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
                           >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Más opciones</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuLabel className="text-xs text-slate-500">
-                            Opciones
-                          </DropdownMenuLabel>
+                            Editar viajero
+                          </TooltipContent>
+                        </Tooltip>
 
-                          <DropdownMenuItem
-                            className="cursor-pointer font-medium text-indigo-700 focus:bg-indigo-50"
-                            onClick={() => {
-                              if (traveler.id) onViewHistory?.(traveler.id);
-                            }}
+                        {/* Botón Ver Historial */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 rounded-lg border border-slate-200/80 bg-white text-slate-500 shadow-xs transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                              onClick={() => {
+                                if (traveler.id) onViewHistory?.(traveler.id);
+                              }}
+                            >
+                              <Activity className="h-4 w-4" />
+                              <span className="sr-only">Ver Historial</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
                           >
-                            <Activity className="mr-2 h-4 w-4" /> Ver Historial
-                          </DropdownMenuItem>
+                            Ver Historial
+                          </TooltipContent>
+                        </Tooltip>
 
-                          <DropdownMenuSeparator />
-
-                          <DropdownMenuItem
-                            className="cursor-pointer font-medium text-red-600 focus:bg-red-50 focus:text-red-700"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              if (traveler.id) setDeletingId(traveler.id);
-                            }}
+                        {/* Botón Eliminar */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 rounded-lg border border-slate-200/80 bg-white text-slate-400 shadow-xs transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                              onClick={() => {
+                                if (traveler.id) setDeletingId(traveler.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Eliminar</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
                           >
-                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                            Eliminar pasajero
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               );

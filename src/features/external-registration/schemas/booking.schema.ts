@@ -11,20 +11,57 @@ const basePassengerSchema = z.object({
   birthDate: z.union([z.iso.date("Formato YYYY-MM-DD"), z.literal("")]).optional(),
 });
 
-export const mainClientSchema = basePassengerSchema.extend({
-  whatsappPhone: z.string().regex(mexicanPhoneRegex, "Debe ser un WhatsApp válido a 10 dígitos"),
-  email: z.email("Correo electrónico inválido").trim(),
-});
+export const mainClientSchema = basePassengerSchema
+  .extend({
+    whatsappPhone: z.string().regex(mexicanPhoneRegex, "Debe ser un WhatsApp válido a 10 dígitos"),
+    email: z.email("Correo electrónico inválido").trim(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.whatsappPhone === data.emergencyContactPhone) {
+      ctx.addIssue({
+        code: "custom",
+        message: "El contacto de emergencia debe ser un número distinto al tuyo",
+        path: ["emergencyContactPhone"],
+      });
+    }
+  });
 
-export const companionSchema = basePassengerSchema.extend({
-  whatsappPhone: z
-    .string()
-    .regex(mexicanPhoneRegex, "WhatsApp inválido")
-    .optional()
-    .or(z.literal("")),
-  email: z.email("Correo inválido").optional().or(z.literal("")),
-  passengerType: z.enum(["ADULT", "CHILD"]),
-});
+export const companionSchema = basePassengerSchema
+  .extend({
+    whatsappPhone: z
+      .string()
+      .regex(mexicanPhoneRegex, "WhatsApp inválido")
+      .optional()
+      .or(z.literal("")),
+    email: z.email("Correo inválido").optional().or(z.literal("")),
+    passengerType: z.enum(["ADULT", "CHILD"]),
+  })
+  .superRefine((data, ctx) => {
+    if (data.passengerType === "ADULT") {
+      if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Correo electrónico inválido o faltante",
+          path: ["email"],
+        });
+      }
+      if (data.whatsappPhone && data.whatsappPhone === data.emergencyContactPhone) {
+        ctx.addIssue({
+          code: "custom",
+          message: "El contacto de emergencia debe ser distinto al WhatsApp del acompañante",
+          path: ["emergencyContactPhone"],
+        });
+      }
+    } else if (data.passengerType === "CHILD") {
+      if (data.whatsappPhone && data.whatsappPhone === data.emergencyContactPhone) {
+        ctx.addIssue({
+          code: "custom",
+          message: "El contacto de emergencia debe ser distinto al WhatsApp del menor",
+          path: ["emergencyContactPhone"],
+        });
+      }
+    }
+  });
 
 export const bookingFormSchema = z.object({
   token: z.string().min(1, "Token de seguridad faltante"),

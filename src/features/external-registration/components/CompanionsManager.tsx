@@ -207,7 +207,7 @@ export function CompanionsManager({
                       onChange={(val) => {
                         field.onChange(val);
                         if (val === "CHILD") {
-                          setValue(`companions.${index}.whatsappPhone`, "");
+                          setValue(`companions.${index}.email`, "", { shouldValidate: true });
                         }
                       }}
                     />
@@ -231,34 +231,63 @@ export function CompanionsManager({
                 </div>
 
                 {/* Grid Dinámico para Datos Personales */}
-                <div
-                  className={`grid grid-cols-1 gap-3 ${
-                    isAdult ? "sm:grid-cols-2" : "sm:grid-cols-1"
-                  }`}
-                >
-                  {/* WhatsApp Solo para Adultos */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {/* WhatsApp (Siempre visible. Obligatorio para Adulto, Opcional para Niño) */}
+                  <div className="animate-in fade-in space-y-1 duration-200">
+                    <Label className="text-xs font-semibold text-slate-600">
+                      WhatsApp{" "}
+                      {isAdult ? (
+                        "*"
+                      ) : (
+                        <span className="font-normal text-slate-400">(Opcional)</span>
+                      )}
+                    </Label>
+                    <Input
+                      {...register(`companions.${index}.whatsappPhone`)}
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="10 dígitos"
+                      disabled={isLocked}
+                      className="h-11 bg-white text-base sm:text-sm"
+                      onBlur={(e) => handleCompanionPhoneBlur(index, e.target.value)}
+                    />
+                    {errors.companions?.[index]?.whatsappPhone && (
+                      <p className="text-xs text-red-500">
+                        {errors.companions?.[index]?.whatsappPhone?.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Email SOLO para Adultos */}
                   {isAdult && (
                     <div className="animate-in fade-in space-y-1 duration-200">
-                      <Label className="text-xs font-semibold text-slate-600">WhatsApp</Label>
+                      <Label className="text-xs font-semibold text-slate-600">
+                        Correo Electrónico *
+                      </Label>
                       <Input
-                        {...register(`companions.${index}.whatsappPhone`)}
-                        type="tel"
-                        inputMode="numeric"
-                        placeholder="10 dígitos"
+                        {...register(`companions.${index}.email`)}
+                        type="email"
+                        placeholder="correo@ejemplo.com"
+                        disabled={isLocked}
                         className="h-11 bg-white text-base sm:text-sm"
-                        onBlur={(e) => handleCompanionPhoneBlur(index, e.target.value)}
                       />
+                      {errors.companions?.[index]?.email && (
+                        <p className="text-xs text-red-500">
+                          {errors.companions?.[index]?.email?.message}
+                        </p>
+                      )}
                     </div>
                   )}
 
                   {/* Fecha de Nacimiento (OBLIGATORIO PARA AMBOS) */}
-                  <div className="space-y-1">
+                  <div className={`space-y-1 ${isAdult && "sm:col-span-2"}`}>
                     <Label className="text-xs font-semibold text-slate-700">
                       Fecha de Nacimiento *
                     </Label>
                     <Input
                       {...register(`companions.${index}.birthDate`)}
                       type="date"
+                      disabled={isLocked && getValues(`companions.${index}.birthDate`) !== ""}
                       className="w-max-full h-11 appearance-none bg-white text-base sm:text-sm"
                     />
                     {errors.companions?.[index]?.birthDate && (
@@ -336,18 +365,32 @@ export function CompanionsManager({
 
                   {!isSameEmergency && (
                     <div className="grid grid-cols-1 gap-3 border-t border-slate-100 pt-2 sm:grid-cols-2">
-                      <Input
-                        {...register(`companions.${index}.emergencyContactName`)}
-                        placeholder="Nombre del familiar"
-                        className="h-11 bg-white text-base sm:text-sm"
-                      />
-                      <Input
-                        {...register(`companions.${index}.emergencyContactPhone`)}
-                        type="tel"
-                        inputMode="numeric"
-                        placeholder="Teléfono 10 dígitos"
-                        className="h-11 bg-white text-base sm:text-sm"
-                      />
+                      <div className="space-y-1">
+                        <Input
+                          {...register(`companions.${index}.emergencyContactName`)}
+                          placeholder="Nombre del familiar"
+                          className="h-11 bg-white text-base sm:text-sm"
+                        />
+                        {errors.companions?.[index]?.emergencyContactName && (
+                          <p className="text-xs text-red-500">
+                            {errors.companions?.[index]?.emergencyContactName.message}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Input
+                          {...register(`companions.${index}.emergencyContactPhone`)}
+                          type="tel"
+                          inputMode="numeric"
+                          placeholder="Teléfono 10 dígitos"
+                          className="h-11 bg-white text-base sm:text-sm"
+                        />
+                        {errors.companions?.[index]?.emergencyContactPhone && (
+                          <p className="text-xs text-red-500">
+                            {errors.companions?.[index]?.emergencyContactPhone.message}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
