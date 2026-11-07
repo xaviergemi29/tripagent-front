@@ -11,6 +11,7 @@ import {
   Trash2,
   MoreVertical,
   Lock,
+  FileDown,
   CornerDownRight,
   ArrowLeftRight,
 } from "lucide-react";
@@ -46,6 +47,7 @@ interface TravelerGroupProps {
   onRemovePassengerClick: (bookingId: string, passengerId: string, name: string) => void;
   onRemoveGhostSlotClick: (bookingId: string) => void;
   onTransferBookingClick?: (titular: TitularRowDTO) => void;
+  onDownloadReceiptClick?: (titular: TitularRowDTO) => void;
 }
 
 const getFinancialBadge = (status: string, paidAmount: number, balance: number): JSX.Element => {
@@ -96,6 +98,7 @@ export function TravelerGroup({
   onAddPassengerClick,
   onRemovePassengerClick,
   onTransferBookingClick,
+  onDownloadReceiptClick,
 }: TravelerGroupProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -210,6 +213,30 @@ export function TravelerGroup({
         <td className="px-6 py-3.5 text-right whitespace-nowrap">
           <TooltipProvider delayDuration={150}>
             <div className="flex items-center justify-end gap-1.5">
+              {hasPaid && onDownloadReceiptClick && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-600 shadow-xs transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDownloadReceiptClick(titular);
+                      }}
+                      aria-label="Descargar Comprobante PDF"
+                    >
+                      <FileDown className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
+                  >
+                    Descargar Comprobante PDF
+                  </TooltipContent>
+                </Tooltip>
+              )}
               {/* MAGICAL LINK PERMANENTE (Registro y Estado de Cuenta) */}
               {titular.magicToken && (
                 <Tooltip>

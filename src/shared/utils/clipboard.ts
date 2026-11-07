@@ -1,3 +1,12 @@
+/**
+ * @description Copia un texto al portapapeles del sistema operativo.
+ * Implementa una estrategia de degradación elegante (Graceful Degradation):
+ * 1. Intenta usar la API moderna `navigator.clipboard` (requiere HTTPS).
+ * 2. Si falla o no está en un contexto seguro, hace fallback al método heredado `document.execCommand`.
+ *
+ * @param {string} text - El texto exacto a copiar.
+ * @returns {Promise<boolean>} `true` si la operación fue exitosa, `false` en caso contrario.
+ */
 export const copyToClipboard = async (text: string): Promise<boolean> => {
   // 1. Intento con la API moderna (Solo funciona en HTTPS o localhost)
   if (navigator?.clipboard && window?.isSecureContext) {
@@ -9,23 +18,23 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
     }
   }
 
-  // 2. Fallback clásico para HTTP en red local o navegadores restringidos
+  // 2. Fallback clásico para HTTP en red local o navegadores/WebViews restringidos
   try {
     const textArea = document.createElement("textarea");
     textArea.value = text;
-    console.log("entro al try 2");
-    // Estilos para que el textarea sea invisible y no altere el scroll visual
+
+    // Estilos para que el textarea sea invisible y no altere el scroll visual del DOM
     textArea.style.position = "fixed";
     textArea.style.left = "-999999px";
     textArea.style.top = "-999999px";
-    textArea.setAttribute("readonly", ""); // Evita que aparezca el teclado en móviles
+    textArea.setAttribute("readonly", ""); // Evita que aparezca el teclado virtual en móviles
 
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
 
-    // 🚀 Suprimimos el warning porque sabemos que está deprecado,
-    // pero es nuestro único fallback vital para HTTP/WebViews.
+    // 🚀 Tech Lead Note: Suprimimos el warning porque sabemos que está deprecado,
+    // pero es nuestro único fallback vital para HTTP/WebViews antiguos.
     // @ts-ignore: document.execCommand is deprecated but required as fallback
     const successful = document.execCommand("copy");
 

@@ -14,18 +14,19 @@ import {
   Users,
   User,
   CheckCircle2,
+  FileText,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-// 🚀 1. Importamos las utilidades globales centralizadas
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { formatSpanishLongDate, formatForDateInput } from "@/shared/utils/tour-date.util";
+import { generatePartialPaymentReceiptPDF } from "./GeneratePartialPaymentReceipt";
 
-// Mantenemos solo el helper específico de dominio de esta vista (si no tienes uno global para métodos de pago)
-const getMethodLabel = (method: string) => {
+const getMethodLabel = (method: string): string => {
   switch (method?.toUpperCase()) {
     case "TRANSFER":
       return "Transferencia";
@@ -43,6 +44,7 @@ interface PartialPaymentViewProps {
   tourInfo: {
     title: string;
     departureDateTime: string;
+    currency?: "MXN" | "USD";
   };
   financials: {
     totalAmount: number;
@@ -75,6 +77,7 @@ interface PartialPaymentViewProps {
 }
 
 export function PartialPaymentView({
+  bookingId,
   tourInfo,
   financials,
   paymentHistory = [],
@@ -82,8 +85,8 @@ export function PartialPaymentView({
   agency,
 }: PartialPaymentViewProps) {
   const [copied, setCopied] = useState(false);
-
-  // Cálculos defensivos y Reglas de Avance
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const tourCurrency = tourInfo.currency || "MXN";
   const totalCost = financials.totalAmount || 0;
   const totalPaid = financials.amountPaid || 0;
   const remaining = Math.max(0, financials.remainingBalance || 0);
@@ -91,7 +94,7 @@ export function PartialPaymentView({
     totalCost > 0 ? Math.min(100, Math.round((totalPaid / totalCost) * 100)) : 0;
   const isFullyPaid = remaining === 0;
 
-  const handleCopyClabe = async () => {
+  const handleCopyClabe = async (): Promise<void> => {
     if (!agency.clabeNumber) return;
     try {
       await navigator.clipboard.writeText(agency.clabeNumber.replace(/\s+/g, ""));
@@ -103,11 +106,53 @@ export function PartialPaymentView({
     }
   };
 
-  const handleSendWhatsApp = () => {
+  const handleSendWhatsApp = (): void => {
     const message = encodeURIComponent(
       `¡Hola ${agency.name}! Quiero reportar un nuevo abono para mi reservación en el "${tourInfo.title}". Adjunto mi comprobante:`,
     );
     window.open(`https://wa.me/${agency.phone.replace(/\D/g, "")}?text=${message}`, "_blank");
+  };
+
+  const handleDownloadPDF = async (): Promise<void> => {
+    try {
+      setIsGeneratingPDF(true);
+
+      const leadPassenger =
+        passengers?.find((p) => p.type?.toLowerCase() === "titular")?.name ||
+        passengers?.[0]?.name ||
+        "Viajero";
+
+      // 🚀 Mapeamos los pasajeros para el PDF
+      const pdfPassengers = passengers.map((p) => ({
+        name: p.name,
+        type: p.type,
+        boardingPoint: p.boardingPoint,
+        departureTime: p.departureTime,
+      }));
+
+      generatePartialPaymentReceiptPDF({
+        agencyName: agency.name || "Agencia de Viajes",
+        agencyPhone: agency.phone || "",
+        tourName: tourInfo.title || "Tour",
+        departureDate: tourInfo.departureDateTime,
+        bookingRef: bookingId,
+        passengerLeadName: leadPassenger,
+        totalAmount: totalCost,
+        amountPaid: totalPaid,
+        remainingBalance: remaining,
+        status: financials.status || "PARTIAL",
+        paymentHistory: paymentHistory || [],
+        passengers: pdfPassengers,
+        currency: tourCurrency,
+      });
+
+      toast.success("Comprobante en PDF generado correctamente");
+    } catch (error) {
+      console.error("Error al generar comprobante PDF:", error);
+      toast.error("No se pudo generar el comprobante. Por favor intenta de nuevo.");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   return (
@@ -155,9 +200,8 @@ export function PartialPaymentView({
                   <span className="block text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
                     Costo total del viaje
                   </span>
-                  {/* 🚀 Usamos formatCurrency */}
                   <span className="text-xl font-extrabold text-slate-900">
-                    {formatCurrency(totalCost)}
+                    {formatCurrency(totalCost, { currency: tourCurrency })}
                   </span>
                 </div>
                 <div className="rounded-xl bg-slate-200/60 p-2 text-slate-600">
@@ -176,9 +220,8 @@ export function PartialPaymentView({
                       Abonado
                     </span>
                   </div>
-                  {/* 🚀 Usamos formatCurrency */}
                   <span className="text-xl font-extrabold text-emerald-700">
-                    +{formatCurrency(totalPaid)}
+                    +{formatCurrency(totalPaid, { currency: tourCurrency })}
                   </span>
                 </div>
                 <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
@@ -209,13 +252,12 @@ export function PartialPaymentView({
                       {isFullyPaid ? "Completado" : "Pendiente"}
                     </span>
                   </div>
-                  {/* 🚀 Usamos formatCurrency */}
                   <span
                     className={`text-xl font-extrabold ${
                       isFullyPaid ? "text-slate-700" : "text-indigo-900"
                     }`}
                   >
-                    {formatCurrency(remaining)}
+                    {formatCurrency(remaining, { currency: tourCurrency })}
                   </span>
                 </div>
                 <div
@@ -245,7 +287,7 @@ export function PartialPaymentView({
             </div>
 
             {/* 2. SECCIÓN: TUS ABONOS REGISTRADOS */}
-            <div className="space-y-2 border-t border-slate-100 pt-3">
+            <div className="space-y-3 border-t border-slate-100 pt-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-700 uppercase">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" /> Tus Abonos Registrados
@@ -274,20 +316,41 @@ export function PartialPaymentView({
                           <p className="text-xs font-bold text-slate-900">
                             Abono {index + 1} • {getMethodLabel(p.method)}
                           </p>
-                          {/* 🚀 Composición: Extraemos el YYYY-MM-DD y formateamos */}
                           <p className="text-[11px] text-slate-500 capitalize">
                             {formatSpanishLongDate(formatForDateInput(p.date))}
                           </p>
                         </div>
                       </div>
-                      {/* 🚀 Usamos formatCurrency */}
                       <span className="text-xs font-bold whitespace-nowrap text-emerald-600">
-                        +{formatCurrency(p.amount)}
+                        +{formatCurrency(p.amount, { currency: tourCurrency })}
                       </span>
                     </div>
                   ))}
                 </div>
               )}
+
+              {/* 🚀 BOTÓN DESCARGAR COMPROBANTE EN PDF */}
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDownloadPDF}
+                  disabled={isGeneratingPDF}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-indigo-200 bg-indigo-50/50 px-4 py-2.5 text-xs font-semibold text-indigo-700 shadow-none transition-all hover:bg-indigo-100/70"
+                >
+                  {isGeneratingPDF ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600" />
+                      <span>Generando comprobante...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-3.5 w-3.5 text-indigo-600" />
+                      <span>Descargar comprobante en PDF</span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

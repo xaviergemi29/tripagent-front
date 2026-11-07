@@ -121,7 +121,11 @@ export const formatTourDateTime = (
 };
 
 /**
- * Formatea un timestamp a fecha y hora corta. Ej: "sáb., 21 sept. 15:30"
+ * @description Formatea un timestamp a una representación de fecha y hora corta y amigable.
+ * Útil para historiales, logs o timestamps de creación (ej. "sáb., 21 sept. 15:30").
+ *
+ * @param {string} dateString - Cadena de texto que representa una fecha válida.
+ * @returns {string} La fecha y hora formateada, o string vacío si la entrada es nula.
  */
 export const formatShortDateTime = (dateString: string): string => {
   if (!dateString) return "";
@@ -135,8 +139,49 @@ export const formatShortDateTime = (dateString: string): string => {
 };
 
 /**
- * Devuelve la fecha actual en formato YYYY-MM-DD para nombres de archivos o inputs.
+ * @description Devuelve la fecha de hoy en formato ISO estándar sin la porción de tiempo.
+ * Útil para establecer valores por defecto en `<input type="date">` o prefijos de nombres de archivos.
+ *
+ * @returns {string} Fecha actual en formato "YYYY-MM-DD".
  */
 export const getTodayIsoString = (): string => {
   return new Date().toISOString().split("T")[0];
 };
+
+/**
+ * @description Procesa una fecha de nacimiento y devuelve un objeto compuesto con datos clave
+ * para validaciones de negocio (UI de reservas, validación de menores de edad, etc.).
+ *
+ * @param {string | null | undefined} birthdateStr - Fecha de nacimiento ingresada.
+ * @returns {Object | null} Objeto con la fecha formateada, edad calculada y flag de minoría de edad, o null si es inválida.
+ */
+export function formatBirthdateAndAge(birthdateStr?: string | null): {
+  formattedDate: string;
+  age: number | null;
+  isMinor: boolean;
+} | null {
+  if (!birthdateStr) return null;
+  const birthDate = new Date(birthdateStr);
+  if (isNaN(birthDate.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+
+  // Ajuste de edad si el mes actual es anterior al de nacimiento o si estamos en el mes pero no ha llegado el día
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  const formattedDate = new Intl.DateTimeFormat("es-MX", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(birthDate);
+
+  return {
+    formattedDate,
+    age: age >= 0 ? age : null,
+    isMinor: age < 18,
+  };
+}

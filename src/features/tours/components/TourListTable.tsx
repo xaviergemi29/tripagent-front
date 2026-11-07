@@ -82,7 +82,7 @@ const getStatusBadge = (isActive: boolean, temporalStatus?: string): JSX.Element
 };
 
 const handleShareLink = async (tour: TourOutput): Promise<void> => {
-  const publicUrl = tour.brochureUrl || `${window.location.origin}/p/${tour.id}`;
+  const publicUrl = `${window.location.origin}/p/${tour.id}`;
   const formattedDate = formatSpanishLongDate(tour.departureDateTime);
   const deposit = tour.depositPerPerson || 0;
   const formattedDeposit = formatCurrency(deposit, {

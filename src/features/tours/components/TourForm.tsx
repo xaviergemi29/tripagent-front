@@ -30,11 +30,11 @@ import { TourBoardingSection } from "./form-sections/TourBoardingSection";
 import { TourAssetSection } from "./form-sections/TourAssetSection";
 import { AgencyBankDetailsBanner } from "./AgencyBankDetailsBanner";
 
-interface CreateTourFormProps {
-  tour: TourOutput;
+interface TourForm {
+  tour?: TourOutput;
 }
 
-export function TourForm({ tour }: CreateTourFormProps) {
+export function TourForm({ tour }: TourForm) {
   const isEditing = !!tour;
   const router = useRouter();
 

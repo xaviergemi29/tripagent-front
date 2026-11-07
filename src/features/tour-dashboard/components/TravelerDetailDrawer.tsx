@@ -12,10 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  useCancelPassenger,
-  useCancelFullBooking,
-} from "@/features/external-registration/hooks/useBookings";
+import { useCancelFullBooking } from "@/features/external-registration/hooks/useBookings";
 import { RegisterPaymentModal } from "./RegisterPaymentModal";
 import { useVoidPayment } from "../hooks/usePayments";
 import type {
@@ -27,6 +24,7 @@ import { formatCurrency } from "@/shared/utils/currency.util";
 import { VoidPaymentModal } from "./VoidPaymentModal";
 import { formatShortDateTime } from "@/shared/utils/tour-date.util";
 import { PAYMENT_METHOD_DICT } from "@/shared/utils/config/status-dictionaries.config";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TravelerDetailDrawerProps {
   tourId: string;
@@ -49,10 +47,8 @@ export function TravelerDetailDrawer({
   const [showCancellationConfirm, setShowCancellationConfirm] = useState(false);
   const [isFullRetention, setIsFullRetention] = useState(true);
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
-  const { mutate: cancelPassenger, isPending } = useCancelPassenger();
   const { mutate: voidPayment, isPending: isVoiding } = useVoidPayment(tourId);
-  const { mutate: cancelFullBooking, isPending: isCancellingFull } = useCancelFullBooking();
-  const [isFullCancellationMode, setIsFullCancellationMode] = useState(false);
+  const { mutate: cancelFullBooking, isPending: isCancelling } = useCancelFullBooking();
 
   const [paymentToVoid, setPaymentToVoid] = useState<PaymentRecordDTO | null>(null);
   const [correctionData, setCorrectionData] = useState<{ amount: number; method: string } | null>(
@@ -63,10 +59,10 @@ export function TravelerDetailDrawer({
   const isUSD = tourCurrency === "USD";
   const isTitular = traveler.role === "TITULAR";
 
-  const titularPayments = traveler.role === "TITULAR" ? traveler.payments : [];
-  const titularBalance = traveler.role === "TITULAR" ? traveler.balance : 0;
-  const titularPaidAmount = traveler.role === "TITULAR" ? traveler.paidAmount : 0;
-  const titularUnitPrice = traveler.role === "TITULAR" ? traveler.unitPrice : 0;
+  const titularPayments = isTitular && "payments" in traveler ? traveler.payments : [];
+  const titularBalance = isTitular && "balance" in traveler ? traveler.balance : 0;
+  const titularPaidAmount = isTitular && "paidAmount" in traveler ? traveler.paidAmount : 0;
+  const titularUnitPrice = isTitular && "unitPrice" in traveler ? traveler.unitPrice : 0;
 
   const voidedOriginalIds = new Set(
     titularPayments
@@ -111,11 +107,7 @@ export function TravelerDetailDrawer({
   const handleConfirmCancellation = (): void => {
     const penaltyAmount = isFullRetention ? titularUnitPrice : parseFloat(manualPenalty) || 0;
 
-    if (isFullCancellationMode) {
-      cancelFullBooking({ bookingId: traveler.bookingId, penaltyAmount });
-    } else {
-      cancelPassenger({ bookingId: traveler.bookingId, travelerId: traveler.id, penaltyAmount });
-    }
+    cancelFullBooking({ bookingId: traveler.bookingId, penaltyAmount });
 
     onClose();
     setShowCancellationConfirm(false);
@@ -278,15 +270,26 @@ export function TravelerDetailDrawer({
                           </p>
                         </div>
                         {!isVoided && !isAuditMode && payment.type === "PAYMENT" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="ml-2 shrink-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                            onClick={() => setPaymentToVoid(payment)}
-                            title="Anular este abono"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <TooltipProvider delayDuration={150}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 rounded-lg border border-slate-200/80 bg-white text-slate-400 shadow-xs transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                                  onClick={() => setPaymentToVoid(payment)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
+                              >
+                                Anular este abono
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                       </div>
                     );
@@ -311,24 +314,11 @@ export function TravelerDetailDrawer({
                         <Button
                           variant="outline"
                           className="w-full border-red-200 font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
-                          onClick={() => {
-                            setShowCancellationConfirm(true);
-                            setIsFullCancellationMode(true);
-                          }}
+                          onClick={() => setShowCancellationConfirm(true)}
                         >
                           Cancelar Reserva Completa (Todos)
                         </Button>
                       )}
-                      <Button
-                        variant="outline"
-                        className="w-full border-orange-200 font-medium text-orange-600 hover:bg-orange-50 hover:text-orange-700"
-                        onClick={() => {
-                          setShowCancellationConfirm(true);
-                          setIsFullCancellationMode(false);
-                        }}
-                      >
-                        Dar de baja solo a este pasajero
-                      </Button>
                     </div>
                   ) : (
                     <div className="animate-in fade-in space-y-4 rounded-lg border border-red-200 bg-white p-4 shadow-sm duration-200">
@@ -387,7 +377,7 @@ export function TravelerDetailDrawer({
                         <Button
                           size="sm"
                           className="w-full bg-red-600 text-white hover:bg-red-700"
-                          disabled={isPending}
+                          disabled={isCancelling}
                           onClick={handleConfirmCancellation}
                         >
                           Confirmar Baja

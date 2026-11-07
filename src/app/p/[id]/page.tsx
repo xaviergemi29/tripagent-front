@@ -51,14 +51,13 @@ async function getPublicTour(tourId: string): Promise<PublicTourOutput | null> {
   }
 }
 
-interface PageProps {
+interface PublicTourLanding {
   params: Promise<{ id: string }>;
 }
 
-export default async function PublicTourLanding({ params }: PageProps) {
+export default async function PublicTourLanding({ params }: PublicTourLanding) {
   const { id: tourId } = await params;
   const tour = await getPublicTour(tourId);
-  console.log("tour", tour);
 
   if (!tour) {
     return (
@@ -72,7 +71,7 @@ export default async function PublicTourLanding({ params }: PageProps) {
   const isHiking = tour.transportModality === "INDEPENDENT_ACCESS";
   const formattedDepartureDate = formatLocalDate(tour.departureDateTime);
 
-  const pdfUrl = tour.brochureUrl ? `http://localhost:3001/public${tour.brochureUrl}` : null;
+  const pdfUrl = tour.brochureUrl ? `http://192.168.1.73/public${tour.brochureUrl}` : null;
 
   const whatsappUrl = buildWhatsAppBrochureUrl({
     agencyPhone: tour.agency.phone || "",

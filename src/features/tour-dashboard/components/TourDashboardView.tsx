@@ -125,7 +125,6 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
 
           <TabsContent value="viajeros" className="space-y-4 outline-none">
             <TravelersTableToolbar
-              travelers={tour.travelers}
               tourId={tourId}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -139,6 +138,8 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
 
             <DashboardTravelerTable
               tourId={tourId}
+              tourTitle={tour.title}
+              agencyName={""}
               travelers={tour.travelers}
               searchQuery={searchQuery}
               tourCurrency={tour.currency}
