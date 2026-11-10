@@ -30,6 +30,16 @@ interface TourRegistrationViewProps {
     depositPerPassenger?: number | null;
   };
   agencyName: string;
+  prefillData?: {
+    fullName?: string;
+    whatsappPhone?: string;
+    email?: string;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+    medicalNotes?: string;
+    birthDate?: string;
+    boardingPoint?: string;
+  } | null;
 }
 
 export function TourRegistrationView({
@@ -37,10 +47,13 @@ export function TourRegistrationView({
   boardingPoints,
   tourInfo,
   agencyName,
+  prefillData,
 }: TourRegistrationViewProps) {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const { mutateAsync: createBooking, isPending } = useCreateBooking();
-  const [isMainClientFound, setIsMainClientFound] = useState(false);
+  const [isMainClientFound, setIsMainClientFound] = useState(
+    !!(prefillData?.whatsappPhone && prefillData?.fullName),
+  );
   const router = useRouter();
   const { lookupTraveler } = usePublicTravelerLookup(token);
 
@@ -50,14 +63,14 @@ export function TourRegistrationView({
     defaultValues: {
       token,
       mainClient: {
-        fullName: "",
-        whatsappPhone: "",
-        email: "",
-        emergencyContactName: "",
-        emergencyContactPhone: "",
-        medicalNotes: "",
-        birthDate: "",
-        boardingPoint: "",
+        fullName: prefillData?.fullName || "",
+        whatsappPhone: prefillData?.whatsappPhone || "",
+        email: prefillData?.email || "",
+        emergencyContactName: prefillData?.emergencyContactName || "",
+        emergencyContactPhone: prefillData?.emergencyContactPhone || "",
+        medicalNotes: prefillData?.medicalNotes || "",
+        birthDate: prefillData?.birthDate || "",
+        boardingPoint: prefillData?.boardingPoint || "",
       },
       hasCompanions: false,
       companionMethod: "MANUAL",

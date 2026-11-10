@@ -66,6 +66,7 @@ const baseTourSchema = z.object({
     )
     .min(1, "Debes agregar al menos un punto de abordaje"),
   brochureUrl: z.string().nullable().optional(),
+  destinationType: z.enum(["NATIONAL", "INTERNATIONAL"]).optional(),
 });
 
 export const tourSchema = baseTourSchema.superRefine((data, ctx) => {

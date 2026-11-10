@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User, ShieldAlert, Link as LinkIcon, RefreshCcw, Trash2 } from "lucide-react";
+import { ShieldAlert, RefreshCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTourSeats, useUpdateSeat, SeatInfo } from "../hooks/useTourSeats";
 import {
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getInitials } from "@/shared/utils/travelers-helpers";
 
 interface Passenger {
   id: string;
@@ -27,16 +28,9 @@ interface SeatMapCanvasProps {
   initialSelectedPassengerId?: string | null;
 }
 
-const getInitials = (name: string): string => {
-  const parts = name.trim().split(" ");
-  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  return name.substring(0, 2).toUpperCase();
-};
-
 export function SeatMapCanvas({
   tourId,
   layoutMap,
-  activePassengers,
   initialSelectedPassengerId,
 }: SeatMapCanvasProps) {
   const { data: assignedSeats = [] } = useTourSeats(tourId);
@@ -53,15 +47,7 @@ export function SeatMapCanvas({
   const getSeatInfo = (label: string): SeatInfo | undefined =>
     assignedSeats.find((s: any) => s.seatLabel === label);
 
-  // Obtener el bookingId del pasajero seleccionado para resaltar a sus acompañantes
-  const selectedBookingId = activePassengers.find((p) => p.id === selectedPassengerId)?.bookingId;
-
-  // Filtrar "Pasajeros en espera" (Microcopy PM)
-  const benchPassengers = activePassengers.filter(
-    (p) => !assignedSeats.some((s: any) => s.passenger?.id === p.id && s.status === "ASSIGNED"),
-  );
-
-  const handleEmptySeatClick = (seatLabel: string) => {
+  const handleEmptySeatClick = (seatLabel: string): void => {
     if (!selectedPassengerId) {
       toast.info("Selecciona primero a un pasajero de la lista.");
       return;
@@ -71,12 +57,12 @@ export function SeatMapCanvas({
     toast.success(`✅ Asiento ${seatLabel} asignado.`);
   };
 
-  const handleRemoveSeat = (seatLabel: string) => {
+  const handleRemoveSeat = (seatLabel: string): void => {
     updateSeat({ seatLabel, status: "AVAILABLE", passengerId: null });
     toast.success("🗑️ Pasajero regresado a la lista de espera.");
   };
 
-  const handleChangeSeat = (passengerId: string) => {
+  const handleChangeSeat = (passengerId: string): void => {
     setSelectedPassengerId(passengerId);
     toast.info("Toca un asiento vacío para reubicarlo.");
   };
@@ -169,57 +155,6 @@ export function SeatMapCanvas({
               })}
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* EL BANQUILLO (SIDEBAR) */}
-      <div className="h-fit max-h-[600px] w-full overflow-y-auto rounded-xl border bg-white p-4 md:w-80">
-        <h3 className="mb-4 flex items-center justify-between font-bold text-slate-800">
-          <span>Faltan por acomodar</span>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-            {benchPassengers.length}
-          </span>
-        </h3>
-
-        <div className="flex flex-col gap-2">
-          {benchPassengers.map((p) => {
-            const isSelected = selectedPassengerId === p.id;
-            const isSameGroup = selectedBookingId === p.bookingId && !isSelected;
-
-            return (
-              <button
-                key={p.id}
-                onClick={() => setSelectedPassengerId(isSelected ? null : p.id)}
-                className={`flex w-full items-center justify-between gap-3 rounded-lg border p-3 text-left transition-all ${isSelected ? "border-indigo-500 bg-indigo-50 shadow-sm ring-1 ring-indigo-500" : ""} ${isSameGroup ? "border-dashed border-indigo-200 bg-indigo-50/50" : ""} ${!isSelected && !isSameGroup ? "border-slate-200 hover:bg-slate-50" : ""} `}
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <User
-                    className={`h-4 w-4 flex-shrink-0 ${isSelected || isSameGroup ? "text-indigo-600" : "text-slate-400"}`}
-                  />
-                  <span
-                    className={`truncate text-sm font-medium ${isSelected ? "text-indigo-900" : "text-slate-700"}`}
-                  >
-                    {p.fullName}
-                  </span>
-                </div>
-                {isSameGroup && (
-                  <span
-                    title="Viaja con la persona seleccionada"
-                    className="flex-shrink-0 cursor-help"
-                  >
-                    <LinkIcon className="h-3 w-3 text-indigo-400" />
-                  </span>
-                )}
-              </button>
-            );
-          })}
-
-          {benchPassengers.length === 0 && (
-            <div className="py-8 text-center">
-              <span className="text-2xl">🎉</span>
-              <p className="mt-2 text-sm font-bold text-emerald-600">¡Todos tienen asiento!</p>
-            </div>
-          )}
         </div>
       </div>
     </div>

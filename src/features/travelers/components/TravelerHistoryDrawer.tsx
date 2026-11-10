@@ -1,42 +1,77 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { useTravelerHistory } from "../hooks/useTravelers";
-import { Loader2, X, Phone, User, Calendar } from "lucide-react";
+import {
+  Loader2,
+  X,
+  Phone,
+  Calendar,
+  Banknote,
+  History,
+  Bus,
+  Plane,
+  Check,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+import { formatCurrency } from "@/shared/utils/currency.util";
+import { formatLocalDate } from "@/shared/utils/tour-date.util";
+import { getInitials } from "@/shared/utils/travelers-helpers";
 
 interface Props {
   travelerId: string | null;
   onClose: () => void;
 }
 
-// 🇲🇽 Lógica visual para estados de viaje
-const getBookingStatusBadge = (isCancelled: boolean, departureDate: string) => {
-  if (isCancelled) {
-    return (
-      <span className="rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">
-        Cancelado
-      </span>
-    );
-  }
-
-  const isPast = new Date(departureDate) < new Date();
-  if (isPast) {
-    return (
-      <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-        Completado
-      </span>
-    );
-  }
-
-  return (
-    <span className="rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800">
-      Próximo viaje
-    </span>
-  );
-};
+type FilterType = "ALL" | "NACIONAL" | "EXTRANJERO" | "CANCELLED";
 
 export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
   const { data: traveler, isLoading } = useTravelerHistory(travelerId);
+  const [activeFilter, setActiveFilter] = useState<FilterType>("ALL");
+
+  const history = traveler?.history || [];
+
+  // Contadores memorizados
+  const counts = useMemo(() => {
+    return {
+      all: history.length,
+      national: history.filter(
+        (h) =>
+          h.destinationType === "NATIONAL" &&
+          h.passengerStatus !== "CANCELLED" &&
+          h.bookingStatus !== "CANCELLED",
+      ).length,
+      international: history.filter(
+        (h) =>
+          h.destinationType === "INTERNATIONAL" &&
+          h.passengerStatus !== "CANCELLED" &&
+          h.bookingStatus !== "CANCELLED",
+      ).length,
+      cancelled: history.filter(
+        (h) => h.passengerStatus === "CANCELLED" || h.bookingStatus === "CANCELLED",
+      ).length,
+    };
+  }, [history]);
+
+  // Filtrado de registros
+  const filteredBookings = useMemo(() => {
+    if (activeFilter === "ALL") return history;
+    if (activeFilter === "CANCELLED") {
+      return history.filter(
+        (h) => h.passengerStatus === "CANCELLED" || h.bookingStatus === "CANCELLED",
+      );
+    }
+    const activeHistory = history.filter(
+      (h) => h.passengerStatus !== "CANCELLED" && h.bookingStatus !== "CANCELLED",
+    );
+    if (activeFilter === "NACIONAL")
+      return activeHistory.filter((h) => h.destinationType === "NATIONAL");
+    if (activeFilter === "EXTRANJERO")
+      return activeHistory.filter((h) => h.destinationType === "INTERNATIONAL");
+    return history;
+  }, [history, activeFilter]);
 
   if (!travelerId) return null;
 
@@ -46,10 +81,9 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="animate-in slide-in-from-right flex h-full w-full max-w-md flex-col bg-white shadow-2xl duration-300"
+        className="animate-in slide-in-from-right flex h-full w-full max-w-lg flex-col bg-white shadow-2xl duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header estático */}
         <div className="flex shrink-0 items-center justify-between border-b bg-slate-50/50 p-6">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Perfil del Viajero</h2>
@@ -66,93 +100,210 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
           </div>
         ) : (
           <div className="flex-1 space-y-6 overflow-y-auto p-6">
-            {/* IDENTIDAD DEL CLIENTE */}
-            <div className="flex items-start gap-4 rounded-xl border border-slate-200/80 bg-slate-50 p-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-lg font-bold text-white shadow-sm">
-                {traveler?.fullName?.substring(0, 2).toUpperCase() || <User className="h-6 w-6" />}
+            {/* 1. IDENTIDAD DEL CLIENTE */}
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-slate-50 p-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-base font-bold text-indigo-700">
+                {getInitials(traveler?.fullName)}
               </div>
-              <div className="space-y-1 overflow-hidden">
-                <h3 className="truncate text-lg leading-snug font-bold text-slate-900">
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-base font-semibold text-slate-900">
                   {traveler?.fullName}
                 </h3>
-                <p className="flex items-center gap-1.5 font-mono text-xs text-slate-600">
-                  <Phone className="h-3.5 w-3.5 text-slate-400" />
-                  {traveler?.whatsappPhone || "Sin teléfono registrado"}
-                </p>
+                <div className="mt-0.5 flex items-center gap-1.5 text-sm text-slate-600">
+                  <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>{traveler?.whatsappPhone || "Sin teléfono"}</span>
+                </div>
               </div>
             </div>
 
-            {/* MÉTRICAS HERO */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 text-center">
-                <p className="text-[11px] font-bold tracking-wider text-indigo-700 uppercase">
-                  Viajes Activos
-                </p>
-                <p className="text-2xl font-black text-indigo-950">
-                  {traveler?.metrics?.totalTrips ?? 0}
-                </p>
+            {/* 2. KPIs HERO */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50 p-3.5">
+                <div className="flex items-center justify-between text-xs font-medium tracking-wide text-slate-500">
+                  <span>VIAJES ACTIVOS</span>
+                  <Calendar className="h-4 w-4 text-indigo-500" />
+                </div>
+                <div className="my-1">
+                  <span className="text-2xl font-bold text-slate-900">
+                    {traveler?.metrics?.totalTrips ?? 0}
+                  </span>
+                  <span className="ml-1.5 text-xs font-medium text-slate-500">TOURS</span>
+                </div>
+                <div className="flex items-center gap-1.5 border-t border-slate-200/60 pt-1 text-[11px] font-medium text-slate-600">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  <span>{counts.national} Nac.</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                  <span>{counts.international} Ext.</span>
+                </div>
               </div>
 
-              <div className="flex flex-col justify-center space-y-1 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 text-center">
-                <p className="text-[11px] font-bold tracking-wider text-emerald-700 uppercase">
-                  Total Comprado
-                </p>
-                <p className="text-2xl font-black text-emerald-950">
-                  $
-                  {(traveler?.metrics?.lifetimeValue ?? 0).toLocaleString("es-MX", {
-                    minimumFractionDigits: 0,
-                  })}
-                </p>
-                {/* 🇲🇽 Aclaración de negocio solicitada por el PM */}
-                {traveler?.metrics?.isHabitualCompanion && (
-                  <p className="mt-1 rounded bg-white/50 py-0.5 text-[9px] leading-tight font-medium text-slate-500">
-                    (Viaja habitualmente como acompañante)
-                  </p>
-                )}
+              <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50 p-3.5">
+                <div className="flex items-center justify-between text-xs font-medium tracking-wide text-slate-500">
+                  <span>TOTAL COMPRADO</span>
+                  <Banknote className="h-4 w-4 text-emerald-500" />
+                </div>
+                <div className="my-1">
+                  <span className="text-2xl font-bold text-emerald-600">
+                    {/* 🚀 USO DE UTILIDAD: formatCurrency */}
+                    {formatCurrency(traveler?.metrics?.lifetimeValue, { currency: "MXN" })}
+                  </span>
+                </div>
+                <div className="border-t border-slate-200/60 pt-1 text-[11px] font-medium text-slate-500">
+                  Moneda nacional (MXN)
+                </div>
               </div>
             </div>
 
-            {/* HISTORIAL DE VIAJES */}
-            <div className="space-y-4 border-t border-slate-200 pt-4">
-              <h4 className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-400 uppercase">
-                <Calendar className="h-4 w-4" /> Historial Completo
-              </h4>
+            {/* 3. SECCIÓN DE HISTORIAL */}
+            <div className="mt-5">
+              <div className="mb-2 flex items-center justify-between">
+                <h4 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                  <History className="h-3.5 w-3.5 text-slate-400" />
+                  Historial completo
+                </h4>
+                <span className="text-xs font-medium text-slate-400">
+                  {filteredBookings.length} registros
+                </span>
+              </div>
 
-              <div className="space-y-3">
-                {traveler?.history?.map((record: any) => (
-                  <div
-                    key={record.id}
-                    className={`space-y-2 rounded-r-lg border-l-2 py-2 pl-4 transition-colors ${record.isCancelled ? "border-red-400 bg-slate-50/50 opacity-80" : "border-indigo-500 hover:bg-slate-50/80"}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p
-                          className={`text-sm leading-tight font-semibold ${record.isCancelled ? "text-slate-600 line-through" : "text-slate-800"}`}
-                        >
-                          {record.tourTitle}
-                        </p>
-                        <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-slate-500">
-                          {record.isTitular ? (
-                            <span className="font-bold text-indigo-600">Titular (Pagador)</span>
-                          ) : (
-                            <span className="text-slate-500">Acompañante</span>
+              <div className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1 text-[11px] font-medium text-slate-600 sm:text-xs">
+                <button
+                  onClick={() => setActiveFilter("ALL")}
+                  className={`rounded-lg px-1 py-1.5 text-center transition-all ${
+                    activeFilter === "ALL"
+                      ? "bg-white font-semibold text-slate-900 shadow-sm"
+                      : "hover:text-slate-900"
+                  }`}
+                >
+                  Todos ({counts.all})
+                </button>
+                <button
+                  onClick={() => setActiveFilter("NACIONAL")}
+                  className={`rounded-lg px-1 py-1.5 text-center transition-all ${
+                    activeFilter === "NACIONAL"
+                      ? "bg-white font-semibold text-slate-900 shadow-sm"
+                      : "hover:text-slate-900"
+                  }`}
+                >
+                  Nacionales ({counts.national})
+                </button>
+                <button
+                  onClick={() => setActiveFilter("EXTRANJERO")}
+                  className={`rounded-lg px-1 py-1.5 text-center transition-all ${
+                    activeFilter === "EXTRANJERO"
+                      ? "bg-white font-semibold text-slate-900 shadow-sm"
+                      : "hover:text-slate-900"
+                  }`}
+                >
+                  Extranjero ({counts.international})
+                </button>
+                <button
+                  onClick={() => setActiveFilter("CANCELLED")}
+                  className={`rounded-lg px-1 py-1.5 text-center transition-all ${
+                    activeFilter === "CANCELLED"
+                      ? "bg-white font-semibold text-slate-900 shadow-sm"
+                      : "hover:text-slate-900"
+                  }`}
+                >
+                  Cancelados ({counts.cancelled})
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {filteredBookings.map((item: any) => {
+                  const isCancelled = item.isCancelled;
+                  const isNacional = item.destinationType === "NATIONAL";
+
+                  // 🚀 USO DE UTILIDAD: formatCurrency
+                  const priceFormatted = formatCurrency(item.amountPaid);
+
+                  // 🚀 USO DE UTILIDAD: formatLocalDate (evita el desfase de zona horaria)
+                  const localDateString = formatLocalDate(item.departureDateTime);
+
+                  let dateLabel = "";
+                  if (isCancelled) {
+                    dateLabel = `Cancelado: ${localDateString}`;
+                  } else {
+                    const isPast = new Date(item.departureDateTime) < new Date();
+                    dateLabel = isPast
+                      ? `Concluido: ${localDateString}`
+                      : `Salida: ${localDateString}`;
+                  }
+
+                  let uiStatus = "UPCOMING";
+                  if (isCancelled) uiStatus = "CANCELLED";
+                  else if (new Date(item.departureDateTime) < new Date()) uiStatus = "COMPLETED";
+
+                  return (
+                    <div
+                      key={item.id}
+                      className={`rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm transition-all ${
+                        isCancelled
+                          ? "border-l-4 border-l-red-400 bg-red-50/20"
+                          : isNacional
+                            ? "border-l-4 border-l-emerald-500"
+                            : "border-l-4 border-l-indigo-600"
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        {isNacional ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/60 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 sm:text-[11px]">
+                            <Bus className="h-3 w-3 text-emerald-600" />
+                            NACIONAL
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/60 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 sm:text-[11px]">
+                            <Plane className="h-3 w-3 text-indigo-600" />
+                            EXTRANJERO
+                          </span>
+                        )}
+
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-sm font-bold ${isCancelled ? "text-slate-400 line-through" : "text-slate-900"}`}
+                          >
+                            {priceFormatted}
+                          </span>
+
+                          {uiStatus === "UPCOMING" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700 sm:text-[11px]">
+                              <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                              Próximo viaje
+                            </span>
                           )}
-                          •{" "}
-                          {new Date(record.departureDateTime).toLocaleDateString("es-MX", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </p>
-                      </div>
-                      {getBookingStatusBadge(record.isCancelled, record.departureDateTime)}
-                    </div>
-                  </div>
-                ))}
 
-                {(!traveler?.history || traveler.history.length === 0) && (
+                          {uiStatus === "COMPLETED" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 sm:text-[11px]">
+                              <Check className="h-3 w-3 text-emerald-600" />
+                              Completado
+                            </span>
+                          )}
+
+                          {uiStatus === "CANCELLED" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700 sm:text-[11px]">
+                              <XCircle className="h-3 w-3 text-red-500" />
+                              Cancelado
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <h5 className="mb-1 text-sm leading-snug font-bold text-slate-900">
+                        {item.tourTitle}
+                      </h5>
+
+                      <div className="flex items-center justify-between text-xs text-slate-500">
+                        <span>{item.isTitular ? "Titular (Pagador)" : "Acompañante"}</span>
+                        <span>{dateLabel}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {filteredBookings.length === 0 && (
                   <p className="rounded-xl border border-dashed py-6 text-center text-xs text-slate-400 italic">
-                    Este viajero no cuenta con historial de excursiones registradas.
+                    No se encontraron registros para este filtro.
                   </p>
                 )}
               </div>
