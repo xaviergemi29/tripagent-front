@@ -1,64 +1,48 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useDeleteTraveler, useTravelers } from "@/features/travelers/hooks/useTravelers";
-import type { TravelerOutput } from "@/features/travelers/schemas/traveler.schema";
 import { EditTravelerDrawer } from "@/features/travelers/components/EditTravelerDrawer";
 import { TravelerHistoryDrawer } from "@/features/travelers/components/TravelerHistoryDrawer";
-import { TravelersTable } from "@/features/travelers/components/TravelersTable";
-import {
-  TravelersFilters,
-  TravelerFilterType,
-} from "@/features/travelers/components/TravelersFilters";
+import { TravelersTable, TravelerTableRow } from "@/features/travelers/components/TravelersTable";
+import { TravelersFilters } from "@/features/travelers/components/TravelersFilters";
+import { useTravelersFilter } from "@/features/travelers/hooks/useTravelersFilter";
+import { ArrowRight, Users } from "lucide-react";
+import { TravelersMobileCardList } from "@/features/travelers/components/TravelersMobileCardList";
+import { Button } from "@/components/ui/button";
 
 export default function TravelersPage() {
   const router = useRouter();
   const { data: travelers = [], isLoading } = useTravelers();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<TravelerFilterType>("all");
-  const { mutateAsync: deleteTraveler } = useDeleteTraveler();
+  const { mutate: deleteTraveler } = useDeleteTraveler();
 
-  const [selectedTravelerToEdit, setSelectedTravelerToEdit] = useState<TravelerOutput | null>(null);
+  const { searchQuery, setSearchQuery, activeFilter, setActiveFilter, filteredTravelers, counts } =
+    useTravelersFilter(travelers);
+
+  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+  const [editingTraveler, setEditingTraveler] = useState<TravelerTableRow | null>(null);
   const [historyTravelerId, setHistoryTravelerId] = useState<string | null>(null);
 
-  const counts = useMemo(() => {
-    return {
-      all: travelers.length,
-      national: travelers.filter((t) => t.hasNationalTrips).length,
-      international: travelers.filter((t) => t.hasInternationalTrips).length,
-    };
-  }, [travelers]);
+  const handleEdit = (traveler: TravelerTableRow): void => {
+    setEditingTraveler(traveler);
+    setIsEditDrawerOpen(true);
+  };
 
-  const filteredTravelers = useMemo(() => {
-    let result = travelers;
+  const handleDelete = (id: string): void => {
+    deleteTraveler(id);
+  };
 
-    if (activeFilter === "national") {
-      result = result.filter((t) => t.hasNationalTrips);
-    } else if (activeFilter === "international") {
-      result = result.filter((t) => t.hasInternationalTrips);
-    }
+  const handleViewHistory = (id: string): void => {
+    setHistoryTravelerId(id);
+  };
 
-    const query = searchQuery.trim().toLowerCase();
-    if (query) {
-      result = result.filter(
-        (t) =>
-          t.fullName?.toLowerCase().includes(query) ||
-          t.whatsappPhone?.includes(query) ||
-          t.email?.toLowerCase().includes(query),
-      );
-    }
-
-    return result;
-  }, [travelers, searchQuery, activeFilter]);
-
+  const isFiltered = searchQuery.length > 0 || activeFilter !== "all";
   const hasTravelers = travelers.length > 0;
 
   return (
     <main className="container mx-auto space-y-6 px-4 py-8">
-      <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
             MÓDULO DE PASAJEROS
@@ -69,17 +53,6 @@ export default function TravelersPage() {
         </div>
       </div>
 
-      {hasTravelers && (
-        <TravelersFilters
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-          counts={counts}
-        />
-      )}
-
-      {/* Renderizado Condicional del Empty State vs Tabla */}
       {!isLoading && !hasTravelers ? (
         <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white p-12 text-center shadow-sm">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
@@ -100,20 +73,43 @@ export default function TravelersPage() {
           </Button>
         </div>
       ) : (
-        <TravelersTable
-          travelers={filteredTravelers}
-          isLoading={isLoading}
-          isFiltered={searchQuery.trim().length > 0 || activeFilter !== "all"}
-          onEdit={setSelectedTravelerToEdit}
-          onDelete={deleteTraveler}
-          onViewHistory={setHistoryTravelerId}
-        />
+        <div className="space-y-4">
+          <TravelersFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+            counts={counts}
+          />
+
+          <div className="hidden md:block">
+            <TravelersTable
+              travelers={filteredTravelers}
+              isLoading={isLoading}
+              isFiltered={isFiltered}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onViewHistory={handleViewHistory}
+            />
+          </div>
+
+          <div className="block md:hidden">
+            <TravelersMobileCardList
+              travelers={filteredTravelers}
+              isLoading={isLoading}
+              isFiltered={isFiltered}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onViewHistory={handleViewHistory}
+            />
+          </div>
+        </div>
       )}
 
       <EditTravelerDrawer
-        traveler={selectedTravelerToEdit}
-        isOpen={!!selectedTravelerToEdit}
-        onClose={() => setSelectedTravelerToEdit(null)}
+        isOpen={isEditDrawerOpen}
+        onClose={() => setIsEditDrawerOpen(false)}
+        traveler={editingTraveler}
       />
 
       <TravelerHistoryDrawer

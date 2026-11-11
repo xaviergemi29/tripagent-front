@@ -1,4 +1,3 @@
-// src/features/tour-dashboard/components/TourDashboardView.tsx
 "use client";
 
 import { useState, useMemo } from "react";
@@ -16,11 +15,12 @@ import { TourTabsNav } from "./TourTabsNav";
 import { VehicleStatusBanner } from "./VehicleStatusBanner";
 import { UnassignedSeatsPanel } from "./UnassignedSeatsPanel";
 import { VehicleSelectionModal } from "./VehicleSelectionModal";
-import { MobileHeader } from "./MobileHeader";
-import { MobileKpiCards } from "./MobileKpiCards";
-import { MobileTabsNav } from "./MobileTabsNav";
-import { MobileFilters } from "./MobileFilters";
-import { BookingCard } from "./BookingCard";
+import { MobileHeader } from "./mobile/MobileHeader";
+import { MobileKpiCards } from "./mobile/MobileKpiCards";
+import { MobileTabsNav } from "./mobile/MobileTabsNav";
+import { MobileFilters } from "./mobile/MobileFilters";
+import { BookingCard } from "./mobile/BookingCard";
+import { MobileSeatsTab } from "./mobile/MobileSeatsTab";
 
 interface TourDashboardViewProps {
   tourId: string;
@@ -45,10 +45,11 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   const [seatFilter, setSeatFilter] = useState("ALL");
 
   const isAuditMode = tour?.temporalStatus === "FINALIZADO" || tour?.temporalStatus === "CANCELADO";
+  const requiresSeats = tour?.requiresSeats ?? Boolean(tour?.vehicle);
   const [selectedTravelerId, setSelectedTravelerId] = useState<string | null>(null);
   const [isQuickReservationOpen, setIsQuickReservationOpen] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"viajeros" | "asientos">("viajeros");
+  const [activeTab, setActiveTab] = useState<"passengers" | "seatmap">("passengers");
   const [pendingSeatPassengerId, setPendingSeatPassengerId] = useState<string | null>(null);
 
   const freeSeatsCount =
@@ -59,7 +60,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
     if (!tour?.vehicle) {
       setIsVehicleModalOpen(true);
     } else {
-      setActiveTab("asientos");
+      setActiveTab("passengers");
       setMobileTab("seatmap");
     }
   };
@@ -71,7 +72,6 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
     setSeatFilter("ALL");
   };
 
-  // 1. FLATTEN PARA ASIENTOS (Intacto)
   const flattenedPassengers = useMemo(() => {
     if (!tour?.travelers) return [];
 
@@ -225,6 +225,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
         />
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
           <TourTabsNav
+            requiresSeats={requiresSeats}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             totalPassengers={totalEligiblePassengers}
@@ -233,7 +234,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
           />
 
           <div className="flex-1">
-            {activeTab === "viajeros" && (
+            {activeTab === "passengers" && (
               <div className="animate-in fade-in space-y-4 duration-300">
                 <TravelersTableToolbar
                   tourId={tourId}
@@ -247,7 +248,6 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                   onSeatFilterChange={setSeatFilter}
                 />
 
-                {/* Ojo: A la tabla original seguimos pasándole "tour.travelers" porque ella tiene su propia lógica residual o si refactorizamos ambas, le pasamos "filteredTravelers" */}
                 <DashboardTravelerTable
                   tourId={tourId}
                   tourTitle={tour.title}
@@ -263,11 +263,12 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                   onRowClick={(id) => setSelectedTravelerId(id)}
                   onAssignSeatClick={handleAssignSeatIntent}
                   onClearFilters={handleClearFilters}
+                  requiresSeats={requiresSeats}
                 />
               </div>
             )}
 
-            {activeTab === "asientos" && (
+            {activeTab === "seatmap" && (
               <div className="animate-in fade-in flex flex-col gap-4 duration-300 lg:flex-row">
                 <div className="flex flex-1 flex-col gap-4">
                   <VehicleStatusBanner
@@ -318,6 +319,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
           totalPassengers={totalEligiblePassengers}
           assignedCount={assignedSeatsCount}
           totalBookedPax={totalEligiblePassengers}
+          requiresSeats={requiresSeats}
         />
 
         {mobileTab === "passengers" ? (
@@ -355,26 +357,16 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
             </div>
           </div>
         ) : (
-          <div className="animate-in fade-in overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm duration-300">
-            {tour.vehicle?.layoutMap ? (
-              <SeatMapCanvas
-                tourId={tourId}
-                layoutMap={tour.vehicle.layoutMap}
-                activePassengers={flattenedPassengers}
-                initialSelectedPassengerId={pendingSeatPassengerId}
-              />
-            ) : (
-              <div className="space-y-3 py-12 text-center">
-                <p className="text-sm font-semibold text-slate-800">Sin vehículo asignado</p>
-                <button
-                  onClick={() => setIsVehicleModalOpen(true)}
-                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white"
-                >
-                  Asignar Vehículo
-                </button>
-              </div>
-            )}
-          </div>
+          <MobileSeatsTab
+            tourId={tourId}
+            vehicle={tour.vehicle}
+            assignedSeatsCount={assignedSeatsCount}
+            unassignedEligibles={unassignedPassengers}
+            allEligiblePassengers={flattenedPassengers}
+            onOpenVehicleSelection={() => setIsVehicleModalOpen(true)}
+            pendingSeatPassengerId={pendingSeatPassengerId}
+            setPendingSeatPassengerId={setPendingSeatPassengerId}
+          />
         )}
       </div>
 
@@ -400,7 +392,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
         passengersCount={totalEligiblePassengers}
         assignedSeatsCount={assignedSeatsCount}
         currentVehicle={tour.vehicle}
-        onSuccess={() => setActiveTab("asientos")}
+        onSuccess={() => setActiveTab("seatmap")}
       />
     </main>
   );

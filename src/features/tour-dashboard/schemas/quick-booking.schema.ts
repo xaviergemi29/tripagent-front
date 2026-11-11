@@ -22,6 +22,12 @@ export const quickBookingResultSchema = quickBookingSchema.extend({
   availableSeats: z.number().positive(),
 });
 
+export const cancelFullBookingBodySchema = z.object({
+  bookingId: z.uuid(),
+  penaltyAmount: z.number().positive("El monto no debe ser negativo"),
+});
+
 export type QuickBookingInput = z.input<typeof quickBookingBodySchema>;
 export type QuickBookingFormValues = z.infer<typeof quickBookingSchema>;
 export type QuickBookingOutput = z.infer<typeof quickBookingResultSchema>;
+export type CancelFullBookingInput = z.infer<typeof cancelFullBookingBodySchema>;

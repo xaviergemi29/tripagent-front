@@ -8,13 +8,12 @@ export const temporalStatusSchema = z.enum(["ACTIVO", "FINALIZADO", "CANCELADO"]
 export const paymentMethodSchema = z.enum(["CASH", "TRANSFER", "CARD", "OTHER"]);
 export const paymentTypeSchema = z.enum(["PAYMENT", "REFUND"]);
 
-// Historial de transacciones de un titular
 export const paymentRecordSchema = z.object({
   id: z.uuid(),
   amount: z.number(),
   method: paymentMethodSchema,
   type: paymentTypeSchema,
-  createdAt: z.string().datetime(),
+  createdAt: z.iso.datetime(),
   referenceInfo: z.string().nullable().optional(),
   registeredBy: z.string().nullable().optional(),
   amountUSD: z.number().nullable(),
@@ -22,21 +21,18 @@ export const paymentRecordSchema = z.object({
   exchangeRate: z.number().nullable().optional(),
 });
 
-// Acompañantes (Estructura plana, dependen financieramente del titular)
 export const companionSchema = z.object({
   id: z.uuid(),
-  bookingId: z.string().uuid(),
+  bookingId: z.uuid(),
   role: z.literal("COMPANION"),
   fullName: z.string(),
   whatsapp: z.string(),
 
-  // Logística
   formStatus: formStatusSchema,
   seatLabel: z.string().nullable(),
   boardingPoint: z.string().nullable(),
 });
 
-// Titular (Dueño de la reserva y finanzas)
 export const titularSchema = z.object({
   id: z.uuid(),
   bookingId: z.uuid(),
@@ -46,19 +42,16 @@ export const titularSchema = z.object({
   groupSize: z.number().min(1),
   unitPrice: z.number(),
 
-  // Logística y Registro
   formStatus: formStatusSchema,
   seatLabel: z.string().nullable(),
   boardingPoint: z.string().nullable(),
   magicToken: z.string().nullable(),
 
-  // Finanzas consolidadas de la reserva
   paymentStatus: paymentStatusSchema,
   paidAmount: z.number(),
   balance: z.number(),
   equivalentMXN: z.number().nullable().optional(),
 
-  // Relaciones
   payments: z.array(paymentRecordSchema).default([]),
   companions: z.array(companionSchema).default([]),
 });
@@ -92,11 +85,8 @@ export const tourDashboardDataSchema = z.object({
   currency: currencySchema.default("MXN"),
   departureDateTime: z.iso.datetime(),
   temporalStatus: temporalStatusSchema.default("ACTIVO"),
-
-  // Agregaciones de negocio
+  requiresSeats: z.boolean().default(true),
   metrics: tourMetricsSchema,
-
-  // Recursos anidados
   vehicle: vehicleDTOSchema.nullable().optional(),
   travelers: z.array(titularSchema),
 });

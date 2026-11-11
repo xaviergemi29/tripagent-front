@@ -11,6 +11,10 @@ import { AddPassengerDialog } from "./AddPassengerDialog";
 import { RemovePassengerDialog } from "./RemovePassengerDialog";
 import { TravelerGroup } from "./TravelerGroup";
 import { Button } from "@/components/ui/button";
+import { ReleaseSlotDialog } from "./ReleaseSlotDialog";
+import { useTransferBooking } from "../hooks/useTourDashboard";
+import { CurrentBookingData, TransferLeadModal, TransferPayload } from "./TransferLeadModal";
+import { generatePartialPaymentReceiptPDF } from "@/features/external-registration/components/GeneratePartialPaymentReceipt";
 
 export type PaymentFilter = "ALL" | "UNPAID" | "PARTIAL" | "PAID";
 export type RegistrationFilter = "ALL" | "PENDING" | "COMPLETED";
@@ -18,6 +22,9 @@ export type SeatFilter = "ALL" | "UNASSIGNED" | "ASSIGNED";
 
 interface DashboardTravelerTableProps {
   tourId: string;
+  tourTitle: string;
+  agencyName: string;
+  requiresSeats: boolean;
   travelers: TitularRowDTO[];
   searchQuery: string;
   paymentFilter: PaymentFilter | string;
@@ -33,6 +40,9 @@ interface DashboardTravelerTableProps {
 
 export function DashboardTravelerTable({
   tourId,
+  agencyName,
+  tourTitle,
+  requiresSeats,
   travelers,
   searchQuery,
   paymentFilter,
@@ -47,7 +57,15 @@ export function DashboardTravelerTable({
 }: DashboardTravelerTableProps) {
   const { mutate: addPassenger, isPending: isAdding } = useAddPassengerToBooking();
   const { mutate: removePassenger, isPending: isRemoving } = useQuickRemovePassenger();
-  const { mutate: removePendingSlot, isPending: isRemovingGhost } = useRemovePendingSlot();
+  const { mutateAsync: removePendingSlot, isPending: isRemovingGhost } = useRemovePendingSlot();
+  const { mutate: transferBooking, isPending: isTransferring } = useTransferBooking();
+  const [transferState, setTransferState] = useState<{
+    isOpen: boolean;
+    bookingData?: CurrentBookingData;
+    rawTitular?: TitularRowDTO;
+  }>({
+    isOpen: false,
+  });
   const [confirmAdd, setConfirmAdd] = useState<{ isOpen: boolean; titular?: TitularRowDTO }>({
     isOpen: false,
   });
@@ -57,6 +75,11 @@ export function DashboardTravelerTable({
     bookingId: string;
     passengerId: string;
     name: string;
+  } | null>(null);
+
+  const [slotToRelease, setSlotToRelease] = useState<{
+    bookingId: string;
+    titularName: string;
   } | null>(null);
 
   const filteredTravelers = useMemo(() => {
@@ -153,6 +176,91 @@ export function DashboardTravelerTable({
     }
   };
 
+  const handleConfirmReleaseSlot = async (): Promise<void> => {
+    if (!slotToRelease) return;
+    try {
+      await removePendingSlot({ bookingId: slotToRelease.bookingId });
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
+  const handleOpenTransferModal = (titular: TitularRowDTO) => {
+    const bookingData: CurrentBookingData = {
+      tourTitle: "Tour Actual",
+      currentLead: {
+        id: titular.id,
+        fullName: titular.fullName,
+        seatNumber: titular.seatLabel,
+      },
+      companions: (titular.companions || []).map((c) => ({
+        id: c.id,
+        fullName: c.fullName,
+        phone: c.whatsapp,
+        seatNumber: c.seatLabel,
+        relationship: "Acompañante",
+      })),
+      finances: {
+        totalPrice: titular.paidAmount + titular.balance,
+        amountPaid: titular.paidAmount,
+        pendingBalance: titular.balance,
+        currency: tourCurrency || "MXN",
+      },
+    };
+
+    setTransferState({
+      isOpen: true,
+      bookingData,
+      rawTitular: titular,
+    });
+  };
+
+  // 4. Actualizar el handleConfirmTransfer
+  const handleConfirmTransfer = (payload: TransferPayload): void => {
+    if (transferState.rawTitular) {
+      transferBooking(
+        { bookingId: transferState.rawTitular.bookingId, data: payload },
+        { onSuccess: () => setTransferState({ isOpen: false }) },
+      );
+    }
+  };
+
+  const handleDownloadReceipt = (titularData: TitularRowDTO): void => {
+    const passengersList = [
+      {
+        name: titularData.fullName,
+        type: "Titular",
+        boardingPoint: titularData.boardingPoint ?? undefined,
+      },
+      ...(titularData.companions || []).map((c) => ({
+        name: c.fullName,
+        type: "Acompañante",
+        boardingPoint: c.boardingPoint ?? undefined,
+      })),
+    ];
+
+    const mappedPaymentHistory = (titularData.payments || []).map((payment) => ({
+      id: payment.id,
+      date: payment.createdAt,
+      amount: payment.amount,
+      method: payment.method,
+      reference: payment.referenceInfo ?? undefined,
+    }));
+
+    generatePartialPaymentReceiptPDF({
+      agencyName: agencyName,
+      tourName: tourTitle,
+      totalAmount: titularData.paidAmount + titularData.balance,
+      amountPaid: titularData.paidAmount,
+      remainingBalance: titularData.balance,
+      status: titularData.paymentStatus,
+      paymentHistory: mappedPaymentHistory,
+      passengers: passengersList,
+      currency: tourCurrency || "MXN",
+    });
+  };
+
   return (
     <>
       <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
@@ -162,7 +270,7 @@ export function DashboardTravelerTable({
               <tr>
                 <th className="w-10 px-4 py-4"></th>
                 <th className="px-6 py-4">Viajero / Grupo</th>
-                <th className="px-6 py-4">Asiento</th>
+                {requiresSeats && <th className="px-6 py-4">Seat</th>}
                 <th className="px-6 py-4">Abordaje</th>
                 <th className="px-6 py-4">Contacto</th>
                 <th className="px-6 py-4">Registro</th>
@@ -178,6 +286,7 @@ export function DashboardTravelerTable({
                   isAuditMode={isAuditMode}
                   tourCurrency={tourCurrency}
                   isAdding={isAdding}
+                  requiresSeats={requiresSeats}
                   onRowClick={onRowClick}
                   onAssignSeatClick={onAssignSeatClick}
                   isRemovingGhost={isRemovingGhost}
@@ -185,14 +294,18 @@ export function DashboardTravelerTable({
                   onRemovePassengerClick={(bId, pId, name) =>
                     setConfirmRemove({ isOpen: true, bookingId: bId, passengerId: pId, name })
                   }
-                  onRemoveGhostSlotClick={(bookingId) => removePendingSlot({ bookingId })}
+                  onRemoveGhostSlotClick={(bookingId) =>
+                    setSlotToRelease({ bookingId, titularName: titular.fullName })
+                  }
                   freeSeatsCount={freeSeatsCount}
+                  onTransferBookingClick={handleOpenTransferModal}
+                  onDownloadReceiptClick={handleDownloadReceipt}
                 />
               ))}
 
               {filteredTravelers.length === 0 && travelers?.length > 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
+                  <td colSpan={requiresSeats ? 8 : 7} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center gap-3 text-slate-500">
                       <p className="text-sm font-medium">
                         No se encontraron viajeros con los filtros actuales.
@@ -214,7 +327,10 @@ export function DashboardTravelerTable({
 
               {travelers?.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                  <td
+                    colSpan={requiresSeats ? 8 : 7}
+                    className="px-6 py-12 text-center text-slate-500"
+                  >
                     Aún no hay viajeros registrados en este tour.
                   </td>
                 </tr>
@@ -230,7 +346,15 @@ export function DashboardTravelerTable({
         titular={confirmAdd.titular}
         tourCurrency={tourCurrency}
         isSubmitting={isAdding}
-        // freeSeatsCount={tourMetrics.occupancy.max - tourMetrics.occupancy.current}
+        freeSeatsCount={freeSeatsCount}
+      />
+
+      <ReleaseSlotDialog
+        isOpen={!!slotToRelease}
+        onClose={() => setSlotToRelease(null)}
+        titularName={slotToRelease?.titularName || ""}
+        slotId={slotToRelease?.bookingId}
+        onConfirm={handleConfirmReleaseSlot}
       />
 
       <RemovePassengerDialog
@@ -240,6 +364,16 @@ export function DashboardTravelerTable({
         passengerName={confirmRemove?.name}
         isSubmitting={isRemoving}
       />
+
+      {transferState.bookingData && (
+        <TransferLeadModal
+          open={transferState.isOpen}
+          onOpenChange={(open) => setTransferState((prev) => ({ ...prev, isOpen: open }))}
+          booking={transferState.bookingData}
+          onConfirmTransfer={handleConfirmTransfer}
+          isLoading={isTransferring}
+        />
+      )}
     </>
   );
 }

@@ -19,7 +19,6 @@ export function Sidebar() {
 
   const initials = user?.fullName?.substring(0, 2).toUpperCase() || "US";
   const agencyTitle = user?.agencyName;
-  console.log("initials", initials);
 
   return (
     <aside className="flex hidden w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-900 text-slate-300 md:flex">

@@ -127,3 +127,15 @@
     @apply font-sans;
   }
 }
+
+@utility scrollbar-hide {
+  /* IE y Edge */
+  -ms-overflow-style: none;
+  /* Firefox */
+  scrollbar-width: none;
+
+  /* Chrome, Safari y Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

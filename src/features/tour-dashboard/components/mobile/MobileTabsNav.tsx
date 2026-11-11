@@ -7,15 +7,18 @@ interface MobileTabsNavProps {
   totalPassengers: number;
   assignedCount: number;
   totalBookedPax: number;
+  requiresSeats?: boolean;
 }
 
 export function MobileTabsNav({
   activeTab,
+  requiresSeats,
   onTabChange,
   totalPassengers,
   assignedCount,
   totalBookedPax,
 }: MobileTabsNavProps) {
+  if (!requiresSeats) return null;
   return (
     <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 text-sm font-semibold">
       <button

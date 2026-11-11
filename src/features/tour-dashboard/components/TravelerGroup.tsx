@@ -41,6 +41,7 @@ interface TravelerGroupProps {
   isAdding?: boolean;
   isRemovingGhost?: boolean;
   freeSeatsCount?: number;
+  requiresSeats?: boolean;
   onRowClick: (id: string) => void;
   onAssignSeatClick: (passengerId: string) => void;
   onAddPassengerClick: (titular: TitularRowDTO) => void;
@@ -92,6 +93,7 @@ export function TravelerGroup({
   isAdding,
   isRemovingGhost,
   freeSeatsCount,
+  requiresSeats,
   onRemoveGhostSlotClick,
   onRowClick,
   onAssignSeatClick,
@@ -106,7 +108,7 @@ export function TravelerGroup({
   const missingCount = Math.max(0, titular.groupSize - registeredCount);
   const isGroupIncomplete = missingCount > 0;
   const hasPaid = titular.paidAmount > 0 || titular.paymentStatus !== "PENDING";
-  const isGroup = titular.groupSize > 1; // Helper derivado para legibilidad
+  const isGroup = titular.groupSize > 1;
 
   const handleCopyLink = async (e: React.MouseEvent, token?: string): Promise<void> => {
     e.stopPropagation();
@@ -164,31 +166,33 @@ export function TravelerGroup({
             </div>
           </div>
         </td>
-        <td className="px-6 py-3.5">
-          {hasPaid ? (
-            titular.seatLabel ? (
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-xs font-bold text-indigo-700">
-                {titular.seatLabel}
-              </span>
+        {requiresSeats && (
+          <td className="px-6 py-3.5">
+            {hasPaid ? (
+              titular.seatLabel ? (
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-xs font-bold text-indigo-700">
+                  {titular.seatLabel}
+                </span>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAssignSeatClick(titular.id);
+                  }}
+                >
+                  [ Asignar Asiento ]
+                </Badge>
+              )
             ) : (
-              <Badge
-                variant="outline"
-                className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAssignSeatClick(titular.id);
-                }}
-              >
-                [ Asignar Asiento ]
-              </Badge>
-            )
-          ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
-              <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />
-              <span>Requiere anticipo</span>
-            </span>
-          )}
-        </td>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
+                <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                <span>Requiere anticipo</span>
+              </span>
+            )}
+          </td>
+        )}
         <td className="px-6 py-3.5">
           {titular.boardingPoint ? (
             <span className="text-xs font-medium text-slate-700">{titular.boardingPoint}</span>
@@ -336,31 +340,33 @@ export function TravelerGroup({
                 </div>
               </div>
             </td>
-            <td className="px-6 py-3">
-              {hasPaid ? (
-                companion.seatLabel ? (
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-xs font-bold text-indigo-700">
-                    {companion.seatLabel}
-                  </span>
+            {requiresSeats && (
+              <td className="px-6 py-3">
+                {hasPaid ? (
+                  companion.seatLabel ? (
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-xs font-bold text-indigo-700">
+                      {companion.seatLabel}
+                    </span>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAssignSeatClick(companion.id);
+                      }}
+                    >
+                      [ Asignar Asiento ]
+                    </Badge>
+                  )
                 ) : (
-                  <Badge
-                    variant="outline"
-                    className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAssignSeatClick(companion.id);
-                    }}
-                  >
-                    [ Asignar Asiento ]
-                  </Badge>
-                )
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
-                  <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />
-                  <span>Requiere anticipo</span>
-                </span>
-              )}
-            </td>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
+                    <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                    <span>Requiere anticipo</span>
+                  </span>
+                )}
+              </td>
+            )}
             <td className="px-6 py-3 text-xs text-slate-400">{companion.boardingPoint || "—"}</td>
             <td className="px-6 py-3 font-mono text-xs text-slate-500">
               {companion.whatsapp || "—"}
@@ -398,29 +404,6 @@ export function TravelerGroup({
                       </TooltipContent>
                     </Tooltip>
                   )}
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-600 shadow-xs transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRowClick(companion.id);
-                        }}
-                        aria-label="Registrar abonos y pagos"
-                      >
-                        <Wallet className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="top"
-                      className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
-                    >
-                      Registrar abonos y pagos
-                    </TooltipContent>
-                  </Tooltip>
                 </div>
               </TooltipProvider>
             </td>
@@ -449,25 +432,27 @@ export function TravelerGroup({
                 </div>
               </div>
             </td>
-            <td className="px-6 py-3">
-              {hasPaid ? (
-                <Badge
-                  variant="outline"
-                  className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAssignSeatClick(titular.id);
-                  }}
-                >
-                  [ Asignar Asiento ]
-                </Badge>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
-                  <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />
-                  <span>Requiere anticipo</span>
-                </span>
-              )}
-            </td>
+            {requiresSeats && (
+              <td className="px-6 py-3">
+                {hasPaid ? (
+                  <Badge
+                    variant="outline"
+                    className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAssignSeatClick(titular.id);
+                    }}
+                  >
+                    [ Asignar Asiento ]
+                  </Badge>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
+                    <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                    <span>Requiere anticipo</span>
+                  </span>
+                )}
+              </td>
+            )}
             <td className="px-6 py-3 text-xs text-slate-400">—</td>
             <td className="px-6 py-3 text-xs text-slate-400">—</td>
             <td className="px-6 py-3">
@@ -510,7 +495,7 @@ export function TravelerGroup({
       {/* 4. FILA DE ACCIÓN: AGREGAR LUGAR AL GRUPO */}
       {!isAuditMode && isExpanded && titular.formStatus === "PENDING" && (
         <tr className="border-b border-slate-100 bg-slate-50/20">
-          <td colSpan={8} className="px-4 py-2.5 pl-9">
+          <td colSpan={requiresSeats ? 8 : 7} className="px-4 py-2.5 pl-9">
             <button
               onClick={() => onAddPassengerClick(titular)}
               disabled={isAdding || (typeof freeSeatsCount === "number" && freeSeatsCount <= 0)}
@@ -519,7 +504,6 @@ export function TravelerGroup({
               <UserPlus className="h-3.5 w-3.5" />
               <span>+ Agregar lugar al grupo</span>
 
-              {/* 🚀 Renderizado condicional del Badge de disponibilidad */}
               {typeof freeSeatsCount === "number" && (
                 <span className="inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
                   {freeSeatsCount} libres en tour
