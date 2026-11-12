@@ -1,264 +1,259 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TourForm } from "../TourForm";
 import { TOUR_FORM_COPY } from "../../constants/copy";
+import type { TourOutput } from "../../schemas/tour.schema";
 
-// 1. Mockeamos la mutación de TanStack Query para aislar la prueba de llamadas reales a red
-vi.mock("../../hooks/useCreateTour", () => ({
-  useCreateTour: () => ({
-    mutateAsync: vi.fn().mockResolvedValue({}),
-    isPending: false,
+// --- Dobles de prueba -------------------------------------------------------------------------
+// TourForm usa el router de Next (no existe fuera de la app) y hooks de React Query: se simulan
+// en el módulo real donde viven (`hooks/useTours`, `settings/hooks/useAgency`).
+const push = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, replace: vi.fn(), back: vi.fn() }),
+}));
+
+const createTour = vi.fn();
+const updateTour = vi.fn();
+const uploadBrochure = vi.fn();
+vi.mock("../../hooks/useTours", () => ({
+  useCreateTour: () => ({ mutateAsync: createTour, isPending: false }),
+  useUpdateTour: () => ({ mutateAsync: updateTour, isPending: false }),
+  useUploadTourBrochure: () => ({ mutateAsync: uploadBrochure, isPending: false }),
+  extractTourId: (response: { id?: string } | undefined) => response?.id,
+}));
+
+vi.mock("@/features/settings/hooks/useAgency", () => ({
+  useAgency: () => ({
+    data: {
+      bankName: "BBVA",
+      bankAccountHolder: "Bruji Tours SA",
+      clabeNumber: "012180001234567891",
+      cardNumber: "4152313412345678",
+    },
   }),
 }));
 
-describe("TourForm - Pruebas de Integración", () => {
-  it("Should render main fields form", () => {
+const toastWarning = vi.fn();
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: (...a: unknown[]) => toastWarning(...a),
+  },
+}));
+
+// --- Datos ------------------------------------------------------------------------------------
+const TOUR_ID = "5f0c7a52-1f5e-4a8e-9a3b-2c1d0e9f8a7b";
+
+const savedTour = (overrides: Partial<TourOutput> = {}): TourOutput =>
+  ({
+    id: TOUR_ID,
+    title: "Zacatlán de las manzanas",
+    description: "Recorrido por el pueblo mágico",
+    transportModality: "TRANSPORT_INCLUDED",
+    price: 1200,
+    depositPerPerson: 500,
+    currency: "MXN",
+    departureDateTime: "2027-01-10",
+    returnDate: null,
+    maxCapacity: 20,
+    staffCapacity: 1,
+    isActive: true,
+    acceptsBankTransfer: true,
+    acceptsCreditCard: false,
+    paymentLink: null,
+    postPaymentInstructions: "",
+    acceptsCash: false,
+    cashInstructions: null,
+    boardingPoints: [
+      { id: "8a1d2c3b-4e5f-4a6b-8c7d-9e0f1a2b3c4d", location: "Plaza Central", time: "06:00" },
+    ],
+    brochureUrl: null,
+    destinationType: "NATIONAL",
+    hasPayments: false,
+    ...overrides,
+  }) as TourOutput;
+
+const submitButton = (name: string = TOUR_FORM_COPY.actions.submit) =>
+  screen.getByRole("button", { name });
+
+/** Captura los datos mínimos válidos de un tour nuevo (pago por Transferencia). */
+async function fillValidTour(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByLabelText("Nombre del Tour"), "Cascadas de Cuetzalan");
+  fireEvent.change(screen.getByLabelText(/Fecha de Salida/), { target: { value: "2027-02-14" } });
+  await user.type(screen.getByLabelText(/Capacidad total del vehículo/), "20");
+  await user.type(screen.getByLabelText(/Precio Total por Pasajero/), "1200");
+  await user.type(screen.getByPlaceholderText("Ej. Oxxo Tec, Veracruz"), "Plaza Central");
+  await user.click(screen.getByRole("checkbox", { name: "Transferencia" }));
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3001/api");
+});
+
+// --- Pruebas ----------------------------------------------------------------------------------
+describe("TourForm — creación", () => {
+  it("muestra los campos principales y deshabilita Guardar mientras el formulario es inválido", () => {
     render(<TourForm />);
 
-    expect(screen.getByLabelText(TOUR_FORM_COPY.fields.title.label)).toBeInTheDocument();
-    expect(screen.getByLabelText(TOUR_FORM_COPY.fields.deaperture)).toBeInTheDocument();
-    expect(screen.getByLabelText(TOUR_FORM_COPY.fields.capacity)).toBeInTheDocument();
-    expect(screen.getByLabelText(TOUR_FORM_COPY.fields.description)).toBeInTheDocument();
-    expect(screen.getByLabelText(TOUR_FORM_COPY.fields.recommendations)).toBeInTheDocument();
-    expect(screen.getByLabelText(TOUR_FORM_COPY.fields.price)).toBeInTheDocument();
-    expect(screen.getByLabelText(TOUR_FORM_COPY.fields.duration)).toBeInTheDocument();
-    expect(screen.getByLabelText(TOUR_FORM_COPY.fields.pointOfOrigin)).toBeInTheDocument();
+    expect(screen.getByLabelText("Nombre del Tour")).toBeInTheDocument();
     expect(
-      screen.getByLabelText(TOUR_FORM_COPY.fields.paymentTypes.spei.title),
+      screen.getByLabelText(new RegExp(TOUR_FORM_COPY.fields.description.replace(/[()]/g, "\\$&"))),
     ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(TOUR_FORM_COPY.fields.paymentTypes.credit.title),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(TOUR_FORM_COPY.fields.paymentTypes.cash.title),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Fecha de Salida/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Capacidad total del vehículo/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Lugares bloqueados para staff/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Precio Total por Pasajero/)).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Nacional/ })).toBeInTheDocument();
+    for (const method of ["Transferencia", "Tarjeta / Link", "Efectivo"]) {
+      expect(screen.getByRole("checkbox", { name: method })).toBeInTheDocument();
+    }
 
-    expect(screen.getByRole("button", { name: TOUR_FORM_COPY.actions.reset })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: TOUR_FORM_COPY.actions.reset })).toBeEnabled();
-
-    expect(screen.getByRole("button", { name: TOUR_FORM_COPY.actions.submit })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: TOUR_FORM_COPY.actions.submit })).toBeDisabled();
+    expect(submitButton()).toBeDisabled();
   });
 
-  it("Should only display bank details when the 'SPEI' check is active.", async () => {
+  it("Transferencia muestra los datos bancarios de la agencia, incluido el número de tarjeta", async () => {
     const user = userEvent.setup();
     render(<TourForm />);
 
-    expect(
-      screen.queryByLabelText(TOUR_FORM_COPY.fields.paymentTypes.spei.label),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("012180001234567891")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("checkbox", { name: "Transferencia" }));
 
-    const speiCheckbox = screen.getByRole("checkbox", {
-      name: TOUR_FORM_COPY.fields.paymentTypes.spei.title,
-    });
-    await user.click(speiCheckbox);
-
-    const bankDetailsInput = screen.getByLabelText(TOUR_FORM_COPY.fields.paymentTypes.spei.label);
-    expect(bankDetailsInput).toBeInTheDocument();
-
-    await user.click(speiCheckbox);
-    expect(bankDetailsInput).not.toBeInTheDocument();
+    expect(screen.getByText("012180001234567891")).toBeInTheDocument();
+    expect(screen.getByText("4152313412345678")).toBeInTheDocument();
   });
 
-  it("Should only display bank details when the 'CREDIT' check is active.", async () => {
+  it("Tarjeta exige el enlace de pago y Efectivo exige instrucciones", async () => {
     const user = userEvent.setup();
     render(<TourForm />);
 
-    expect(
-      screen.queryByLabelText(TOUR_FORM_COPY.fields.paymentTypes.credit.label),
-    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("checkbox", { name: "Tarjeta / Link" }));
+    expect(screen.getByPlaceholderText("https://...")).toBeInTheDocument();
 
-    const creditCheckbox = screen.getByRole("checkbox", {
-      name: TOUR_FORM_COPY.fields.paymentTypes.credit.title,
+    await user.click(screen.getByRole("checkbox", { name: "Efectivo" }));
+    expect(screen.getByPlaceholderText("Ej. Paga directo al abordar")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: "Tarjeta / Link" }));
+    expect(screen.queryByPlaceholderText("https://...")).not.toBeInTheDocument();
+  });
+
+  it("con datos válidos crea el tour (vacíos → null) y regresa al listado", async () => {
+    createTour.mockResolvedValue({ id: TOUR_ID });
+    const user = userEvent.setup();
+    render(<TourForm />);
+
+    await fillValidTour(user);
+    await waitFor(() => expect(submitButton()).toBeEnabled());
+    await user.click(submitButton());
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/tours"));
+    expect(createTour).toHaveBeenCalledTimes(1);
+    expect(createTour.mock.calls[0]?.[0]).toMatchObject({
+      title: "Cascadas de Cuetzalan",
+      departureDateTime: "2027-02-14",
+      price: 1200,
+      maxCapacity: 20,
+      destinationType: "NATIONAL",
+      paymentLink: null,
+      cashInstructions: null,
+      postPaymentInstructions: null,
+      returnDate: null,
     });
-    await user.click(creditCheckbox);
+    expect(uploadBrochure).not.toHaveBeenCalled();
+  });
 
-    const creditDetailsInput = screen.getByLabelText(
-      TOUR_FORM_COPY.fields.paymentTypes.credit.label,
+  it("si el folleto falla después de crear, lleva a la edición del tour nuevo (sin duplicarlo)", async () => {
+    createTour.mockResolvedValue({ id: TOUR_ID });
+    uploadBrochure.mockRejectedValue(new Error("Error al subir"));
+    const user = userEvent.setup();
+    const { container } = render(<TourForm />);
+
+    await fillValidTour(user);
+    const pdf = new File(["%PDF"], "itinerario.pdf", { type: "application/pdf" });
+    await user.upload(container.querySelector<HTMLInputElement>('input[type="file"]')!, pdf);
+    await user.click(submitButton());
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith(`/tours/${TOUR_ID}/edit`));
+    expect(createTour).toHaveBeenCalledTimes(1);
+    expect(push).not.toHaveBeenCalledWith("/tours");
+    expect(toastWarning).toHaveBeenCalledWith(
+      "El tour se guardó, pero el folleto no se subió",
+      expect.anything(),
     );
-    expect(creditDetailsInput).toBeInTheDocument();
-
-    await user.click(creditCheckbox);
-    expect(creditDetailsInput).not.toBeInTheDocument();
   });
 
-  it("Should only display bank details when the 'CASH' check is active.", async () => {
+  it("Limpiar regresa los campos y el PDF adjunto a su estado inicial", async () => {
     const user = userEvent.setup();
-    render(<TourForm />);
+    const { container } = render(<TourForm />);
+
+    await user.type(screen.getByLabelText("Nombre del Tour"), "Tour temporal");
+    const pdf = new File(["%PDF"], "itinerario.pdf", { type: "application/pdf" });
+    await user.upload(container.querySelector<HTMLInputElement>('input[type="file"]')!, pdf);
+    expect(screen.getByText("itinerario.pdf")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: TOUR_FORM_COPY.actions.reset }));
+
+    expect(screen.getByLabelText("Nombre del Tour")).toHaveValue("");
+    expect(screen.queryByText("itinerario.pdf")).not.toBeInTheDocument();
+    expect(screen.getByText("Haz clic para adjuntar el PDF")).toBeInTheDocument();
+  });
+});
+
+describe("TourForm — edición", () => {
+  it("guarda los cambios del tour y regresa al listado", async () => {
+    updateTour.mockResolvedValue({ id: TOUR_ID });
+    const user = userEvent.setup();
+    render(<TourForm tour={savedTour()} />);
+
+    const title = screen.getByLabelText("Nombre del Tour");
+    await user.clear(title);
+    await user.type(title, "Zacatlán y Chignahuapan");
+    await user.click(submitButton("Guardar Cambios"));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/tours"));
+    expect(updateTour).toHaveBeenCalledWith({
+      tourId: TOUR_ID,
+      tourData: expect.objectContaining({
+        title: "Zacatlán y Chignahuapan",
+        removeBrochure: false,
+      }),
+    });
+  });
+
+  it("con pagos registrados congela la moneda y el precio", () => {
+    render(<TourForm tour={savedTour({ hasPayments: true })} />);
+
+    expect(screen.getByText(/Moneda y precio congelados/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Precio Total por Pasajero/)).toBeDisabled();
+    expect(screen.getByRole("radio", { name: /USD/ })).toBeDisabled();
+    // El anticipo sigue editable.
+    expect(screen.getByLabelText(/Anticipo por pasajero/)).toBeEnabled();
+  });
+
+  it("abre el folleto guardado en el origen de la API, fuera de /api", async () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    const user = userEvent.setup();
+    render(<TourForm tour={savedTour({ brochureUrl: "/uploads/brochures/tour-1.pdf" })} />);
+
+    await user.click(screen.getByRole("button", { name: /Ver \/ Descargar/ }));
+
+    expect(open).toHaveBeenCalledWith(
+      "http://localhost:3001/public/uploads/brochures/tour-1.pdf",
+      "_blank",
+    );
+  });
+
+  it("si el tour guardado no cumple una regla, explica por qué no se puede guardar", async () => {
+    // Guardado por API sin ningún método de cobro: la UI exige al menos uno.
+    render(<TourForm tour={savedTour({ acceptsBankTransfer: false })} />);
 
     expect(
-      screen.queryByLabelText(TOUR_FORM_COPY.fields.paymentTypes.cash.label),
-    ).not.toBeInTheDocument();
-
-    const cashCheckbox = screen.getByRole("checkbox", {
-      name: TOUR_FORM_COPY.fields.paymentTypes.cash.title,
-    });
-    await user.click(cashCheckbox);
-
-    const cashDetailsInput = screen.getByLabelText(TOUR_FORM_COPY.fields.paymentTypes.cash.label);
-    expect(cashDetailsInput).toBeInTheDocument();
-
-    await user.click(cashCheckbox);
-    expect(cashDetailsInput).not.toBeInTheDocument();
-  });
-
-  it("Should must disable the default submit button", async () => {
-    render(<TourForm />);
-
-    const submitButton = screen.getByRole("button", { name: TOUR_FORM_COPY.actions.submit });
-    expect(submitButton).toBeDisabled();
-  });
-
-  it("Should eneabled 'Guardar Tour' button", async () => {
-    const user = userEvent.setup();
-    render(<TourForm />);
-
-    const titleInput = screen.getByRole("textbox", { name: TOUR_FORM_COPY.fields.title.label });
-    expect(titleInput).toHaveValue("");
-
-    await user.type(titleInput, "Ruta del Café");
-    expect(titleInput).toHaveValue("Ruta del Café");
-
-    const departureInput = screen.getByLabelText(TOUR_FORM_COPY.fields.deaperture);
-    expect(departureInput).toHaveValue("");
-
-    const targetDate = "2026-08-15T09:00";
-    await user.type(departureInput, targetDate);
-    expect(departureInput).toHaveValue(targetDate);
-
-    const capacityInput = screen.getByLabelText(TOUR_FORM_COPY.fields.capacity);
-    expect(capacityInput).toHaveValue(0);
-
-    await user.type(capacityInput, "15");
-    expect(capacityInput).toHaveValue(15);
-
-    const descriptionInput = screen.getByRole("textbox", {
-      name: TOUR_FORM_COPY.fields.description,
-    });
-    expect(descriptionInput).toHaveValue("");
-
-    await user.type(descriptionInput, "Descripción del tour");
-    expect(descriptionInput).toHaveValue("Descripción del tour");
-
-    const recommendationsInput = screen.getByRole("textbox", {
-      name: TOUR_FORM_COPY.fields.recommendations,
-    });
-    expect(recommendationsInput).toHaveValue("");
-
-    await user.type(recommendationsInput, "Recomendaciones del tour");
-    expect(recommendationsInput).toHaveValue("Recomendaciones del tour");
-
-    const priceInput = screen.getByLabelText(TOUR_FORM_COPY.fields.price);
-    expect(priceInput).toHaveValue(0);
-
-    await user.type(priceInput, "100");
-    expect(priceInput).toHaveValue(100);
-
-    const durationInput = screen.getByLabelText(TOUR_FORM_COPY.fields.duration);
-    expect(durationInput).toHaveValue(0);
-
-    await user.type(durationInput, "1");
-    expect(durationInput).toHaveValue(1);
-
-    const meetingInput = screen.getByRole("textbox", { name: TOUR_FORM_COPY.fields.pointOfOrigin });
-    expect(meetingInput).toHaveValue("");
-
-    await user.type(meetingInput, "Punto de encuentro en gasolinea del oxxo");
-    expect(meetingInput).toHaveValue("Punto de encuentro en gasolinea del oxxo");
-
-    const acceptBankTransferCheckbox = screen.getByRole("checkbox", {
-      name: TOUR_FORM_COPY.fields.paymentTypes.spei.title,
-    });
-    expect(acceptBankTransferCheckbox).not.toBeChecked();
-
-    const acceptCreditCheckbox = screen.getByRole("checkbox", {
-      name: TOUR_FORM_COPY.fields.paymentTypes.credit.title,
-    });
-    expect(acceptCreditCheckbox).not.toBeChecked();
-
-    const acceptCashCheckbox = screen.getByRole("checkbox", {
-      name: TOUR_FORM_COPY.fields.paymentTypes.cash.title,
-    });
-    expect(acceptCashCheckbox).not.toBeChecked();
-
-    await user.click(acceptBankTransferCheckbox);
-    expect(acceptBankTransferCheckbox).toBeChecked();
-
-    const speiDetailInput = screen.getByRole("textbox", {
-      name: TOUR_FORM_COPY.fields.paymentTypes.spei.label,
-    });
-    expect(speiDetailInput).toBeInTheDocument();
-    expect(speiDetailInput).toHaveValue("");
-
-    await user.type(
-      speiDetailInput,
-      "Información bancaria para la transferencia como número de cuenta, CLABE y nombre",
-    );
-    expect(speiDetailInput).toHaveValue(
-      "Información bancaria para la transferencia como número de cuenta, CLABE y nombre",
-    );
-
-    const resetButton = screen.getByRole("button", { name: TOUR_FORM_COPY.actions.reset });
-    expect(resetButton).toBeEnabled();
-
-    const submitButton = screen.getByRole("button", { name: TOUR_FORM_COPY.actions.submit });
-    expect(submitButton).toBeEnabled();
-  });
-
-  it("Should reset the form to its default state when clicking the Reset button", async () => {
-    const user = userEvent.setup();
-    render(<TourForm />);
-
-    // ==========================================
-    // 1. ARRANGE: Ensuciar el formulario
-    // ==========================================
-    const titleInput = screen.getByRole("textbox", { name: TOUR_FORM_COPY.fields.title.label });
-    await user.type(titleInput, "Ruta del Café");
-
-    const capacityInput = screen.getByLabelText(TOUR_FORM_COPY.fields.capacity);
-    await user.clear(capacityInput); // Limpiamos el 0 por defecto antes de escribir
-    await user.type(capacityInput, "15");
-
-    const acceptBankTransferCheckbox = screen.getByRole("checkbox", {
-      name: TOUR_FORM_COPY.fields.paymentTypes.spei.title,
-    });
-    await user.click(acceptBankTransferCheckbox);
-
-    // Al activar el checkbox, el campo condicional debe existir en el DOM
-    const speiDetailInput = screen.getByRole("textbox", {
-      name: TOUR_FORM_COPY.fields.paymentTypes.spei.label,
-    });
-    await user.type(speiDetailInput, "Información bancaria de prueba");
-
-    // Comprobamos que el formulario efectivamente está "sucio"
-    expect(titleInput).toHaveValue("Ruta del Café");
-    expect(capacityInput).toHaveValue(15);
-    expect(acceptBankTransferCheckbox).toBeChecked();
-    expect(speiDetailInput).toHaveValue("Información bancaria de prueba");
-
-    // ==========================================
-    // 2. ACT: Disparar el Reset
-    // ==========================================
-    const resetButton = screen.getByRole("button", { name: TOUR_FORM_COPY.actions.reset });
-    expect(resetButton).toBeEnabled();
-    await user.click(resetButton);
-
-    // ==========================================
-    // 3. ASSERT: Verificar el estado por defecto
-    // ==========================================
-    // Los campos de texto deben estar vacíos
-    expect(titleInput).toHaveValue("");
-
-    // Los inputs numéricos deben regresar al default definido en tu esquema (0)
-    expect(capacityInput).toHaveValue(0);
-
-    // Los checkboxes deben desmarcarse
-    expect(acceptBankTransferCheckbox).not.toBeChecked();
-
-    // CRÍTICO: El campo condicional ya no debe existir en el DOM
-    // Usamos queryByRole en lugar de getByRole porque esperamos que sea null
-    expect(
-      screen.queryByRole("textbox", { name: TOUR_FORM_COPY.fields.paymentTypes.spei.label }),
-    ).not.toBeInTheDocument();
+      await screen.findByText("Completa o corrige los campos marcados para poder guardar."),
+    ).toBeInTheDocument();
+    expect(submitButton("Guardar Cambios")).toBeDisabled();
   });
 });

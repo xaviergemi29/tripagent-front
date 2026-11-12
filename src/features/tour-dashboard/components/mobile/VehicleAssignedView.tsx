@@ -2,6 +2,7 @@ import { Bus, RefreshCw, Info } from "lucide-react";
 import { SeatMapCanvas } from "@/features/tours/components/SeatMapCanvas";
 import { getInitials } from "@/shared/utils/travelers-helpers";
 import type { FlattenedPassenger, VehicleOutput } from "../../schemas/tour-dashboard.schema";
+import { PASSENGER_ROLE_DICT } from "@/shared/utils/config/status-dictionaries.config";
 
 interface VehicleAssignedViewProps {
   tourId: string;
@@ -84,7 +85,7 @@ export function VehicleAssignedView({
                         {p.fullName}
                       </span>
                       <span className="truncate text-[10px] text-slate-500">
-                        {p.role === "TITULAR" ? "Titular" : "Acompañante"}
+                        {PASSENGER_ROLE_DICT[p.role]}
                       </span>
                     </div>
                   </div>

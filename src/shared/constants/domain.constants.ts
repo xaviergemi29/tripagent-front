@@ -20,3 +20,15 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 // Estado de un pasajero dentro de la reserva (enum `passenger_status` de la API)
 export const PASSENGER_STATUSES = ["ACTIVE", "CANCELLED"] as const;
 export type PassengerStatus = (typeof PASSENGER_STATUSES)[number];
+
+// Rol de un pasajero dentro de su reserva. No es un enum de BD (allí es el booleano
+// `booking_passengers.isTitular`): es parte del contrato de la API (Centro de Control y
+// transferencia). Espejo de `tripagent-api/src/shared/constants/domain.constants.ts`.
+export const PASSENGER_ROLES = ["TITULAR", "COMPANION"] as const;
+export type PassengerRole = (typeof PASSENGER_ROLES)[number];
+
+/** Acceso por nombre para comparar sin escribir el texto: `role === PASSENGER_ROLE.TITULAR`. */
+export const PASSENGER_ROLE = {
+  TITULAR: "TITULAR",
+  COMPANION: "COMPANION",
+} as const satisfies Record<PassengerRole, PassengerRole>;

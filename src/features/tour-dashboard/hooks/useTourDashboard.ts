@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TourDashboardOutput, VehicleOutput } from "../schemas/tour-dashboard.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
+import { PASSENGER_ROLE } from "@/shared/constants/domain.constants";
 import { TOUR_SEAT_KEYS } from "@/features/tours/hooks/useTourSeats";
 import type {
   TransferPassengerInput,
@@ -175,7 +176,7 @@ export function useTransferPassenger() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(result.tourId) });
       toast.success(
-        result.transferredPassenger.role === "TITULAR"
+        result.transferredPassenger.role === PASSENGER_ROLE.TITULAR
           ? "Titularidad transferida"
           : "Lugar transferido",
         {

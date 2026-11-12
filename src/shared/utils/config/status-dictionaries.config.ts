@@ -1,5 +1,5 @@
 import { FormStatus } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
-import type { PaymentMethod } from "@/shared/constants/domain.constants";
+import type { PassengerRole, PaymentMethod } from "@/shared/constants/domain.constants";
 
 // Interfaz genérica para estandarizar todos los badges de la UI
 export interface UIStateConfig {
@@ -51,4 +51,10 @@ export const PAYMENT_METHOD_DICT: Record<PaymentMethod, string> = {
   TRANSFER: "SPEI",
   CARD: "TARJETA",
   OTHER: "OTRO",
+};
+
+// Rol del pasajero dentro de su reserva (titular o acompañante)
+export const PASSENGER_ROLE_DICT: Record<PassengerRole, string> = {
+  TITULAR: "Titular",
+  COMPANION: "Acompañante",
 };

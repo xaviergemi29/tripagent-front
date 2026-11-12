@@ -3,12 +3,19 @@ import {
   layoutMapSchema,
   vehicleCapacityOutputSchema,
 } from "@/features/vehicles/schemas/vehicle.schema";
-import { CURRENCIES, DEFAULT_CURRENCY, PAYMENT_METHODS } from "@/shared/constants/domain.constants";
+import type { PassengerRole } from "@/shared/constants/domain.constants";
+import {
+  CURRENCIES,
+  DEFAULT_CURRENCY,
+  PASSENGER_ROLE,
+  PASSENGER_ROLES,
+  PAYMENT_METHODS,
+} from "@/shared/constants/domain.constants";
 
 export const currencySchema = z.enum(CURRENCIES);
 export const formStatusSchema = z.enum(["COMPLETED", "PENDING"]);
 export const paymentStatusSchema = z.enum(["PAID", "ADVANCE", "PENDING_VALIDATION", "PENDING"]);
-export const travelerRoleSchema = z.enum(["TITULAR", "COMPANION"]);
+export const passengerRoleSchema = z.enum(PASSENGER_ROLES);
 export const temporalStatusSchema = z.enum(["ACTIVO", "FINALIZADO", "CANCELADO"]);
 export const paymentMethodSchema = z.enum(PAYMENT_METHODS);
 export const paymentTypeSchema = z.enum(["PAYMENT", "REFUND"]);
@@ -29,7 +36,7 @@ export const paymentRecordSchema = z.object({
 export const companionSchema = z.object({
   id: z.uuid(),
   bookingId: z.uuid(),
-  role: z.literal("COMPANION"),
+  role: z.literal(PASSENGER_ROLE.COMPANION),
   fullName: z.string(),
   whatsapp: z.string(),
 
@@ -41,7 +48,7 @@ export const companionSchema = z.object({
 export const titularSchema = z.object({
   id: z.uuid(),
   bookingId: z.uuid(),
-  role: z.literal("TITULAR"),
+  role: z.literal(PASSENGER_ROLE.TITULAR),
   fullName: z.string(),
   whatsapp: z.string(),
   groupSize: z.number().min(1),
@@ -106,7 +113,6 @@ export const tourDashboardOutputSchema = z.object({
 });
 
 export type FormStatus = z.infer<typeof formStatusSchema>;
-export type TravelerRole = z.infer<typeof travelerRoleSchema>;
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
 export type PaymentRecordOutput = z.infer<typeof paymentRecordSchema>;
 export type CompanionOutput = z.infer<typeof companionSchema>;
@@ -124,6 +130,6 @@ export interface FlattenedPassenger {
   fullName: string;
   bookingId: string;
   seatNumber: string | null;
-  role: TravelerRole;
+  role: PassengerRole;
   paxCount: number;
 }

@@ -1,3 +1,4 @@
+import { PASSENGER_ROLE } from "@/shared/constants/domain.constants";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TransferPassengerModal } from "../TransferPassengerModal";
@@ -32,7 +33,7 @@ describe("TransferPassengerModal", () => {
         onOpenChange={() => {}}
         bookingId={BOOKING_ID}
         passengerId={COMPANION_ID}
-        role="COMPANION"
+        role={PASSENGER_ROLE.COMPANION}
         currentName="Acompañante Original"
         currentWhatsapp={null}
       />,
@@ -51,7 +52,7 @@ describe("TransferPassengerModal", () => {
     expect(bookingId).toBe(BOOKING_ID);
     expect(data).toMatchObject({
       passengerId: COMPANION_ID,
-      role: "COMPANION",
+      role: PASSENGER_ROLE.COMPANION,
       fullName: "Persona Nueva",
       whatsapp: "2289999999",
       email: "nueva@correo.mx",
@@ -68,7 +69,7 @@ describe("TransferPassengerModal", () => {
         onOpenChange={() => {}}
         bookingId={BOOKING_ID}
         passengerId={COMPANION_ID}
-        role="COMPANION"
+        role={PASSENGER_ROLE.COMPANION}
         currentName="Acompañante Original"
         currentWhatsapp={null}
       />,
@@ -83,7 +84,7 @@ describe("TransferPassengerModal", () => {
 
     await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
     const { data } = mutate.mock.calls[0]![0];
-    expect(data).toMatchObject({ role: "COMPANION", isMinor: true });
+    expect(data).toMatchObject({ role: PASSENGER_ROLE.COMPANION, isMinor: true });
     expect(data.whatsapp).toBeUndefined();
     expect(data.email).toBeUndefined();
   });
@@ -96,7 +97,7 @@ describe("TransferPassengerModal", () => {
         onOpenChange={() => {}}
         bookingId={BOOKING_ID}
         passengerId={TITULAR_ID}
-        role="TITULAR"
+        role={PASSENGER_ROLE.TITULAR}
         currentName="Titular Original"
         currentWhatsapp="2281111111"
       />,
@@ -115,7 +116,7 @@ describe("TransferPassengerModal", () => {
     const { data } = mutate.mock.calls[0]![0];
     expect(data).toMatchObject({
       passengerId: TITULAR_ID,
-      role: "TITULAR",
+      role: PASSENGER_ROLE.TITULAR,
       inheritTitularBoardingPoint: false,
     });
   });

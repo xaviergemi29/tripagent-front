@@ -95,7 +95,7 @@ export function TourAssetSection({
             </div>
 
             <div className="flex w-full items-center gap-2 sm:w-auto">
-              {existingBrochure && !brochureFile && (
+              {existingBrochure && brochureFile === null && (
                 <Button
                   type="button"
                   variant="outline"

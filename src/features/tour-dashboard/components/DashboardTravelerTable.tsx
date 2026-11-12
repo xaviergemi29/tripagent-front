@@ -13,9 +13,12 @@ import { TravelerGroup } from "./TravelerGroup";
 import { Button } from "@/components/ui/button";
 import { ReleaseSlotDialog } from "./ReleaseSlotDialog";
 import { TransferPassengerModal } from "./TransferPassengerModal";
-import type { TravelerRole } from "../schemas/tour-dashboard.schema";
 import { generatePartialPaymentReceiptPDF } from "@/features/external-registration/components/GeneratePartialPaymentReceipt";
-import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import {
+  type Currency,
+  DEFAULT_CURRENCY,
+  type PassengerRole,
+} from "@/shared/constants/domain.constants";
 
 export type PaymentFilter = "ALL" | "UNPAID" | "PARTIAL" | "PAID";
 export type RegistrationFilter = "ALL" | "PENDING" | "COMPLETED";
@@ -62,7 +65,7 @@ export function DashboardTravelerTable({
   const [transferTarget, setTransferTarget] = useState<{
     bookingId: string;
     passengerId: string;
-    role: TravelerRole;
+    role: PassengerRole;
     currentName: string;
     currentWhatsapp: string | null;
   } | null>(null);
@@ -190,7 +193,7 @@ export function DashboardTravelerTable({
   const handleOpenTransferModal = (
     bookingId: string,
     passengerId: string,
-    role: TravelerRole,
+    role: PassengerRole,
     currentName: string,
     whatsapp: string,
   ): void => {

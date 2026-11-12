@@ -64,7 +64,6 @@ export function SeatMapCanvas({
   initialSelectedPassengerId,
   staffCapacity = 0,
 }: SeatMapCanvasProps) {
-  console.log("staffCapacity", staffCapacity)
   const { data: assignedSeats = [] } = useTourSeats(tourId);
   const { mutate: updateSeat } = useUpdateSeat(tourId);
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PASSENGER_ROLE, type PassengerRole } from "@/shared/constants/domain.constants";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, ArrowLeftRight, Check, ChevronDown, Copy, Loader2 } from "lucide-react";
@@ -17,7 +18,6 @@ import { copyToClipboard } from "@/shared/utils/clipboard";
 import { buildMagicLinkUrl, buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 
 import { useTransferPassenger } from "../hooks/useTourDashboard";
-import type { TravelerRole } from "../schemas/tour-dashboard.schema";
 import {
   transferPassengerSchema,
   type TransferPassengerFormInput,
@@ -28,7 +28,7 @@ interface TransferPassengerModalProps {
   onOpenChange: (open: boolean) => void;
   bookingId: string;
   passengerId: string;
-  role: TravelerRole;
+  role: PassengerRole;
   currentName: string;
   currentWhatsapp: string | null;
 }
@@ -49,7 +49,7 @@ export function TransferPassengerModal({
   currentName,
   currentWhatsapp,
 }: TransferPassengerModalProps) {
-  const isTitular = role === "TITULAR";
+  const isTitular = role === PASSENGER_ROLE.TITULAR;
   const [isMedicalOpen, setIsMedicalOpen] = useState(false);
   const [newMagicLink, setNewMagicLink] = useState<{ url: string; whatsapp: string } | null>(null);
   const { mutate, isPending } = useTransferPassenger();

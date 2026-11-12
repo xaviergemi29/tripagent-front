@@ -50,3 +50,21 @@ export const buildMagicLinkUrl = (token: string): string =>
  */
 export const buildBrochureUrl = (tourId: string | undefined): string =>
   `${window.location.origin}/p/${tourId}`;
+
+/**
+ * @description URL pública de un archivo servido por la API (p. ej. el folleto PDF).
+ * La API guarda rutas como `/uploads/brochures/x.pdf` y las sirve en `<origen API>/public/...`,
+ * **fuera** del prefijo `/api` que trae `NEXT_PUBLIC_API_URL`.
+ *
+ * @param {string} storedPath - Ruta guardada por la API (empieza con `/uploads/...`).
+ * @returns {string} URL absoluta del archivo.
+ * @example
+ * // NEXT_PUBLIC_API_URL = "http://localhost:3001/api"
+ * buildApiPublicFileUrl("/uploads/brochures/tour-1.pdf")
+ * // "http://localhost:3001/public/uploads/brochures/tour-1.pdf"
+ */
+export const buildApiPublicFileUrl = (storedPath: string): string => {
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+  const normalizedPath = storedPath.startsWith("/") ? storedPath : `/${storedPath}`;
+  return new URL(`/public${normalizedPath}`, apiBase).toString();
+};

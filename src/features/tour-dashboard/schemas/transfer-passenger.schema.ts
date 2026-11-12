@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { travelerRoleSchema } from "./tour-dashboard.schema";
+import { PASSENGER_ROLE } from "@/shared/constants/domain.constants";
+import { passengerRoleSchema } from "./tour-dashboard.schema";
 
 const PHONE_REGEX = /^\d{10}$/;
 
@@ -11,7 +12,7 @@ const PHONE_REGEX = /^\d{10}$/;
  */
 export const transferPassengerSchema = z
   .object({
-    role: travelerRoleSchema,
+    role: passengerRoleSchema,
     isMinor: z.boolean(),
     fullName: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres").max(255),
     whatsapp: z.string().trim(),
@@ -22,7 +23,7 @@ export const transferPassengerSchema = z
     emergencyContactPhone: z.string().trim(),
   })
   .superRefine((data, ctx) => {
-    if (data.role === "TITULAR" && data.isMinor) {
+    if (data.role === PASSENGER_ROLE.TITULAR && data.isMinor) {
       ctx.addIssue({
         code: "custom",
         path: ["isMinor"],
@@ -60,7 +61,7 @@ export const transferPassengerSchema = z
 /** Cuerpo de `PATCH /bookings/:bookingId/transfer` (los campos vacíos no se envían). */
 export const transferPassengerInputSchema = z.object({
   passengerId: z.uuid(),
-  role: travelerRoleSchema,
+  role: passengerRoleSchema,
   fullName: z.string(),
   whatsapp: z.string().optional(),
   email: z.string().optional(),
@@ -86,7 +87,7 @@ export const transferPassengerOutputSchema = z.object({
   transferredPassenger: z.object({
     previousTravelerId: z.uuid(),
     newTravelerId: z.uuid(),
-    role: travelerRoleSchema,
+    role: passengerRoleSchema,
   }),
 });
 

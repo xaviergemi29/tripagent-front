@@ -25,7 +25,11 @@ import { VoidPaymentModal } from "./VoidPaymentModal";
 import { formatShortDateTime } from "@/shared/utils/tour-date.util";
 import { PAYMENT_METHOD_DICT } from "@/shared/utils/config/status-dictionaries.config";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Currency, PaymentMethod } from "@/shared/constants/domain.constants";
+import {
+  type Currency,
+  PASSENGER_ROLE,
+  type PaymentMethod,
+} from "@/shared/constants/domain.constants";
 
 interface TravelerDetailDrawerProps {
   tourId: string;
@@ -59,7 +63,7 @@ export function TravelerDetailDrawer({
 
   if (!isOpen || !traveler) return null;
   const isUSD = tourCurrency === "USD";
-  const isTitular = traveler.role === "TITULAR";
+  const isTitular = traveler.role === PASSENGER_ROLE.TITULAR;
 
   const titularPayments = isTitular && "payments" in traveler ? traveler.payments : [];
   const titularBalance = isTitular && "balance" in traveler ? traveler.balance : 0;

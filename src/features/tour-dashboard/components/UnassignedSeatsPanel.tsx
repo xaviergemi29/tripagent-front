@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getInitials } from "@/shared/utils/travelers-helpers";
 import type { FlattenedPassenger } from "../schemas/tour-dashboard.schema";
+import { PASSENGER_ROLE_DICT } from "@/shared/utils/config/status-dictionaries.config";
 
 type UnassignedPassenger = Pick<FlattenedPassenger, "id" | "fullName" | "role" | "paxCount">;
 
@@ -82,8 +83,7 @@ export function UnassignedSeatsPanel({
                       {passenger.fullName}
                     </span>
                     <span className="text-xs text-slate-500">
-                      {passenger.role === "TITULAR" ? "Titular" : "Acompañante"} •{" "}
-                      {passenger.paxCount || 1} Pasajero
+                      {PASSENGER_ROLE_DICT[passenger.role]} • {passenger.paxCount || 1} Pasajero
                     </span>
                   </div>
                   {!isSelected && (

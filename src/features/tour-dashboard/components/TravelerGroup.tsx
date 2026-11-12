@@ -1,5 +1,5 @@
 import { JSX, useState } from "react";
-import { FormStatus, TitularRowOutput, TravelerRole } from "../schemas/tour-dashboard.schema";
+import { FormStatus, TitularRowOutput } from "../schemas/tour-dashboard.schema";
 import {
   ChevronDown,
   User,
@@ -33,7 +33,12 @@ import {
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import {
+  type Currency,
+  DEFAULT_CURRENCY,
+  PASSENGER_ROLE,
+  type PassengerRole,
+} from "@/shared/constants/domain.constants";
 import { buildMagicLinkUrl } from "@/shared/utils/share-links.util";
 
 interface TravelerGroupProps {
@@ -52,7 +57,7 @@ interface TravelerGroupProps {
   onTransferPassengerClick?: (
     bookingId: string,
     passengerId: string,
-    role: TravelerRole,
+    role: PassengerRole,
     currentName: string,
     whatsapp: string,
   ) => void;
@@ -318,7 +323,7 @@ export function TravelerGroup({
                         onTransferPassengerClick?.(
                           titular.bookingId,
                           titular.id,
-                          "TITULAR",
+                          PASSENGER_ROLE.TITULAR,
                           titular.fullName,
                           titular.whatsapp,
                         );
@@ -442,7 +447,7 @@ export function TravelerGroup({
                             onTransferPassengerClick?.(
                               companion.bookingId,
                               companion.id,
-                              "COMPANION",
+                              PASSENGER_ROLE.COMPANION,
                               companion.fullName,
                               companion.whatsapp,
                             );
