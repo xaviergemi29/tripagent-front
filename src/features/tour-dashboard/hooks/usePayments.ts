@@ -1,6 +1,7 @@
 import { apiClient, ApiError } from "@/lib/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { TOUR_DASHBOARD_KEYS } from "./useTourDashboard";
 import {
   PaymentInput,
   PaymentOutput,
@@ -25,7 +26,7 @@ export const useCreatePayment = (tourId: string) => {
   return useMutation({
     mutationFn: createPaymentApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tour-dashboard", tourId] });
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(tourId) });
       toast.success("Abono registrado correctamente");
     },
     onError: (error: ApiError) => {
@@ -42,7 +43,7 @@ export const useVoidPayment = (tourId: string) => {
   return useMutation({
     mutationFn: voidPaymentApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tour-dashboard", tourId] });
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(tourId) });
       toast.success("Abono anulado exitosamente");
     },
     onError: (error: ApiError) => {

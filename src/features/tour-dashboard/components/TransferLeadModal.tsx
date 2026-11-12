@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeftRight, Users, UserPlus, CheckCircle2, UserX, CreditCard } from "lucide-react";
+import type { Currency } from "@/shared/constants/domain.constants";
 
 export interface CompanionPassenger {
   id: string;
@@ -27,11 +28,11 @@ export interface CurrentBookingData {
     totalPrice: number;
     amountPaid: number;
     pendingBalance: number;
-    currency: "MXN" | "USD";
+    currency: Currency;
   };
 }
 
-export interface TransferPayload {
+export interface TransferLeadInput {
   targetType: "COMPANION" | "EXTERNAL";
   selectedCompanionId?: string;
   externalData?: {
@@ -45,7 +46,7 @@ interface TransferLeadModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   booking: CurrentBookingData;
-  onConfirmTransfer: (payload: TransferPayload) => Promise<void> | void;
+  onConfirmTransfer: (payload: TransferLeadInput) => Promise<void> | void;
   isLoading?: boolean;
 }
 

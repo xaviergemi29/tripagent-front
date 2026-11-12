@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarCheck, MessageCircle } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PreBookingDialog } from "./PreBookingDialog";
+import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 
 interface BrochureCallToActionProps {
   tourId: string;
@@ -43,7 +44,7 @@ export function BrochureCallToAction({
               className="h-10 w-full rounded-2xl text-sm font-semibold text-[#008069] hover:bg-emerald-50 hover:text-[#006e5a]"
             >
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="h-4 w-4" />
+                <WhatsAppIcon className="h-4 w-4" />
                 Contactar asesor por WhatsApp
               </a>
             </Button>

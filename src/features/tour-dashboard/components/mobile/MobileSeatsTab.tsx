@@ -4,20 +4,11 @@ import { useState } from "react";
 import { NoVehicleView } from "./NoVehicleView";
 import { VehicleAssignedView } from "./VehicleAssignedView";
 import { ChangeVehicleAlert } from "./ChangeVehicleAlert";
-import type { VehicleDTO } from "../../schemas/tour-dashboard.schema";
-
-export interface FlattenedPassenger {
-  id: string;
-  fullName: string;
-  bookingId: string;
-  seatNumber: string | null;
-  role: "TITULAR" | "COMPANION";
-  paxCount: number;
-}
+import type { FlattenedPassenger, VehicleOutput } from "../../schemas/tour-dashboard.schema";
 
 interface MobileSeatsTabProps {
   tourId: string;
-  vehicle?: VehicleDTO | null;
+  vehicle?: VehicleOutput | null;
   assignedSeatsCount: number;
   unassignedEligibles: FlattenedPassenger[];
   allEligiblePassengers: FlattenedPassenger[];
@@ -38,7 +29,7 @@ export function MobileSeatsTab({
 }: MobileSeatsTabProps) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
 
-  // Verificación type-safe gracias al esquema VehicleDTO
+  // Verificación type-safe gracias al esquema VehicleOutput
   const hasVehicle = Boolean(vehicle?.layoutMap);
 
   const handleIntentChangeVehicle = () => {

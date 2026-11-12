@@ -1,12 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { TourDashboardOutput, VehicleDTO } from "../schemas/tour-dashboard.schema";
+import { TourDashboardOutput, VehicleOutput } from "../schemas/tour-dashboard.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
+import { TransferLeadInput } from "../components/TransferLeadModal";
 
-interface AssignVehiclePayload {
+// ============================================================================
+// 0. QUERY KEY FACTORIES
+// ============================================================================
+export const TOUR_DASHBOARD_KEYS = {
+  all: ["tour-dashboard"] as const,
+  detail: (tourId: string) => [...TOUR_DASHBOARD_KEYS.all, tourId] as const,
+};
+
+export const VEHICLE_KEYS = {
+  all: ["vehicles"] as const,
+};
+
+interface AssignVehicleInput {
   tourId: string;
   vehicleId: string;
-  resetOrphans?: boolean; // 🚀 Nueva flag para el backend
+  resetOrphans?: boolean;
 }
 
 // ============================================================================
@@ -16,8 +29,8 @@ const fetchDashboardByTourIdApi = async (tourId: string): Promise<TourDashboardO
   return apiClient.get<never, TourDashboardOutput>(`/dashboards/${tourId}`);
 };
 
-const fetchVehiclesApi = async (): Promise<VehicleDTO[]> => {
-  return apiClient.get<never, VehicleDTO[]>(`/vehicles`);
+const fetchVehiclesApi = async (): Promise<VehicleOutput[]> => {
+  return apiClient.get<never, VehicleOutput[]>(`/vehicles`);
 };
 
 // ============================================================================
@@ -25,7 +38,7 @@ const fetchVehiclesApi = async (): Promise<VehicleDTO[]> => {
 // ============================================================================
 export function useTourDashboardByTourId(tourId: string) {
   return useQuery({
-    queryKey: ["tour-dashboard", tourId],
+    queryKey: TOUR_DASHBOARD_KEYS.detail(tourId),
     queryFn: () => fetchDashboardByTourIdApi(tourId),
     enabled: !!tourId,
     staleTime: 1000 * 60 * 5,
@@ -34,7 +47,7 @@ export function useTourDashboardByTourId(tourId: string) {
 }
 export function useVehicles() {
   return useQuery({
-    queryKey: ["vehicles"],
+    queryKey: VEHICLE_KEYS.all,
     queryFn: fetchVehiclesApi,
   });
 }
@@ -46,10 +59,10 @@ export function useAssignVehicleToTour() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ tourId, vehicleId, resetOrphans }: AssignVehiclePayload) =>
+    mutationFn: ({ tourId, vehicleId, resetOrphans }: AssignVehicleInput) =>
       apiClient.patch(`/tours/${tourId}/vehicle`, { vehicleId, resetOrphans }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tour-dashboard", variables.tourId] });
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(variables.tourId) });
       toast.success("Vehículo asignado y mapa actualizado");
     },
     onError: (error: ApiError) => {
@@ -67,12 +80,93 @@ export function useCreateVehicle() {
     mutationFn: (payload: { name: string; layoutMap: (string | null)[][] }) =>
       apiClient.post("/vehicles", payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+      queryClient.invalidateQueries({ queryKey: VEHICLE_KEYS.all });
       toast.success("Plantilla de vehículo creada");
     },
     onError: (error: ApiError) => {
       toast.error("Error al crear la plantilla", {
         description: error.message || "No se pudo crear la plantilla",
+      });
+    },
+  });
+}
+
+export function useAddPassengerToBooking() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ bookingId, tourId }: { bookingId: string; tourId: string }) =>
+      apiClient.post(`/bookings/${bookingId}/add-passenger`, { tourId }),
+    onSuccess: (_, variables) => {
+      // Invalidar para actualizar métricas financieras y tamaño de grupo
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
+      toast.success("Acompañante agregado", {
+        description: "El saldo pendiente ha sido ajustado.",
+      });
+    },
+    onError: (error: ApiError) => {
+      toast.error("Error al agregar pasajero", {
+        description: error.message || "Verifica la disponibilidad de lugares.",
+      });
+    },
+  });
+}
+
+export function useRemovePendingSlot() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ bookingId }: { bookingId: string }) =>
+      apiClient.delete(`/bookings/${bookingId}/pending-slots`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
+      toast.success("Cupo liberado", {
+        description: "El lugar ha regresado al inventario y el saldo se ajustó.",
+      });
+    },
+    onError: (error: ApiError) => {
+      toast.error("Error al eliminar el acompañante", {
+        description: error.message || "No se pudo eliminar el acompañante",
+      });
+    },
+  });
+}
+
+export function useTransferBooking() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ bookingId, data }: { bookingId: string; data: TransferLeadInput }) =>
+      apiClient.post(`/bookings/${bookingId}/transfer-lead`, data), // Cambiamos a la ruta y método correctos del backend según el ejemplo
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
+      toast.success("Titularidad transferida exitosamente");
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || "Ocurrió un error al procesar el cambio");
+    },
+  });
+}
+
+// Nota: Esta es una simplificación UX de tu lógica previa de "CancelPassenger"
+// que requiere penalización manual. Aquí asumimos la baja rápida o conectamos a tu hook existente.
+export function useQuickRemovePassenger() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ bookingId, passengerId }: { bookingId: string; passengerId: string }) =>
+      apiClient.patch(`/bookingPassengers/${bookingId}/passengers/${passengerId}/cancel`, {
+        penaltyAmount: 0, // Simplificado para UX rápida, si necesitas penalty, abre el Drawer en su lugar.
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
+      toast.success("Pasajero dado de baja", {
+        description: "El asiento ha sido liberado.",
+      });
+    },
+    onError: (error: ApiError) => {
+      toast.error("Error al dar de baja", {
+        description: error.message || "No se pudo cancelar al pasajero.",
       });
     },
   });

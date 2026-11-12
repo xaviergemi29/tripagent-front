@@ -5,7 +5,8 @@ import { Users, AlertCircle, Bus, Banknote, CheckCircle2, Plus, Calendar } from 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { TourMetrics, Currency } from "../schemas/tour-dashboard.schema";
+import type { TourMetrics } from "../schemas/tour-dashboard.schema";
+import type { Currency } from "@/shared/constants/domain.constants";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 
@@ -45,11 +46,8 @@ export function TourDashboardHeader({
     return { totalCollected, totalProjected, balanceDue };
   }, [metrics.revenue]);
 
-  // Formateo de fecha
-  const formattedDate = departureDateTime
-    ? formatLocalDate(departureDateTime)
-    : "Fecha por definir";
-  const displayDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+  // Formateo de fecha (formatLocalDate ya devuelve la primera letra en mayúscula)
+  const displayDate = departureDateTime ? formatLocalDate(departureDateTime) : "Fecha por definir";
 
   return (
     <div className="space-y-6 border-b bg-white px-6 py-8">

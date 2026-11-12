@@ -1,12 +1,11 @@
 import { Bus, RefreshCw, Info } from "lucide-react";
 import { SeatMapCanvas } from "@/features/tours/components/SeatMapCanvas";
 import { getInitials } from "@/shared/utils/travelers-helpers";
-import type { VehicleDTO } from "../../schemas/tour-dashboard.schema";
-import type { FlattenedPassenger } from "./MobileSeatsTab";
+import type { FlattenedPassenger, VehicleOutput } from "../../schemas/tour-dashboard.schema";
 
 interface VehicleAssignedViewProps {
   tourId: string;
-  vehicle: VehicleDTO;
+  vehicle: VehicleOutput;
   assignedSeatsCount: number;
   unassignedEligibles: FlattenedPassenger[];
   allEligiblePassengers: FlattenedPassenger[];

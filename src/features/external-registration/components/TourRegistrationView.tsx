@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Edit2 } from "lucide-react";
 import { useState } from "react";
 
-import { bookingFormSchema, type BookingFormValues } from "../schemas/booking.schema";
+import { bookingFormSchema, type BookingInput } from "../schemas/booking.schema";
 import { CompanionsManager } from "./CompanionsManager";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,7 +57,7 @@ export function TourRegistrationView({
   const router = useRouter();
   const { lookupTraveler } = usePublicTravelerLookup(token);
 
-  const methods = useForm<BookingFormValues>({
+  const methods = useForm<BookingInput>({
     resolver: zodResolver(bookingFormSchema),
     mode: "onChange",
     defaultValues: {
@@ -88,15 +88,8 @@ export function TourRegistrationView({
       if (traveler) {
         methods.setValue("mainClient.fullName", traveler.fullName, { shouldValidate: true });
         methods.setValue("mainClient.email", traveler.email || "", { shouldValidate: true });
-        methods.setValue("mainClient.emergencyContactName", traveler.emergencyContactName || "", {
-          shouldValidate: true,
-        });
-        methods.setValue("mainClient.emergencyContactPhone", traveler.emergencyContactPhone || "", {
-          shouldValidate: true,
-        });
-        methods.setValue("mainClient.medicalNotes", traveler.medicalNotes || "", {
-          shouldValidate: true,
-        });
+        // La búsqueda pública no devuelve notas médicas ni contactos de emergencia (datos sensibles):
+        // el viajero los captura en el formulario.
         methods.setValue("mainClient.birthDate", traveler.birthDate || "", {
           shouldValidate: true,
         });
@@ -111,7 +104,7 @@ export function TourRegistrationView({
     }
   };
 
-  const onSubmit = async (formData: BookingFormValues): Promise<void> => {
+  const onSubmit = async (formData: BookingInput): Promise<void> => {
     try {
       const result = await createBooking(formData);
       console.log("result", result);

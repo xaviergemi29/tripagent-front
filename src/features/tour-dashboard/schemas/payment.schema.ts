@@ -1,16 +1,17 @@
 import { z } from "zod";
+import { CURRENCIES, DEFAULT_CURRENCY, PAYMENT_METHODS } from "@/shared/constants/domain.constants";
 
 export const paymentFormSchema = z.object({
   amount: z.coerce.number().positive("El monto debe ser mayor a $0"),
-  method: z.enum(["CASH", "TRANSFER", "CARD", "OTHER"], "Selecciona un método"),
+  method: z.enum(PAYMENT_METHODS, "Selecciona un método"),
   type: z.literal("PAYMENT").default("PAYMENT"),
   referenceInfo: z.string().optional(),
 });
 
-export const createPaymentPayloadSchema = paymentFormSchema.extend({
-  currency: z.enum(["MXN", "USD"]).default("MXN"),
+export const createPaymentInputSchema = paymentFormSchema.extend({
+  currency: z.enum(CURRENCIES).default(DEFAULT_CURRENCY),
   collectedAmount: z.number().positive().optional(),
-  collectedCurrency: z.enum(["MXN", "USD"]).optional(),
+  collectedCurrency: z.enum(CURRENCIES).optional(),
   exchangeRate: z.number().positive().optional(),
 });
 
@@ -39,10 +40,10 @@ export const bookingBalanceSchema = z.object({
 
 export const paymentInputSchema = z.object({
   bookingId: z.uuid(),
-  payload: createPaymentPayloadSchema,
+  payload: createPaymentInputSchema,
 });
 
-export const voidPaymentSchema = z.object({
+export const voidPaymentInputSchema = z.object({
   bookingId: z.uuid(),
   paymentId: z.uuid(),
   data: z.object({
@@ -67,9 +68,9 @@ export const voidPaymentOutputSchema = z.object({
   }),
 });
 
-export type VoidPaymentInput = z.input<typeof voidPaymentSchema>;
+export type VoidPaymentInput = z.input<typeof voidPaymentInputSchema>;
 export type VoidPaymentOutput = z.input<typeof voidPaymentOutputSchema>;
 export type PaymentInput = z.input<typeof paymentInputSchema>;
 export type PaymentOutput = z.input<typeof paymentOutputSchema>;
-export type PaymentFormValues = z.infer<typeof paymentFormSchema>;
-export type CreatePaymentPayload = z.infer<typeof createPaymentPayloadSchema>;
+export type PaymentFormInput = z.infer<typeof paymentFormSchema>;
+export type CreatePaymentInput = z.infer<typeof createPaymentInputSchema>;

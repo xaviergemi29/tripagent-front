@@ -1,4 +1,4 @@
-import { TitularRowDTO } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
+import { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import {
   MapPin,
   Phone,
@@ -11,9 +11,11 @@ import {
 } from "lucide-react";
 import { getInitials } from "@/shared/utils/travelers-helpers";
 import { formatCurrency } from "@/shared/utils/currency.util";
+import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
+import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 
 interface BookingCardProps {
-  titular: TitularRowDTO;
+  titular: TitularRowOutput;
   requiresSeats?: boolean;
   onAssignSeatClick: (passengerId: string) => void;
   onRemoveGhostSlotClick?: (bookingId: string) => void;
@@ -81,7 +83,7 @@ export function BookingCard({
               <span className="inline-flex h-6 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-2 text-xs font-bold text-indigo-700">
                 {titular.seatLabel}
               </span>
-            ) : isPaid ? (
+            ) : titular.hasSeatRight ? (
               <button
                 onClick={() => onAssignSeatClick(titular.id)}
                 className="rounded-md border border-indigo-200 bg-white px-2 py-0.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
@@ -134,12 +136,17 @@ export function BookingCard({
               📞
             </a>
             <a
-              href={`https://wa.me/52${titular.whatsapp}`}
+              href={buildWhatsAppUrl(titular.whatsapp, { countryCode: "52" })}
               target="_blank"
               rel="noreferrer"
               className="rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 hover:bg-emerald-100"
             >
-              💬
+              <WhatsAppIcon
+                className="h-4 w-4"
+                role="img"
+                aria-hidden={false}
+                aria-label="WhatsApp"
+              />
             </a>
           </div>
         </div>
@@ -165,7 +172,7 @@ export function BookingCard({
                   <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700">
                     {comp.seatLabel}
                   </span>
-                ) : isPaid ? (
+                ) : titular.hasSeatRight ? (
                   <button
                     onClick={() => onAssignSeatClick(comp.id)}
                     className="rounded-md border border-indigo-200 bg-white px-2 py-0.5 text-[10px] font-medium text-indigo-600 hover:bg-indigo-50"

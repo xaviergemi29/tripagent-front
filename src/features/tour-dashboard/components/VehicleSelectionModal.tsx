@@ -15,7 +15,7 @@ import {
   useAssignVehicleToTour,
   useVehicles,
 } from "@/features/tour-dashboard/hooks/useTourDashboard";
-import type { VehicleDTO } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
+import type { VehicleOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ interface VehicleSelectionModalProps {
   onClose: () => void;
   passengersCount: number;
   assignedSeatsCount: number;
-  currentVehicle?: VehicleDTO | null;
+  currentVehicle?: VehicleOutput | null;
   onSuccess?: () => void;
 }
 

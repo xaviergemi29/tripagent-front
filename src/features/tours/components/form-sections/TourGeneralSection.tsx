@@ -1,13 +1,19 @@
 "use client";
 
-import { useFormContext, Controller } from "react-hook-form";
-import { MapPin, AlertCircle } from "lucide-react";
+import { useFormContext, useWatch, Controller } from "react-hook-form";
+import { MapPin, AlertCircle, Users } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { TourInput } from "@/features/tours/schemas/tour.schema"; // Ajusta tu ruta de importación
 
 export function TourGeneralSection() {
   const { control } = useFormContext<TourInput>();
+  const [maxCapacity, staffCapacity] = useWatch({
+    control,
+    name: ["maxCapacity", "staffCapacity"],
+  });
+  // Vista previa de lo capturado; la API recalcula y valida la capacidad vendible.
+  const sellableSeats = Math.max(0, (Number(maxCapacity) || 0) - (Number(staffCapacity) || 0));
 
   return (
     <div className="space-y-5">
@@ -40,7 +46,7 @@ export function TourGeneralSection() {
         )}
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Controller
           name="departureDateTime"
           control={control}
@@ -90,36 +96,79 @@ export function TourGeneralSection() {
             </div>
           )}
         />
+      </div>
 
-        <Controller
-          name="maxCapacity"
-          control={control}
-          render={({ field, fieldState }) => (
-            <div className="space-y-1.5">
-              <Label htmlFor="tour-capacity" className="text-xs font-bold text-slate-700">
-                Lugares Disponibles (Cupo) <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                {...field}
-                id="tour-capacity"
-                type="number"
-                min={1}
-                placeholder="Ej. 40"
-                value={field.value === 0 ? "" : field.value}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  field.onChange(val === "" ? 0 : Number(val));
-                }}
-                className={`h-11 rounded-xl bg-slate-50/50 text-sm ${fieldState.error ? "border-red-500" : "border-slate-200"}`}
-              />
-              {fieldState.error && (
-                <p className="animate-in fade-in flex items-center gap-1 text-xs font-medium text-red-500">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {fieldState.error.message}
-                </p>
-              )}
-            </div>
-          )}
-        />
+      <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Controller
+            name="maxCapacity"
+            control={control}
+            render={({ field, fieldState }) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="tour-capacity" className="text-xs font-bold text-slate-700">
+                  Capacidad total del vehículo <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  {...field}
+                  id="tour-capacity"
+                  type="number"
+                  min={1}
+                  placeholder="Ej. 20"
+                  value={field.value === 0 ? "" : field.value}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    field.onChange(val === "" ? 0 : Number(val));
+                  }}
+                  className={`h-11 rounded-xl bg-white text-sm ${fieldState.error ? "border-red-500" : "border-slate-200"}`}
+                />
+                {fieldState.error && (
+                  <p className="animate-in fade-in flex items-center gap-1 text-xs font-medium text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {fieldState.error.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
+
+          <Controller
+            name="staffCapacity"
+            control={control}
+            render={({ field, fieldState }) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="tour-staff-capacity" className="text-xs font-bold text-slate-700">
+                  Lugares bloqueados para staff
+                </Label>
+                <Input
+                  {...field}
+                  id="tour-staff-capacity"
+                  type="number"
+                  min={0}
+                  placeholder="Ej. 2 (chofer y guía)"
+                  value={field.value ?? 0}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    field.onChange(val === "" ? 0 : Number(val));
+                  }}
+                  className={`h-11 rounded-xl bg-white text-sm ${fieldState.error ? "border-red-500" : "border-slate-200"}`}
+                />
+                {fieldState.error && (
+                  <p className="animate-in fade-in flex items-center gap-1 text-xs font-medium text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {fieldState.error.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
+        </div>
+
+        <p
+          aria-live="polite"
+          className="flex items-center gap-2 text-sm font-medium text-slate-600"
+        >
+          <Users className="h-4 w-4 shrink-0 text-indigo-600" />
+          Lugares disponibles para venta al público:{" "}
+          <span className="font-bold text-indigo-700">{sellableSeats}</span>
+        </p>
       </div>
 
       <Controller

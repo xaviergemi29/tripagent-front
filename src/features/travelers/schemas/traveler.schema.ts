@@ -22,6 +22,8 @@ export const travelerSchema = z.object({
   tripCount: z.number().optional(),
   nextTourName: z.string().nullable().optional(),
   nextTourDate: z.string().nullable().optional(),
+  hasNationalTrips: z.boolean().optional(),
+  hasInternationalTrips: z.boolean().optional(),
 });
 
 export const travelerMetricsSchema = z.object({
@@ -40,10 +42,12 @@ export const travelerHistoryItemSchema = z.object({
   amountPaid: z.number(),
   tourTitle: z.string(),
   departureDateTime: z.string(),
+  destinationType: z.enum(["NATIONAL", "INTERNATIONAL"]).optional(),
 });
 
-export const travelerHistorySchema = z.object({
+export const travelerHistoryOutputSchema = z.object({
   history: z.array(travelerHistoryItemSchema),
+  metrics: travelerMetricsSchema.optional(),
   id: z.string(),
   email: z.string(),
   createdAt: z.string(),
@@ -103,7 +107,7 @@ export const editTravelerSchema = z
     }
   });
 
-export type EditTravelerFormValues = z.infer<typeof editTravelerSchema>;
-export type TravelerHistoryOutput = z.infer<typeof travelerHistorySchema>;
+export type EditTravelerFormInput = z.infer<typeof editTravelerSchema>;
+export type TravelerHistoryOutput = z.infer<typeof travelerHistoryOutputSchema>;
 export type TravelerInput = z.input<typeof travelerSchema>;
 export type TravelerOutput = z.output<typeof travelerSchema>;

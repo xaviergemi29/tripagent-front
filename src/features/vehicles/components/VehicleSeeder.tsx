@@ -60,7 +60,7 @@ export function VehicleSeeder() {
             </p>
           ) : (
             <ul className="space-y-2">
-              {vehicles?.map((v: any) => (
+              {vehicles?.map((v) => (
                 <li
                   key={v.id}
                   className="flex justify-between rounded border border-slate-100 bg-slate-50 p-3 text-sm font-medium text-slate-600"
@@ -79,7 +79,7 @@ export function VehicleSeeder() {
           <div className="space-y-3">
             {PRESETS.map((preset) => {
               // Deshabilitar el botón si ya existe un vehículo con ese nombre en la BD
-              const alreadyExists = vehicles.some((v: any) => v.name === preset.name);
+              const alreadyExists = vehicles.some((v) => v.name === preset.name);
 
               return (
                 <Button

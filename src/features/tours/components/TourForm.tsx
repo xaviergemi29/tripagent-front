@@ -21,7 +21,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { tourSchema, type TourInput, type TourOutput } from "../schemas/tour.schema";
-import { useCreateTour, useUpdateTour, useUploadTourBrochure } from "../hooks/useTours";
+import {
+  extractTourId,
+  useCreateTour,
+  useUpdateTour,
+  useUploadTourBrochure,
+} from "../hooks/useTours";
 import { formatForDateInput } from "@/shared/utils/tour-date.util";
 import { useAgency } from "@/features/settings/hooks/useAgency";
 import { CurrencySelector } from "./CurrencySelector";
@@ -29,6 +34,7 @@ import { TourGeneralSection } from "./form-sections/TourGeneralSection";
 import { TourBoardingSection } from "./form-sections/TourBoardingSection";
 import { TourAssetSection } from "./form-sections/TourAssetSection";
 import { AgencyBankDetailsBanner } from "./AgencyBankDetailsBanner";
+import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface TourForm {
   tour?: TourOutput;
@@ -57,7 +63,7 @@ export function TourForm({ tour }: TourForm) {
       ? {
           ...tour,
           depositPerPerson: tour.depositPerPerson ?? 0,
-          currency: tour.currency ?? "MXN",
+          currency: tour.currency ?? DEFAULT_CURRENCY,
         }
       : {
           title: "",
@@ -66,6 +72,7 @@ export function TourForm({ tour }: TourForm) {
           currency: "MXN",
           departureDateTime: "",
           maxCapacity: 0,
+          staffCapacity: 0,
           isActive: true,
           acceptsBankTransfer: false,
           acceptsCreditCard: false,
@@ -91,6 +98,11 @@ export function TourForm({ tour }: TourForm) {
     form.trigger(["depositPerPerson", "price"]);
   }, [price, depositPerPerson, form]);
 
+  const maxCapacity = form.watch("maxCapacity");
+  useEffect(() => {
+    if (form.getFieldState("staffCapacity").isDirty) form.trigger("staffCapacity");
+  }, [maxCapacity, form]);
+
   useEffect(() => {
     if (returnDate && departureDateTime) {
       form.trigger(["returnDate", "departureDateTime"]);
@@ -101,7 +113,7 @@ export function TourForm({ tour }: TourForm) {
     if (tour) {
       form.reset({
         ...tour,
-        currency: tour.currency ?? "MXN",
+        currency: tour.currency ?? DEFAULT_CURRENCY,
         departureDateTime: formatForDateInput(tour?.departureDateTime),
         paymentLink: tour.paymentLink ?? "",
         cashInstructions: tour.cashInstructions ?? "",
@@ -132,10 +144,7 @@ export function TourForm({ tour }: TourForm) {
       } else {
         // 3. Flujo de Creación: Enviamos el payload limpio (sin removeBrochure)
         const response = await createTour(basePayload);
-        currentTourId =
-          typeof response === "object" && "data" in response
-            ? (response as any).data.id
-            : response?.id;
+        currentTourId = extractTourId(response) ?? "";
       }
 
       // Procesamiento de Asset (Folleto) post-persistencia

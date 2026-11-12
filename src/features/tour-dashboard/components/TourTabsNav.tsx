@@ -1,13 +1,13 @@
 import { Users, Bus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { VehicleDTO } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
+import type { VehicleOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 
 interface TourTabsNavProps {
   activeTab: "passengers" | "seatmap";
   totalPassengers: number;
   assignedSeatsCount: number;
   requiresSeats?: boolean;
-  vehicle?: VehicleDTO | null;
+  vehicle?: VehicleOutput | null;
   onTabChange: (tab: "passengers" | "seatmap") => void;
 }
 

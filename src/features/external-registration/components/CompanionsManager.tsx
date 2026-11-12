@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import type { BookingFormValues } from "../schemas/booking.schema";
+import type { BookingInput } from "../schemas/booking.schema";
 import { useState } from "react";
 
 import { PassengerTypeSwitch, type PassengerCategory } from "./PassengerTypeSwitch";
@@ -28,7 +28,7 @@ export function CompanionsManager({
     setValue,
     getValues,
     formState: { errors },
-  } = useFormContext<BookingFormValues>();
+  } = useFormContext<BookingInput>();
 
   const [lockedCompanions, setLockedCompanions] = useState<Record<number, boolean>>({});
   const [sameEmergencyContact, setSameEmergencyContact] = useState<Record<number, boolean>>({});

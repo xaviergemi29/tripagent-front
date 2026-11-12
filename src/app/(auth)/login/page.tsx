@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { useLogin } from "../../../features/settings/hooks/useAuth";
-import { loginSchema, type LoginFormValues } from "../schemas/login.schema";
+import { loginSchema, type LoginInput } from "../schemas/login.schema";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +34,7 @@ export default function LoginPage() {
     handleSubmit,
     register,
     formState: { errors, isValid },
-  } = useForm<LoginFormValues>({
+  } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     mode: "onChange",
     defaultValues: {
@@ -48,7 +48,7 @@ export default function LoginPage() {
     if (authError) setAuthError(null);
   };
 
-  const onSubmit = (data: LoginFormValues): void => {
+  const onSubmit = (data: LoginInput): void => {
     setAuthError(null);
 
     // Inyectamos los callbacks directamente en la llamada a la mutación para controlar la UI local

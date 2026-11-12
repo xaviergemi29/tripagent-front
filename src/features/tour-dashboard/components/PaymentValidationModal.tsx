@@ -1,12 +1,13 @@
 import { X, Check, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/shared/utils/currency.util";
+import type { Currency } from "@/shared/constants/domain.constants";
 
 interface PaymentValidationModalProps {
   isOpen: boolean;
   onClose: () => void;
   detectedAmount: number;
-  currency?: "MXN" | "USD";
+  currency?: Currency;
 }
 
 export function PaymentValidationModal({

@@ -6,7 +6,11 @@ import { useTourDashboardByTourId } from "../hooks/useTourDashboard";
 import { QuickReservationModal } from "./QuickReservationModal";
 import { SeatMapCanvas } from "@/features/tours/components/SeatMapCanvas";
 import { DashboardTravelerTable } from "./DashboardTravelerTable";
-import { CompanionDTO, TitularRowDTO } from "../schemas/tour-dashboard.schema";
+import type {
+  CompanionOutput,
+  FlattenedPassenger,
+  TitularRowOutput,
+} from "../schemas/tour-dashboard.schema";
 
 import { TravelersTableToolbar } from "./TravelersTableToolbar";
 import { TravelerDetailDrawer } from "./TravelerDetailDrawer";
@@ -24,15 +28,6 @@ import { MobileSeatsTab } from "./mobile/MobileSeatsTab";
 
 interface TourDashboardViewProps {
   tourId: string;
-}
-
-interface FlattenedPassenger {
-  id: string;
-  fullName: string;
-  bookingId: string;
-  seatNumber: string | null;
-  role: "TITULAR" | "COMPANION";
-  paxCount: number;
 }
 
 export function TourDashboardView({ tourId }: TourDashboardViewProps) {
@@ -76,8 +71,8 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
     if (!tour?.travelers) return [];
 
     return tour.travelers.flatMap((titular) => {
-      const hasPaid = titular.paidAmount > 0 || titular.paymentStatus !== "PENDING";
-      if (!hasPaid) return [];
+      // Solo grupos que cubren el anticipo requerido pasan a "Faltan por acomodar".
+      if (!titular.hasSeatRight) return [];
 
       const eligiblePassengers: FlattenedPassenger[] = [
         {
@@ -112,7 +107,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
 
   const foundTraveler = useMemo(() => {
     if (!selectedTravelerId || !tour?.travelers) return null;
-    const allTravelersList: Array<TitularRowDTO | CompanionDTO> = tour.travelers.flatMap(
+    const allTravelersList: Array<TitularRowOutput | CompanionOutput> = tour.travelers.flatMap(
       (titular) => [titular, ...(titular.companions || [])],
     );
     return allTravelersList.find((t) => t.id === selectedTravelerId) ?? null;

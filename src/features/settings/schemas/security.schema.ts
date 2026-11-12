@@ -16,4 +16,3 @@ export const changePasswordSchema = z
   });
 
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
-export type ChangePasswordOutput = z.infer<typeof changePasswordSchema>;

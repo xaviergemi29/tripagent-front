@@ -17,10 +17,10 @@ import {
 import { useCreatePayment } from "../hooks/usePayments";
 import {
   paymentFormSchema,
-  type PaymentFormValues,
+  type PaymentFormInput,
 } from "@/features/travelers/schemas/enroll-traveler.schema";
 import { Info, Check, X } from "lucide-react";
-import { CreatePaymentPayload } from "../schemas/payment.schema";
+import { CreatePaymentInput } from "../schemas/payment.schema";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import type { Currency, PaymentMethod } from "@/shared/constants/domain.constants";
 
@@ -47,7 +47,7 @@ export function RegisterPaymentModal({
   const isUSD = tourCurrency === "USD";
   const [amountMXN, setAmountMXN] = useState<string>("");
 
-  const form = useForm<PaymentFormValues>({
+  const form = useForm<PaymentFormInput>({
     resolver: zodResolver(paymentFormSchema),
     defaultValues: {
       amount: balance,
@@ -59,8 +59,8 @@ export function RegisterPaymentModal({
 
   const watchAmountUSD = form.watch("amount");
 
-  const onSubmit = (formData: PaymentFormValues): void => {
-    const payload: CreatePaymentPayload = {
+  const onSubmit = (formData: PaymentFormInput): void => {
+    const payload: CreatePaymentInput = {
       amount: Number(watchAmountUSD || formData.amount),
       currency: isUSD ? "USD" : "MXN",
       method: formData.method,

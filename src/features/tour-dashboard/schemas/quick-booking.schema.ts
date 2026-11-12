@@ -12,22 +12,22 @@ export const quickBookingSchema = z.object({
     .min(1, "Debe apartar al menos 1 lugar"),
 });
 
-export const quickBookingBodySchema = quickBookingSchema.extend({
+export const quickBookingInputSchema = quickBookingSchema.extend({
   tourId: z.uuid().trim(),
 });
 
-export const quickBookingResultSchema = quickBookingSchema.extend({
+export const quickBookingOutputSchema = quickBookingSchema.extend({
   bookingId: z.uuid(),
   token: z.string(),
   availableSeats: z.number().positive(),
 });
 
-export const cancelFullBookingBodySchema = z.object({
+export const cancelFullBookingInputSchema = z.object({
   bookingId: z.uuid(),
   penaltyAmount: z.number().positive("El monto no debe ser negativo"),
 });
 
-export type QuickBookingInput = z.input<typeof quickBookingBodySchema>;
-export type QuickBookingFormValues = z.infer<typeof quickBookingSchema>;
-export type QuickBookingOutput = z.infer<typeof quickBookingResultSchema>;
-export type CancelFullBookingInput = z.infer<typeof cancelFullBookingBodySchema>;
+export type QuickBookingInput = z.input<typeof quickBookingInputSchema>;
+export type QuickBookingFormInput = z.infer<typeof quickBookingSchema>;
+export type QuickBookingOutput = z.infer<typeof quickBookingOutputSchema>;
+export type CancelFullBookingInput = z.infer<typeof cancelFullBookingInputSchema>;

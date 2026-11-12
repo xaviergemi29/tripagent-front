@@ -9,13 +9,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import type { TitularRowDTO } from "../schemas/tour-dashboard.schema";
+import type { TitularRowOutput } from "../schemas/tour-dashboard.schema";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import type { Currency } from "@/shared/constants/domain.constants";
 
 interface AddPassengerDialogProps {
   isOpen: boolean;
-  titular?: TitularRowDTO;
+  titular?: TitularRowOutput;
   tourCurrency?: Currency;
   isSubmitting?: boolean;
   freeSeatsCount?: number;

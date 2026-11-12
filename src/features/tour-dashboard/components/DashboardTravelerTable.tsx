@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { TitularRowDTO } from "../schemas/tour-dashboard.schema";
+import { TitularRowOutput } from "../schemas/tour-dashboard.schema";
 import {
   useAddPassengerToBooking,
   useQuickRemovePassenger,
@@ -13,7 +13,7 @@ import { TravelerGroup } from "./TravelerGroup";
 import { Button } from "@/components/ui/button";
 import { ReleaseSlotDialog } from "./ReleaseSlotDialog";
 import { useTransferBooking } from "../hooks/useTourDashboard";
-import { CurrentBookingData, TransferLeadModal, TransferPayload } from "./TransferLeadModal";
+import { CurrentBookingData, TransferLeadModal, TransferLeadInput } from "./TransferLeadModal";
 import { generatePartialPaymentReceiptPDF } from "@/features/external-registration/components/GeneratePartialPaymentReceipt";
 import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
@@ -26,7 +26,7 @@ interface DashboardTravelerTableProps {
   tourTitle: string;
   agencyName: string;
   requiresSeats: boolean;
-  travelers: TitularRowDTO[];
+  travelers: TitularRowOutput[];
   searchQuery: string;
   paymentFilter: PaymentFilter | string;
   formFilter: RegistrationFilter | string;
@@ -63,11 +63,11 @@ export function DashboardTravelerTable({
   const [transferState, setTransferState] = useState<{
     isOpen: boolean;
     bookingData?: CurrentBookingData;
-    rawTitular?: TitularRowDTO;
+    rawTitular?: TitularRowOutput;
   }>({
     isOpen: false,
   });
-  const [confirmAdd, setConfirmAdd] = useState<{ isOpen: boolean; titular?: TitularRowDTO }>({
+  const [confirmAdd, setConfirmAdd] = useState<{ isOpen: boolean; titular?: TitularRowOutput }>({
     isOpen: false,
   });
 
@@ -187,7 +187,7 @@ export function DashboardTravelerTable({
     }
   };
 
-  const handleOpenTransferModal = (titular: TitularRowDTO) => {
+  const handleOpenTransferModal = (titular: TitularRowOutput) => {
     const bookingData: CurrentBookingData = {
       tourTitle: "Tour Actual",
       currentLead: {
@@ -218,7 +218,7 @@ export function DashboardTravelerTable({
   };
 
   // 4. Actualizar el handleConfirmTransfer
-  const handleConfirmTransfer = (payload: TransferPayload): void => {
+  const handleConfirmTransfer = (payload: TransferLeadInput): void => {
     if (transferState.rawTitular) {
       transferBooking(
         { bookingId: transferState.rawTitular.bookingId, data: payload },
@@ -227,7 +227,7 @@ export function DashboardTravelerTable({
     }
   };
 
-  const handleDownloadReceipt = (titularData: TitularRowDTO): void => {
+  const handleDownloadReceipt = (titularData: TitularRowOutput): void => {
     const passengersList = [
       {
         name: titularData.fullName,

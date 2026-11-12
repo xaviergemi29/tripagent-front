@@ -71,7 +71,7 @@ export const bookingFormSchema = z.object({
   companions: z.array(companionSchema),
 });
 
-export const bookingResultSchema = z.object({
+export const bookingOutputSchema = z.object({
   bookingId: z.string(),
   titularName: z.string().optional(),
   companionNames: z.array(z.string()).optional(),
@@ -92,6 +92,5 @@ export const bookingResultSchema = z.object({
   message: z.string(),
 });
 
-export type BookingFormValues = z.infer<typeof bookingFormSchema>;
 export type BookingInput = z.input<typeof bookingFormSchema>;
-export type BookingOutput = z.output<typeof bookingResultSchema>;
+export type BookingOutput = z.output<typeof bookingOutputSchema>;

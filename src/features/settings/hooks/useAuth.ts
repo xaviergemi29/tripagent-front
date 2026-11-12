@@ -2,13 +2,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { LoginFormValues } from "../../../app/(auth)/schemas/login.schema";
+import { LoginInput } from "../../../app/(auth)/schemas/login.schema";
 import { ChangePasswordInput } from "../schemas/security.schema";
 
 // ============================================================================
 // 1. CAPA DE RED (Axios API Client)
 // ============================================================================
-const loginApi = async (credentials: LoginFormValues): Promise<void> => {
+const loginApi = async (credentials: LoginInput): Promise<void> => {
   // Tu BE deberá devolver un token (JWT) o setear una cookie httpOnly
   return apiClient.post("/auth/login", credentials);
 };

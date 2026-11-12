@@ -46,7 +46,9 @@ export function TravelersMobileCardList({
             <h3 className="mb-1 text-base font-semibold text-slate-900">
               Aún no hay viajeros registrados
             </h3>
-            <p className="text-xs text-slate-500">Presiona "Nuevo Viajero" para comenzar.</p>
+            <p className="text-xs text-slate-500">
+              Presiona &quot;Nuevo Viajero&quot; para comenzar.
+            </p>
           </>
         )}
       </div>

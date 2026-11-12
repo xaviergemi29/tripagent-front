@@ -14,8 +14,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAgency, useUpdateAgency } from "../hooks/useAgency";
 import { AgencyInput, updateAgencyFormSchema } from "../schemas/agency.schema";
+import { useEffect } from "react";
 
 export function AgencyTab() {
   const { data: agencyData, isLoading: isFetching, isError } = useAgency();
@@ -23,15 +25,23 @@ export function AgencyTab() {
   const form = useForm<AgencyInput>({
     resolver: zodResolver(updateAgencyFormSchema),
     mode: "onChange",
-    values: agencyData
-      ? {
-          ...agencyData,
-        }
-      : undefined,
+    defaultValues: agencyData || {},
   });
 
+  useEffect(() => {
+    if (agencyData) {
+      form.reset(agencyData);
+    }
+  }, [agencyData, form]);
+
   const onSubmit = async (formData: AgencyInput): Promise<void> => {
-    await updateAgency(formData);
+    const sanitizedData = {
+      ...formData,
+      clabeNumber: formData.clabeNumber?.replace(/[\s-]/g, "") || formData.clabeNumber,
+      cardNumber: formData.cardNumber?.replace(/[\s-]/g, "") || formData.cardNumber,
+    };
+
+    await updateAgency(sanitizedData);
   };
 
   if (isError) {
@@ -39,6 +49,47 @@ export function AgencyTab() {
       <div className="flex h-40 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-red-600">
         <AlertCircle className="h-5 w-5" />
         <p className="text-sm font-semibold">Error al cargar la información de la agencia.</p>
+      </div>
+    );
+  }
+
+  if (isFetching && !agencyData) {
+    return (
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Esqueleto Tarjeta 1 */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <Skeleton className="mb-2 h-6 w-1/3" />
+            <Skeleton className="h-4 w-2/3" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="space-y-1.5">
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-10 w-full rounded-md" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Esqueleto Tarjeta 2 */}
+        <Card className="flex flex-col shadow-sm">
+          <CardHeader className="pb-4">
+            <Skeleton className="mb-2 h-6 w-1/3" />
+            <Skeleton className="h-4 w-2/3" />
+          </CardHeader>
+          <CardContent className="flex-1 space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="space-y-1.5">
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-10 w-full rounded-md" />
+              </div>
+            ))}
+          </CardContent>
+          <CardFooter className="mt-auto border-t bg-slate-50/50 px-6 py-4">
+            <Skeleton className="h-10 w-full rounded-md sm:w-40" />
+          </CardFooter>
+        </Card>
       </div>
     );
   }
@@ -58,6 +109,20 @@ export function AgencyTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Dirección Física */}
+          <div className="space-y-1.5">
+            <Label htmlFor="address">Dirección Física / Sucursal (Opcional)</Label>
+            <Input
+              id="address"
+              placeholder="Calle, Número, Colonia, Ciudad"
+              {...form.register("address")}
+              disabled={isFormLocked}
+            />
+            {form.formState.errors.address && (
+              <p className="text-xs text-red-500">{form.formState.errors.address.message}</p>
+            )}
+          </div>
+
           {/* Nombre Comercial */}
           <div className="space-y-1.5">
             <Label htmlFor="name">Nombre Comercial</Label>
@@ -129,27 +194,38 @@ export function AgencyTab() {
               disabled={isFormLocked}
             />
           </div>
-          <div className="grid grid-cols-1 gap-4 pb-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="clabeNumber">CLABE Interbancaria</Label>
-              <Input
-                id="clabeNumber"
-                placeholder="18 dígitos"
-                maxLength={18}
-                {...form.register("clabeNumber")}
-                disabled={isFormLocked}
-              />
-              {form.formState.errors.clabeNumber && (
-                <p className="text-xs text-red-500">{form.formState.errors.clabeNumber.message}</p>
-              )}
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="clabeNumber">CLABE Interbancaria *</Label>
+            <Input
+              id="clabeNumber"
+              placeholder="18 dígitos"
+              maxLength={18}
+              {...form.register("clabeNumber")}
+              disabled={isFormLocked}
+            />
+            {form.formState.errors.clabeNumber && (
+              <p className="text-xs text-red-500">{form.formState.errors.clabeNumber.message}</p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cardNumber">Número de Tarjeta (16 dígitos) *</Label>
+            <Input
+              id="cardNumber"
+              placeholder="Ej: 4123 4567 8901 2345"
+              maxLength={16}
+              {...form.register("cardNumber")}
+              disabled={isFormLocked}
+            />
+            {form.formState.errors.cardNumber && (
+              <p className="text-xs text-red-500">{form.formState.errors.cardNumber.message}</p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="mt-auto border-t bg-slate-50/50 px-6 py-4">
           <Button
             type="submit"
             className="w-full bg-indigo-600 hover:bg-indigo-700 sm:w-auto"
-            disabled={isFormLocked || !form.formState.isValid}
+            // disabled={isFormLocked || !form.formState.isValid}
           >
             {isUpdating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

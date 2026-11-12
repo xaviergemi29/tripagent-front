@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useUpdateTraveler } from "../hooks/useTravelers";
-import { editTravelerSchema, type EditTravelerFormValues } from "../schemas/traveler.schema";
+import { editTravelerSchema, type EditTravelerFormInput } from "../schemas/traveler.schema";
 import type { TravelerInput, TravelerOutput } from "../schemas/traveler.schema";
 
 interface ExtendedTraveler extends TravelerOutput {
@@ -44,7 +44,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: Props) {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<EditTravelerFormValues>({
+  } = useForm<EditTravelerFormInput>({
     resolver: zodResolver(editTravelerSchema),
     defaultValues: { passengerType: "ADULT" },
   });
@@ -66,7 +66,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: Props) {
     }
   }, [traveler]);
 
-  const onSubmit = async (formData: EditTravelerFormValues) => {
+  const onSubmit = async (formData: EditTravelerFormInput) => {
     if (!traveler?.id) return;
 
     // 1. Destructuramos para aislar 'passengerType'

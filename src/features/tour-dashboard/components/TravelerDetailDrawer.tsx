@@ -16,20 +16,21 @@ import { useCancelFullBooking } from "@/features/external-registration/hooks/use
 import { RegisterPaymentModal } from "./RegisterPaymentModal";
 import { useVoidPayment } from "../hooks/usePayments";
 import type {
-  TitularRowDTO,
-  CompanionDTO,
-  PaymentRecordDTO,
+  TitularRowOutput,
+  CompanionOutput,
+  PaymentRecordOutput,
 } from "../schemas/tour-dashboard.schema";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { VoidPaymentModal } from "./VoidPaymentModal";
 import { formatShortDateTime } from "@/shared/utils/tour-date.util";
 import { PAYMENT_METHOD_DICT } from "@/shared/utils/config/status-dictionaries.config";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import type { Currency, PaymentMethod } from "@/shared/constants/domain.constants";
 
 interface TravelerDetailDrawerProps {
   tourId: string;
-  tourCurrency?: "MXN" | "USD";
-  traveler: TitularRowDTO | CompanionDTO | null;
+  tourCurrency?: Currency;
+  traveler: TitularRowOutput | CompanionOutput | null;
   isOpen: boolean;
   isAuditMode?: boolean;
   onClose: () => void;
@@ -50,10 +51,11 @@ export function TravelerDetailDrawer({
   const { mutate: voidPayment, isPending: isVoiding } = useVoidPayment(tourId);
   const { mutate: cancelFullBooking, isPending: isCancelling } = useCancelFullBooking();
 
-  const [paymentToVoid, setPaymentToVoid] = useState<PaymentRecordDTO | null>(null);
-  const [correctionData, setCorrectionData] = useState<{ amount: number; method: string } | null>(
-    null,
-  );
+  const [paymentToVoid, setPaymentToVoid] = useState<PaymentRecordOutput | null>(null);
+  const [correctionData, setCorrectionData] = useState<{
+    amount: number;
+    method: PaymentMethod;
+  } | null>(null);
 
   if (!isOpen || !traveler) return null;
   const isUSD = tourCurrency === "USD";
@@ -337,7 +339,7 @@ export function TravelerDetailDrawer({
                             onClick={() => setIsFullRetention(!isFullRetention)}
                           >
                             <p className="text-xs font-bold text-slate-800">
-                              Aplicar política "Sin Devolución"
+                              Aplicar política &quot;Sin Devolución&quot;
                             </p>
                             <p className="text-[11px] leading-tight text-slate-500">
                               Se retendrá el 100% del costo del asiento.

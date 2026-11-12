@@ -3,13 +3,9 @@ import { Info, X, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getInitials } from "@/shared/utils/travelers-helpers";
+import type { FlattenedPassenger } from "../schemas/tour-dashboard.schema";
 
-interface UnassignedPassenger {
-  id: string;
-  fullName: string;
-  role: "TITULAR" | "COMPANION";
-  paxCount: number;
-}
+type UnassignedPassenger = Pick<FlattenedPassenger, "id" | "fullName" | "role" | "paxCount">;
 
 interface UnassignedSeatsPanelProps {
   unassignedPassengers: UnassignedPassenger[];

@@ -1,5 +1,5 @@
 import { JSX, useState } from "react";
-import { FormStatus, TitularRowDTO } from "../schemas/tour-dashboard.schema";
+import { FormStatus, TitularRowOutput } from "../schemas/tour-dashboard.schema";
 import {
   ChevronDown,
   User,
@@ -37,7 +37,7 @@ import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.const
 import { buildMagicLinkUrl } from "@/shared/utils/share-links.util";
 
 interface TravelerGroupProps {
-  titular: TitularRowDTO;
+  titular: TitularRowOutput;
   isAuditMode?: boolean;
   tourCurrency?: Currency;
   isAdding?: boolean;
@@ -46,11 +46,11 @@ interface TravelerGroupProps {
   requiresSeats?: boolean;
   onRowClick: (id: string) => void;
   onAssignSeatClick: (passengerId: string) => void;
-  onAddPassengerClick: (titular: TitularRowDTO) => void;
+  onAddPassengerClick: (titular: TitularRowOutput) => void;
   onRemovePassengerClick: (bookingId: string, passengerId: string, name: string) => void;
   onRemoveGhostSlotClick: (bookingId: string) => void;
-  onTransferBookingClick?: (titular: TitularRowDTO) => void;
-  onDownloadReceiptClick?: (titular: TitularRowDTO) => void;
+  onTransferBookingClick?: (titular: TitularRowOutput) => void;
+  onDownloadReceiptClick?: (titular: TitularRowOutput) => void;
 }
 
 const getFinancialBadge = (status: string, paidAmount: number, balance: number): JSX.Element => {

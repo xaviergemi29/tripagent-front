@@ -6,7 +6,6 @@ import {
   Copy,
   Clock,
   HelpCircle,
-  MessageCircle,
   AlertCircle,
   Users,
   MapPin,
@@ -23,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import { formatPickupTime, formatSpanishLongDate } from "@/shared/utils/tour-date.util";
 import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
+import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 
 interface PassengerDTO {
   name: string;
@@ -406,7 +406,7 @@ export function BookingSuccessView({ booking, tourInfo, titularName }: BookingSu
             type="button"
             className="h-12 w-full rounded-xl bg-[#25D366] text-sm font-bold text-white shadow-none transition-transform hover:bg-[#1DA851] active:scale-[0.98]"
           >
-            <MessageCircle className="mr-2 h-5 w-5 fill-current" /> Enviar comprobante
+            <WhatsAppIcon className="mr-2 h-5 w-5 fill-current" /> Enviar comprobante
           </Button>
         </a>
       </div>

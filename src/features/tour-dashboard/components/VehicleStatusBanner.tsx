@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Bus, RefreshCw } from "lucide-react";
-import type { VehicleDTO } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
+import type { VehicleOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 
 interface VehicleStatusBannerProps {
-  vehicle?: VehicleDTO | null;
+  vehicle?: VehicleOutput | null;
   onChangeVehicleClick: () => void;
 }
 

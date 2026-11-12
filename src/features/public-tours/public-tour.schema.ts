@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { CURRENCIES, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
-export const publicTourSchema = z.object({
+export const publicTourOutputSchema = z.object({
   id: z.string(),
   title: z.string(),
   currency: z.enum(CURRENCIES).default(DEFAULT_CURRENCY),
@@ -32,4 +32,4 @@ export const publicTourSchema = z.object({
   }),
 });
 
-export type PublicTourOutput = z.infer<typeof publicTourSchema>;
+export type PublicTourOutput = z.infer<typeof publicTourOutputSchema>;

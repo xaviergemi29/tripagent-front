@@ -1,10 +1,8 @@
 import { BusFront, User } from "lucide-react";
 import { getInitials } from "@/shared/utils/travelers-helpers";
+import type { FlattenedPassenger } from "../../schemas/tour-dashboard.schema";
 
-interface UnassignedPassenger {
-  id: string;
-  fullName: string;
-}
+type UnassignedPassenger = Pick<FlattenedPassenger, "id" | "fullName">;
 
 interface NoVehicleViewProps {
   eligibleWaitingPassengers: UnassignedPassenger[];

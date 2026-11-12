@@ -6,7 +6,6 @@ import {
   Copy,
   CreditCard,
   Hourglass,
-  MessageCircle,
   MapPin,
   ReceiptText,
   ShieldCheck,
@@ -27,6 +26,7 @@ import { formatSpanishLongDate, formatForDateInput } from "@/shared/utils/tour-d
 import { generatePartialPaymentReceiptPDF } from "./GeneratePartialPaymentReceipt";
 import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
+import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 
 const getMethodLabel = (method: string): string => {
   switch (method?.toUpperCase()) {
@@ -510,7 +510,7 @@ export function PartialPaymentView({
           <div className="space-y-3 rounded-2xl border border-emerald-200/80 bg-emerald-50/70 p-4">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                <MessageCircle className="h-4 w-4" />
+                <WhatsAppIcon className="h-4 w-4" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-emerald-950">¿Hiciste otro abono o pago?</h3>
@@ -524,7 +524,7 @@ export function PartialPaymentView({
               onClick={handleSendWhatsApp}
               className="h-11 w-full gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:bg-emerald-700 active:scale-[0.98]"
             >
-              <MessageCircle className="h-4 w-4 fill-current" /> Enviar comprobante por WhatsApp
+              <WhatsAppIcon className="h-4 w-4 fill-current" /> Enviar comprobante por WhatsApp
             </Button>
           </div>
         )}
