@@ -2,6 +2,7 @@ import { TourRegistrationView } from "@/features/external-registration/component
 import { AlertTriangle, Compass, Unlink, HelpCircle } from "lucide-react";
 import { BookingSuccessView } from "@/features/external-registration/components/BookingSuccessView";
 import { PartialPaymentView } from "@/features/external-registration/components/PartialPaymentView";
+import { PaidBookingView } from "@/features/external-registration/components/PaidBookingView";
 
 interface PageProps {
   searchParams: Promise<{ token: string }>;
@@ -25,7 +26,7 @@ const FlowViews = {
   PENDING_REGISTRATION: TourRegistrationView,
   PENDING_PAYMENT: BookingSuccessView,
   PARTIAL_PAYMENT: PartialPaymentView,
-  PAID: PartialPaymentView,
+  PAID: PaidBookingView,
 
   SEAT_SELECTION: () => (
     <div className="flex min-h-[50vh] items-center justify-center p-8">

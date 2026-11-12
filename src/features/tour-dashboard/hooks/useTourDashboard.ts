@@ -2,7 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TourDashboardOutput, VehicleOutput } from "../schemas/tour-dashboard.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
-import { TransferLeadInput } from "../components/TransferLeadModal";
+import type {
+  TransferPassengerInput,
+  TransferPassengerOutput,
+} from "../schemas/transfer-passenger.schema";
 
 // ============================================================================
 // 0. QUERY KEY FACTORIES
@@ -132,18 +135,33 @@ export function useRemovePendingSlot() {
   });
 }
 
-export function useTransferBooking() {
+/**
+ * Transferencia de un lugar (titular o acompañante) a otra persona.
+ * Si el titular cambia de WhatsApp, la API regenera el Magic Link (`tokenRegenerated`).
+ */
+export function useTransferPassenger() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ bookingId, data }: { bookingId: string; data: TransferLeadInput }) =>
-      apiClient.post(`/bookings/${bookingId}/transfer-lead`, data), // Cambiamos a la ruta y método correctos del backend según el ejemplo
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
-      toast.success("Titularidad transferida exitosamente");
+    mutationFn: ({ bookingId, data }: { bookingId: string; data: TransferPassengerInput }) =>
+      apiClient.patch<never, TransferPassengerOutput>(`/bookings/${bookingId}/transfer`, data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(result.tourId) });
+      toast.success(
+        result.transferredPassenger.role === "TITULAR"
+          ? "Titularidad transferida"
+          : "Lugar transferido",
+        {
+          description: result.tokenRegenerated
+            ? "Se generó un nuevo Magic Link; el enlace anterior ya no funciona."
+            : undefined,
+        },
+      );
     },
     onError: (error: ApiError) => {
-      toast.error(error.message || "Ocurrió un error al procesar el cambio");
+      toast.error("No se pudo transferir el lugar", {
+        description: error.message || "Ocurrió un error al procesar la transferencia",
+      });
     },
   });
 }

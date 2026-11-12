@@ -76,7 +76,6 @@ interface PartialPaymentViewProps {
     clabeNumber: string | null;
   };
   token?: string;
-  // CONFIRMED = el anticipo requerido está cubierto y el formulario lleno (lo deriva el BE).
   bookingStatus?: string;
 }
 
@@ -125,7 +124,6 @@ export function PartialPaymentView({
         passengers?.[0]?.name ||
         "Viajero";
 
-      // 🚀 Mapeamos los pasajeros para el PDF
       const pdfPassengers = passengers.map((p) => ({
         name: p.name,
         type: p.type,

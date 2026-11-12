@@ -12,8 +12,8 @@ import { RemovePassengerDialog } from "./RemovePassengerDialog";
 import { TravelerGroup } from "./TravelerGroup";
 import { Button } from "@/components/ui/button";
 import { ReleaseSlotDialog } from "./ReleaseSlotDialog";
-import { useTransferBooking } from "../hooks/useTourDashboard";
-import { CurrentBookingData, TransferLeadModal, TransferLeadInput } from "./TransferLeadModal";
+import { TransferPassengerModal } from "./TransferPassengerModal";
+import type { TravelerRole } from "../schemas/tour-dashboard.schema";
 import { generatePartialPaymentReceiptPDF } from "@/features/external-registration/components/GeneratePartialPaymentReceipt";
 import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
@@ -59,14 +59,13 @@ export function DashboardTravelerTable({
   const { mutate: addPassenger, isPending: isAdding } = useAddPassengerToBooking();
   const { mutate: removePassenger, isPending: isRemoving } = useQuickRemovePassenger();
   const { mutateAsync: removePendingSlot, isPending: isRemovingGhost } = useRemovePendingSlot();
-  const { mutate: transferBooking, isPending: isTransferring } = useTransferBooking();
-  const [transferState, setTransferState] = useState<{
-    isOpen: boolean;
-    bookingData?: CurrentBookingData;
-    rawTitular?: TitularRowOutput;
-  }>({
-    isOpen: false,
-  });
+  const [transferTarget, setTransferTarget] = useState<{
+    bookingId: string;
+    passengerId: string;
+    role: TravelerRole;
+    currentName: string;
+    currentWhatsapp: string | null;
+  } | null>(null);
   const [confirmAdd, setConfirmAdd] = useState<{ isOpen: boolean; titular?: TitularRowOutput }>({
     isOpen: false,
   });
@@ -187,44 +186,21 @@ export function DashboardTravelerTable({
     }
   };
 
-  const handleOpenTransferModal = (titular: TitularRowOutput) => {
-    const bookingData: CurrentBookingData = {
-      tourTitle: "Tour Actual",
-      currentLead: {
-        id: titular.id,
-        fullName: titular.fullName,
-        seatNumber: titular.seatLabel,
-      },
-      companions: (titular.companions || []).map((c) => ({
-        id: c.id,
-        fullName: c.fullName,
-        phone: c.whatsapp,
-        seatNumber: c.seatLabel,
-        relationship: "Acompañante",
-      })),
-      finances: {
-        totalPrice: titular.paidAmount + titular.balance,
-        amountPaid: titular.paidAmount,
-        pendingBalance: titular.balance,
-        currency: tourCurrency || DEFAULT_CURRENCY,
-      },
-    };
-
-    setTransferState({
-      isOpen: true,
-      bookingData,
-      rawTitular: titular,
+  // Transferencia de lugar (titular o acompañante). La API devuelve "Sin teléfono" si no hay número.
+  const handleOpenTransferModal = (
+    bookingId: string,
+    passengerId: string,
+    role: TravelerRole,
+    currentName: string,
+    whatsapp: string,
+  ): void => {
+    setTransferTarget({
+      bookingId,
+      passengerId,
+      role,
+      currentName,
+      currentWhatsapp: /^\d{10}$/.test(whatsapp) ? whatsapp : null,
     });
-  };
-
-  // 4. Actualizar el handleConfirmTransfer
-  const handleConfirmTransfer = (payload: TransferLeadInput): void => {
-    if (transferState.rawTitular) {
-      transferBooking(
-        { bookingId: transferState.rawTitular.bookingId, data: payload },
-        { onSuccess: () => setTransferState({ isOpen: false }) },
-      );
-    }
   };
 
   const handleDownloadReceipt = (titularData: TitularRowOutput): void => {
@@ -308,7 +284,7 @@ export function DashboardTravelerTable({
                     setSlotToRelease({ bookingId, titularName: titular.fullName })
                   }
                   freeSeatsCount={freeSeatsCount}
-                  onTransferBookingClick={handleOpenTransferModal}
+                  onTransferPassengerClick={handleOpenTransferModal}
                   onDownloadReceiptClick={handleDownloadReceipt}
                 />
               ))}
@@ -375,13 +351,18 @@ export function DashboardTravelerTable({
         isSubmitting={isRemoving}
       />
 
-      {transferState.bookingData && (
-        <TransferLeadModal
-          open={transferState.isOpen}
-          onOpenChange={(open) => setTransferState((prev) => ({ ...prev, isOpen: open }))}
-          booking={transferState.bookingData}
-          onConfirmTransfer={handleConfirmTransfer}
-          isLoading={isTransferring}
+      {transferTarget && (
+        <TransferPassengerModal
+          key={`${transferTarget.bookingId}-${transferTarget.passengerId}`}
+          open
+          onOpenChange={(open) => {
+            if (!open) setTransferTarget(null);
+          }}
+          bookingId={transferTarget.bookingId}
+          passengerId={transferTarget.passengerId}
+          role={transferTarget.role}
+          currentName={transferTarget.currentName}
+          currentWhatsapp={transferTarget.currentWhatsapp}
         />
       )}
     </>

@@ -1,5 +1,5 @@
 import { JSX, useState } from "react";
-import { FormStatus, TitularRowOutput } from "../schemas/tour-dashboard.schema";
+import { FormStatus, TitularRowOutput, TravelerRole } from "../schemas/tour-dashboard.schema";
 import {
   ChevronDown,
   User,
@@ -49,7 +49,13 @@ interface TravelerGroupProps {
   onAddPassengerClick: (titular: TitularRowOutput) => void;
   onRemovePassengerClick: (bookingId: string, passengerId: string, name: string) => void;
   onRemoveGhostSlotClick: (bookingId: string) => void;
-  onTransferBookingClick?: (titular: TitularRowOutput) => void;
+  onTransferPassengerClick?: (
+    bookingId: string,
+    passengerId: string,
+    role: TravelerRole,
+    currentName: string,
+    whatsapp: string,
+  ) => void;
   onDownloadReceiptClick?: (titular: TitularRowOutput) => void;
 }
 
@@ -101,7 +107,7 @@ export function TravelerGroup({
   onAssignSeatClick,
   onAddPassengerClick,
   onRemovePassengerClick,
-  onTransferBookingClick,
+  onTransferPassengerClick,
   onDownloadReceiptClick,
 }: TravelerGroupProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -309,7 +315,13 @@ export function TravelerGroup({
                       className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-indigo-50/70 hover:text-indigo-600"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (onTransferBookingClick) onTransferBookingClick(titular);
+                        onTransferPassengerClick?.(
+                          titular.bookingId,
+                          titular.id,
+                          "TITULAR",
+                          titular.fullName,
+                          titular.whatsapp,
+                        );
                       }}
                     >
                       <ArrowLeftRight className="h-4 w-4 text-indigo-600" />
@@ -406,6 +418,41 @@ export function TravelerGroup({
                         Dar de baja pasajero
                       </TooltipContent>
                     </Tooltip>
+                  )}
+                  {!isAuditMode && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                          aria-label="Más acciones del acompañante"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-52 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+                      >
+                        <DropdownMenuItem
+                          className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-indigo-50/70 hover:text-indigo-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onTransferPassengerClick?.(
+                              companion.bookingId,
+                              companion.id,
+                              "COMPANION",
+                              companion.fullName,
+                              companion.whatsapp,
+                            );
+                          }}
+                        >
+                          <ArrowLeftRight className="h-4 w-4 text-indigo-600" />
+                          <span>Transferir lugar</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                 </div>
               </TooltipProvider>
