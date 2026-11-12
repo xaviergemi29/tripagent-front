@@ -22,15 +22,16 @@ import {
 import { Info, Check, X } from "lucide-react";
 import { CreatePaymentPayload } from "../schemas/payment.schema";
 import { formatCurrency } from "@/shared/utils/currency.util";
+import type { Currency, PaymentMethod } from "@/shared/constants/domain.constants";
 
 interface RegisterPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   bookingId: string;
-  tourCurrency?: "MXN" | "USD";
+  tourCurrency?: Currency;
   tourId: string;
   balance: number;
-  correctionData?: { amount: number; method: string } | null;
+  correctionData?: { amount: number; method: PaymentMethod } | null;
 }
 
 export function RegisterPaymentModal({
@@ -89,7 +90,7 @@ export function RegisterPaymentModal({
     if (isOpen) {
       form.reset({
         amount: correctionData ? correctionData.amount : balance,
-        method: (correctionData ? correctionData.method : "TRANSFER") as any,
+        method: correctionData ? correctionData.method : "TRANSFER",
         type: "PAYMENT",
         referenceInfo: "",
       });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CURRENCIES, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 export const TOUR_MODALITIES = ["TRANSPORT_INCLUDED", "INDEPENDENT_ACCESS"] as const;
 
@@ -37,12 +38,23 @@ const baseTourSchema = z.object({
       if (isNaN(date.getTime())) return null;
       return date.toISOString().slice(0, 10);
     }),
-  currency: z.enum(["MXN", "USD"]).default("MXN"),
+  currency: z.enum(CURRENCIES).default(DEFAULT_CURRENCY),
 
   maxCapacity: z
     .union([z.string(), z.number()], { message: "La capacidad debe ser un número válido" })
     .transform((val) => (val === "" ? 0 : Number(val)))
     .pipe(z.number().int().positive({ message: "La capacidad debe ser de al menos 1 asiento" })),
+  // Lugares operativos (chofer, guía) que no se venden. Capacidad vendible = total − staff.
+  staffCapacity: z
+    .union([z.string(), z.number()], { message: "Los lugares de staff deben ser un número" })
+    .transform((val) => (val === "" ? 0 : Number(val)))
+    .pipe(
+      z
+        .number()
+        .int("Los lugares de staff deben ser un número entero")
+        .min(0, "Los lugares de staff no pueden ser negativos"),
+    )
+    .default(0),
   isActive: z.boolean(),
 
   acceptsBankTransfer: z.boolean(),
@@ -83,7 +95,14 @@ export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
     });
   }
 
-  // 2. Fechas: Alertamos en ambos campos
+  if (data.staffCapacity >= data.maxCapacity && data.maxCapacity > 0) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Los lugares de staff deben ser menores a la capacidad total",
+      path: ["staffCapacity"],
+    });
+  }
+
   if (data.returnDate && data.departureDateTime) {
     const departure = new Date(data.departureDateTime);
     const returnD = new Date(data.returnDate);
@@ -144,6 +163,7 @@ export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
 export const tourOutputSchema = baseTourSchema.extend({
   temporalStatus: z.string().optional(),
   currentOccupancy: z.number().optional(),
+  sellableCapacity: z.number().optional(),
 });
 
 export type TourInput = z.input<typeof tourSchema>;

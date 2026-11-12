@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import { formatPickupTime, formatSpanishLongDate } from "@/shared/utils/tour-date.util";
+import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 
 interface PassengerDTO {
   name: string;
@@ -83,9 +84,7 @@ export function BookingSuccessView({ booking, tourInfo, titularName }: BookingSu
   const formattedDate = formatSpanishLongDate(tourInfo.departureDateTime);
   const totalRegistered = normalizedPassengers.length;
 
-  const whatsappText = encodeURIComponent(
-    `Hola, acabo de registrar mis lugares para el ${tourInfo.title}. Adjunto mi comprobante de pago a nombre de ${mainTitular}.`,
-  );
+  const whatsappText = `Hola, acabo de registrar mis lugares para el ${tourInfo.title}. Adjunto mi comprobante de pago a nombre de ${mainTitular}.`;
 
   const handleCopyClabe = async (clabe: string): Promise<void> => {
     const success = await copyToClipboard(clabe);
@@ -208,7 +207,12 @@ export function BookingSuccessView({ booking, tourInfo, titularName }: BookingSu
 
         <div className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-3 text-xs font-bold text-amber-800">
           <Clock className="h-4 w-4 text-amber-600" />
-          <span>Lugares apartados por las próximas 24 horas</span>
+          {/* El enlace y el apartado no vencen (decisión del PM); la confirmación llega con el anticipo. */}
+          <span>
+            {hasAdvancePayment
+              ? "Tus lugares están apartados. Tu viaje se confirma al cubrir el anticipo."
+              : "Tus lugares están apartados."}
+          </span>
         </div>
       </div>
 
@@ -393,7 +397,7 @@ export function BookingSuccessView({ booking, tourInfo, titularName }: BookingSu
           Envíanos la captura de tu comprobante para validar tu pago y confirmar tus lugares.
         </p>
         <a
-          href={`https://wa.me/${agencyPhone.replace(/\D/g, "")}?text=${whatsappText}`}
+          href={buildWhatsAppUrl(agencyPhone, { message: whatsappText })}
           target="_blank"
           rel="noopener noreferrer"
           className="block w-full"

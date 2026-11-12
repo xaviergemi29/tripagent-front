@@ -45,7 +45,7 @@ export function SeatMapCanvas({
   }, [initialSelectedPassengerId]);
 
   const getSeatInfo = (label: string): SeatInfo | undefined =>
-    assignedSeats.find((s: any) => s.seatLabel === label);
+    assignedSeats.find((s) => s.seatLabel === label);
 
   const handleEmptySeatClick = (seatLabel: string): void => {
     if (!selectedPassengerId) {

@@ -4,8 +4,7 @@ import { useController, useFormContext } from "react-hook-form";
 import { HelpCircle, CheckCircle2, Lightbulb, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
-export type CurrencyType = "MXN" | "USD";
+import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 export function CurrencySelector() {
   const { control } = useFormContext();
@@ -13,10 +12,10 @@ export function CurrencySelector() {
   const { field } = useController({
     name: "currency",
     control,
-    defaultValue: "MXN",
+    defaultValue: DEFAULT_CURRENCY,
   });
 
-  const selectedCurrency = field.value as CurrencyType;
+  const selectedCurrency = field.value as Currency;
 
   return (
     <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">

@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { formatSpanishLongDate, formatForDateInput } from "@/shared/utils/tour-date.util";
 import { generatePartialPaymentReceiptPDF } from "./GeneratePartialPaymentReceipt";
+import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 
 const getMethodLabel = (method: string): string => {
   switch (method?.toUpperCase()) {
@@ -44,7 +46,7 @@ interface PartialPaymentViewProps {
   tourInfo: {
     title: string;
     departureDateTime: string;
-    currency?: "MXN" | "USD";
+    currency?: Currency;
   };
   financials: {
     totalAmount: number;
@@ -74,10 +76,13 @@ interface PartialPaymentViewProps {
     clabeNumber: string | null;
   };
   token?: string;
+  // CONFIRMED = el anticipo requerido está cubierto y el formulario lleno (lo deriva el BE).
+  bookingStatus?: string;
 }
 
 export function PartialPaymentView({
   bookingId,
+  bookingStatus,
   tourInfo,
   financials,
   paymentHistory = [],
@@ -86,7 +91,7 @@ export function PartialPaymentView({
 }: PartialPaymentViewProps) {
   const [copied, setCopied] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const tourCurrency = tourInfo.currency || "MXN";
+  const tourCurrency = tourInfo.currency || DEFAULT_CURRENCY;
   const totalCost = financials.totalAmount || 0;
   const totalPaid = financials.amountPaid || 0;
   const remaining = Math.max(0, financials.remainingBalance || 0);
@@ -107,10 +112,8 @@ export function PartialPaymentView({
   };
 
   const handleSendWhatsApp = (): void => {
-    const message = encodeURIComponent(
-      `¡Hola ${agency.name}! Quiero reportar un nuevo abono para mi reservación en el "${tourInfo.title}". Adjunto mi comprobante:`,
-    );
-    window.open(`https://wa.me/${agency.phone.replace(/\D/g, "")}?text=${message}`, "_blank");
+    const message = `¡Hola ${agency.name}! Quiero reportar un nuevo abono para mi reservación en el "${tourInfo.title}". Adjunto mi comprobante:`;
+    window.open(buildWhatsAppUrl(agency.phone, { message }), "_blank");
   };
 
   const handleDownloadPDF = async (): Promise<void> => {
@@ -165,12 +168,21 @@ export function PartialPaymentView({
             {agency.name}
           </span>
         </div>
-        <Badge
-          variant="outline"
-          className="border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"
-        >
-          • Viaje confirmado
-        </Badge>
+        {bookingStatus === "CONFIRMED" ? (
+          <Badge
+            variant="outline"
+            className="border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"
+          >
+            • Viaje confirmado
+          </Badge>
+        ) : (
+          <Badge
+            variant="outline"
+            className="border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700"
+          >
+            • Pendiente de anticipo
+          </Badge>
+        )}
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-4 pt-5">

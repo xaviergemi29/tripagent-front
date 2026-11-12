@@ -67,6 +67,20 @@ const uploadTourBrochureApi = async ({
   });
 };
 
+/**
+ * @description Obtiene el id del tour de la respuesta de una mutación.
+ * El interceptor de `apiClient` ya desenvuelve `{ data }`, pero se conserva la comprobación
+ * defensiva por si la respuesta llega envuelta.
+ */
+export const extractTourId = (
+  response: TourOutput | { data: TourOutput } | null | undefined,
+): string | undefined => {
+  if (typeof response === "object" && response !== null && "data" in response) {
+    return response.data.id;
+  }
+  return response?.id;
+};
+
 // ============================================================================
 // 3. HOOKS DE QUERIES (Lectura)
 // ============================================================================
@@ -114,7 +128,7 @@ export function useUpdateTour() {
   return useMutation({
     mutationFn: updateTourApi,
     onSuccess: (data) => {
-      const id = ("data" in data ? (data as any).data.id : data.id) as string;
+      const id = extractTourId(data) as string;
       queryClient.setQueryData(TOUR_KEYS.detail(id), data);
       queryClient.invalidateQueries({ queryKey: TOUR_KEYS.lists() });
       toast.success("Tour actualizado exitosamente");

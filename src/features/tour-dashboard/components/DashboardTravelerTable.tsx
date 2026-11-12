@@ -15,6 +15,7 @@ import { ReleaseSlotDialog } from "./ReleaseSlotDialog";
 import { useTransferBooking } from "../hooks/useTourDashboard";
 import { CurrentBookingData, TransferLeadModal, TransferPayload } from "./TransferLeadModal";
 import { generatePartialPaymentReceiptPDF } from "@/features/external-registration/components/GeneratePartialPaymentReceipt";
+import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 export type PaymentFilter = "ALL" | "UNPAID" | "PARTIAL" | "PAID";
 export type RegistrationFilter = "ALL" | "PENDING" | "COMPLETED";
@@ -31,7 +32,7 @@ interface DashboardTravelerTableProps {
   formFilter: RegistrationFilter | string;
   seatFilter: SeatFilter | string;
   isAuditMode?: boolean;
-  tourCurrency?: "MXN" | "USD";
+  tourCurrency?: Currency;
   freeSeatsCount?: number;
   onRowClick: (id: string) => void;
   onAssignSeatClick: (passengerId: string) => void;
@@ -205,7 +206,7 @@ export function DashboardTravelerTable({
         totalPrice: titular.paidAmount + titular.balance,
         amountPaid: titular.paidAmount,
         pendingBalance: titular.balance,
-        currency: tourCurrency || "MXN",
+        currency: tourCurrency || DEFAULT_CURRENCY,
       },
     };
 
@@ -240,13 +241,22 @@ export function DashboardTravelerTable({
       })),
     ];
 
-    const mappedPaymentHistory = (titularData.payments || []).map((payment) => ({
-      id: payment.id,
-      date: payment.createdAt,
-      amount: payment.amount,
-      method: payment.method,
-      reference: payment.referenceInfo ?? undefined,
-    }));
+    const mappedPaymentHistory = (titularData.payments || [])
+      .filter(
+        (payment) =>
+          payment.type === "PAYMENT" &&
+          !(titularData.payments || []).some(
+            (refund) =>
+              refund.type === "REFUND" && refund.referenceInfo?.includes(`(Ref: ${payment.id})`),
+          ),
+      )
+      .map((payment) => ({
+        id: payment.id,
+        date: payment.createdAt,
+        amount: payment.amount,
+        method: payment.method,
+        reference: payment.referenceInfo ?? undefined,
+      }));
 
     generatePartialPaymentReceiptPDF({
       agencyName: agencyName,
@@ -257,7 +267,7 @@ export function DashboardTravelerTable({
       status: titularData.paymentStatus,
       paymentHistory: mappedPaymentHistory,
       passengers: passengersList,
-      currency: tourCurrency || "MXN",
+      currency: tourCurrency || DEFAULT_CURRENCY,
     });
   };
 

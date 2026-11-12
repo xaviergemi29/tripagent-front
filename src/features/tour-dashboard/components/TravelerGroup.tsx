@@ -33,11 +33,13 @@ import {
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { buildMagicLinkUrl } from "@/shared/utils/share-links.util";
 
 interface TravelerGroupProps {
   titular: TitularRowDTO;
   isAuditMode?: boolean;
-  tourCurrency?: "MXN" | "USD";
+  tourCurrency?: Currency;
   isAdding?: boolean;
   isRemovingGhost?: boolean;
   freeSeatsCount?: number;
@@ -113,7 +115,7 @@ export function TravelerGroup({
   const handleCopyLink = async (e: React.MouseEvent, token?: string): Promise<void> => {
     e.stopPropagation();
     if (!token) return;
-    const success = await copyToClipboard(`${window.location.origin}/register?token=${token}`);
+    const success = await copyToClipboard(buildMagicLinkUrl(token));
     if (success) toast.success("Enlace copiado");
     else toast.error("Error al copiar");
   };
@@ -168,7 +170,7 @@ export function TravelerGroup({
         </td>
         {requiresSeats && (
           <td className="px-6 py-3.5">
-            {hasPaid ? (
+            {titular.hasSeatRight ? (
               titular.seatLabel ? (
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-xs font-bold text-indigo-700">
                   {titular.seatLabel}
@@ -207,7 +209,8 @@ export function TravelerGroup({
             {getFinancialBadge(titular.paymentStatus, titular.paidAmount, titular.balance)}
             {titular.balance > 0 ? (
               <span className="text-[11px] font-bold text-slate-500">
-                Debe: {formatCurrency(titular.balance, { currency: tourCurrency || "MXN" })}
+                Debe:{" "}
+                {formatCurrency(titular.balance, { currency: tourCurrency || DEFAULT_CURRENCY })}
               </span>
             ) : (
               <span className="text-[11px] font-medium text-slate-400">Sin adeudos</span>
@@ -342,7 +345,7 @@ export function TravelerGroup({
             </td>
             {requiresSeats && (
               <td className="px-6 py-3">
-                {hasPaid ? (
+                {titular.hasSeatRight ? (
                   companion.seatLabel ? (
                     <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-xs font-bold text-indigo-700">
                       {companion.seatLabel}
@@ -434,7 +437,7 @@ export function TravelerGroup({
             </td>
             {requiresSeats && (
               <td className="px-6 py-3">
-                {hasPaid ? (
+                {titular.hasSeatRight ? (
                   <Badge
                     variant="outline"
                     className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
