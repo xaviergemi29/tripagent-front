@@ -108,7 +108,7 @@ export const formatPickupTime = (timeStr?: string | null): string => {
  */
 export const formatTourDateTime = (
   dateString?: string | null,
-  boardingPoints?: any[] | null,
+  boardingPoints?: ReadonlyArray<{ time?: string | null }> | null,
 ): string => {
   if (!dateString) return "";
   const baseDate = formatSpanishLongDate(dateString);

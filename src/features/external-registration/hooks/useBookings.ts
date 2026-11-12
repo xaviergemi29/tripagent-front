@@ -1,6 +1,7 @@
 import { apiClient, ApiError } from "@/lib/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { TOUR_DASHBOARD_KEYS } from "@/features/tour-dashboard/hooks/useTourDashboard";
 import { BookingInput, BookingOutput } from "../schemas/booking.schema";
 import {
   CancelFullBookingInput,
@@ -62,7 +63,7 @@ export function useQuickReservation() {
   return useMutation({
     mutationFn: createQuickBookingApi,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tour-dashboard", variables.tourId] });
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(variables.tourId) });
     },
     onError: (error: ApiError) => {
       toast.error("Error al apartar lugares", {
@@ -79,7 +80,7 @@ export const useCancelFullBooking = () => {
     onSuccess: () => {
       toast.success("Reserva cancelada por completo");
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: ["tour-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
     },
     onError: (error: ApiError) => toast.error("Error", { description: error.message }),
   });

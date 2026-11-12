@@ -21,6 +21,7 @@ import { type QuickBookingFormValues, quickBookingSchema } from "../schemas/quic
 import { useTravelerLookup } from "@/features/travelers/hooks/useTravelers";
 import { useQuickReservation } from "@/features/external-registration/hooks/useBookings";
 import { copyToClipboard } from "@/shared/utils/clipboard";
+import { buildMagicLinkUrl, buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 
 interface Props {
   tourId: string;
@@ -65,8 +66,7 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
     const payload = { ...formData, tourId };
     mutate(payload, {
       onSuccess: (response) => {
-        const url = `${window.location.origin}/register?token=${response?.token}`;
-        setMagicLink(url);
+        setMagicLink(buildMagicLinkUrl(response.token));
       },
     });
   };
@@ -95,10 +95,8 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
     if (!magicLink) return;
 
     const { fullName, whatsapp } = getValues();
-    const cleanPhone = whatsapp.replace(/\D/g, "");
-
     const message = `¡Hola ${fullName}! Apartamos tus lugares para el tour. Completa tu registro y datos aquí: ${magicLink}`;
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    const waUrl = buildWhatsAppUrl(whatsapp, { message });
 
     window.open(waUrl, "_blank", "noopener,noreferrer");
     handleClose();

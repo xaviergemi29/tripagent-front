@@ -33,6 +33,7 @@ import type { TourOutput } from "../schemas/tour.schema";
 import { formatTourDateTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { handleShareLink } from "@/shared/utils/clipboard";
+import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface TourDesktopTableProps {
   tours: TourOutput[];
@@ -99,7 +100,7 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
         <TableBody>
           {tours.map((tour) => {
             const occupiedSeats = tour.currentOccupancy || 0;
-            const totalCapacity = tour.maxCapacity;
+            const totalCapacity = tour.sellableCapacity ?? tour.maxCapacity;
             const availableSeats = Math.max(0, totalCapacity - occupiedSeats);
             const isSoldOut = occupiedSeats >= totalCapacity;
             const availablePercentage =
@@ -148,7 +149,7 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
                 {/* 3. PRECIO */}
                 <TableCell>
                   <span className="text-sm font-bold text-slate-900">
-                    {formatCurrency(tour.price, { currency: tour.currency || "MXN" })}
+                    {formatCurrency(tour.price, { currency: tour.currency || DEFAULT_CURRENCY })}
                   </span>
                 </TableCell>
 

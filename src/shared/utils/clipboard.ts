@@ -2,6 +2,8 @@ import { TourOutput } from "@/features/tours/schemas/tour.schema";
 import { formatCurrency } from "./currency.util";
 import { formatSpanishLongDate } from "./tour-date.util";
 import { toast } from "sonner";
+import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { buildBrochureUrl } from "./share-links.util";
 
 /**
  * @description Copia un texto al portapapeles del sistema operativo.
@@ -40,7 +42,6 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
 
     // 🚀 Tech Lead Note: Suprimimos el warning porque sabemos que está deprecado,
     // pero es nuestro único fallback vital para HTTP/WebViews antiguos.
-    // @ts-ignore: document.execCommand is deprecated but required as fallback
     const successful = document.execCommand("copy");
 
     textArea.remove();
@@ -53,12 +54,12 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
 };
 
 export const handleShareLink = async (tour: TourOutput): Promise<void> => {
-  const publicUrl = `${window.location.origin}/p/${tour.id}`;
+  const publicUrl = buildBrochureUrl(tour.id);
   const formattedDate = formatSpanishLongDate(tour.departureDateTime);
   const deposit = tour.depositPerPerson || 0;
 
   const formattedDeposit = formatCurrency(deposit, {
-    currency: tour.currency || "MXN",
+    currency: tour.currency || DEFAULT_CURRENCY,
   });
 
   const depositLine = deposit > 0 ? `💰 Aparta desde: ${formattedDeposit}\n` : "";

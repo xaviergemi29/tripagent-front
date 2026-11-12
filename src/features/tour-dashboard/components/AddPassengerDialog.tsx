@@ -11,11 +11,12 @@ import {
 import { Button } from "@/components/ui/button";
 import type { TitularRowDTO } from "../schemas/tour-dashboard.schema";
 import { formatCurrency } from "@/shared/utils/currency.util";
+import type { Currency } from "@/shared/constants/domain.constants";
 
 interface AddPassengerDialogProps {
   isOpen: boolean;
   titular?: TitularRowDTO;
-  tourCurrency?: "MXN" | "USD";
+  tourCurrency?: Currency;
   isSubmitting?: boolean;
   freeSeatsCount?: number;
   onClose: () => void;

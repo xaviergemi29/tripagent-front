@@ -1,4 +1,5 @@
 import { FormStatus } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
+import type { PaymentMethod } from "@/shared/constants/domain.constants";
 
 // Interfaz genérica para estandarizar todos los badges de la UI
 export interface UIStateConfig {
@@ -45,7 +46,7 @@ export const FORM_STATUS_DICT: Record<FormStatus, UIStateConfig> = {
 
 // 3. Diccionario de Métodos de Pago
 // Alineado con PAYMENT_METHOD: "CASH", "TRANSFER", "CARD", "OTHER"
-export const PAYMENT_METHOD_DICT: Record<string, string> = {
+export const PAYMENT_METHOD_DICT: Record<PaymentMethod, string> = {
   CASH: "EFECTIVO",
   TRANSFER: "SPEI",
   CARD: "TARJETA",

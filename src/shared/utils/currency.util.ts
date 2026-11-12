@@ -1,11 +1,11 @@
-export type SupportedCurrency = "MXN" | "USD";
+import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface FormatCurrencyOptions {
   /**
    * Código ISO de la divisa. Soporta "MXN" o "USD".
    * @default "MXN"
    */
-  currency?: SupportedCurrency;
+  currency?: Currency;
   /**
    * Locale BCP 47 para el formato regional.
    * @default "es-MX"
@@ -29,7 +29,7 @@ export function formatCurrency(
   value: number | string | null | undefined,
   options: FormatCurrencyOptions = {},
 ): string {
-  const { currency = "MXN", locale = "es-MX" } = options;
+  const { currency = DEFAULT_CURRENCY, locale = "es-MX" } = options;
 
   // 🛡️ Patrón de Programación Defensiva: Evitamos crashear la UI si el backend envía nulls
   if (value === null || value === undefined) {

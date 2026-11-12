@@ -211,7 +211,7 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
               </div>
 
               <div className="mt-4 space-y-3">
-                {filteredBookings.map((item: any) => {
+                {filteredBookings.map((item) => {
                   const isCancelled = item.isCancelled;
                   const isNacional = item.destinationType === "NATIONAL";
 
