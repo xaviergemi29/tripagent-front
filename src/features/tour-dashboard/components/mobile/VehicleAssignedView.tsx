@@ -7,6 +7,7 @@ interface VehicleAssignedViewProps {
   tourId: string;
   vehicle: VehicleOutput;
   assignedSeatsCount: number;
+  staffCapacity: number;
   unassignedEligibles: FlattenedPassenger[];
   allEligiblePassengers: FlattenedPassenger[];
   pendingSeatPassengerId: string | null;
@@ -18,13 +19,14 @@ export function VehicleAssignedView({
   tourId,
   vehicle,
   assignedSeatsCount,
+  staffCapacity,
   unassignedEligibles,
   allEligiblePassengers,
   pendingSeatPassengerId,
   onChangeVehicleClick,
   onSelectPassenger,
 }: VehicleAssignedViewProps) {
-  const capacity = vehicle.layoutMap.flat().filter((c) => c && c !== "AISLE").length;
+  const { passenger: capacity, staff: staffSeats } = vehicle.capacity;
 
   return (
     <div className="animate-in fade-in flex flex-col gap-4 duration-300">
@@ -38,6 +40,7 @@ export function VehicleAssignedView({
             <span className="text-sm font-bold text-slate-900">{vehicle.name}</span>
             <span className="text-xs font-medium text-slate-500">
               {assignedSeatsCount} ocupados de {capacity}
+              {staffSeats > 0 ? ` · ${staffSeats} staff` : ""}
             </span>
           </div>
         </div>
@@ -109,23 +112,8 @@ export function VehicleAssignedView({
           layoutMap={vehicle.layoutMap}
           activePassengers={allEligiblePassengers}
           initialSelectedPassengerId={pendingSeatPassengerId}
+          staffCapacity={staffCapacity}
         />
-      </div>
-
-      {/* Leyenda */}
-      <div className="flex flex-wrap items-center justify-center gap-4 rounded-xl border border-slate-200 bg-white p-3 text-[11px] font-medium text-slate-600 shadow-sm">
-        <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded border border-slate-300 bg-white" />
-          <span>Disponible</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded bg-indigo-500" />
-          <span>Asignado</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded border border-red-300 bg-red-100" />
-          <span>Bloqueado</span>
-        </div>
       </div>
     </div>
   );

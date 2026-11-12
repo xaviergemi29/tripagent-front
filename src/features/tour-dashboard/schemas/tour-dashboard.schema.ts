@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  layoutMapSchema,
+  vehicleCapacityOutputSchema,
+} from "@/features/vehicles/schemas/vehicle.schema";
 import { CURRENCIES, DEFAULT_CURRENCY, PAYMENT_METHODS } from "@/shared/constants/domain.constants";
 
 export const currencySchema = z.enum(CURRENCIES);
@@ -77,10 +81,14 @@ export const tourMetricsSchema = z.object({
   }),
 });
 
+// Unidad de la agencia (`GET /vehicles` y `vehicle` del dashboard). `templateId` = plantilla del
+// catálogo de la que se creó (null: vehículo anterior al catálogo o creado por API).
 export const vehicleOutputSchema = z.object({
   id: z.uuid(),
+  templateId: z.uuid().nullable().optional(),
   name: z.string(),
-  layoutMap: z.array(z.array(z.string().nullable())),
+  layoutMap: layoutMapSchema,
+  capacity: vehicleCapacityOutputSchema,
 });
 
 export const tourDashboardOutputSchema = z.object({
@@ -92,6 +100,8 @@ export const tourDashboardOutputSchema = z.object({
   requiresSeats: z.boolean().default(true),
   metrics: tourMetricsSchema,
   vehicle: vehicleOutputSchema.nullable().optional(),
+  // Lugares de staff del tour: tope de asientos que se pueden bloquear en el croquis.
+  staffCapacity: z.number().default(0),
   travelers: z.array(titularSchema),
 });
 

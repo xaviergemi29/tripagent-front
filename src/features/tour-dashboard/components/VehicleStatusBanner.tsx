@@ -34,7 +34,7 @@ export function VehicleStatusBanner({ vehicle, onChangeVehicleClick }: VehicleSt
     );
   }
 
-  const capacity = vehicle.layoutMap.flat().filter((cell) => cell && cell !== "AISLE").length;
+  const { passenger, staff } = vehicle.capacity;
 
   return (
     <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row">
@@ -42,7 +42,7 @@ export function VehicleStatusBanner({ vehicle, onChangeVehicleClick }: VehicleSt
         <span className="mr-3 h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
         <span className="mr-2 text-sm text-slate-500">Vehículo asignado:</span>
         <span className="text-sm font-bold text-slate-900">
-          {vehicle.name} ({capacity} Pasajeros)
+          {vehicle.name} ({passenger} pasajeros{staff > 0 ? ` + ${staff} staff` : ""})
         </span>
       </div>
 

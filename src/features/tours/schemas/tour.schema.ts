@@ -2,11 +2,13 @@ import { z } from "zod";
 import { CURRENCIES, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 export const TOUR_MODALITIES = ["TRANSPORT_INCLUDED", "INDEPENDENT_ACCESS"] as const;
+// Espejo de DESTINATION_TYPE en la API. Lo usa el CRM (viajes nacionales / internacionales).
+export const DESTINATION_TYPES = ["NATIONAL", "INTERNATIONAL"] as const;
 
 const baseTourSchema = z.object({
   id: z.uuid().optional(),
   title: z.string().min(5, "El título debe tener al menos 5 caracteres").max(100),
-  description: z.string().default(""),
+  description: z.string().max(5000, "La descripción no puede superar 5000 caracteres").default(""),
   transportModality: z
     .enum(TOUR_MODALITIES, {
       message: "Debes seleccionar una modalidad operativa válida",
@@ -65,7 +67,10 @@ const baseTourSchema = z.object({
       z.url({ message: "Debe ser una URL válida (ej. https://mercadopago.com/...)" }),
     ])
     .nullish(),
-  postPaymentInstructions: z.string().nullish(),
+  postPaymentInstructions: z
+    .string()
+    .max(2000, "Las instrucciones no pueden superar 2000 caracteres")
+    .nullish(),
   acceptsCash: z.boolean(),
   cashInstructions: z.string().nullish(),
   boardingPoints: z
@@ -78,7 +83,7 @@ const baseTourSchema = z.object({
     )
     .min(1, "Debes agregar al menos un punto de abordaje"),
   brochureUrl: z.string().nullable().optional(),
-  destinationType: z.enum(["NATIONAL", "INTERNATIONAL"]).optional(),
+  destinationType: z.enum(DESTINATION_TYPES).default("NATIONAL"),
 });
 
 export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
@@ -164,6 +169,8 @@ export const tourOutputSchema = baseTourSchema.extend({
   temporalStatus: z.string().optional(),
   currentOccupancy: z.number().optional(),
   sellableCapacity: z.number().optional(),
+  // Solo en GET /tours/:id: con pagos registrados, la moneda y el precio quedan congelados.
+  hasPayments: z.boolean().optional(),
 });
 
 export type TourInput = z.input<typeof tourSchema>;

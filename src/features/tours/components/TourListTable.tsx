@@ -56,7 +56,7 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
         isOpen={!!tourToDelete}
         onOpenChange={(open) => !open && setTourToDelete(null)}
         title="¿Eliminar este tour?"
-        description="Esta acción es irreversible y borrará todo el registro logístico de la base de datos."
+        description="El tour dejará de aparecer en tus listados y su folleto público dejará de funcionar. Solo se puede eliminar si no tiene reservas activas ni dinero abonado: cancela y reembolsa primero desde el Centro de Control."
         confirmText="Sí, eliminar"
         onConfirm={() => {
           if (tourToDelete) {

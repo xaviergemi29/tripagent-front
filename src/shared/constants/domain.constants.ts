@@ -16,3 +16,7 @@ export const DEFAULT_CURRENCY: Currency = "MXN";
 // Métodos de pago (enum `payment_method` de la API)
 export const PAYMENT_METHODS = ["CASH", "TRANSFER", "CARD", "OTHER"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+// Estado de un pasajero dentro de la reserva (enum `passenger_status` de la API)
+export const PASSENGER_STATUSES = ["ACTIVE", "CANCELLED"] as const;
+export type PassengerStatus = (typeof PASSENGER_STATUSES)[number];

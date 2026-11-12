@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TourDashboardOutput, VehicleOutput } from "../schemas/tour-dashboard.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
+import { TOUR_SEAT_KEYS } from "@/features/tours/hooks/useTourSeats";
 import type {
   TransferPassengerInput,
   TransferPassengerOutput,
@@ -19,10 +20,16 @@ export const VEHICLE_KEYS = {
   all: ["vehicles"] as const,
 };
 
-interface AssignVehicleInput {
-  tourId: string;
-  vehicleId: string;
-  resetOrphans?: boolean;
+/** Se envía una unidad de la agencia (`vehicleId`) o una plantilla del catálogo (`templateId`). */
+export type AssignVehicleInput =
+  | { tourId: string; vehicleId: string; templateId?: never }
+  | { tourId: string; templateId: string; vehicleId?: never };
+
+/** Respuesta (ya desenvuelta) de `PATCH /tours/:id/vehicle`: el tour + asientos liberados. */
+interface AssignVehicleOutput {
+  id: string;
+  vehicleId: string | null;
+  releasedSeats?: { passengers: number; blocked: number };
 }
 
 // ============================================================================
@@ -62,11 +69,31 @@ export function useAssignVehicleToTour() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ tourId, vehicleId, resetOrphans }: AssignVehicleInput) =>
-      apiClient.patch(`/tours/${tourId}/vehicle`, { vehicleId, resetOrphans }),
-    onSuccess: (_, variables) => {
+    // La API libera siempre los asientos y bloqueos cuya etiqueta no existe en el nuevo layout
+    // y responde 409 si el vehículo no alcanza para los pasajeros con derecho a asiento.
+    mutationFn: ({ tourId, vehicleId, templateId }: AssignVehicleInput) =>
+      apiClient.patch<never, AssignVehicleOutput>(
+        `/tours/${tourId}/vehicle`,
+        templateId ? { templateId } : { vehicleId },
+      ),
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(variables.tourId) });
-      toast.success("Vehículo asignado y mapa actualizado");
+      // Con templateId la API pudo crear la unidad de la agencia para esa plantilla.
+      queryClient.invalidateQueries({ queryKey: VEHICLE_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: TOUR_SEAT_KEYS.byTour(variables.tourId) });
+
+      const released = data?.releasedSeats;
+      const parts = [
+        released?.passengers
+          ? `${released.passengers} pasajero(s) volvieron a "Faltan por acomodar"`
+          : null,
+        released?.blocked ? `${released.blocked} bloqueo(s) de staff se quitaron` : null,
+      ].filter(Boolean);
+      toast.success("Vehículo asignado y mapa actualizado", {
+        description: parts.length
+          ? `${parts.join(" y ")} porque su asiento no existe en la nueva unidad.`
+          : undefined,
+      });
     },
     onError: (error: ApiError) => {
       toast.error("Error al asignar el vehículo", {

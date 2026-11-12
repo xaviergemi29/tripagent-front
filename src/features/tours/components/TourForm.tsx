@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, FormProvider, Controller } from "react-hook-form";
-import { Loader2, Save, Wallet, Info, AlertCircle } from "lucide-react";
+import { Loader2, Save, Wallet, Info, AlertCircle, Lock } from "lucide-react";
 
 import { TOUR_FORM_COPY } from "../constants/copy";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 
 import { tourSchema, type TourInput, type TourOutput } from "../schemas/tour.schema";
 import {
@@ -55,6 +56,9 @@ export function TourForm({ tour }: TourForm) {
   const { data: agencyData } = useAgency();
 
   const isProcessing = isCreating || isUpdating;
+  // Decisión del PM: con pagos registrados, la moneda y el precio por pasajero no se editan
+  // (protege la contabilidad). La API también lo valida y responde 409.
+  const isPricingFrozen = !!tour?.hasPayments;
 
   const form = useForm<TourInput>({
     resolver: zodResolver(tourSchema),
@@ -82,6 +86,7 @@ export function TourForm({ tour }: TourForm) {
           boardingPoints: [{ location: "", time: "06:00" }],
           postPaymentInstructions: "",
           depositPerPerson: 0,
+          destinationType: "NATIONAL",
         },
   });
 
@@ -117,6 +122,9 @@ export function TourForm({ tour }: TourForm) {
         departureDateTime: formatForDateInput(tour?.departureDateTime),
         paymentLink: tour.paymentLink ?? "",
         cashInstructions: tour.cashInstructions ?? "",
+        description: tour.description ?? "",
+        postPaymentInstructions: tour.postPaymentInstructions ?? "",
+        destinationType: tour.destinationType ?? "NATIONAL",
       });
     }
   }, [tour, form]);
@@ -190,7 +198,19 @@ export function TourForm({ tour }: TourForm) {
                 <h3 className="text-lg font-semibold">3. Finanzas y Medios de Pago</h3>
               </div>
 
-              <CurrencySelector />
+              {isPricingFrozen && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs leading-relaxed text-amber-900">
+                  <Lock className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  <p>
+                    <strong>Moneda y precio congelados.</strong> Este tour ya tiene pagos
+                    registrados, así que no puedes cambiar la moneda ni el precio por pasajero. El
+                    anticipo sí se puede ajustar: al guardarlo se recalcula el estado de cada
+                    reserva.
+                  </p>
+                </div>
+              )}
+
+              <CurrencySelector disabled={isPricingFrozen} />
 
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <Controller
@@ -212,6 +232,7 @@ export function TourForm({ tour }: TourForm) {
                           type="number"
                           min="0"
                           step="any"
+                          disabled={isPricingFrozen}
                           className="rounded-xl bg-white pl-14 text-sm font-semibold text-slate-900"
                           value={field.value === 0 ? "" : field.value}
                           onChange={(e) => {
@@ -382,7 +403,8 @@ export function TourForm({ tour }: TourForm) {
                       bankName={agencyData?.bankName}
                       accountHolder={agencyData?.bankAccountHolder}
                       clabe={agencyData?.clabeNumber}
-                      cardNumber={null} // Pásalo si lo agregas a tu DB en el futuro
+                      // Dato de la agencia (Configuración → Agencia), no del tour.
+                      cardNumber={agencyData?.cardNumber}
                       settingsUrl="/settings?tab=agency"
                     />
                   )}
@@ -436,6 +458,34 @@ export function TourForm({ tour }: TourForm) {
                 </div>
               )}
             </div>
+
+            {/* Instrucciones que la agencia quiere dar al cliente después de pagar */}
+            <Controller
+              name="postPaymentInstructions"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="tour-post-payment"
+                    className="text-sm font-semibold text-slate-700"
+                  >
+                    {TOUR_FORM_COPY.confirmInstruction}{" "}
+                    <span className="font-normal text-slate-400">(opcional)</span>
+                  </Label>
+                  <Textarea
+                    {...field}
+                    id="tour-post-payment"
+                    value={field.value ?? ""}
+                    rows={3}
+                    placeholder="Ej. Envía tu comprobante por WhatsApp. Te confirmaremos tu lugar en menos de 24 horas."
+                    className="bg-white text-sm"
+                  />
+                  {fieldState.error && (
+                    <p className="text-xs text-red-500">{fieldState.error.message}</p>
+                  )}
+                </div>
+              )}
+            />
 
             <TourAssetSection
               brochureFile={brochureFile}

@@ -125,6 +125,7 @@ export function TourMobileCardList({ tours, onDeleteRequest }: TourMobileCardLis
               <Button
                 onClick={() => handleShareLink(tour)}
                 size="icon"
+                aria-label="Compartir folleto digital"
                 className="shrink-0 bg-indigo-600 hover:bg-indigo-700"
               >
                 <Share2 className="h-4 w-4" />

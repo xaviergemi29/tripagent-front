@@ -192,15 +192,27 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
                     </Button>
 
                     {/* Botón Compartir */}
-                    <Button
-                      variant="default"
-                      size="icon"
-                      className="h-8 w-8 bg-indigo-600 shadow-sm hover:bg-indigo-700"
-                      onClick={() => handleShareLink(tour)}
-                      title="Compartir folleto digital"
-                    >
-                      <Share2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="default"
+                            size="icon"
+                            className="h-8 w-8 bg-indigo-600 shadow-sm hover:bg-indigo-700"
+                            onClick={() => handleShareLink(tour)}
+                            aria-label="Compartir folleto digital"
+                          >
+                            <Share2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
+                        >
+                          Compartir folleto digital
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
 
                     {/* Dropdown Menu (Más opciones) */}
                     <DropdownMenu>

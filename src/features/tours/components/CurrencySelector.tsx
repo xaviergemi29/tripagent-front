@@ -6,7 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
-export function CurrencySelector() {
+interface CurrencySelectorProps {
+  /** Moneda congelada: el tour ya tiene pagos registrados (la API rechaza el cambio con 409). */
+  disabled?: boolean;
+}
+
+export function CurrencySelector({ disabled = false }: CurrencySelectorProps) {
   const { control } = useFormContext();
 
   const { field } = useController({
@@ -47,10 +52,13 @@ export function CurrencySelector() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 gap-3.5 sm:grid-cols-2 ${disabled ? "pointer-events-none opacity-60" : ""}`}
+      >
         <button
           type="button"
           onClick={() => field.onChange("MXN")}
+          disabled={disabled}
           role="radio"
           aria-checked={selectedCurrency === "MXN"}
           className={`flex items-start justify-between rounded-xl border p-3.5 text-left transition-all ${
@@ -90,6 +98,7 @@ export function CurrencySelector() {
         <button
           type="button"
           onClick={() => field.onChange("USD")}
+          disabled={disabled}
           role="radio"
           aria-checked={selectedCurrency === "USD"}
           className={`flex items-start justify-between rounded-xl border p-3.5 text-left transition-all ${

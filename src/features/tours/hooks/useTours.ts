@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TourOutput, TourInput } from "../schemas/tour.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
+import { TOUR_DASHBOARD_KEYS } from "@/features/tour-dashboard/hooks/useTourDashboard";
 
 // ============================================================================
 // 1. QUERY KEY FACTORY (Patrón de Arquitectura Limpia)
@@ -129,8 +130,12 @@ export function useUpdateTour() {
     mutationFn: updateTourApi,
     onSuccess: (data) => {
       const id = extractTourId(data) as string;
-      queryClient.setQueryData(TOUR_KEYS.detail(id), data);
+      // Se vuelve a pedir el detalle: el PATCH no devuelve campos calculados como `hasPayments`.
+      queryClient.invalidateQueries({ queryKey: TOUR_KEYS.detail(id) });
       queryClient.invalidateQueries({ queryKey: TOUR_KEYS.lists() });
+      // El Centro de Control cuelga de otra raíz (["tour-dashboard"]) y se cachea 5 min: sin esto
+      // seguiría mostrando staffCapacity, capacidad vendible, anticipo y estados anteriores.
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(id) });
       toast.success("Tour actualizado exitosamente");
     },
     onError: (error: ApiError) => {
@@ -196,7 +201,7 @@ export function useDeleteTour() {
     },
     onSuccess: () => {
       toast.success("Tour eliminado", {
-        description: "El registro fue borrado permanentemente de la base de datos.",
+        description: "Ya no aparece en tus listados ni en su folleto público.",
       });
     },
     onError: (error: ApiError, _, context) => {

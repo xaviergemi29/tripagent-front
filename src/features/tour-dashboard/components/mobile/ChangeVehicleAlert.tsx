@@ -38,7 +38,7 @@ export function ChangeVehicleAlert({
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center text-sm text-slate-600">
             {isDestructive
-              ? "Al cambiar el vehículo, los asientos asignados actualmente no se conservarán. Tendrás que asignar manualmente los asientos de los viajeros en el nuevo vehículo. ¿Deseas continuar?"
+              ? 'Los asientos cuya etiqueta exista en la nueva unidad se conservan; los demás vuelven a "Faltan por acomodar". Antes de confirmar verás cuántos se liberan. Solo podrás elegir unidades con lugar para todos los pasajeros con derecho a asiento.'
               : "Selecciona la nueva distribución para este viaje."}
           </AlertDialogDescription>
         </AlertDialogHeader>

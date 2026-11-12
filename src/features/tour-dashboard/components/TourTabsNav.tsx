@@ -21,10 +21,8 @@ export function TourTabsNav({
 }: TourTabsNavProps) {
   const getSeatmapLabel = () => {
     if (!vehicle) return "Croquis de Asientos (Sin vehículo)";
-    const vehicleCapacity = vehicle.layoutMap
-      .flat()
-      .filter((cell) => cell && cell !== "AISLE").length;
-    return `Mapa de Asientos • ${vehicle.name} (${vehicleCapacity})`;
+    // Asientos de pasajero (sin operador ni asientos de staff), calculados por la API.
+    return `Mapa de Asientos • ${vehicle.name} (${vehicle.capacity.passenger})`;
   };
 
   return (

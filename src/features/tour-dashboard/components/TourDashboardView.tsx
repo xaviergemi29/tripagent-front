@@ -278,6 +278,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                         layoutMap={tour.vehicle.layoutMap}
                         activePassengers={flattenedPassengers}
                         initialSelectedPassengerId={pendingSeatPassengerId}
+                        staffCapacity={tour.staffCapacity}
                       />
                     </div>
                   )}
@@ -356,6 +357,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
             tourId={tourId}
             vehicle={tour.vehicle}
             assignedSeatsCount={assignedSeatsCount}
+            staffCapacity={tour.staffCapacity}
             unassignedEligibles={unassignedPassengers}
             allEligiblePassengers={flattenedPassengers}
             onOpenVehicleSelection={() => setIsVehicleModalOpen(true)}

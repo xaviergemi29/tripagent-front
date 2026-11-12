@@ -4,6 +4,8 @@ import { useFormContext, useWatch, Controller } from "react-hook-form";
 import { MapPin, AlertCircle, Users } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { TOUR_FORM_COPY } from "@/features/tours/constants/copy";
 import { TourInput } from "@/features/tours/schemas/tour.schema"; // Ajusta tu ruta de importación
 
 export function TourGeneralSection() {
@@ -42,6 +44,73 @@ export function TourGeneralSection() {
                 {fieldState.error.message}
               </p>
             )}
+          </div>
+        )}
+      />
+
+      <Controller
+        name="description"
+        control={control}
+        render={({ field, fieldState }) => (
+          <div className="space-y-1.5">
+            <Label htmlFor="tour-description" className="font-semibold text-slate-700">
+              {TOUR_FORM_COPY.fields.description}{" "}
+              <span className="font-normal text-slate-400">(opcional)</span>
+            </Label>
+            <Textarea
+              {...field}
+              id="tour-description"
+              value={field.value ?? ""}
+              rows={4}
+              placeholder="Ej. Visita guiada a las cascadas, comida típica incluida y tiempo libre en el pueblo."
+              className="bg-slate-50/50 text-sm"
+            />
+            {fieldState.error && (
+              <p className="animate-in fade-in flex items-center gap-1 text-xs font-medium text-red-500">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                {fieldState.error.message}
+              </p>
+            )}
+          </div>
+        )}
+      />
+
+      <Controller
+        name="destinationType"
+        control={control}
+        render={({ field }) => (
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700">Tipo de destino</Label>
+            <div role="radiogroup" className="grid grid-cols-2 gap-3">
+              {(
+                [
+                  { value: "NATIONAL", label: "Nacional" },
+                  { value: "INTERNATIONAL", label: "Internacional" },
+                ] as const
+              ).map((option) => {
+                const isSelected = (field.value ?? "NATIONAL") === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => field.onChange(option.value)}
+                    className={`h-10 rounded-xl border text-sm font-semibold transition-colors ${
+                      isSelected
+                        ? "border-indigo-600 bg-indigo-50/40 text-indigo-700 ring-1 ring-indigo-600/20"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Se usa en el historial de viajeros para distinguir viajes nacionales e
+              internacionales.
+            </p>
           </div>
         )}
       />

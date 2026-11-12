@@ -10,6 +10,7 @@ interface MobileSeatsTabProps {
   tourId: string;
   vehicle?: VehicleOutput | null;
   assignedSeatsCount: number;
+  staffCapacity: number;
   unassignedEligibles: FlattenedPassenger[];
   allEligiblePassengers: FlattenedPassenger[];
   onOpenVehicleSelection: () => void;
@@ -21,6 +22,7 @@ export function MobileSeatsTab({
   tourId,
   vehicle,
   assignedSeatsCount,
+  staffCapacity,
   unassignedEligibles,
   allEligiblePassengers,
   onOpenVehicleSelection,
@@ -62,6 +64,7 @@ export function MobileSeatsTab({
         tourId={tourId}
         vehicle={vehicle!}
         assignedSeatsCount={assignedSeatsCount}
+        staffCapacity={staffCapacity}
         unassignedEligibles={unassignedEligibles}
         allEligiblePassengers={allEligiblePassengers}
         pendingSeatPassengerId={pendingSeatPassengerId}

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, type ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
 import { TOUR_DASHBOARD_KEYS } from "@/features/tour-dashboard/hooks/useTourDashboard";
 
@@ -76,9 +76,10 @@ export const useUpdateSeat = (tourId: string) => {
 
       return { previousSeats };
     },
-    onError: (err, _, context) => {
+    onError: (err: ApiError, _, context) => {
       queryClient.setQueryData(TOUR_SEAT_KEYS.byTour(tourId), context?.previousSeats);
-      toast.error("Error de sincronización. El asiento volvió a su estado anterior.");
+      // El mensaje de la API explica el rechazo (p. ej. anticipo no cubierto o tope de staff).
+      toast.error("El asiento volvió a su estado anterior.", { description: err.message });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: TOUR_SEAT_KEYS.byTour(tourId) });
