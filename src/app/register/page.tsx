@@ -1,5 +1,6 @@
 import { TourRegistrationView } from "@/features/external-registration/components/TourRegistrationView";
 import { AlertTriangle, Compass, Unlink, HelpCircle } from "lucide-react";
+import { CancelledBookingView } from "@/features/external-registration/components/CancelledBookingView";
 import { BookingSuccessView } from "@/features/external-registration/components/BookingSuccessView";
 import { PartialPaymentView } from "@/features/external-registration/components/PartialPaymentView";
 import { PaidBookingView } from "@/features/external-registration/components/PaidBookingView";
@@ -67,7 +68,16 @@ export default async function RegistroPage({ searchParams }: PageProps) {
     );
   }
 
-  // 2. Renderizado de Vistas Válidas
+  // Marca de la agencia: la API la manda en `meta` para todos los estados (incluido CANCELLED).
+  const agencyBrand: { name: string; logoPath: string | null; phone?: string | null } | null =
+    validation.meta?.agency ?? null;
+
+  // 2. Reserva cancelada: no tiene vista de flujo, pero sí la marca de la agencia.
+  if (validation.flowState === "CANCELLED") {
+    return <CancelledBookingView agency={agencyBrand} data={validation.data ?? null} />;
+  }
+
+  // 3. Renderizado de Vistas Válidas
   const CurrentView = FlowViews[validation.flowState as keyof typeof FlowViews];
 
   if (!CurrentView) {
@@ -79,19 +89,14 @@ export default async function RegistroPage({ searchParams }: PageProps) {
     );
   }
 
+  // Cada vista aporta su propio cascarón (PublicBookingLayout: fondo, encabezado y pie comunes).
   return (
-    <main className="min-h-screen bg-slate-50 px-4">
-      {validation.flowState === "PENDING_REGISTRATION" && (
-        <div className="mx-auto mb-6 max-w-2xl text-center">
-          <p className="text-sm font-semibold tracking-wider text-indigo-600 uppercase">
-            Registro de Viajeros
-          </p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">{validation.data?.tour?.title}</h1>
-        </div>
-      )}
-
-      <CurrentView {...validation.data} token={token} />
-    </main>
+    <CurrentView
+      {...validation.data}
+      token={token}
+      agencyLogoPath={agencyBrand?.logoPath ?? null}
+      agencyPhone={agencyBrand?.phone ?? null}
+    />
   );
 }
 

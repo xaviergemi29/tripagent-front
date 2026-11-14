@@ -12,6 +12,8 @@ interface BrochureCallToActionProps {
   whatsappUrl: string | null;
   availableSeats: number;
   isBookable: boolean;
+  /** Texto del botón deshabilitado: "Agotado" (sin lugares) o "Finalizado" (el tour ya salió). */
+  unavailableLabel?: string;
 }
 
 export function BrochureCallToAction({
@@ -20,6 +22,7 @@ export function BrochureCallToAction({
   whatsappUrl,
   availableSeats,
   isBookable,
+  unavailableLabel = "Agotado",
 }: BrochureCallToActionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -34,7 +37,7 @@ export function BrochureCallToAction({
             className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-indigo-700 text-base font-bold text-white shadow-lg shadow-indigo-900/10 transition-all hover:bg-indigo-800 active:scale-[0.98]"
           >
             <CalendarCheck className="h-5 w-5" />
-            {isBookable ? "Iniciar Reserva" : "Agotado"}
+            {isBookable ? "Iniciar Reserva" : unavailableLabel}
           </Button>
 
           {whatsappUrl && (

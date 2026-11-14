@@ -1,13 +1,14 @@
 "use client";
 
-import { Bus } from "lucide-react";
+import { formatCurrency } from "@/shared/utils/currency.util";
+import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface TourSummaryCardProps {
+  /** El nombre del tour y la fecha de salida los muestra el encabezado común (PublicBookingHeader). */
   tour: {
-    name: string;
-    departureDate: string;
     priceTotalPerPassenger: number;
     depositPerPassenger?: number | null;
+    currency?: Currency;
   };
   lockedSeatsCount: number;
 }
@@ -15,6 +16,7 @@ interface TourSummaryCardProps {
 export function TourSummaryCard({ tour, lockedSeatsCount }: TourSummaryCardProps) {
   const hasDeposit = Boolean(tour.depositPerPassenger && tour.depositPerPassenger > 0);
   const depositAmount = tour.depositPerPassenger ?? 0;
+  const currency = tour.currency || DEFAULT_CURRENCY;
 
   const totalTourCost = tour.priceTotalPerPassenger * lockedSeatsCount;
   const totalDepositCost = depositAmount * lockedSeatsCount;
@@ -29,19 +31,6 @@ export function TourSummaryCard({ tour, lockedSeatsCount }: TourSummaryCardProps
         </span>
       </div>
 
-      {/* Título e Icono */}
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-          <Bus className="h-5 w-5" />
-        </div>
-        <div className="space-y-0.5">
-          <h2 className="text-base leading-snug font-bold text-slate-900">{tour.name}</h2>
-          <p className="flex items-center gap-1 text-xs text-slate-500">
-            <span>📅</span> {tour.departureDate}
-          </p>
-        </div>
-      </div>
-
       {/* Módulo Financiero Condicional */}
       <div className="rounded-xl border border-slate-100 bg-slate-50 p-3.5">
         {hasDeposit ? (
@@ -51,10 +40,10 @@ export function TourSummaryCard({ tour, lockedSeatsCount }: TourSummaryCardProps
             <div className="pr-3">
               <span className="block text-xs text-slate-500">Costo total del viaje</span>
               <p className="text-base font-black text-slate-900">
-                ${totalTourCost.toLocaleString()} MXN
+                {formatCurrency(totalTourCost, { currency })}
               </p>
               <span className="block text-[11px] text-slate-400">
-                (${tour.priceTotalPerPassenger.toLocaleString()} MXN por persona)
+                ({formatCurrency(tour.priceTotalPerPassenger, { currency })} por persona)
               </span>
             </div>
 
@@ -62,10 +51,10 @@ export function TourSummaryCard({ tour, lockedSeatsCount }: TourSummaryCardProps
             <div className="pl-3 text-right">
               <span className="block text-xs text-slate-500">Anticipo para apartar</span>
               <p className="text-sm font-bold text-emerald-600">
-                ${depositAmount.toLocaleString()} MXN / persona
+                {formatCurrency(depositAmount, { currency })} / persona
               </p>
               <span className="block text-[11px] font-semibold text-slate-700">
-                Total a anticipar: ${totalDepositCost.toLocaleString()} MXN
+                Total a anticipar: {formatCurrency(totalDepositCost, { currency })}
               </span>
             </div>
           </div>
@@ -77,10 +66,10 @@ export function TourSummaryCard({ tour, lockedSeatsCount }: TourSummaryCardProps
               {lockedSeatsCount === 1 ? "viajero" : "viajeros"})
             </span>
             <p className="text-lg font-black text-slate-900">
-              ${totalTourCost.toLocaleString()} MXN
+              {formatCurrency(totalTourCost, { currency })}
             </p>
             <span className="block text-xs text-slate-400">
-              (${tour.priceTotalPerPassenger.toLocaleString()} MXN por persona)
+              ({formatCurrency(tour.priceTotalPerPassenger, { currency })} por persona)
             </span>
           </div>
         )}

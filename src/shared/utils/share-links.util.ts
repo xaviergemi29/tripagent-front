@@ -15,6 +15,18 @@ interface WhatsAppUrlOptions {
 }
 
 /**
+ * @description Teléfono para mostrar, sin prefijo de país: los últimos 10 dígitos agrupados
+ * 3-3-4. Si no hay 10 dígitos, devuelve el valor tal cual.
+ * @example formatPhoneForDisplay("+522288492011") // "228 849 2011"
+ */
+export const formatPhoneForDisplay = (phone?: string | null): string => {
+  const digits = toPhoneDigits(phone);
+  if (digits.length < 10) return (phone || "").trim();
+  const local = digits.slice(-10);
+  return `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`;
+};
+
+/**
  * @description Construye un enlace `wa.me` para abrir un chat de WhatsApp.
  * No hay integración con la API de WhatsApp; solo enlaces.
  *

@@ -208,7 +208,7 @@ export function AgencyTab() {
             )}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="cardNumber">Número de Tarjeta (16 dígitos) *</Label>
+            <Label htmlFor="cardNumber">Número de Tarjeta (16 dígitos, opcional)</Label>
             <Input
               id="cardNumber"
               placeholder="Ej: 4123 4567 8901 2345"

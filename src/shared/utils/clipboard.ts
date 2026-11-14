@@ -26,6 +26,15 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
   }
 
   // 2. Fallback clásico para HTTP en red local o navegadores/WebViews restringidos
+  // Dentro de un modal (Radix Dialog/AlertDialog) el foco está atrapado: un textarea en <body>
+  // pierde el foco y la selección, y execCommand no copia nada. Por eso se inserta dentro del
+  // diálogo activo y al terminar se devuelve el foco al elemento que lo tenía.
+  const previouslyFocused =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const container =
+    previouslyFocused?.closest<HTMLElement>('[role="dialog"], [role="alertdialog"]') ??
+    document.body;
+
   try {
     const textArea = document.createElement("textarea");
     textArea.value = text;
@@ -36,7 +45,7 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
     textArea.style.top = "-999999px";
     textArea.setAttribute("readonly", ""); // Evita que aparezca el teclado virtual en móviles
 
-    document.body.appendChild(textArea);
+    container.appendChild(textArea);
     textArea.focus();
     textArea.select();
 
@@ -45,6 +54,7 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
     const successful = document.execCommand("copy");
 
     textArea.remove();
+    previouslyFocused?.focus();
 
     return successful;
   } catch (error) {

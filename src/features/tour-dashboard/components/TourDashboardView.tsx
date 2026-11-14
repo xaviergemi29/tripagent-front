@@ -1,11 +1,23 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import {
+  DEFAULT_DASHBOARD_TAB,
+  type DashboardTab,
+} from "@/features/tour-dashboard/constants/dashboard-tabs";
+import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
+import { CancelTourDialog } from "./CancelTourDialog";
+import { CancelledTourBanner } from "./CancelledTourBanner";
+import { RefundsPanel } from "./RefundsPanel";
 import { TourDashboardHeader } from "./TourDashboardHeader";
 import { useTourDashboardByTourId } from "../hooks/useTourDashboard";
 import { QuickReservationModal } from "./QuickReservationModal";
 import { SeatMapCanvas } from "@/features/tours/components/SeatMapCanvas";
 import { DashboardTravelerTable } from "./DashboardTravelerTable";
+import { useAgency } from "@/features/settings/hooks/useAgency";
+import { useAgencyBranding } from "@/features/settings/hooks/useAgencyBranding";
+import type { StatementPDFData } from "@/features/external-registration/pdf/payment-receipt.pdf";
+import { buildApiPublicFileUrl } from "@/shared/utils/share-links.util";
 import type {
   CompanionOutput,
   FlattenedPassenger,
@@ -32,19 +44,27 @@ interface TourDashboardViewProps {
 
 export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   const { data: tour, isLoading, isError, error } = useTourDashboardByTourId(tourId);
+  // Datos de la agencia para el estado de cuenta PDF (perfil, banco y colores de marca).
+  const { data: agency } = useAgency();
+  const { data: branding } = useAgencyBranding();
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"passengers" | "seatmap">("passengers");
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
   const [formFilter, setFormFilter] = useState("ALL");
   const [seatFilter, setSeatFilter] = useState("ALL");
 
-  const isAuditMode = tour?.temporalStatus === "FINALIZADO" || tour?.temporalStatus === "CANCELADO";
+  // Modo Auditoría (solo lectura): tour FINALIZADO o CANCELADO (pausado). Un tour EN CURSO sigue
+  // operable: abonos de último minuto y ajustes de asiento antes de salir (decisión del PM, 2026-11-14).
+  const isAuditMode =
+    tour?.temporalStatus === TOUR_TEMPORAL_STATUS.FINISHED ||
+    tour?.temporalStatus === TOUR_TEMPORAL_STATUS.CANCELLED;
   const requiresSeats = tour?.requiresSeats ?? Boolean(tour?.vehicle);
   const [selectedTravelerId, setSelectedTravelerId] = useState<string | null>(null);
   const [isQuickReservationOpen, setIsQuickReservationOpen] = useState(false);
+  const [isCancelTourOpen, setIsCancelTourOpen] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"passengers" | "seatmap">("passengers");
+  // Pestaña única para escritorio y móvil (ver constants/dashboard-tabs.ts).
+  const [activeTab, setActiveTab] = useState<DashboardTab>(DEFAULT_DASHBOARD_TAB);
   const [pendingSeatPassengerId, setPendingSeatPassengerId] = useState<string | null>(null);
 
   const freeSeatsCount =
@@ -55,8 +75,8 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
     if (!tour?.vehicle) {
       setIsVehicleModalOpen(true);
     } else {
-      setActiveTab("passengers");
-      setMobileTab("seatmap");
+      // La asignación de asientos vive en la pestaña del croquis (escritorio y móvil).
+      setActiveTab("seatmap");
     }
   };
 
@@ -205,6 +225,19 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
 
   const totalEligiblePassengers = tour.metrics.logistics.total;
   const assignedSeatsCount = tour.metrics.logistics.assigned;
+  // Cancelar el tour (decisión del PM, 2026-11-14): solo si aún opera (ni finalizado ni cancelado).
+  const openCancelTour = isAuditMode ? undefined : () => setIsCancelTourOpen(true);
+  // Reembolsos: se registran salvo en un tour FINALIZADO (excepción del Modo Auditoría para los
+  // tours cancelados).
+  const canRegisterRefunds = tour.temporalStatus !== TOUR_TEMPORAL_STATUS.FINISHED;
+  const refundsPanel = (
+    <RefundsPanel
+      tourId={tourId}
+      currency={tour.currency}
+      refunds={tour.refunds}
+      canRegisterRefunds={canRegisterRefunds}
+    />
+  );
 
   return (
     <main className="flex h-full min-h-screen flex-col bg-slate-50">
@@ -217,8 +250,10 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
           metrics={tour.metrics}
           logistics={tour.metrics.logistics}
           onNewReservation={isAuditMode ? undefined : () => setIsQuickReservationOpen(true)}
+          onCancelTour={openCancelTour}
         />
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+          {tour.cancellation && <CancelledTourBanner cancellation={tour.cancellation} />}
           <TourTabsNav
             requiresSeats={requiresSeats}
             activeTab={activeTab}
@@ -231,6 +266,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
           <div className="flex-1">
             {activeTab === "passengers" && (
               <div className="animate-in fade-in space-y-4 duration-300">
+                {refundsPanel}
                 <TravelersTableToolbar
                   tourId={tourId}
                   searchQuery={searchQuery}
@@ -246,7 +282,30 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                 <DashboardTravelerTable
                   tourId={tourId}
                   tourTitle={tour.title}
-                  agencyName={""}
+                  tourDepartureDate={tour.departureDateTime}
+                  tourReturnDate={tour.returnDate ?? null}
+                  tourPostPaymentInstructions={tour.postPaymentInstructions ?? null}
+                  statementAgency={
+                    {
+                      name: agency?.name ?? "",
+                      email: agency?.email ?? "",
+                      whatsapp: agency?.phone ?? "",
+                      logoUrl: branding?.logoPath ? buildApiPublicFileUrl(branding.logoPath) : null,
+                      primaryColor: branding?.primaryColor ?? null,
+                      secondaryColor: branding?.secondaryColor ?? null,
+                      accentColor: branding?.accentColor ?? null,
+                      bankInfo:
+                        // Sin número de tarjeta: el PDF solo lleva banco, titular y CLABE.
+                        agency?.bankName || agency?.clabeNumber
+                          ? {
+                              bankName: agency.bankName ?? "",
+                              accountHolder: agency.bankAccountHolder ?? "",
+                              clabe: agency.clabeNumber ?? "",
+                            }
+                          : null,
+                      policies: agency?.policies ?? null,
+                    } satisfies StatementPDFData["agency"]
+                  }
                   travelers={tour.travelers}
                   searchQuery={searchQuery}
                   tourCurrency={tour.currency}
@@ -268,7 +327,9 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                 <div className="flex flex-1 flex-col gap-4">
                   <VehicleStatusBanner
                     vehicle={tour.vehicle}
-                    onChangeVehicleClick={() => setIsVehicleModalOpen(true)}
+                    onChangeVehicleClick={
+                      isAuditMode ? undefined : () => setIsVehicleModalOpen(true)
+                    }
                   />
 
                   {tour.vehicle?.layoutMap && (
@@ -279,12 +340,13 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                         activePassengers={flattenedPassengers}
                         initialSelectedPassengerId={pendingSeatPassengerId}
                         staffCapacity={tour.staffCapacity}
+                        readOnly={isAuditMode}
                       />
                     </div>
                   )}
                 </div>
 
-                {tour.vehicle?.layoutMap && (
+                {tour.vehicle?.layoutMap && !isAuditMode && (
                   <div className="w-full shrink-0 lg:w-80">
                     <UnassignedSeatsPanel
                       unassignedPassengers={unassignedPassengers}
@@ -305,21 +367,25 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
           tourTitle={tour.title}
           departureDateTime={tour.departureDateTime}
           onOpenNewBookingModal={isAuditMode ? undefined : () => setIsQuickReservationOpen(true)}
+          onCancelTour={openCancelTour}
         />
 
-        <MobileKpiCards metrics={tour.metrics} />
+        {tour.cancellation && <CancelledTourBanner cancellation={tour.cancellation} />}
+
+        <MobileKpiCards metrics={tour.metrics} currency={tour.currency} />
 
         <MobileTabsNav
-          activeTab={mobileTab}
-          onTabChange={setMobileTab}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           totalPassengers={totalEligiblePassengers}
           assignedCount={assignedSeatsCount}
           totalBookedPax={totalEligiblePassengers}
           requiresSeats={requiresSeats}
         />
 
-        {mobileTab === "passengers" ? (
+        {activeTab === "passengers" ? (
           <div className="animate-in fade-in space-y-4 duration-300">
+            {refundsPanel}
             <MobileFilters
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -336,8 +402,10 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                 <BookingCard
                   key={titular.id}
                   titular={titular}
+                  tourCurrency={tour.currency}
                   onAssignSeatClick={handleAssignSeatIntent}
                   onRowClick={(id) => setSelectedTravelerId(id)}
+                  isAuditMode={isAuditMode}
                 />
               ))}
 
@@ -360,7 +428,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
             staffCapacity={tour.staffCapacity}
             unassignedEligibles={unassignedPassengers}
             allEligiblePassengers={flattenedPassengers}
-            onOpenVehicleSelection={() => setIsVehicleModalOpen(true)}
+            onOpenVehicleSelection={isAuditMode ? undefined : () => setIsVehicleModalOpen(true)}
             pendingSeatPassengerId={pendingSeatPassengerId}
             setPendingSeatPassengerId={setPendingSeatPassengerId}
           />
@@ -390,6 +458,16 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
         assignedSeatsCount={assignedSeatsCount}
         currentVehicle={tour.vehicle}
         onSuccess={() => setActiveTab("seatmap")}
+      />
+
+      <CancelTourDialog
+        tourId={tourId}
+        tourTitle={tour.title}
+        activeBookings={tour.travelers.length}
+        collectedAmount={tour.metrics.revenue.collected}
+        currency={tour.currency}
+        open={isCancelTourOpen}
+        onOpenChange={setIsCancelTourOpen}
       />
     </main>
   );

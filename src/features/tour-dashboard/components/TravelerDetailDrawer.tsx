@@ -428,7 +428,7 @@ export function TravelerDetailDrawer({
                   : paymentToVoid.amount,
                 { currency: isUSD || paymentToVoid.amountUSD ? "USD" : "MXN" },
               )
-            : "$0.00"
+            : formatCurrency(0, { currency: tourCurrency })
         }
       />
     </>

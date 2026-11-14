@@ -1,10 +1,16 @@
 import { z } from "zod";
-import { CURRENCIES, DEFAULT_CURRENCY, PAYMENT_METHODS } from "@/shared/constants/domain.constants";
+import {
+  CURRENCIES,
+  DEFAULT_CURRENCY,
+  PAYMENT_METHODS,
+  PAYMENT_TYPES,
+} from "@/shared/constants/domain.constants";
 
 export const paymentFormSchema = z.object({
   amount: z.coerce.number().positive("El monto debe ser mayor a $0"),
   method: z.enum(PAYMENT_METHODS, "Selecciona un método"),
-  type: z.literal("PAYMENT").default("PAYMENT"),
+  // REFUND: devolución al cliente (monto positivo; la API lo guarda en negativo).
+  type: z.enum(PAYMENT_TYPES).default("PAYMENT"),
   referenceInfo: z.string().optional(),
 });
 

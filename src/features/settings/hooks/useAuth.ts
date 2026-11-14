@@ -42,19 +42,30 @@ export const useLogin = () => {
   });
 };
 
+/**
+ * Navegación DURA al login, reemplazando la entrada actual del historial.
+ * `router.replace` no basta: la Client Cache de Next reutiliza las páginas en atrás/adelante sin
+ * pasar por el proxy, así que la página privada se volvía a pintar antes del 401. La recarga
+ * destruye esa caché (y la de React Query) y obliga a que «Atrás» pida la ruta al servidor,
+ * donde el proxy redirige a /login sin renderizar nada privado.
+ */
+const hardRedirectToLogin = (query = ""): void => {
+  window.location.replace(`/login${query}`);
+};
+
 export const useLogout = () => {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: logoutApi,
     onSuccess: () => {
       queryClient.clear();
-      toast.success("Sesión cerrada correctamente");
-      router.replace("/login");
+      hardRedirectToLogin();
     },
     onError: () => {
-      router.replace("/login");
+      queryClient.clear();
+      // Si la API no pudo borrar la cookie, el proxy la elimina al recibir ?expired=true.
+      hardRedirectToLogin("?expired=true");
     },
   });
 };

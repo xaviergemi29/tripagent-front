@@ -13,7 +13,8 @@ interface MobileSeatsTabProps {
   staffCapacity: number;
   unassignedEligibles: FlattenedPassenger[];
   allEligiblePassengers: FlattenedPassenger[];
-  onOpenVehicleSelection: () => void;
+  /** Sin acción = Modo Auditoría: croquis de solo consulta, sin cambiar vehículo ni asientos. */
+  onOpenVehicleSelection?: () => void;
   pendingSeatPassengerId: string | null;
   setPendingSeatPassengerId: (id: string | null) => void;
 }
@@ -34,17 +35,19 @@ export function MobileSeatsTab({
   // Verificación type-safe gracias al esquema VehicleOutput
   const hasVehicle = Boolean(vehicle?.layoutMap);
 
+  const isReadOnly = !onOpenVehicleSelection;
+
   const handleIntentChangeVehicle = () => {
     if (assignedSeatsCount > 0) {
       setIsAlertOpen(true);
     } else {
-      onOpenVehicleSelection();
+      onOpenVehicleSelection?.();
     }
   };
 
   const handleConfirmChange = () => {
     setIsAlertOpen(false);
-    onOpenVehicleSelection();
+    onOpenVehicleSelection?.();
   };
 
   if (!hasVehicle) {
@@ -68,8 +71,8 @@ export function MobileSeatsTab({
         unassignedEligibles={unassignedEligibles}
         allEligiblePassengers={allEligiblePassengers}
         pendingSeatPassengerId={pendingSeatPassengerId}
-        onChangeVehicleClick={handleIntentChangeVehicle}
-        onSelectPassenger={setPendingSeatPassengerId}
+        onChangeVehicleClick={isReadOnly ? undefined : handleIntentChangeVehicle}
+        onSelectPassenger={isReadOnly ? undefined : setPendingSeatPassengerId}
       />
 
       <ChangeVehicleAlert

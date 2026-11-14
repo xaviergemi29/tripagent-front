@@ -20,7 +20,10 @@ export function AgencyBankDetailsBanner({
   settingsUrl = "/settings",
   className = "",
 }: AgencyBankDetailsBannerProps) {
-  const hasBankData = Boolean(bankName || accountHolder || clabe || cardNumber);
+  // La tarjeta es opcional (decisión del PM, 2026-11-14): no cuenta como dato bancario configurado
+  // y su recuadro solo aparece si la agencia la capturó.
+  const hasBankData = Boolean(bankName || accountHolder || clabe);
+  const card = cardNumber?.trim() || null;
 
   return (
     <div
@@ -78,14 +81,16 @@ export function AgencyBankDetailsBanner({
             </span>
           </div>
 
-          <div className="flex flex-col justify-center rounded-lg border border-slate-100 bg-white/90 p-3 shadow-sm">
-            <span className="mb-1 block text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-              Número de Tarjeta
-            </span>
-            <span className="font-mono text-sm font-bold tracking-widest break-all text-slate-800">
-              {cardNumber || "No registrado"}
-            </span>
-          </div>
+          {card && (
+            <div className="flex flex-col justify-center rounded-lg border border-slate-100 bg-white/90 p-3 shadow-sm">
+              <span className="mb-1 block text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+                Número de Tarjeta
+              </span>
+              <span className="font-mono text-sm font-bold tracking-widest break-all text-slate-800">
+                {card}
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex items-center justify-between rounded-lg border border-amber-200/60 bg-amber-50 p-3.5 text-xs text-amber-800">

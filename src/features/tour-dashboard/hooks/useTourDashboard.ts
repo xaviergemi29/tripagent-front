@@ -2,7 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TourDashboardOutput, VehicleOutput } from "../schemas/tour-dashboard.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
-import { PASSENGER_ROLE } from "@/shared/constants/domain.constants";
+import {
+  type Currency,
+  PASSENGER_ROLE,
+  type TourCancellationReason,
+} from "@/shared/constants/domain.constants";
+import { TOUR_KEYS } from "@/features/tours/hooks/useTours";
 import { TOUR_SEAT_KEYS } from "@/features/tours/hooks/useTourSeats";
 import type {
   TransferPassengerInput,
@@ -214,6 +219,55 @@ export function useQuickRemovePassenger() {
       toast.error("Error al dar de baja", {
         description: error.message || "No se pudo cancelar al pasajero.",
       });
+    },
+  });
+}
+
+// ============================================================================
+// CANCELACIÓN DEL TOUR POR LA AGENCIA (decisión del PM, 2026-11-14)
+// ============================================================================
+export interface CancelTourInput {
+  tourId: string;
+  reason: TourCancellationReason;
+  /** Nota interna opcional (≤ 200); vacía → null en la API. */
+  note?: string | null;
+}
+
+/** Respuesta (ya desenvuelta) de `POST /tours/:id/cancel`. */
+export interface CancelTourOutput {
+  tourId: string;
+  cancelledAt: string;
+  reason: TourCancellationReason;
+  cancelledBookings: number;
+  refundableTotal: number;
+  currency: Currency;
+}
+
+const cancelTourApi = ({ tourId, ...body }: CancelTourInput): Promise<CancelTourOutput> =>
+  apiClient.post<never, CancelTourOutput>(`/tours/${tourId}/cancel`, body);
+
+/**
+ * Cancela el tour: todas las reservas pasan a canceladas sin penalización y lo abonado queda como
+ * saldo a reembolsar. Invalida el Centro de Control, el croquis y el listado de tours.
+ */
+export function useCancelTour() {
+  const queryClient = useQueryClient();
+
+  return useMutation<CancelTourOutput, ApiError, CancelTourInput>({
+    mutationFn: cancelTourApi,
+    onSuccess: (result, { tourId }) => {
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(tourId) });
+      queryClient.invalidateQueries({ queryKey: TOUR_SEAT_KEYS.byTour(tourId) });
+      queryClient.invalidateQueries({ queryKey: TOUR_KEYS.all });
+      toast.success("Tour cancelado", {
+        description:
+          result.refundableTotal > 0
+            ? `Se cancelaron ${result.cancelledBookings} reserva(s). Registra los reembolsos conforme los transfieras.`
+            : `Se cancelaron ${result.cancelledBookings} reserva(s). No hay dinero por reembolsar.`,
+      });
+    },
+    onError: (error) => {
+      toast.error("No se pudo cancelar el tour", { description: error.message });
     },
   });
 }

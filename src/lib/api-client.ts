@@ -35,7 +35,7 @@ apiClient.interceptors.response.use(
 
       if (!requestUrl.includes("/auth/login")) {
         if (typeof window !== "undefined") {
-          window.location.href = "/login?expired=true";
+          window.location.replace("/login?expired=true");
         }
       }
     }

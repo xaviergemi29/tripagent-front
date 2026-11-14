@@ -1,44 +1,24 @@
 import type { ReactNode } from "react";
-import { CalendarDays, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
-import { DEFAULT_CURRENCY, type Currency } from "@/shared/constants/domain.constants";
+import { PublicBookingLayout } from "@/components/layout/public/PublicBookingLayout";
+import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 import { formatCurrency } from "@/shared/utils/currency.util";
-import { formatSpanishLongDate } from "@/shared/utils/tour-date.util";
+import { resolveBoardingPointDisplay } from "@/shared/utils/boarding-point.util";
 import { buildWhatsAppUrl, toPhoneDigits } from "@/shared/utils/share-links.util";
-import type {
-  PaidBookingOutput,
-  PaidPassengerOutput,
-} from "@/features/external-registration/schemas/paid-booking.schema";
-import {
-  TravelerTicketCard,
-  type TravelerTicketCardProps,
-} from "@/features/external-registration/components/TravelerTicketCard";
+import type { PaidBookingOutput } from "@/features/external-registration/schemas/paid-booking.schema";
+import { TravelerTicketCard } from "@/features/external-registration/components/TravelerTicketCard";
+import { TourInstructionsCard } from "@/features/external-registration/components/TourInstructionsCard";
+import { DownloadStatementButton } from "@/features/external-registration/components/DownloadStatementButton";
 
-type PaidBookingViewProps = PaidBookingOutput & { token?: string };
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type PaidBookingViewProps = PaidBookingOutput & {
+  token?: string;
+  /** Logotipo de la agencia (`meta.agency.logoPath` del Magic Link). */
+  agencyLogoPath?: string | null;
+};
 
 /** Barras del código ilustrativo (anchos relativos). Es decorativo: no codifica ningún dato. */
 const BARCODE_PATTERN = [3, 1, 2, 1, 4, 1, 1, 3, 2, 1, 1, 2, 4, 1, 2, 3, 1, 1, 2, 1, 3, 2, 1, 4];
-
-/**
- * Punto de abordaje que se muestra al viajero: el configurado en el tour (ubicación + hora) o,
- * si no coincide con ninguno, el texto guardado. Nunca se muestran identificadores técnicos.
- */
-const toTicketBoardingPoint = (
-  passenger: PaidPassengerOutput,
-): TravelerTicketCardProps["boardingPoint"] => {
-  if (passenger.boardingPointDetails) return passenger.boardingPointDetails;
-  const raw = passenger.boardingPoint?.trim();
-  if (!raw || UUID_REGEX.test(raw)) return null;
-  return { location: raw, time: null };
-};
-
-/** Formato "$6,000.00 MXN" para pesos; en otras monedas Intl ya incluye el código. */
-const formatAmountWithCode = (amount: number, currency: Currency): string => {
-  const formatted = formatCurrency(amount, { currency });
-  return currency === "MXN" ? `${formatted} MXN` : formatted;
-};
 
 /**
  * Vista del Magic Link para `flowState = "PAID"`: pase de abordaje digital con un boleto por
@@ -49,6 +29,9 @@ export function PaidBookingView({
   financials,
   passengers = [],
   agency,
+  groupSize,
+  paymentHistory = [],
+  agencyLogoPath,
 }: PaidBookingViewProps) {
   const currency = tourInfo.currency || DEFAULT_CURRENCY;
 
@@ -69,29 +52,26 @@ export function PaidBookingView({
       })
     : null;
 
-  const departureDate = formatSpanishLongDate(tourInfo.departureDateTime);
-
   return (
-    <div className="mx-auto max-w-md space-y-4 py-6 font-sans text-slate-800 antialiased">
-      {/* Encabezado */}
-      <header className="space-y-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-          <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" aria-hidden />
-          PASE DE ABORDAJE DIGITAL
-        </span>
-        <h1 className="text-2xl leading-tight font-black tracking-tight text-slate-900 sm:text-3xl">
-          {tourInfo.title}
-        </h1>
-        {departureDate && (
-          <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
-            <CalendarDays className="h-4 w-4 shrink-0 text-indigo-600" aria-hidden />
-            {departureDate}
-          </p>
-        )}
-        <p className="text-sm text-slate-600">
-          Revisa los detalles de cada viajero para abordar el día del viaje.
-        </p>
-      </header>
+    <PublicBookingLayout
+      headerProps={{
+        agencyName: agency.name,
+        agencyLogoPath,
+        statusBadgeText: "100% liquidado • Viaje confirmado",
+        statusVariant: "success",
+        tourTitle: tourInfo.title,
+        departureDate: tourInfo.departureDateTime,
+      }}
+      footerProps={{
+        agencyName: agency.name,
+        // Esta vista ya tiene su botón "Contactar a la agencia o guía": no se repite en el pie.
+        agencyWhatsApp: null,
+        closingNote: `${agency.address ? `${agency.address} • ` : ""}¡Buen viaje! Nos vemos en el punto de encuentro.`,
+      }}
+    >
+      <p className="text-center text-sm text-slate-600">
+        Revisa los detalles de cada viajero para abordar el día del viaje.
+      </p>
 
       {/* Confirmación */}
       <section className="flex items-center gap-3.5 rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm">
@@ -115,10 +95,13 @@ export function PaidBookingView({
             isTitular={traveler.isTitular}
             name={traveler.name}
             seatLabel={traveler.seatLabel}
-            boardingPoint={toTicketBoardingPoint(traveler)}
+            boardingPoint={resolveBoardingPointDisplay(traveler)}
           />
         ))}
       </section>
+
+      {/* Indicaciones de logística del tour (Instrucciones Post-Pago) */}
+      <TourInstructionsCard instructions={tourInfo.postPaymentInstructions} />
 
       {/* Código de barras ilustrativo */}
       <section className="space-y-2 rounded-2xl border border-slate-200/80 bg-white p-4 text-center shadow-sm">
@@ -147,7 +130,20 @@ export function PaidBookingView({
       </section>
 
       {/* Estado de pago */}
-      <PaymentSettledBadge amountLabel={formatAmountWithCode(financials.totalAmount, currency)} />
+      <PaymentSettledBadge amountLabel={formatCurrency(financials.totalAmount, { currency })} />
+
+      {/* Estado de cuenta PDF (100% liquidado) */}
+      <DownloadStatementButton
+        className="h-11 text-sm"
+        source={{
+          tourInfo,
+          groupSize,
+          financials,
+          paymentHistory,
+          passengers,
+          agency,
+        }}
+      />
 
       {/* Contacto */}
       {whatsappUrl && (
@@ -161,16 +157,7 @@ export function PaidBookingView({
           Contactar a la agencia o guía
         </a>
       )}
-
-      {/* Pie institucional */}
-      <footer className="space-y-1 pt-2 pb-4 text-center">
-        <p className="text-xs font-semibold text-slate-600">
-          {agency.name}
-          {agency.address ? ` • ${agency.address}` : ""}
-        </p>
-        <p className="text-xs text-slate-500">¡Buen viaje! Nos vemos en el punto de encuentro.</p>
-      </footer>
-    </div>
+    </PublicBookingLayout>
   );
 }
 

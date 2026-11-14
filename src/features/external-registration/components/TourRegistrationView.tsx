@@ -12,12 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useCreateBooking } from "../hooks/useBookings";
 
-import { RegistrationHeader } from "./RegistrationHeader";
+import { PublicBookingLayout } from "@/components/layout/public/PublicBookingLayout";
 import { TourSummaryCard } from "./TourSummaryCard";
 import { PickupPointSelector } from "./PickupPointSelector";
 import { RegistrationFooter } from "./RegistrationFooter";
 import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 import { useRouter } from "next/navigation";
+import type { Currency } from "@/shared/constants/domain.constants";
 
 interface TourRegistrationViewProps {
   token: string;
@@ -25,11 +26,17 @@ interface TourRegistrationViewProps {
   tourInfo: {
     title: string;
     departureDateTime: string;
+    /** Moneda del tour (la envía la API en PENDING_REGISTRATION). */
+    currency?: Currency;
     reservedSeats?: number;
     priceTotalPerPassenger?: number;
     depositPerPassenger?: number | null;
   };
   agencyName: string;
+  /** Logotipo de la agencia (`meta.agency.logoPath` del Magic Link). */
+  agencyLogoPath?: string | null;
+  /** WhatsApp de la agencia (`meta.agency.phone`), para el pie común. */
+  agencyPhone?: string | null;
   prefillData?: {
     fullName?: string;
     whatsappPhone?: string;
@@ -47,6 +54,8 @@ export function TourRegistrationView({
   boardingPoints,
   tourInfo,
   agencyName,
+  agencyLogoPath,
+  agencyPhone,
   prefillData,
 }: TourRegistrationViewProps) {
   const [isLookingUp, setIsLookingUp] = useState(false);
@@ -128,24 +137,36 @@ export function TourRegistrationView({
   }));
 
   return (
-    <div className="min-h-screen bg-[#faf8ff] pb-24">
-      {/* 1. Header de Agencia Pegajoso */}
-      <RegistrationHeader agencyName={agencyName} />
-
+    // pb-40: espacio para la barra fija de "Completar Registro" (RegistrationFooter).
+    <PublicBookingLayout
+      className="pb-40"
+      headerProps={{
+        agencyName,
+        agencyLogoPath,
+        statusBadgeText: "Registro de viajeros",
+        statusVariant: "brand",
+        tourTitle: tourInfo.title,
+        departureDate: tourInfo.departureDateTime,
+      }}
+      footerProps={{
+        agencyName,
+        agencyWhatsApp: agencyPhone,
+        whatsappMessage: `Hola, tengo dudas con el registro de mi reservación para "${tourInfo.title}".`,
+      }}
+    >
       <FormProvider {...methods}>
         <form
           onSubmit={methods.handleSubmit(onSubmit)}
-          className="mx-auto max-w-xl space-y-6 px-4 pt-5"
+          className="space-y-6"
           noValidate={true}
           suppressHydrationWarning
         >
           {/* 2. Resumen del Tour con Finanzas */}
           <TourSummaryCard
             tour={{
-              name: tourInfo.title,
-              departureDate: tourInfo.departureDateTime,
               priceTotalPerPassenger: tourInfo.priceTotalPerPassenger || 0,
               depositPerPassenger: tourInfo.depositPerPassenger,
+              currency: tourInfo.currency,
             }}
             lockedSeatsCount={lockedSeats}
           />
@@ -314,6 +335,7 @@ export function TourRegistrationView({
           {/* 5. Sticky Footer (Se encarga de ejecutar el submit del form) */}
           <RegistrationFooter
             totalAmount={lockedSeats * (tourInfo.priceTotalPerPassenger || 0)}
+            currency={tourInfo.currency}
             travelersCount={lockedSeats}
             isSubmitting={isPending}
             disabled={!methods.formState.isValid}
@@ -321,6 +343,6 @@ export function TourRegistrationView({
           />
         </form>
       </FormProvider>
-    </div>
+    </PublicBookingLayout>
   );
 }

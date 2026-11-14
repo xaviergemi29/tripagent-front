@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import type { TourOutput } from "../schemas/tour.schema";
+import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
 
 export type StatusFilter = "ALL" | "UPCOMING" | "IN_PROGRESS" | "COMPLETED";
 export type DestinationFilter = "ALL" | "NATIONAL" | "INTERNATIONAL";
@@ -20,10 +21,11 @@ export function useTourFilters(tours: TourOutput[]) {
       // 2. Filtro por Estado Temporal
       let matchStatus = true;
       if (statusFilter !== "ALL") {
-        const status = tour.temporalStatus || "PRÓXIMO";
-        if (statusFilter === "UPCOMING") matchStatus = status === "PRÓXIMO";
-        if (statusFilter === "IN_PROGRESS") matchStatus = status === "EN_CURSO";
-        if (statusFilter === "COMPLETED") matchStatus = status === "FINALIZADO";
+        const status = tour.temporalStatus || TOUR_TEMPORAL_STATUS.UPCOMING;
+        if (statusFilter === "UPCOMING") matchStatus = status === TOUR_TEMPORAL_STATUS.UPCOMING;
+        if (statusFilter === "IN_PROGRESS")
+          matchStatus = status === TOUR_TEMPORAL_STATUS.IN_PROGRESS;
+        if (statusFilter === "COMPLETED") matchStatus = status === TOUR_TEMPORAL_STATUS.FINISHED;
       }
 
       // 3. Filtro por Destino (Asumiendo campo destinationType o divisa como fallback)
@@ -44,9 +46,12 @@ export function useTourFilters(tours: TourOutput[]) {
   const counts = useMemo(() => {
     return {
       all: tours.length,
-      upcoming: tours.filter((t) => (t.temporalStatus || "PRÓXIMO") === "PRÓXIMO").length,
-      inProgress: tours.filter((t) => t.temporalStatus === "EN_CURSO").length,
-      completed: tours.filter((t) => t.temporalStatus === "FINALIZADO").length,
+      upcoming: tours.filter(
+        (t) =>
+          (t.temporalStatus || TOUR_TEMPORAL_STATUS.UPCOMING) === TOUR_TEMPORAL_STATUS.UPCOMING,
+      ).length,
+      inProgress: tours.filter((t) => t.temporalStatus === TOUR_TEMPORAL_STATUS.IN_PROGRESS).length,
+      completed: tours.filter((t) => t.temporalStatus === TOUR_TEMPORAL_STATUS.FINISHED).length,
     };
   }, [tours]);
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CURRENCIES, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 export const manifestPassengerSchema = z.object({
   id: z.uuid(),
@@ -35,6 +36,8 @@ export const tourManifestOutputSchema = z.object({
   tourId: z.string().uuid(),
   tourTitle: z.string(),
   departureDateTime: z.string(),
+  /** Moneda del tour: los saldos por cobrar se muestran en ella. */
+  currency: z.enum(CURRENCIES).default(DEFAULT_CURRENCY),
   boardingPoints: z.array(manifestBoardingPointSchema),
 });
 

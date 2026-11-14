@@ -1,4 +1,5 @@
 import { FormStatus } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
+import type { TourCancellationReason } from "@/shared/constants/domain.constants";
 import type { PassengerRole, PaymentMethod } from "@/shared/constants/domain.constants";
 
 // Interfaz genérica para estandarizar todos los badges de la UI
@@ -53,8 +54,31 @@ export const PAYMENT_METHOD_DICT: Record<PaymentMethod, string> = {
   OTHER: "OTRO",
 };
 
+// Método de pago con texto para el cliente (comprobante PDF y estado de cuenta del Magic Link)
+export const PAYMENT_METHOD_LABEL_DICT: Record<PaymentMethod, string> = {
+  TRANSFER: "Transferencia",
+  CASH: "Efectivo",
+  CARD: "Tarjeta / Link",
+  OTHER: "Otro",
+};
+
+/** Texto del método de pago para el cliente; tolera valores fuera del enum. */
+export const getPaymentMethodText = (method?: string | null): string =>
+  PAYMENT_METHOD_LABEL_DICT[(method ?? "").toUpperCase() as PaymentMethod] ?? (method || "Pago");
+
 // Rol del pasajero dentro de su reserva (titular o acompañante)
 export const PASSENGER_ROLE_DICT: Record<PassengerRole, string> = {
   TITULAR: "Titular",
   COMPANION: "Acompañante",
+};
+
+/**
+ * Etiquetas de los motivos de cancelación de un tour (decisión del PM, 2026-11-14). Las ve el
+ * operador al cancelar y el viajero en su Magic Link, así que son textos formales y fijos.
+ */
+export const TOUR_CANCELLATION_REASON_DICT: Record<TourCancellationReason, string> = {
+  WEATHER: "Condiciones climatológicas adversas",
+  SECURITY: "Motivos de seguridad / Cierre carretero",
+  LOW_SALES: "Cupo mínimo no alcanzado",
+  OTHER: "Causa de fuerza mayor de la agencia",
 };

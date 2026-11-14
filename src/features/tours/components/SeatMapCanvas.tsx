@@ -44,6 +44,11 @@ interface SeatMapCanvasProps {
   initialSelectedPassengerId?: string | null;
   /** Lugares de staff del tour: tope de asientos de staff (croquis + bloqueos). La API lo valida. */
   staffCapacity?: number;
+  /**
+   * Modo Auditoría (tour finalizado, pausado o cancelado; decisión del PM, 2026-11-14): el croquis
+   * solo se consulta. No se asignan, mueven, liberan ni bloquean asientos.
+   */
+  readOnly?: boolean;
 }
 
 const SEAT_BASE =
@@ -63,6 +68,7 @@ export function SeatMapCanvas({
   layoutMap,
   initialSelectedPassengerId,
   staffCapacity = 0,
+  readOnly = false,
 }: SeatMapCanvasProps) {
   const { data: assignedSeats = [] } = useTourSeats(tourId);
   const { mutate: updateSeat } = useUpdateSeat(tourId);
@@ -149,6 +155,54 @@ export function SeatMapCanvas({
     const info = getSeatInfo(seatLabel);
     const isBlocked = info?.status === "BLOCKED";
     const isAssigned = info?.status === "ASSIGNED";
+
+    // Solo consulta: el mismo dibujo, sin menús ni acciones.
+    if (readOnly) {
+      const passengerName = isAssigned ? info?.passenger?.fullName : undefined;
+      return (
+        <div
+          title={
+            passengerName
+              ? `Asiento ${seatLabel} · ${passengerName}`
+              : isBlocked
+                ? `Asiento ${seatLabel} · Bloqueado / Staff`
+                : `Asiento ${seatLabel} · Libre`
+          }
+          aria-label={
+            passengerName
+              ? `Asiento ${seatLabel}, ${passengerName}`
+              : isBlocked
+                ? `Asiento ${seatLabel} bloqueado para staff`
+                : `Asiento ${seatLabel} libre`
+          }
+          className={cn(
+            SEAT_BASE,
+            "cursor-default active:scale-100",
+            passengerName
+              ? "border-indigo-600 bg-indigo-500 text-white"
+              : isBlocked
+                ? "border-red-300 bg-red-50 text-red-400"
+                : "border-slate-300 bg-white text-slate-400",
+          )}
+        >
+          {passengerName ? (
+            <>
+              <SeatCornerLabel label={seatLabel} />
+              <span className="mt-1 text-xs font-black tracking-widest sm:text-sm">
+                {getInitials(passengerName)}
+              </span>
+            </>
+          ) : isBlocked ? (
+            <>
+              <SeatCornerLabel label={seatLabel} />
+              <ShieldAlert className="h-4 w-4 sm:h-5 sm:w-5" />
+            </>
+          ) : (
+            <span className="text-xs font-bold sm:text-sm">{seatLabel}</span>
+          )}
+        </div>
+      );
+    }
 
     if (isAssigned && info?.passenger) {
       return (
@@ -307,8 +361,13 @@ export function SeatMapCanvas({
           <strong className="text-slate-900">{staffCapacity}</strong> lugar(es)
           {layoutStaffSeats > 0 && ` (${layoutStaffSeats} del croquis)`}
         </span>
-        {!selectedPassengerId && canBlockMore && (
-          <span className="text-slate-400">· Toca un asiento libre para reservarlo al staff</span>
+        {readOnly ? (
+          <span className="text-slate-400">· Solo consulta (Modo Auditoría)</span>
+        ) : (
+          !selectedPassengerId &&
+          canBlockMore && (
+            <span className="text-slate-400">· Toca un asiento libre para reservarlo al staff</span>
+          )
         )}
       </div>
 
@@ -317,7 +376,7 @@ export function SeatMapCanvas({
           <p className="flex items-start gap-2 font-medium">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
             {orphanSeats.length} pasajero(s) tienen un asiento que no existe en este vehículo.
-            Libéralos para volver a acomodarlos.
+            {!readOnly && " Libéralos para volver a acomodarlos."}
           </p>
           <ul className="flex flex-wrap gap-2">
             {orphanSeats.map((seat) => (
@@ -328,13 +387,15 @@ export function SeatMapCanvas({
                 <span>
                   {seat.passenger?.fullName ?? "Pasajero"} · {seat.seatLabel}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSeat(seat.seatLabel)}
-                  className="font-semibold text-amber-700 underline hover:text-amber-900"
-                >
-                  Liberar
-                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSeat(seat.seatLabel)}
+                    className="font-semibold text-amber-700 underline hover:text-amber-900"
+                  >
+                    Liberar
+                  </button>
+                )}
               </li>
             ))}
           </ul>

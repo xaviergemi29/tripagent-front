@@ -13,10 +13,17 @@ import { TravelerGroup } from "./TravelerGroup";
 import { Button } from "@/components/ui/button";
 import { ReleaseSlotDialog } from "./ReleaseSlotDialog";
 import { TransferPassengerModal } from "./TransferPassengerModal";
-import { generatePartialPaymentReceiptPDF } from "@/features/external-registration/components/GeneratePartialPaymentReceipt";
+import {
+  buildStatementPayments,
+  generatePartialPaymentReceiptPDF,
+  type StatementPDFData,
+} from "@/features/external-registration/pdf/payment-receipt.pdf";
+import { resolveBoardingPointDisplay } from "@/shared/utils/boarding-point.util";
+import { toast } from "sonner";
 import {
   type Currency,
   DEFAULT_CURRENCY,
+  PASSENGER_ROLE,
   type PassengerRole,
 } from "@/shared/constants/domain.constants";
 
@@ -27,7 +34,13 @@ export type SeatFilter = "ALL" | "UNASSIGNED" | "ASSIGNED";
 interface DashboardTravelerTableProps {
   tourId: string;
   tourTitle: string;
-  agencyName: string;
+  /** Fechas del tour para el estado de cuenta PDF. */
+  tourDepartureDate: string;
+  tourReturnDate?: string | null;
+  /** Marca, contacto, datos bancarios y políticas generales de la agencia para el PDF. */
+  statementAgency: StatementPDFData["agency"];
+  /** Instrucciones Post-Pago (logística) del tour que se imprimen al final del PDF. */
+  tourPostPaymentInstructions?: string | null;
   requiresSeats: boolean;
   travelers: TitularRowOutput[];
   searchQuery: string;
@@ -44,8 +57,11 @@ interface DashboardTravelerTableProps {
 
 export function DashboardTravelerTable({
   tourId,
-  agencyName,
   tourTitle,
+  tourDepartureDate,
+  tourReturnDate,
+  statementAgency,
+  tourPostPaymentInstructions,
   requiresSeats,
   travelers,
   searchQuery,
@@ -206,21 +222,29 @@ export function DashboardTravelerTable({
     });
   };
 
-  const handleDownloadReceipt = (titularData: TitularRowOutput): void => {
-    const passengersList = [
-      {
-        name: titularData.fullName,
-        type: "Titular",
-        boardingPoint: titularData.boardingPoint ?? undefined,
-      },
-      ...(titularData.companions || []).map((c) => ({
-        name: c.fullName,
-        type: "Acompañante",
-        boardingPoint: c.boardingPoint ?? undefined,
-      })),
-    ];
+  const handleDownloadReceipt = async (titularData: TitularRowOutput): Promise<void> => {
+    const toStatementPassenger = (passenger: {
+      fullName: string;
+      role: PassengerRole;
+      whatsapp: string;
+      seatLabel: string | null;
+      boardingPoint: string | null;
+      boardingPointDetails?: { location: string; time: string } | null;
+    }) => {
+      const point = resolveBoardingPointDisplay(passenger);
+      return {
+        fullName: passenger.fullName,
+        isMainPassenger: passenger.role === PASSENGER_ROLE.TITULAR,
+        pickupPointName: point?.location ?? "Por coordinar",
+        pickupTime: point?.time ?? null,
+        seatNumber: passenger.seatLabel,
+        // La API manda "Sin teléfono" cuando no hay WhatsApp; el PDF lo resuelve por dígitos.
+        phone: passenger.whatsapp,
+      };
+    };
 
-    const mappedPaymentHistory = (titularData.payments || [])
+    // El cliente solo ve abonos válidos (decisión del PM): sin REFUND ni el abono anulado.
+    const validPayments = (titularData.payments || [])
       .filter(
         (payment) =>
           payment.type === "PAYMENT" &&
@@ -234,20 +258,35 @@ export function DashboardTravelerTable({
         date: payment.createdAt,
         amount: payment.amount,
         method: payment.method,
-        reference: payment.referenceInfo ?? undefined,
+        reference: payment.referenceInfo ?? null,
       }));
 
-    generatePartialPaymentReceiptPDF({
-      agencyName: agencyName,
-      tourName: tourTitle,
-      totalAmount: titularData.paidAmount + titularData.balance,
-      amountPaid: titularData.paidAmount,
-      remainingBalance: titularData.balance,
-      status: titularData.paymentStatus,
-      paymentHistory: mappedPaymentHistory,
-      passengers: passengersList,
-      currency: tourCurrency || DEFAULT_CURRENCY,
-    });
+    const groupPassengers = [titularData, ...(titularData.companions || [])];
+
+    try {
+      await generatePartialPaymentReceiptPDF({
+        agency: statementAgency,
+        tour: {
+          title: tourTitle,
+          departureDate: tourDepartureDate,
+          returnDate: tourReturnDate ?? null,
+          totalPassengers: titularData.groupSize,
+          registeredPassengers: groupPassengers.length,
+          postPaymentInstructions: tourPostPaymentInstructions ?? null,
+        },
+        passengers: groupPassengers.map(toStatementPassenger),
+        financials: {
+          currency: tourCurrency || DEFAULT_CURRENCY,
+          totalAmount: titularData.paidAmount + titularData.balance,
+          paidAmount: titularData.paidAmount,
+          balanceDue: titularData.balance,
+          payments: buildStatementPayments(validPayments),
+        },
+      });
+    } catch (error) {
+      console.error("Error al generar el estado de cuenta PDF:", error);
+      toast.error("No se pudo generar el estado de cuenta. Intenta de nuevo.");
+    }
   };
 
   return (

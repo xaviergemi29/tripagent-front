@@ -12,8 +12,9 @@ interface VehicleAssignedViewProps {
   unassignedEligibles: FlattenedPassenger[];
   allEligiblePassengers: FlattenedPassenger[];
   pendingSeatPassengerId: string | null;
-  onChangeVehicleClick: () => void;
-  onSelectPassenger: (id: string) => void;
+  /** Sin acciones = Modo Auditoría: sin cambiar vehículo ni acomodar pasajeros. */
+  onChangeVehicleClick?: () => void;
+  onSelectPassenger?: (id: string) => void;
 }
 
 export function VehicleAssignedView({
@@ -45,17 +46,19 @@ export function VehicleAssignedView({
             </span>
           </div>
         </div>
-        <button
-          onClick={onChangeVehicleClick}
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 active:scale-95"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Cambiar</span>
-        </button>
+        {onChangeVehicleClick && (
+          <button
+            onClick={onChangeVehicleClick}
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 active:scale-95"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Cambiar</span>
+          </button>
+        )}
       </div>
 
       {/* Carrusel de Faltantes por Acomodar */}
-      {unassignedEligibles.length > 0 && (
+      {onSelectPassenger && unassignedEligibles.length > 0 && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-1.5 px-1">
             <Info className="h-4 w-4 text-amber-600" />
@@ -114,6 +117,7 @@ export function VehicleAssignedView({
           activePassengers={allEligiblePassengers}
           initialSelectedPassengerId={pendingSeatPassengerId}
           staffCapacity={staffCapacity}
+          readOnly={!onSelectPassenger}
         />
       </div>
     </div>

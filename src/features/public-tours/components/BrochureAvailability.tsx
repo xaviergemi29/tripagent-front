@@ -1,4 +1,4 @@
-import { Flame, Users } from "lucide-react";
+import { CalendarX2, Flame, Users } from "lucide-react";
 import type { PublicTourOutput } from "../public-tour.schema";
 
 interface BrochureAvailabilityProps {
@@ -6,7 +6,27 @@ interface BrochureAvailabilityProps {
 }
 
 export function BrochureAvailability({ availability }: BrochureAvailabilityProps) {
-  const { sellableCapacity, occupiedSeats, availableSeats } = availability;
+  const { sellableCapacity, occupiedSeats, availableSeats, hasDeparted } = availability;
+
+  // El tour ya salió: la logística está cerrada, así que no se muestra la urgencia de lugares.
+  if (hasDeparted) {
+    return (
+      <section
+        aria-label="Disponibilidad de lugares"
+        className="flex items-center gap-3 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+          <CalendarX2 className="h-4 w-4" />
+        </div>
+        <div>
+          <h3 className="text-base leading-tight font-bold text-slate-900">Viaje finalizado</h3>
+          <p className="text-xs text-slate-500">
+            Esta salida ya no admite reservas. Consulta a la agencia por sus próximas fechas.
+          </p>
+        </div>
+      </section>
+    );
+  }
   const isSoldOut = availableSeats <= 0;
   const occupiedPercentage =
     sellableCapacity > 0

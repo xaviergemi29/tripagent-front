@@ -22,6 +22,8 @@ export const publicTourOutputSchema = z.object({
   agency: z.object({
     name: z.string(),
     phone: z.string().nullable(),
+    /** Ruta del logotipo (`/uploads/logos/…`) o null. */
+    logoPath: z.string().nullable().optional(),
   }),
   // Ocupación en vivo calculada por la API (misma regla que el Centro de Control).
   availability: z.object({
@@ -29,6 +31,8 @@ export const publicTourOutputSchema = z.object({
     occupiedSeats: z.number(),
     availableSeats: z.number(),
     isBookable: z.boolean(),
+    // El tour ya salió (EN CURSO o FINALIZADO): reservas cerradas, el folleto dice "Finalizado".
+    hasDeparted: z.boolean(),
   }),
 });
 

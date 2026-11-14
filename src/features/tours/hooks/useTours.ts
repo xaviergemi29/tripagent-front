@@ -30,15 +30,6 @@ const createTourApi = async (tourData: TourInput): Promise<TourOutput> => {
   return apiClient.post<never, TourOutput>(`/tours`, tourData);
 };
 
-const toggleTourStatus = async (payload: {
-  id: string;
-  isActive: boolean;
-}): Promise<TourOutput> => {
-  return apiClient.patch<never, TourOutput>(`/tours/${payload.id}`, {
-    isActive: payload.isActive,
-  });
-};
-
 const deleteTourApi = async (travelerId: string): Promise<void> => {
   return apiClient.delete(`/tours/${travelerId}`);
 };
@@ -142,41 +133,6 @@ export function useUpdateTour() {
       toast.error("Error al actualizar", {
         description: error?.message || "Revisa al actualizar el tour.",
       });
-    },
-  });
-}
-
-export function useToggleTourStatus() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: toggleTourStatus,
-    onMutate: async (newStatus) => {
-      await queryClient.cancelQueries({ queryKey: TOUR_KEYS.all });
-      const previousTours = queryClient.getQueryData<TourOutput[]>(TOUR_KEYS.all);
-
-      if (previousTours) {
-        queryClient.setQueryData<TourOutput[]>(
-          TOUR_KEYS.all,
-          previousTours.map((tour) =>
-            tour.id === newStatus.id ? { ...tour, isActive: newStatus.isActive } : tour,
-          ),
-        );
-      }
-
-      return { previousTours };
-    },
-    onError: (error: ApiError, _, context) => {
-      if (context?.previousTours) {
-        queryClient.setQueryData(TOUR_KEYS.all, context.previousTours);
-      }
-
-      toast.error("Error al actualizar estado", {
-        description: error.message || "No se pudo sincronizar el cambio con el servidor.",
-      });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: TOUR_KEYS.all });
     },
   });
 }

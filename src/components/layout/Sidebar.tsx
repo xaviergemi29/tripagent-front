@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Calendar, Users, LogOut, Settings } from "lucide-react";
+import { Calendar, Users, LogOut, Settings } from "lucide-react";
+import { AgencyLogo } from "@/components/shared/AgencyLogo";
 import { useSession } from "@/app/(auth)/hooks/useSession";
 import { useLogout } from "@/features/settings/hooks/useAuth";
 import { Button } from "../ui/button";
@@ -24,9 +25,12 @@ export function Sidebar() {
     <aside className="flex hidden w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-900 text-slate-300 md:flex">
       {/* Brand / Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-6">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">
-          <Compass className="h-5 w-5" />
-        </div>
+        <AgencyLogo
+          logoPath={user?.agencyLogoPath}
+          agencyName={agencyTitle ?? "Agencia"}
+          className="h-9 w-9 rounded-lg"
+          logoClassName="bg-white p-0.5"
+        />
 
         {isLoading ? (
           <div className="flex-1 animate-pulse space-y-1.5">

@@ -11,21 +11,29 @@ import {
 } from "lucide-react";
 import { getInitials } from "@/shared/utils/travelers-helpers";
 import { formatCurrency } from "@/shared/utils/currency.util";
+import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { SeatWithoutDepositBadge } from "../SeatWithoutDepositBadge";
+import { UnpaidHoldAge } from "../UnpaidHoldAge";
 
 interface BookingCardProps {
   titular: TitularRowOutput;
+  tourCurrency?: Currency;
   requiresSeats?: boolean;
   onAssignSeatClick: (passengerId: string) => void;
+  /** Modo Auditoría (tour finalizado, pausado o cancelado): sin acciones sobre asientos. */
+  isAuditMode?: boolean;
   onRemoveGhostSlotClick?: (bookingId: string) => void;
   onRowClick?: (id: string) => void;
 }
 
 export function BookingCard({
   titular,
+  tourCurrency = DEFAULT_CURRENCY,
   requiresSeats,
   onAssignSeatClick,
+  isAuditMode = false,
   onRowClick,
   onRemoveGhostSlotClick,
 }: BookingCardProps) {
@@ -65,12 +73,17 @@ export function BookingCard({
                 {titular.paidAmount > 0 ? "ABONO PARCIAL" : "SIN PAGO"}
               </span>
               <span className="mt-0.5 text-xs font-bold text-slate-500">
-                Debe: {formatCurrency(titular.balance)}
+                Debe: {formatCurrency(titular.balance, { currency: tourCurrency })}
               </span>
             </>
           )}
         </div>
       </div>
+
+      {/* Revisión manual de las 48 h (regla 13): solo apartados sin ningún pago. */}
+      {titular.paidAmount <= 0 && titular.balance > 0 && (
+        <UnpaidHoldAge bookedAt={titular.bookedAt} />
+      )}
 
       {/* 2. Grid 2 columnas (Asiento y Registro) */}
       {requiresSeats && (
@@ -80,9 +93,16 @@ export function BookingCard({
               Asiento
             </span>
             {titular.seatLabel ? (
-              <span className="inline-flex h-6 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-2 text-xs font-bold text-indigo-700">
-                {titular.seatLabel}
-              </span>
+              titular.hasSeatRight ? (
+                <span className="inline-flex h-6 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-2 text-xs font-bold text-indigo-700">
+                  {titular.seatLabel}
+                </span>
+              ) : (
+                // Perdió el derecho a asiento: conserva el asiento, pero se señala (decisión del PM).
+                <SeatWithoutDepositBadge seatLabel={titular.seatLabel} />
+              )
+            ) : isAuditMode ? (
+              <span className="text-xs font-medium text-slate-400">Sin asiento</span>
             ) : titular.hasSeatRight ? (
               <button
                 onClick={() => onAssignSeatClick(titular.id)}
@@ -169,10 +189,14 @@ export function BookingCard({
                   </span>
                 </div>
                 {comp.seatLabel ? (
-                  <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700">
-                    {comp.seatLabel}
-                  </span>
-                ) : titular.hasSeatRight ? (
+                  titular.hasSeatRight ? (
+                    <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700">
+                      {comp.seatLabel}
+                    </span>
+                  ) : (
+                    <SeatWithoutDepositBadge seatLabel={comp.seatLabel} compact />
+                  )
+                ) : titular.hasSeatRight && !isAuditMode ? (
                   <button
                     onClick={() => onAssignSeatClick(comp.id)}
                     className="rounded-md border border-indigo-200 bg-white px-2 py-0.5 text-[10px] font-medium text-indigo-600 hover:bg-indigo-50"

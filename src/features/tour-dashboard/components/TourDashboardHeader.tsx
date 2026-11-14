@@ -1,7 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
-import { Users, AlertCircle, Bus, Banknote, CheckCircle2, Plus, Calendar } from "lucide-react";
+import {
+  Users,
+  AlertCircle,
+  Bus,
+  Banknote,
+  CheckCircle2,
+  Plus,
+  Calendar,
+  CalendarX2,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +26,8 @@ interface TourDashboardHeaderProps {
   metrics: TourMetrics;
   logistics: { assigned: number; total: number; unassigned: number };
   onNewReservation?: () => void;
+  /** Sin acción (tour finalizado o cancelado) no se ofrece cancelar el tour. */
+  onCancelTour?: () => void;
 }
 
 export function TourDashboardHeader({
@@ -26,6 +37,7 @@ export function TourDashboardHeader({
   metrics,
   logistics,
   onNewReservation,
+  onCancelTour,
 }: TourDashboardHeaderProps) {
   const occupancyStats = useMemo(() => {
     const maxCapacity = metrics.occupancy.max;
@@ -61,15 +73,27 @@ export function TourDashboardHeader({
             <span>{displayDate}</span>
           </div>
         </div>
-        {onNewReservation && (
-          <div>
-            <Button
-              size="lg"
-              className="w-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 sm:w-auto"
-              onClick={onNewReservation}
-            >
-              <Plus className="mr-2 h-5 w-5" /> Nueva Reserva
-            </Button>
+        {(onNewReservation || onCancelTour) && (
+          <div className="flex flex-wrap gap-2">
+            {onCancelTour && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
+                onClick={onCancelTour}
+              >
+                <CalendarX2 className="mr-2 h-5 w-5" /> Cancelar tour
+              </Button>
+            )}
+            {onNewReservation && (
+              <Button
+                size="lg"
+                className="w-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 sm:w-auto"
+                onClick={onNewReservation}
+              >
+                <Plus className="mr-2 h-5 w-5" /> Nueva Reserva
+              </Button>
+            )}
           </div>
         )}
       </div>

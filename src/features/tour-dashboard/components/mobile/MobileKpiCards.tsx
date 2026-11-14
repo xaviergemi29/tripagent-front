@@ -1,5 +1,6 @@
 import { Users, Banknote, BusFront } from "lucide-react";
 import { formatCurrency } from "@/shared/utils/currency.util";
+import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface MobileKpiCardsProps {
   metrics: {
@@ -7,9 +8,11 @@ interface MobileKpiCardsProps {
     revenue: { projected: number; collected: number };
     logistics: { total: number; assigned: number; unassigned: number };
   };
+  /** Moneda del tour: los importes se muestran en su divisa original. */
+  currency?: Currency;
 }
 
-export function MobileKpiCards({ metrics }: MobileKpiCardsProps) {
+export function MobileKpiCards({ metrics, currency = DEFAULT_CURRENCY }: MobileKpiCardsProps) {
   const { occupancy, revenue, logistics } = metrics;
   const occupancyPercentage =
     occupancy.max > 0 ? Math.round((occupancy.current / occupancy.max) * 100) : 0;
@@ -59,16 +62,16 @@ export function MobileKpiCards({ metrics }: MobileKpiCardsProps) {
         </div>
         <div className="mb-2">
           <span className="text-2xl font-black text-slate-900">
-            {formatCurrency(revenue.collected)}
+            {formatCurrency(revenue.collected, { currency })}
           </span>
         </div>
         <div className="flex flex-col gap-1 text-xs">
           <span className="font-medium text-slate-500">
-            Proyectado total: {formatCurrency(revenue.projected)}
+            Proyectado total: {formatCurrency(revenue.projected, { currency })}
           </span>
           {pendingBalance > 0 ? (
             <span className="font-semibold text-red-600">
-              Por recaudar: {formatCurrency(pendingBalance)}
+              Por recaudar: {formatCurrency(pendingBalance, { currency })}
             </span>
           ) : (
             <span className="font-semibold text-emerald-600">Cobranza completada</span>

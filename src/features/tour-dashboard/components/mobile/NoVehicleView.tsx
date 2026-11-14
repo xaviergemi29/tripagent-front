@@ -6,7 +6,8 @@ type UnassignedPassenger = Pick<FlattenedPassenger, "id" | "fullName">;
 
 interface NoVehicleViewProps {
   eligibleWaitingPassengers: UnassignedPassenger[];
-  onOpenVehicleModal: () => void;
+  /** Sin acción = Modo Auditoría: no se ofrece asignar vehículo. */
+  onOpenVehicleModal?: () => void;
 }
 
 export function NoVehicleView({
@@ -33,13 +34,15 @@ export function NoVehicleView({
           pasajeros.
         </p>
 
-        <button
-          onClick={onOpenVehicleModal}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 active:scale-95"
-        >
-          <BusFront className="h-5 w-5" />
-          Asignar Vehículo al Tour
-        </button>
+        {onOpenVehicleModal && (
+          <button
+            onClick={onOpenVehicleModal}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 active:scale-95"
+          >
+            <BusFront className="h-5 w-5" />
+            Asignar Vehículo al Tour
+          </button>
+        )}
 
         <p className="text-xs text-slate-400">
           Plantillas disponibles en tu agencia: Sprinter (20 lugares), Autobús (47 lugares), etc.

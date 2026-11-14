@@ -2,9 +2,13 @@
 
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/shared/utils/currency.util";
+import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface RegistrationFooterProps {
   totalAmount: number;
+  /** Moneda del tour. */
+  currency?: Currency;
   travelersCount: number;
   isSubmitting?: boolean;
   disabled?: boolean;
@@ -13,6 +17,7 @@ interface RegistrationFooterProps {
 
 export function RegistrationFooter({
   totalAmount,
+  currency = DEFAULT_CURRENCY,
   travelersCount,
   isSubmitting = false,
   disabled = false,
@@ -47,7 +52,7 @@ export function RegistrationFooter({
 
           <div className="flex items-center justify-between pb-1">
             <p className="text-sm font-bold text-slate-900">
-              Total: ${totalAmount.toLocaleString()} MXN{" "}
+              Total: {formatCurrency(totalAmount, { currency })}{" "}
               <span className="font-semibold text-emerald-600">
                 ({travelersCount} {travelersCount === 1 ? "viajero" : "viajeros"})
               </span>

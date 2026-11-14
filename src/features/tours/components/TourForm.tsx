@@ -30,6 +30,7 @@ import {
   useUploadTourBrochure,
 } from "../hooks/useTours";
 import { formatForDateInput } from "@/shared/utils/tour-date.util";
+import { formatCurrency } from "@/shared/utils/currency.util";
 import { useAgency } from "@/features/settings/hooks/useAgency";
 import { CurrencySelector } from "./CurrencySelector";
 import { TourGeneralSection } from "./form-sections/TourGeneralSection";
@@ -80,7 +81,6 @@ export function TourForm({ tour }: TourFormProps) {
           departureDateTime: "",
           maxCapacity: 0,
           staffCapacity: 0,
-          isActive: true,
           acceptsBankTransfer: false,
           acceptsCreditCard: false,
           paymentLink: "",
@@ -337,14 +337,22 @@ export function TourForm({ tour }: TourFormProps) {
                             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
                             {Number(depositPerPerson) === 0 ? (
                               <span className="text-slate-500">
-                                En <strong>$0</strong> el cliente pagará el 100% para asegurar
-                                lugares.
+                                En{" "}
+                                <strong>
+                                  {formatCurrency(0, {
+                                    currency: selectedCurrency || DEFAULT_CURRENCY,
+                                  })}
+                                </strong>{" "}
+                                el cliente pagará el 100% para asegurar lugares.
                               </span>
                             ) : (
                               <span className="font-medium text-indigo-600">
                                 Pagará{" "}
                                 <strong>
-                                  ${depositPerPerson} {selectedCurrency} hoy
+                                  {formatCurrency(depositPerPerson, {
+                                    currency: selectedCurrency || DEFAULT_CURRENCY,
+                                  })}{" "}
+                                  hoy
                                 </strong>{" "}
                                 y liquidará antes de salir.
                               </span>
@@ -501,7 +509,8 @@ export function TourForm({ tour }: TourFormProps) {
               )}
             </div>
 
-            {/* Instrucciones que la agencia quiere dar al cliente después de pagar */}
+            {/* Indicaciones de logística del tour: Magic Link y estado de cuenta PDF. Las reglas
+                legales son las políticas generales de la agencia (Configuración → Políticas). */}
             <Controller
               name="postPaymentInstructions"
               control={form.control}
@@ -519,9 +528,13 @@ export function TourForm({ tour }: TourFormProps) {
                     id="tour-post-payment"
                     value={field.value ?? ""}
                     rows={3}
-                    placeholder="Ej. Envía tu comprobante por WhatsApp. Te confirmaremos tu lugar en menos de 24 horas."
+                    placeholder="Ej. Llevar botas de montaña, impermeable e identificación oficial."
                     className="bg-white text-sm"
                   />
+                  <p className="text-xs text-slate-500">
+                    Tu cliente las verá en su enlace de reservación y en su estado de cuenta PDF,
+                    separadas de las políticas generales de la agencia (Configuración → Políticas).
+                  </p>
                   {fieldState.error && (
                     <p className="text-xs text-red-500">{fieldState.error.message}</p>
                   )}

@@ -1,16 +1,19 @@
-import { Calendar, Plus } from "lucide-react";
+import { Calendar, Plus, CalendarX2 } from "lucide-react";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
 
 interface MobileHeaderProps {
   tourTitle: string;
   departureDateTime: string;
   onOpenNewBookingModal?: () => void;
+  /** Sin acción (tour finalizado o cancelado) no se ofrece cancelar el tour. */
+  onCancelTour?: () => void;
 }
 
 export function MobileHeader({
   tourTitle,
   departureDateTime,
   onOpenNewBookingModal,
+  onCancelTour,
 }: MobileHeaderProps) {
   const dateString = departureDateTime.split("T")[0];
   const formattedDate = formatLocalDate(dateString);
@@ -35,6 +38,15 @@ export function MobileHeader({
         >
           <Plus className="h-4 w-4" />
           Nueva Reserva
+        </button>
+      )}
+      {onCancelTour && (
+        <button
+          onClick={onCancelTour}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 font-semibold text-red-600 transition-all hover:bg-red-50 active:scale-95 sm:w-auto"
+        >
+          <CalendarX2 className="h-4 w-4" />
+          Cancelar tour
         </button>
       )}
     </div>

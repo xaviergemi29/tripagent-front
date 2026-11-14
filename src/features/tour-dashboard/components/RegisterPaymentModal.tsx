@@ -22,7 +22,7 @@ import {
 import { Info, Check, X } from "lucide-react";
 import { CreatePaymentInput } from "../schemas/payment.schema";
 import { formatCurrency } from "@/shared/utils/currency.util";
-import type { Currency, PaymentMethod } from "@/shared/constants/domain.constants";
+import type { Currency, PaymentMethod, PaymentType } from "@/shared/constants/domain.constants";
 
 interface RegisterPaymentModalProps {
   isOpen: boolean;
@@ -30,8 +30,14 @@ interface RegisterPaymentModalProps {
   bookingId: string;
   tourCurrency?: Currency;
   tourId: string;
+  /** PAYMENT: saldo pendiente. REFUND: saldo a reembolsar (tope del monto). */
   balance: number;
   correctionData?: { amount: number; method: PaymentMethod } | null;
+  /**
+   * REFUND = devolución al cliente (decisión del PM, 2026-11-14): mismo formulario, montos que
+   * salen. La API guarda el monto en negativo y rechaza (400) un reembolso mayor que el saldo.
+   */
+  mode?: PaymentType;
 }
 
 export function RegisterPaymentModal({
@@ -42,7 +48,9 @@ export function RegisterPaymentModal({
   tourCurrency,
   balance,
   correctionData,
+  mode = "PAYMENT",
 }: RegisterPaymentModalProps) {
+  const isRefund = mode === "REFUND";
   const { mutate: createPayment, isPending } = useCreatePayment(tourId);
   const isUSD = tourCurrency === "USD";
   const [amountMXN, setAmountMXN] = useState<string>("");
@@ -60,11 +68,18 @@ export function RegisterPaymentModal({
   const watchAmountUSD = form.watch("amount");
 
   const onSubmit = (formData: PaymentFormInput): void => {
+    // Un reembolso nunca supera el saldo a reembolsar (la API también lo valida).
+    if (isRefund && Number(watchAmountUSD || formData.amount) > balance) {
+      form.setError("amount", {
+        message: `El reembolso no puede superar ${formatCurrency(balance, { currency: tourCurrency })}`,
+      });
+      return;
+    }
     const payload: CreatePaymentInput = {
       amount: Number(watchAmountUSD || formData.amount),
       currency: isUSD ? "USD" : "MXN",
       method: formData.method,
-      type: formData.type,
+      type: mode,
       referenceInfo: formData.referenceInfo,
       ...(isUSD && {
         collectedAmount: Number(amountMXN),
@@ -109,7 +124,9 @@ export function RegisterPaymentModal({
         <DialogHeader className="border-b border-slate-100 pb-4 text-left">
           <div className="flex items-center gap-2.5 pr-6">
             {" "}
-            <DialogTitle className="text-lg font-bold text-slate-900">Registrar Abono</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-slate-900">
+              {isRefund ? "Registrar Reembolso" : "Registrar Abono"}
+            </DialogTitle>
             {isUSD && (
               <span className="inline-flex items-center rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
                 Tour en USD
@@ -117,7 +134,7 @@ export function RegisterPaymentModal({
             )}
           </div>
           <DialogDescription className="mt-0.5 text-xs text-slate-500">
-            El saldo pendiente actual es de{" "}
+            {isRefund ? "Saldo a reembolsar al cliente:" : "El saldo pendiente actual es de"}{" "}
             <span className="font-semibold text-slate-800">
               {formatCurrency(balance, { currency: tourCurrency })}
             </span>
@@ -134,7 +151,13 @@ export function RegisterPaymentModal({
                   htmlFor="amount"
                   className="block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
                 >
-                  {isUSD ? "Monto del abono en dólares (USD) *" : "Monto a abonar (MXN) *"}
+                  {isRefund
+                    ? isUSD
+                      ? "Monto reembolsado en dólares (USD) *"
+                      : "Monto reembolsado (MXN) *"
+                    : isUSD
+                      ? "Monto del abono en dólares (USD) *"
+                      : "Monto a abonar (MXN) *"}
                 </Label>
                 <div className="relative rounded-lg shadow-2xs">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -171,7 +194,7 @@ export function RegisterPaymentModal({
                   htmlFor="amountMXN"
                   className="block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
                 >
-                  Monto recibido en pesos (MXN) *
+                  {isRefund ? "Monto devuelto en pesos (MXN) *" : "Monto recibido en pesos (MXN) *"}
                 </Label>
                 <div className="relative rounded-lg shadow-2xs">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -226,7 +249,7 @@ export function RegisterPaymentModal({
             control={form.control}
             render={({ field, fieldState }) => (
               <div className="space-y-2 pt-2">
-                <Label>Método de cobro</Label>
+                <Label>{isRefund ? "Método de devolución" : "Método de cobro"}</Label>
                 <div className="grid grid-cols-3 gap-2">
                   <label
                     className={`cursor-pointer rounded-md border p-2.5 text-center text-sm transition-colors ${field.value === "CASH" ? "border-indigo-300 bg-indigo-50 font-semibold text-indigo-700 shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
@@ -283,7 +306,11 @@ export function RegisterPaymentModal({
                 <Input
                   {...field}
                   id="reference"
-                  placeholder="Ej. Terminación 4599"
+                  placeholder={
+                    isRefund
+                      ? "Ej. SPEI devolución por mal clima – Ref: 98123"
+                      : "Ej. Terminación 4599"
+                  }
                   className="bg-slate-50"
                 />
               </div>
@@ -299,10 +326,14 @@ export function RegisterPaymentModal({
             type="submit"
             form="payment-form"
             disabled={isPending || (isUSD && !amountMXN)}
-            className="inline-flex min-w-[140px] items-center justify-center gap-1.5 bg-emerald-600 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
+            className={`inline-flex min-w-[140px] items-center justify-center gap-1.5 text-xs font-semibold text-white shadow-sm transition active:scale-[0.98] ${
+              isRefund ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700"
+            }`}
           >
             <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-            <span>{isPending ? "Guardando..." : "Guardar Abono"}</span>
+            <span>
+              {isPending ? "Guardando..." : isRefund ? "Guardar Reembolso" : "Guardar Abono"}
+            </span>
           </Button>
         </DialogFooter>
       </DialogContent>

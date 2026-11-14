@@ -10,15 +10,27 @@ import {
   PASSENGER_ROLE,
   PASSENGER_ROLES,
   PAYMENT_METHODS,
+  REFUND_STATUSES,
+  TOUR_CANCELLATION_REASONS,
+  TOUR_TEMPORAL_STATUS,
+  TOUR_TEMPORAL_STATUSES,
 } from "@/shared/constants/domain.constants";
 
 export const currencySchema = z.enum(CURRENCIES);
 export const formStatusSchema = z.enum(["COMPLETED", "PENDING"]);
 export const paymentStatusSchema = z.enum(["PAID", "ADVANCE", "PENDING_VALIDATION", "PENDING"]);
 export const passengerRoleSchema = z.enum(PASSENGER_ROLES);
-export const temporalStatusSchema = z.enum(["ACTIVO", "FINALIZADO", "CANCELADO"]);
+// Los mismos cuatro estados que el catálogo (regla 9; decisión del PM, 2026-11-14). Antes este
+// schema esperaba "ACTIVO", que la API nunca envía.
+export const temporalStatusSchema = z.enum(TOUR_TEMPORAL_STATUSES);
 export const paymentMethodSchema = z.enum(PAYMENT_METHODS);
 export const paymentTypeSchema = z.enum(["PAYMENT", "REFUND"]);
+
+/** Punto de abordaje configurado en el tour, resuelto por la API (regla del manifiesto). */
+export const boardingPointDetailsSchema = z
+  .object({ location: z.string(), time: z.string() })
+  .nullable()
+  .optional();
 
 export const paymentRecordSchema = z.object({
   id: z.uuid(),
@@ -43,6 +55,7 @@ export const companionSchema = z.object({
   formStatus: formStatusSchema,
   seatLabel: z.string().nullable(),
   boardingPoint: z.string().nullable(),
+  boardingPointDetails: boardingPointDetailsSchema,
 });
 
 export const titularSchema = z.object({
@@ -56,10 +69,13 @@ export const titularSchema = z.object({
   bookingStatus: z.enum(["AWAITING_REGISTRATION", "PENDING", "CONFIRMED", "CANCELLED", "NO_SHOW"]),
   requiredDeposit: z.number(),
   hasSeatRight: z.boolean(),
+  /** Fecha del apartado (ISO): antigüedad "Apartado hace N h sin pago" (regla 13). */
+  bookedAt: z.string(),
 
   formStatus: formStatusSchema,
   seatLabel: z.string().nullable(),
   boardingPoint: z.string().nullable(),
+  boardingPointDetails: boardingPointDetailsSchema,
   magicToken: z.string().nullable(),
 
   paymentStatus: paymentStatusSchema,
@@ -98,18 +114,54 @@ export const vehicleOutputSchema = z.object({
   capacity: vehicleCapacityOutputSchema,
 });
 
+/**
+ * Cancelación del tour por la agencia (decisión del PM, 2026-11-14). `note` es interna: solo la ve
+ * el operador. Null = el tour no está cancelado.
+ */
+export const tourCancellationSchema = z.object({
+  cancelledAt: z.string(),
+  reason: z.enum(TOUR_CANCELLATION_REASONS),
+  note: z.string().nullable(),
+});
+
+/**
+ * Reserva cancelada con dinero abonado (sección "Reembolsos" del Centro de Control). Los montos los
+ * calcula la API (`summarizeRefunds`): el front no recalcula el saldo a reembolsar.
+ */
+export const refundRowSchema = z.object({
+  bookingId: z.uuid(),
+  travelerId: z.uuid(),
+  fullName: z.string(),
+  whatsapp: z.string(),
+  groupSize: z.number(),
+  /** Lo que el cliente abonó (sin abonos anulados). */
+  paidAmount: z.number(),
+  /** Penalización retenida ($0 cuando cancela la agencia). */
+  retainedAmount: z.number(),
+  refundedAmount: z.number(),
+  refundableAmount: z.number(),
+  refundStatus: z.enum(REFUND_STATUSES),
+  payments: z.array(paymentRecordSchema).default([]),
+});
+
 export const tourDashboardOutputSchema = z.object({
   id: z.uuid(),
   title: z.string(),
   currency: currencySchema.default(DEFAULT_CURRENCY),
   departureDateTime: z.iso.datetime(),
-  temporalStatus: temporalStatusSchema.default("ACTIVO"),
+  /** Fecha de regreso (`YYYY-MM-DD`), nula si el tour no la tiene. */
+  returnDate: z.string().nullable().optional(),
+  /** Instrucciones Post-Pago (logística) del tour, para el estado de cuenta PDF. */
+  postPaymentInstructions: z.string().nullable().optional(),
+  temporalStatus: temporalStatusSchema.default(TOUR_TEMPORAL_STATUS.UPCOMING),
   requiresSeats: z.boolean().default(true),
   metrics: tourMetricsSchema,
   vehicle: vehicleOutputSchema.nullable().optional(),
   // Lugares de staff del tour: tope de asientos que se pueden bloquear en el croquis.
   staffCapacity: z.number().default(0),
   travelers: z.array(titularSchema),
+  cancellation: tourCancellationSchema.nullable().default(null),
+  refunds: z.array(refundRowSchema).default([]),
 });
 
 export type FormStatus = z.infer<typeof formStatusSchema>;
@@ -120,6 +172,8 @@ export type TitularRowOutput = z.infer<typeof titularSchema>;
 export type TourMetrics = z.infer<typeof tourMetricsSchema>;
 export type VehicleOutput = z.infer<typeof vehicleOutputSchema>;
 export type TourDashboardOutput = z.infer<typeof tourDashboardOutputSchema>;
+export type TourCancellationOutput = z.infer<typeof tourCancellationSchema>;
+export type RefundRowOutput = z.infer<typeof refundRowSchema>;
 
 /**
  * Vista aplanada (titulares + acompañantes) de los pasajeros con derecho a asiento.

@@ -2,12 +2,21 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+/**
+ * Rutas del panel autenticado. Sin cookie se redirige a /login antes de renderizar.
+ * Mantener en sincronía con las cabeceras `no-store` de next.config.ts.
+ */
+const PROTECTED_PREFIXES = ["/tours", "/travelers", "/settings", "/pdf-tour"];
+
+const isProtectedPath = (pathname: string): boolean =>
+  PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+
 export function proxy(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const { pathname, searchParams } = request.nextUrl;
 
   const isAuthRoute = pathname.startsWith("/login");
-  const isDashboardRoute = pathname.startsWith("/tours");
+  const isDashboardRoute = isProtectedPath(pathname);
 
   if (pathname.startsWith("/_next") || pathname.includes("/api/auth")) {
     return NextResponse.next();

@@ -2,51 +2,60 @@ import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.const
 
 interface FormatCurrencyOptions {
   /**
-   * Código ISO de la divisa. Soporta "MXN" o "USD".
-   * @default "MXN"
+   * Código ISO de la divisa del importe ("MXN" o "USD"). Pásalo siempre que se conozca
+   * (moneda del tour, del pago o de la reserva): el importe NO se convierte, solo se etiqueta.
+   * @default DEFAULT_CURRENCY ("MXN")
    */
   currency?: Currency;
-  /**
-   * Locale BCP 47 para el formato regional.
-   * @default "es-MX"
-   */
-  locale?: string;
 }
 
 /**
- * @description Convierte un valor numérico o string cuantitativo a un formato de moneda localizado.
- * Utiliza la API nativa Intl.NumberFormat para evitar librerías pesadas como numeral.js.
+ * Formateador numérico compartido: dos decimales fijos, comas para miles y punto decimal.
+ * Se usa `en-US` (no `es-MX`) porque garantiza el separador de miles también en cifras de
+ * 4 dígitos ("1,000.00") en cualquier motor; el símbolo y el código se agregan a mano.
+ */
+const AMOUNT_FORMATTER = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/**
+ * @description Única función de formateo de importes de TripAgent (pantallas, modales, drawers,
+ * KPIs, textos para compartir y comprobantes PDF). Formato estándar:
+ * `"$1,000.00 MXN"` / `"$1,000.00 USD"`: símbolo `$` al inicio, comas de miles, dos decimales
+ * y el código de la divisa al final.
  *
- * @param {number | string | null | undefined} value - El monto a formatear.
- * @param {FormatCurrencyOptions} [options] - Opciones de configuración de moneda y locale.
- * @returns {string} String formateado con símbolo de moneda y separadores de miles.
+ * - Negativos: el signo va antes del símbolo (`"-$500.00 USD"`). Los importes que se redondean
+ *   a cero se muestran sin signo (`-0.001` → `"$0.00 MXN"`).
+ * - `null`, `undefined`, cadenas vacías o valores no numéricos se muestran como `"$0.00 <divisa>"`
+ *   para no romper la UI si la API omite un campo.
+ * - Acepta cadenas numéricas (`"1500.5"`), como las que devuelven los inputs.
+ * - Solo presenta el valor: no redondea ni modifica el importe almacenado o calculado.
+ *   Un signo `+` decorativo (abonos) se antepone fuera: `` `+${formatCurrency(x, { currency })}` ``.
+ *
+ * @param {number | string | null | undefined} value - Importe a formatear.
+ * @param {FormatCurrencyOptions} [options] - Divisa del importe.
+ * @returns {string} Importe con símbolo, separadores, dos decimales y código de divisa.
  *
  * @example
- * formatCurrency(2000) // "$2,000.00"
- * formatCurrency(1500.5, { currency: "USD" }) // "USD 1,500.50" (o $1,500.50 según locale)
+ * formatCurrency(1000, { currency: "USD" })  // "$1,000.00 USD"
+ * formatCurrency(1500.5, { currency: "MXN" }) // "$1,500.50 MXN"
+ * formatCurrency(0)                           // "$0.00 MXN"
+ * formatCurrency(-500, { currency: "USD" })  // "-$500.00 USD"
+ * formatCurrency(null, { currency: "USD" })  // "$0.00 USD"
  */
 export function formatCurrency(
   value: number | string | null | undefined,
   options: FormatCurrencyOptions = {},
 ): string {
-  const { currency = DEFAULT_CURRENCY, locale = "es-MX" } = options;
+  const { currency = DEFAULT_CURRENCY } = options;
 
-  // 🛡️ Patrón de Programación Defensiva: Evitamos crashear la UI si el backend envía nulls
-  if (value === null || value === undefined) {
-    return "$0.00";
-  }
+  // 🛡️ Programación defensiva: null/undefined/"" → 0 y NaN/Infinity → 0.
+  const numericValue = typeof value === "number" ? value : Number(value ?? 0);
+  const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
 
-  const numericValue = typeof value === "number" ? value : Number(value);
+  const absolute = AMOUNT_FORMATTER.format(Math.abs(safeValue));
+  const sign = safeValue < 0 && absolute !== "0.00" ? "-" : "";
 
-  if (isNaN(numericValue)) {
-    return "$0.00";
-  }
-
-  // Uso eficiente del motor nativo Intl.NumberFormat (C-level performance en V8)
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numericValue);
+  return `${sign}$${absolute} ${currency}`;
 }

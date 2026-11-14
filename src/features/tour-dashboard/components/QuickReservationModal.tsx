@@ -72,18 +72,19 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
     });
   };
 
-  const handleCopy = async (): Promise<void> => {
-    if (magicLink) {
-      console.log("magicLink", magicLink);
-      const success = await copyToClipboard(magicLink);
+  /** Copia el Magic Link y cierra el modal. Si no se pudo copiar, el modal sigue abierto
+   * para que el operador copie el enlace a mano desde el campo. */
+  const handleCopyAndClose = async (): Promise<void> => {
+    if (!magicLink) return;
+    const success = await copyToClipboard(magicLink);
 
-      if (success) {
-        toast.success("Enlace copiado al portapapeles");
-      } else {
-        toast.error("Error al copiar", {
-          description: "Por favor, copia la CLABE manualmente.",
-        });
-      }
+    if (success) {
+      toast.success("Enlace copiado al portapapeles");
+      handleClose();
+    } else {
+      toast.error("Error al copiar", {
+        description: "Por favor, copia el enlace manualmente.",
+      });
     }
   };
 
@@ -284,7 +285,7 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleCopy}
+                onClick={handleCopyAndClose}
                 className="w-full border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <Copy className="mr-2 h-4 w-4 text-slate-500" /> Copiar Enlace y Cerrar

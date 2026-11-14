@@ -25,6 +25,8 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SeatWithoutDepositBadge } from "./SeatWithoutDepositBadge";
+import { UnpaidHoldAge } from "./UnpaidHoldAge";
 import { toast } from "sonner";
 import {
   FORM_STATUS_DICT,
@@ -186,6 +188,8 @@ export function TravelerGroup({
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-xs font-bold text-indigo-700">
                   {titular.seatLabel}
                 </span>
+              ) : isAuditMode ? (
+                <span className="text-xs font-medium text-slate-400">Sin asiento</span>
               ) : (
                 <Badge
                   variant="outline"
@@ -198,6 +202,9 @@ export function TravelerGroup({
                   [ Asignar Asiento ]
                 </Badge>
               )
+            ) : titular.seatLabel ? (
+              // Perdió el derecho a asiento: conserva el asiento, pero se señala (decisión del PM).
+              <SeatWithoutDepositBadge seatLabel={titular.seatLabel} />
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                 <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />
@@ -225,6 +232,10 @@ export function TravelerGroup({
               </span>
             ) : (
               <span className="text-[11px] font-medium text-slate-400">Sin adeudos</span>
+            )}
+            {/* Revisión manual de las 48 h (regla 13): solo apartados sin ningún pago. */}
+            {titular.paidAmount <= 0 && titular.balance > 0 && (
+              <UnpaidHoldAge bookedAt={titular.bookedAt} />
             )}
           </div>
         </td>
@@ -367,6 +378,8 @@ export function TravelerGroup({
                     <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-xs font-bold text-indigo-700">
                       {companion.seatLabel}
                     </span>
+                  ) : isAuditMode ? (
+                    <span className="text-xs font-medium text-slate-400">Sin asiento</span>
                   ) : (
                     <Badge
                       variant="outline"
@@ -379,6 +392,8 @@ export function TravelerGroup({
                       [ Asignar Asiento ]
                     </Badge>
                   )
+                ) : companion.seatLabel ? (
+                  <SeatWithoutDepositBadge seatLabel={companion.seatLabel} />
                 ) : (
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
                     <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />
@@ -490,16 +505,20 @@ export function TravelerGroup({
             {requiresSeats && (
               <td className="px-6 py-3">
                 {titular.hasSeatRight ? (
-                  <Badge
-                    variant="outline"
-                    className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAssignSeatClick(titular.id);
-                    }}
-                  >
-                    [ Asignar Asiento ]
-                  </Badge>
+                  isAuditMode ? (
+                    <span className="text-xs font-medium text-slate-400">Sin asiento</span>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="cursor-pointer border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAssignSeatClick(titular.id);
+                      }}
+                    >
+                      [ Asignar Asiento ]
+                    </Badge>
+                  )
                 ) : (
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
                     <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />

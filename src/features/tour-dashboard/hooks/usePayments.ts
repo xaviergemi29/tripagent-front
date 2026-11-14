@@ -25,14 +25,23 @@ export const useCreatePayment = (tourId: string) => {
 
   return useMutation({
     mutationFn: createPaymentApi,
-    onSuccess: () => {
+    onSuccess: (_data, { payload }) => {
       queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(tourId) });
-      toast.success("Abono registrado correctamente");
+      toast.success(
+        payload.type === "REFUND"
+          ? "Reembolso registrado correctamente"
+          : "Abono registrado correctamente",
+      );
     },
-    onError: (error: ApiError) => {
-      toast.error("Error al registrar el abono", {
-        description: error.message || "Revisa los datos e intenta de nuevo.",
-      });
+    onError: (error: ApiError, { payload }) => {
+      toast.error(
+        payload.type === "REFUND"
+          ? "Error al registrar el reembolso"
+          : "Error al registrar el abono",
+        {
+          description: error.message || "Revisa los datos e intenta de nuevo.",
+        },
+      );
     },
   });
 };

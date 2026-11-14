@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Compass, LogOut } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
+import { AgencyLogo } from "@/components/shared/AgencyLogo";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -36,9 +37,12 @@ export function Header() {
               <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
               {/* Brand Header del Mobile Nav */}
               <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-6">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
-                  <Compass className="h-5 w-5" />
-                </div>
+                <AgencyLogo
+                  logoPath={user?.agencyLogoPath}
+                  agencyName={user?.agencyName || "Agencia"}
+                  className="h-9 w-9 rounded-lg"
+                  logoClassName="bg-white p-0.5"
+                />
                 <div className="overflow-hidden">
                   <h2 className="truncate text-sm font-bold tracking-wide text-white">
                     {user?.agencyName || "Agencia"}

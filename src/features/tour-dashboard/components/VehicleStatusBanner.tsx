@@ -4,7 +4,8 @@ import type { VehicleOutput } from "@/features/tour-dashboard/schemas/tour-dashb
 
 interface VehicleStatusBannerProps {
   vehicle?: VehicleOutput | null;
-  onChangeVehicleClick: () => void;
+  /** Sin acción (Modo Auditoría) no se muestra el botón para asignar o cambiar el vehículo. */
+  onChangeVehicleClick?: () => void;
 }
 
 export function VehicleStatusBanner({ vehicle, onChangeVehicleClick }: VehicleStatusBannerProps) {
@@ -26,10 +27,12 @@ export function VehicleStatusBanner({ vehicle, onChangeVehicleClick }: VehicleSt
             tus pasajeros.
           </p>
         </div>
-        <Button onClick={onChangeVehicleClick} className="mt-2 bg-indigo-600 hover:bg-indigo-700">
-          <Bus className="mr-2 h-4 w-4" />
-          Asignar Vehículo / Plantilla
-        </Button>
+        {onChangeVehicleClick && (
+          <Button onClick={onChangeVehicleClick} className="mt-2 bg-indigo-600 hover:bg-indigo-700">
+            <Bus className="mr-2 h-4 w-4" />
+            Asignar Vehículo / Plantilla
+          </Button>
+        )}
       </div>
     );
   }
@@ -46,15 +49,17 @@ export function VehicleStatusBanner({ vehicle, onChangeVehicleClick }: VehicleSt
         </span>
       </div>
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onChangeVehicleClick}
-        className="w-full gap-2 border-indigo-200 font-medium text-indigo-700 hover:bg-indigo-50 sm:w-auto"
-      >
-        <RefreshCw className="h-3.5 w-3.5" />
-        Cambiar Vehículo
-      </Button>
+      {onChangeVehicleClick && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onChangeVehicleClick}
+          className="w-full gap-2 border-indigo-200 font-medium text-indigo-700 hover:bg-indigo-50 sm:w-auto"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Cambiar Vehículo
+        </Button>
+      )}
     </div>
   );
 }

@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { CURRENCIES, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import {
+  CURRENCIES,
+  DEFAULT_CURRENCY,
+  TOUR_TEMPORAL_STATUSES,
+} from "@/shared/constants/domain.constants";
 
 export const TOUR_MODALITIES = ["TRANSPORT_INCLUDED", "INDEPENDENT_ACCESS"] as const;
 // Espejo de DESTINATION_TYPE en la API. Lo usa el CRM (viajes nacionales / internacionales).
@@ -57,7 +61,8 @@ const baseTourSchema = z.object({
         .min(0, "Los lugares de staff no pueden ser negativos"),
     )
     .default(0),
-  isActive: z.boolean(),
+  // Sin `isActive`: "Pausado" no existe en el MVP (decisión del PM, 2026-11-14). Un tour se cancela
+  // desde el Centro de Control (`POST /tours/:id/cancel`).
 
   acceptsBankTransfer: z.boolean(),
   acceptsCreditCard: z.boolean(),
@@ -67,6 +72,8 @@ const baseTourSchema = z.object({
       z.url({ message: "Debe ser una URL válida (ej. https://mercadopago.com/...)" }),
     ])
     .nullish(),
+  // Indicaciones de logística del tour (ej. "Llevar botas de montaña"). Se muestran en el Magic
+  // Link y en el estado de cuenta PDF, separadas de las políticas generales de la agencia.
   postPaymentInstructions: z
     .string()
     .max(2000, "Las instrucciones no pueden superar 2000 caracteres")
@@ -166,7 +173,8 @@ export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
 });
 
 export const tourOutputSchema = baseTourSchema.extend({
-  temporalStatus: z.string().optional(),
+  // Estado temporal calculado por la API (regla 9): "PRÓXIMO" | "EN CURSO" | "FINALIZADO" | "CANCELADO".
+  temporalStatus: z.enum(TOUR_TEMPORAL_STATUSES).optional(),
   currentOccupancy: z.number().optional(),
   sellableCapacity: z.number().optional(),
   // Solo en GET /tours/:id: con pagos registrados, la moneda y el precio quedan congelados.

@@ -1,22 +1,23 @@
 import { Users, Armchair } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { DashboardTab } from "@/features/tour-dashboard/constants/dashboard-tabs";
 
 interface MobileTabsNavProps {
-  activeTab: "passengers" | "seatmap";
-  onTabChange: (tab: "passengers" | "seatmap") => void;
+  activeTab: DashboardTab;
   totalPassengers: number;
   assignedCount: number;
   totalBookedPax: number;
   requiresSeats?: boolean;
+  onTabChange: (tab: DashboardTab) => void;
 }
 
 export function MobileTabsNav({
   activeTab,
   requiresSeats,
-  onTabChange,
   totalPassengers,
   assignedCount,
   totalBookedPax,
+  onTabChange,
 }: MobileTabsNavProps) {
   if (!requiresSeats) return null;
   return (

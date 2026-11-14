@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CURRENCIES } from "@/shared/constants/domain.constants";
 
 export const travelerSchema = z.object({
   id: z.uuid().optional(),
@@ -28,7 +29,10 @@ export const travelerSchema = z.object({
 
 export const travelerMetricsSchema = z.object({
   totalTrips: z.number(),
+  /** Suma de todas las divisas: no mostrar como importe (mezcla MXN y USD). */
   lifetimeValue: z.number(),
+  /** LTV por divisa, sin conversión (solo incluye las divisas con viajes pagados). */
+  lifetimeValueByCurrency: z.partialRecord(z.enum(CURRENCIES), z.number()).optional(),
   isHabitualCompanion: z.boolean(),
 });
 
@@ -40,6 +44,8 @@ export const travelerHistoryItemSchema = z.object({
   passengerStatus: z.enum(["CANCELLED", "ACTIVE"]),
   bookingStatus: z.enum(["PENDING", "CONFIRMED", "CANCELLED", "NO_SHOW"]),
   amountPaid: z.number(),
+  /** Moneda del tour de esa reserva. */
+  currency: z.enum(CURRENCIES).optional(),
   tourTitle: z.string(),
   departureDateTime: z.string(),
   destinationType: z.enum(["NATIONAL", "INTERNATIONAL"]).optional(),

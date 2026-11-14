@@ -2,6 +2,7 @@
 
 import { useTourManifest } from "@/features/tour-dashboard/hooks/useTourManifest";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
+import { formatCurrency } from "@/shared/utils/currency.util";
 import { useEffect, use } from "react";
 
 interface PageProps {
@@ -103,7 +104,7 @@ export default function ManifestPrintView({ params }: PageProps) {
                     {p.isTitular ? (
                       p.balance > 0 ? (
                         <span className="text-sm font-black tracking-wide text-red-700 uppercase">
-                          Cobrar ${p.balance}
+                          Cobrar {formatCurrency(p.balance, { currency: manifest.currency })}
                         </span>
                       ) : (
                         <span className="text-[11px] font-bold text-slate-500 uppercase">

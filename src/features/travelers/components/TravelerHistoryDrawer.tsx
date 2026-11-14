@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { formatCurrency } from "@/shared/utils/currency.util";
+import { CURRENCIES, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
 import { getInitials } from "@/shared/utils/travelers-helpers";
 
@@ -29,6 +30,14 @@ type FilterType = "ALL" | "NACIONAL" | "EXTRANJERO" | "CANCELLED";
 
 export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
   const { data: traveler, isLoading } = useTravelerHistory(travelerId);
+
+  // LTV en la moneda original de cada tour; sin viajes pagados se muestra $0.00 en la moneda base.
+  const ltvByCurrency = traveler?.metrics?.lifetimeValueByCurrency ?? {};
+  const lifetimeValueLines = CURRENCIES.flatMap((currency) => {
+    const amount = ltvByCurrency[currency];
+    return amount ? [[currency, amount] as const] : [];
+  });
+  if (lifetimeValueLines.length === 0) lifetimeValueLines.push([DEFAULT_CURRENCY, 0] as const);
   const [activeFilter, setActiveFilter] = useState<FilterType>("ALL");
 
   const history = traveler?.history || [];
@@ -143,14 +152,22 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
                   <span>TOTAL COMPRADO</span>
                   <Banknote className="h-4 w-4 text-emerald-500" />
                 </div>
-                <div className="my-1">
-                  <span className="text-2xl font-bold text-emerald-600">
-                    {/* 🚀 USO DE UTILIDAD: formatCurrency */}
-                    {formatCurrency(traveler?.metrics?.lifetimeValue, { currency: "MXN" })}
-                  </span>
+                <div className="my-1 flex flex-col">
+                  {lifetimeValueLines.map(([currency, amount]) => (
+                    <span
+                      key={currency}
+                      className={`font-bold text-emerald-600 ${
+                        lifetimeValueLines.length > 1 ? "text-base" : "text-2xl"
+                      }`}
+                    >
+                      {formatCurrency(amount, { currency })}
+                    </span>
+                  ))}
                 </div>
                 <div className="border-t border-slate-200/60 pt-1 text-[11px] font-medium text-slate-500">
-                  Moneda nacional (MXN)
+                  {lifetimeValueLines.length > 1
+                    ? "Por divisa, sin conversión"
+                    : "En la moneda de sus tours"}
                 </div>
               </div>
             </div>
@@ -216,7 +233,9 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
                   const isNacional = item.destinationType === "NATIONAL";
 
                   // 🚀 USO DE UTILIDAD: formatCurrency
-                  const priceFormatted = formatCurrency(item.amountPaid);
+                  const priceFormatted = formatCurrency(item.amountPaid, {
+                    currency: item.currency || DEFAULT_CURRENCY,
+                  });
 
                   // 🚀 USO DE UTILIDAD: formatLocalDate (evita el desfase de zona horaria)
                   const localDateString = formatLocalDate(item.departureDateTime);
