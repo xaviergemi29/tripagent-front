@@ -7,24 +7,16 @@ import {
   PASSENGER_ROLE,
   type TourCancellationReason,
 } from "@/shared/constants/domain.constants";
-import { TOUR_KEYS } from "@/features/tours/hooks/useTours";
-import { TOUR_SEAT_KEYS } from "@/features/tours/hooks/useTourSeats";
 import type {
   TransferPassengerInput,
   TransferPassengerOutput,
 } from "../schemas/transfer-passenger.schema";
-
-// ============================================================================
-// 0. QUERY KEY FACTORIES
-// ============================================================================
-export const TOUR_DASHBOARD_KEYS = {
-  all: ["tour-dashboard"] as const,
-  detail: (tourId: string) => [...TOUR_DASHBOARD_KEYS.all, tourId] as const,
-};
-
-export const VEHICLE_KEYS = {
-  all: ["vehicles"] as const,
-};
+import {
+  TOUR_DASHBOARD_KEYS,
+  TOUR_KEYS,
+  TOUR_SEAT_KEYS,
+  VEHICLE_KEYS,
+} from "@/shared/api/query-keys";
 
 /** Se envía una unidad de la agencia (`vehicleId`) o una plantilla del catálogo (`templateId`). */
 export type AssignVehicleInput =

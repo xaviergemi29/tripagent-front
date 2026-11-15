@@ -2,14 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient, type ApiError } from "@/lib/api-client";
 import type { AgencyBrandingOutput, BrandingInput } from "../schemas/branding.schema";
-import { AUTH_KEYS } from "@/app/(auth)/hooks/useSession";
-
-// ============================================================================
-// 1. QUERY KEY FACTORY
-// ============================================================================
-export const AGENCY_BRANDING_KEYS = {
-  all: ["agency-branding"] as const,
-};
+import { AGENCY_BRANDING_KEYS, AUTH_KEYS } from "@/shared/api/query-keys";
 
 // ============================================================================
 // 2. CAPA DE RED

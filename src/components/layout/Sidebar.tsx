@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Calendar, Users, LogOut, Settings } from "lucide-react";
 import { AgencyLogo } from "@/components/shared/AgencyLogo";
-import { useSession } from "@/app/(auth)/hooks/useSession";
-import { useLogout } from "@/features/settings/hooks/useAuth";
+import { useSession } from "@/features/auth/hooks/useSession";
+import { useLogout } from "@/features/auth/hooks/useAuth";
 import { Button } from "../ui/button";
 
 const navigationItems = [

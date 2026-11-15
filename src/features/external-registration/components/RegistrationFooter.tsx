@@ -1,13 +1,12 @@
 "use client";
 
-import { ShieldCheck, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface RegistrationFooterProps {
   totalAmount: number;
-  /** Moneda del tour. */
   currency?: Currency;
   travelersCount: number;
   isSubmitting?: boolean;
@@ -25,22 +24,6 @@ export function RegistrationFooter({
 }: RegistrationFooterProps) {
   return (
     <div className="space-y-4">
-      {/* Card de Garantía de Reserva */}
-      <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200/80 bg-emerald-50/70 p-3">
-        <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600" />
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-900">Garantía de Asiento TripAgent</span>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-              Registrado
-            </span>
-          </div>
-          <p className="text-xs text-slate-600">
-            Tus lugares quedan asegurados de inmediato al completar el registro.
-          </p>
-        </div>
-      </div>
-
       {/* Barra Inferior Fija (Sticky Footer) */}
       <div className="fixed right-0 bottom-0 left-0 z-40 border-t border-slate-200/80 bg-white/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-lg backdrop-blur-md">
         <div className="mx-auto flex max-w-md flex-col gap-1.5">

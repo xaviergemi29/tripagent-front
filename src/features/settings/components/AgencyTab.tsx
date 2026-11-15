@@ -123,6 +123,27 @@ export function AgencyTab() {
             )}
           </div>
 
+          {/* Aviso de privacidad (LFPDPPP) */}
+          <div className="space-y-1.5">
+            <Label htmlFor="privacyNoticeUrl">Enlace al aviso de privacidad (Opcional)</Label>
+            <Input
+              id="privacyNoticeUrl"
+              type="url"
+              placeholder="https://tuagencia.mx/aviso-de-privacidad"
+              {...form.register("privacyNoticeUrl")}
+              disabled={isFormLocked}
+            />
+            <p className="text-[11px] text-slate-500">
+              Tus viajeros deben aceptar el aviso de privacidad al registrarse. Si capturas el
+              enlace, podrán abrirlo desde el formulario.
+            </p>
+            {form.formState.errors.privacyNoticeUrl && (
+              <p className="text-xs text-red-500">
+                {form.formState.errors.privacyNoticeUrl.message}
+              </p>
+            )}
+          </div>
+
           {/* Nombre Comercial */}
           <div className="space-y-1.5">
             <Label htmlFor="name">Nombre Comercial</Label>

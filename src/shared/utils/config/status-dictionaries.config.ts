@@ -1,6 +1,5 @@
-import { FormStatus } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import type { TourCancellationReason } from "@/shared/constants/domain.constants";
-import type { PassengerRole, PaymentMethod } from "@/shared/constants/domain.constants";
+import type { FormStatus, PassengerRole, PaymentMethod } from "@/shared/constants/domain.constants";
 
 // Interfaz genérica para estandarizar todos los badges de la UI
 export interface UIStateConfig {

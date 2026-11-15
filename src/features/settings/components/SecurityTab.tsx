@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, KeyRound, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { ChangePasswordInput, changePasswordSchema } from "../schemas/security.schema";
+import { ChangePasswordInput, changePasswordSchema } from "@/features/auth/schemas/security.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useChangePassword } from "../hooks/useAuth";
+import { useChangePassword } from "@/features/auth/hooks/useAuth";
 
 export function SecurityTab() {
   const { isPending, mutateAsync: changePassword } = useChangePassword();

@@ -1,7 +1,11 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SeatWithoutDepositBadge } from "../SeatWithoutDepositBadge";
-import { formatUnpaidHoldAge, getElapsedHours, UnpaidHoldAge } from "../UnpaidHoldAge";
+import { SeatWithoutDepositBadge } from "@/features/tour-dashboard/components/passengers/SeatWithoutDepositBadge";
+import {
+  formatUnpaidHoldAge,
+  getElapsedHours,
+  UnpaidHoldAge,
+} from "@/features/tour-dashboard/components/passengers/UnpaidHoldAge";
 
 const NOW = new Date("2026-11-13T18:00:00.000Z");
 const hoursAgo = (hours: number) => new Date(NOW.getTime() - hours * 3_600_000).toISOString();

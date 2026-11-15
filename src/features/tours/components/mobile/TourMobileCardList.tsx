@@ -20,7 +20,7 @@ import {
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { formatSpanishLongDate } from "@/shared/utils/tour-date.util";
 import type { TourOutput } from "../../schemas/tour.schema";
-import { handleShareLink } from "@/shared/utils/clipboard";
+import { handleShareLink } from "@/features/tours/utils/share-tour.util";
 import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface TourMobileCardListProps {

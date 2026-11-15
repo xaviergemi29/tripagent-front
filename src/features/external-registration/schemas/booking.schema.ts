@@ -69,6 +69,14 @@ export const bookingFormSchema = z.object({
   hasCompanions: z.boolean(),
   companionMethod: z.enum(["MANUAL", "SHARE_LINK"]),
   companions: z.array(companionSchema),
+  // Casilla obligatoria "Acepto el aviso de privacidad" (decisión del PM, 2026-11-14; LFPDPPP:
+  // el registro incluye notas médicas). La API exige `true` y guarda la fecha de aceptación.
+  privacyNoticeAccepted: z
+    .boolean()
+    .refine(
+      (accepted) => accepted,
+      "Es necesario aceptar las políticas y el aviso de privacidad para completar tu registro.",
+    ),
 });
 
 export const bookingOutputSchema = z.object({

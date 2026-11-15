@@ -6,11 +6,12 @@ import {
   PAYMENT_TYPES,
 } from "@/shared/constants/domain.constants";
 
+/** Formulario de `RegisterPaymentModal` (abono o reembolso). Única definición del front. */
 export const paymentFormSchema = z.object({
-  amount: z.coerce.number().positive("El monto debe ser mayor a $0"),
+  amount: z.number("Ingresa un monto").positive("El monto debe ser mayor a $0"),
   method: z.enum(PAYMENT_METHODS, "Selecciona un método"),
   // REFUND: devolución al cliente (monto positivo; la API lo guarda en negativo).
-  type: z.enum(PAYMENT_TYPES).default("PAYMENT"),
+  type: z.enum(PAYMENT_TYPES),
   referenceInfo: z.string().optional(),
 });
 

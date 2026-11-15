@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { SeatMapCanvas } from "@/features/tours/components/SeatMapCanvas";
-import { VehicleStatusBanner } from "../VehicleStatusBanner";
+import { SeatMapCanvas } from "@/features/tour-dashboard/components/seating/SeatMapCanvas";
+import { VehicleStatusBanner } from "@/features/tour-dashboard/components/seating/VehicleStatusBanner";
 import { BookingCard } from "../mobile/BookingCard";
 import { temporalStatusSchema } from "../../schemas/tour-dashboard.schema";
 import type { TitularRowOutput, VehicleOutput } from "../../schemas/tour-dashboard.schema";
@@ -10,7 +10,7 @@ import type { TitularRowOutput, VehicleOutput } from "../../schemas/tour-dashboa
 // catálogo, y un tour FINALIZADO o CANCELADO (pausado) queda en solo lectura, también en asientos.
 
 const updateSeat = vi.fn();
-vi.mock("@/features/tours/hooks/useTourSeats", () => ({
+vi.mock("@/features/tour-dashboard/hooks/useTourSeats", () => ({
   useTourSeats: () => ({
     data: [
       {

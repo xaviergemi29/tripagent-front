@@ -2,13 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient, type ApiError } from "@/lib/api-client";
 import type { AgencyInput, AgencyOutput, AgencyPoliciesInput } from "../schemas/agency.schema";
-
-// ============================================================================
-// 1. QUERY KEY FACTORY (Patrón de Arquitectura Limpia)
-// ============================================================================
-export const AGENCY_KEYS = {
-  all: ["agencies"] as const,
-};
+import { AGENCY_KEYS } from "@/shared/api/query-keys";
 
 // ============================================================================
 // 2. CAPA DE RED (Axios API Client)

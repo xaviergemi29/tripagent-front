@@ -20,8 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-import { useLogin } from "../../../features/settings/hooks/useAuth";
-import { loginSchema, type LoginInput } from "../schemas/login.schema";
+import { useLogin } from "@/features/auth/hooks/useAuth";
+import { loginSchema, type LoginInput } from "@/features/auth/schemas/login.schema";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);

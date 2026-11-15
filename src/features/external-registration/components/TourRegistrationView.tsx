@@ -16,6 +16,8 @@ import { PublicBookingLayout } from "@/components/layout/public/PublicBookingLay
 import { TourSummaryCard } from "./TourSummaryCard";
 import { PickupPointSelector } from "./PickupPointSelector";
 import { RegistrationFooter } from "./RegistrationFooter";
+import { PoliciesCheckbox } from "./PoliciesCheckbox";
+import { PoliciesConsentModal } from "./PoliciesConsentModal";
 import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 import { useRouter } from "next/navigation";
 import type { Currency } from "@/shared/constants/domain.constants";
@@ -33,6 +35,10 @@ interface TourRegistrationViewProps {
     depositPerPassenger?: number | null;
   };
   agencyName: string;
+  /** Enlace al aviso de privacidad de la agencia (null si no lo ha capturado). */
+  agencyPrivacyNoticeUrl?: string | null;
+  /** Políticas generales de la agencia (texto plano; null si no las ha capturado). */
+  agencyPolicies?: string | null;
   /** Logotipo de la agencia (`meta.agency.logoPath` del Magic Link). */
   agencyLogoPath?: string | null;
   /** WhatsApp de la agencia (`meta.agency.phone`), para el pie común. */
@@ -54,11 +60,14 @@ export function TourRegistrationView({
   boardingPoints,
   tourInfo,
   agencyName,
+  agencyPrivacyNoticeUrl,
+  agencyPolicies,
   agencyLogoPath,
   agencyPhone,
   prefillData,
 }: TourRegistrationViewProps) {
   const [isLookingUp, setIsLookingUp] = useState(false);
+  const [isPoliciesModalOpen, setIsPoliciesModalOpen] = useState(false);
   const { mutateAsync: createBooking, isPending } = useCreateBooking();
   const [isMainClientFound, setIsMainClientFound] = useState(
     !!(prefillData?.whatsappPhone && prefillData?.fullName),
@@ -84,6 +93,7 @@ export function TourRegistrationView({
       hasCompanions: false,
       companionMethod: "MANUAL",
       companions: [],
+      privacyNoticeAccepted: false,
     },
   });
 
@@ -113,10 +123,19 @@ export function TourRegistrationView({
     }
   };
 
+  /** "Aceptar y continuar" del modal: marca la casilla obligatoria y cierra el modal. */
+  const handleAcceptPolicies = (): void => {
+    methods.setValue("privacyNoticeAccepted", true, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setIsPoliciesModalOpen(false);
+  };
+
   const onSubmit = async (formData: BookingInput): Promise<void> => {
     try {
-      const result = await createBooking(formData);
-      console.log("result", result);
+      await createBooking(formData);
       router.refresh();
     } catch (error) {
       console.error("Error procesando registro:", error);
@@ -191,6 +210,14 @@ export function TourRegistrationView({
                 </Button>
               )}
             </div>
+            {isMainClientFound && (
+              // Decisión del PM (2026-11-14): para un viajero que ya existía, la agencia conserva los
+              // datos registrados y solo se completan los campos que le falten.
+              <p className="rounded-lg bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+                Ya tienes datos registrados con {agencyName}: se conservarán y solo se completarán
+                los que falten. Para corregirlos, contacta a la agencia.
+              </p>
+            )}
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-slate-700">Teléfono de WhatsApp *</Label>
               <Input
@@ -332,6 +359,25 @@ export function TourRegistrationView({
             maxAllowedCompanions={maxAllowedCompanions}
           />
 
+          {/* Políticas y aviso de privacidad (LFPDPPP): casilla obligatoria (regla 19). El modal
+              muestra las políticas de la agencia; "Aceptar y continuar" marca la casilla. */}
+          <Controller
+            name="privacyNoticeAccepted"
+            control={methods.control}
+            render={({ field, fieldState }) => (
+              <PoliciesCheckbox
+                checked={field.value === true}
+                onChange={(checked) => {
+                  field.onChange(checked);
+                  field.onBlur();
+                }}
+                onOpenModal={() => setIsPoliciesModalOpen(true)}
+                agencyName={agencyName}
+                errorMessage={fieldState.error?.message}
+              />
+            )}
+          />
+
           {/* 5. Sticky Footer (Se encarga de ejecutar el submit del form) */}
           <RegistrationFooter
             totalAmount={lockedSeats * (tourInfo.priceTotalPerPassenger || 0)}
@@ -343,6 +389,15 @@ export function TourRegistrationView({
           />
         </form>
       </FormProvider>
+
+      <PoliciesConsentModal
+        isOpen={isPoliciesModalOpen}
+        onClose={() => setIsPoliciesModalOpen(false)}
+        onAccept={handleAcceptPolicies}
+        policiesText={agencyPolicies}
+        privacyNoticeUrl={agencyPrivacyNoticeUrl}
+        agencyName={agencyName}
+      />
     </PublicBookingLayout>
   );
 }

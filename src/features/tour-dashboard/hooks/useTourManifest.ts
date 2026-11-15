@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { tourManifestOutputSchema, type TourManifestOutput } from "../schemas/tour-manifest.schema";
+import { TOUR_MANIFEST_KEYS } from "@/shared/api/query-keys";
 
 const fetchTourManifestApi = async (tourId: string): Promise<TourManifestOutput> => {
   const response = await apiClient.get<{ data: TourManifestOutput }>(`/manifest/${tourId}/`);
@@ -14,7 +15,7 @@ const fetchTourManifestApi = async (tourId: string): Promise<TourManifestOutput>
 
 export function useTourManifest(tourId: string) {
   return useQuery({
-    queryKey: ["tour-manifest", tourId],
+    queryKey: TOUR_MANIFEST_KEYS.byTour(tourId),
     queryFn: () => fetchTourManifestApi(tourId),
     enabled: Boolean(tourId),
     staleTime: 1000 * 60 * 5, // 5 minutos de frescura

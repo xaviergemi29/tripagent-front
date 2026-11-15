@@ -80,12 +80,12 @@ export function PoliciesTab() {
       <Card className="shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <ScrollText className="h-5 w-5 text-indigo-600" /> Políticas de la Agencia
+            <ScrollText className="h-5 w-5 text-indigo-600" /> Políticas y Términos Comerciales de
+            la Agencia
           </CardTitle>
           <CardDescription>
-            Condiciones generales de cancelación, pagos y viaje. Se imprimen al final del estado de
-            cuenta PDF, después de las políticas específicas de cada tour (que se capturan en el
-            formulario del tour).
+            Condiciones generales de cancelación, pagos y reglas de viaje. Se imprimirán al final
+            del estado de cuenta PDF del viajero..
           </CardDescription>
         </CardHeader>
 

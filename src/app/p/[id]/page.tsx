@@ -10,7 +10,11 @@ import { notFound } from "next/navigation";
 import { BrochureAvailability } from "@/features/public-tours/components/BrochureAvailability";
 import { BrochureCallToAction } from "@/features/public-tours/components/BrochureCallToAction";
 import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
-import { buildWhatsAppUrl, toPhoneDigits } from "@/shared/utils/share-links.util";
+import {
+  buildApiPublicFileUrl,
+  buildWhatsAppUrl,
+  toPhoneDigits,
+} from "@/shared/utils/share-links.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 
 /** Chat con un asesor para resolver dudas antes de reservar (CTA secundario). */
@@ -68,7 +72,8 @@ export default async function PublicTourLanding({ params }: PublicTourLanding) {
   const isHiking = tour.transportModality === "INDEPENDENT_ACCESS";
   const formattedDepartureDate = formatLocalDate(tour.departureDateTime);
 
-  const pdfUrl = tour.brochureUrl ? `http://192.168.1.73/public${tour.brochureUrl}` : null;
+  // El folleto se sirve en <origen de la API>/public/… (sin /api), igual que en TourForm.
+  const pdfUrl = tour.brochureUrl ? buildApiPublicFileUrl(tour.brochureUrl) : null;
 
   const whatsappUrl = buildWhatsAppAdvisorUrl({
     agencyPhone: tour.agency.phone,

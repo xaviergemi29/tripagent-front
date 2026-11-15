@@ -10,6 +10,7 @@ import {
   PASSENGER_ROLE,
   PASSENGER_ROLES,
   PAYMENT_METHODS,
+  FORM_STATUSES,
   REFUND_STATUSES,
   TOUR_CANCELLATION_REASONS,
   TOUR_TEMPORAL_STATUS,
@@ -17,7 +18,7 @@ import {
 } from "@/shared/constants/domain.constants";
 
 export const currencySchema = z.enum(CURRENCIES);
-export const formStatusSchema = z.enum(["COMPLETED", "PENDING"]);
+export const formStatusSchema = z.enum(FORM_STATUSES);
 export const paymentStatusSchema = z.enum(["PAID", "ADVANCE", "PENDING_VALIDATION", "PENDING"]);
 export const passengerRoleSchema = z.enum(PASSENGER_ROLES);
 // Los mismos cuatro estados que el catálogo (regla 9; decisión del PM, 2026-11-14). Antes este
@@ -164,7 +165,7 @@ export const tourDashboardOutputSchema = z.object({
   refunds: z.array(refundRowSchema).default([]),
 });
 
-export type FormStatus = z.infer<typeof formStatusSchema>;
+export type { FormStatus } from "@/shared/constants/domain.constants";
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
 export type PaymentRecordOutput = z.infer<typeof paymentRecordSchema>;
 export type CompanionOutput = z.infer<typeof companionSchema>;

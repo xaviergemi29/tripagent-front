@@ -6,16 +6,7 @@ import type {
 } from "../schemas/traveler.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
-
-// ============================================================================
-// 1. QUERY KEY FACTORY (Patrón de Arquitectura Limpia)
-// ============================================================================
-export const TRAVELER_KEYS = {
-  all: ["travelers"] as const,
-  lists: (search?: string) => [...TRAVELER_KEYS.all, { search }] as const,
-  detail: (id: string) => [...TRAVELER_KEYS.all, "detail", id] as const,
-  history: (id: string) => [...TRAVELER_KEYS.all, "history", id] as const,
-};
+import { TRAVELER_KEYS } from "@/shared/api/query-keys";
 
 // ============================================================================
 // 2. CAPA DE RED (Axios API Client)

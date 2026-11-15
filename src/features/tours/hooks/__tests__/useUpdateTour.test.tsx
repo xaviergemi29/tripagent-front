@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { TOUR_DASHBOARD_KEYS } from "@/features/tour-dashboard/hooks/useTourDashboard";
-import { TOUR_KEYS, useUpdateTour } from "../useTours";
+import { useUpdateTour } from "../useTours";
+import { TOUR_DASHBOARD_KEYS, TOUR_KEYS } from "@/shared/api/query-keys";
 
 const TOUR_ID = "92779764-2131-4c4b-8153-398fbd74bfad";
 

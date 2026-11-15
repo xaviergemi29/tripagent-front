@@ -5,11 +5,11 @@ import { FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { generatePartialPaymentReceiptPDF } from "../pdf/payment-receipt.pdf";
+import { generatePartialPaymentReceiptPDF } from "@/features/statements/pdf/payment-receipt.pdf";
 import {
   buildMagicLinkStatement,
   type MagicLinkStatementSource,
-} from "../pdf/magic-link-statement";
+} from "@/features/statements/pdf/magic-link-statement";
 
 interface DownloadStatementButtonProps {
   /**

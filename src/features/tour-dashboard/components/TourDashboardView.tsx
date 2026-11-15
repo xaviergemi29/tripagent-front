@@ -6,17 +6,17 @@ import {
   type DashboardTab,
 } from "@/features/tour-dashboard/constants/dashboard-tabs";
 import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
-import { CancelTourDialog } from "./CancelTourDialog";
-import { CancelledTourBanner } from "./CancelledTourBanner";
-import { RefundsPanel } from "./RefundsPanel";
-import { TourDashboardHeader } from "./TourDashboardHeader";
+import { CancelTourDialog } from "@/features/tour-dashboard/components/header/CancelTourDialog";
+import { CancelledTourBanner } from "@/features/tour-dashboard/components/header/CancelledTourBanner";
+import { RefundsPanel } from "@/features/tour-dashboard/components/finance/RefundsPanel";
+import { TourDashboardHeader } from "@/features/tour-dashboard/components/header/TourDashboardHeader";
 import { useTourDashboardByTourId } from "../hooks/useTourDashboard";
-import { QuickReservationModal } from "./QuickReservationModal";
-import { SeatMapCanvas } from "@/features/tours/components/SeatMapCanvas";
-import { DashboardTravelerTable } from "./DashboardTravelerTable";
+import { QuickReservationModal } from "@/features/tour-dashboard/components/passengers/QuickReservationModal";
+import { SeatMapCanvas } from "@/features/tour-dashboard/components/seating/SeatMapCanvas";
+import { DashboardTravelerTable } from "@/features/tour-dashboard/components/passengers/DashboardTravelerTable";
 import { useAgency } from "@/features/settings/hooks/useAgency";
 import { useAgencyBranding } from "@/features/settings/hooks/useAgencyBranding";
-import type { StatementPDFData } from "@/features/external-registration/pdf/payment-receipt.pdf";
+import type { StatementPDFData } from "@/features/statements/pdf/payment-receipt.pdf";
 import { buildApiPublicFileUrl } from "@/shared/utils/share-links.util";
 import type {
   CompanionOutput,
@@ -24,13 +24,13 @@ import type {
   TitularRowOutput,
 } from "../schemas/tour-dashboard.schema";
 
-import { TravelersTableToolbar } from "./TravelersTableToolbar";
-import { TravelerDetailDrawer } from "./TravelerDetailDrawer";
+import { TravelersTableToolbar } from "@/features/tour-dashboard/components/passengers/TravelersTableToolbar";
+import { TravelerDetailDrawer } from "@/features/tour-dashboard/components/finance/TravelerDetailDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TourTabsNav } from "./TourTabsNav";
-import { VehicleStatusBanner } from "./VehicleStatusBanner";
-import { UnassignedSeatsPanel } from "./UnassignedSeatsPanel";
-import { VehicleSelectionModal } from "./VehicleSelectionModal";
+import { TourTabsNav } from "@/features/tour-dashboard/components/header/TourTabsNav";
+import { VehicleStatusBanner } from "@/features/tour-dashboard/components/seating/VehicleStatusBanner";
+import { UnassignedSeatsPanel } from "@/features/tour-dashboard/components/seating/UnassignedSeatsPanel";
+import { VehicleSelectionModal } from "@/features/tour-dashboard/components/seating/VehicleSelectionModal";
 import { MobileHeader } from "./mobile/MobileHeader";
 import { MobileKpiCards } from "./mobile/MobileKpiCards";
 import { MobileTabsNav } from "./mobile/MobileTabsNav";

@@ -2,16 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TourOutput, TourInput } from "../schemas/tour.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
-import { TOUR_DASHBOARD_KEYS } from "@/features/tour-dashboard/hooks/useTourDashboard";
-
-// ============================================================================
-// 1. QUERY KEY FACTORY (Patrón de Arquitectura Limpia)
-// ============================================================================
-export const TOUR_KEYS = {
-  all: ["tours"] as const,
-  lists: (search?: string) => [...TOUR_KEYS.all, { search }] as const,
-  detail: (id: string) => [...TOUR_KEYS.all, "detail", id] as const,
-};
+import { TOUR_DASHBOARD_KEYS, TOUR_KEYS } from "@/shared/api/query-keys";
 
 // ============================================================================
 // 2. CAPA DE RED (Axios API Client)
@@ -53,7 +44,6 @@ const uploadTourBrochureApi = async ({
 }): Promise<TourOutput> => {
   const formData = new FormData();
   formData.append("brochure", file);
-  console.log("formData", formData);
   return apiClient.post<never, TourOutput>(`/tours/${tourId}/brochure`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });

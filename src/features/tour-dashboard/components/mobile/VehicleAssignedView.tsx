@@ -1,5 +1,5 @@
 import { Bus, RefreshCw, Info } from "lucide-react";
-import { SeatMapCanvas } from "@/features/tours/components/SeatMapCanvas";
+import { SeatMapCanvas } from "@/features/tour-dashboard/components/seating/SeatMapCanvas";
 import { getInitials } from "@/shared/utils/travelers-helpers";
 import type { FlattenedPassenger, VehicleOutput } from "../../schemas/tour-dashboard.schema";
 import { PASSENGER_ROLE_DICT } from "@/shared/utils/config/status-dictionaries.config";

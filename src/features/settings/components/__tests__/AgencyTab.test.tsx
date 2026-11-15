@@ -42,4 +42,21 @@ describe("Configuración → Agencia: número de tarjeta opcional", () => {
       expect.objectContaining({ cardNumber: "", clabeNumber: "012180001234567891" }),
     ]);
   });
+
+  it("guarda el enlace al aviso de privacidad (A1)", async () => {
+    updateAgency.mockClear();
+    const user = userEvent.setup();
+    render(<AgencyTab />);
+
+    await user.type(
+      screen.getByLabelText(/Enlace al aviso de privacidad/),
+      "https://brujitours.mx/privacidad",
+    );
+    await user.click(screen.getByRole("button", { name: /Guardar/ }));
+
+    await waitFor(() => expect(updateAgency).toHaveBeenCalledTimes(1));
+    expect(updateAgency.mock.calls[0]).toEqual([
+      expect.objectContaining({ privacyNoticeUrl: "https://brujitours.mx/privacidad" }),
+    ]);
+  });
 });

@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CancelTourDialog } from "../CancelTourDialog";
-import { RefundsPanel } from "../RefundsPanel";
+import { CancelTourDialog } from "@/features/tour-dashboard/components/header/CancelTourDialog";
+import { RefundsPanel } from "@/features/tour-dashboard/components/finance/RefundsPanel";
 import { CancelledBookingView } from "@/features/external-registration/components/CancelledBookingView";
 import { TourDesktopTable } from "@/features/tours/components/TourDesktopTable";
 import type { RefundRowOutput } from "../../schemas/tour-dashboard.schema";

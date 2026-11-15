@@ -1,10 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import type { VehicleTemplateOutput } from "../schemas/vehicle.schema";
-
-export const VEHICLE_TEMPLATE_KEYS = {
-  all: ["vehicle-templates"] as const,
-};
+import { VEHICLE_TEMPLATE_KEYS } from "@/shared/api/query-keys";
 
 const fetchVehicleTemplatesApi = async (): Promise<VehicleTemplateOutput[]> =>
   apiClient.get<never, VehicleTemplateOutput[]>("/vehicle-templates");

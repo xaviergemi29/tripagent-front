@@ -1,7 +1,7 @@
 import { PASSENGER_ROLE } from "@/shared/constants/domain.constants";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { TransferPassengerModal } from "../TransferPassengerModal";
+import { TransferPassengerModal } from "@/features/tour-dashboard/components/passengers/TransferPassengerModal";
 
 // Aísla el modal de la red: capturamos lo que se enviaría a PATCH /bookings/:bookingId/transfer.
 const mutate = vi.fn();

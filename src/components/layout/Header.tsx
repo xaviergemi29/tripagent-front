@@ -7,8 +7,8 @@ import { AgencyLogo } from "@/components/shared/AgencyLogo";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
-import { useSession } from "@/app/(auth)/hooks/useSession";
-import { useLogout } from "@/features/settings/hooks/useAuth";
+import { useSession } from "@/features/auth/hooks/useSession";
+import { useLogout } from "@/features/auth/hooks/useAuth";
 import { NAVIGATION_ITEMS, SYSTEM_ITEMS } from "@/shared/utils/config/navigation";
 
 export function Header() {

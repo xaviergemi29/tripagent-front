@@ -17,6 +17,10 @@ export const DEFAULT_CURRENCY: Currency = "MXN";
 export const PAYMENT_METHODS = ["CASH", "TRANSFER", "CARD", "OTHER"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
+/** Estado del formulario de registro de un pasajero en el Centro de Control (lo calcula la API). */
+export const FORM_STATUSES = ["COMPLETED", "PENDING"] as const;
+export type FormStatus = (typeof FORM_STATUSES)[number];
+
 /** Tipo de movimiento del libro de pagos (enum `payment_type` de la API). */
 export const PAYMENT_TYPES = ["PAYMENT", "REFUND"] as const;
 export type PaymentType = (typeof PAYMENT_TYPES)[number];

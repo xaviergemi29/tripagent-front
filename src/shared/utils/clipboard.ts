@@ -1,10 +1,3 @@
-import { TourOutput } from "@/features/tours/schemas/tour.schema";
-import { formatCurrency } from "./currency.util";
-import { formatSpanishLongDate } from "./tour-date.util";
-import { toast } from "sonner";
-import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
-import { buildBrochureUrl } from "./share-links.util";
-
 /**
  * @description Copia un texto al portapapeles del sistema operativo.
  * Implementa una estrategia de degradación elegante (Graceful Degradation):
@@ -60,36 +53,5 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
   } catch (error) {
     console.error("Fallo al copiar con execCommand", error);
     return false;
-  }
-};
-
-export const handleShareLink = async (tour: TourOutput): Promise<void> => {
-  const publicUrl = buildBrochureUrl(tour.id);
-  const formattedDate = formatSpanishLongDate(tour.departureDateTime);
-  const deposit = tour.depositPerPerson || 0;
-
-  const formattedDeposit = formatCurrency(deposit, {
-    currency: tour.currency || DEFAULT_CURRENCY,
-  });
-
-  const depositLine = deposit > 0 ? `💰 Aparta desde: ${formattedDeposit}\n` : "";
-
-  const shareText = `🎒 ¡Hola! Te comparto la información completa para el ${tour.title}
-🗓️ Salida: ${formattedDate}
-${depositLine}Revisa todos los detalles (horarios, fotos y qué incluye) en nuestro folleto digital:
-👉 ${publicUrl}
-
-📲 Cualquier duda, respóndeme a este mensaje.`;
-
-  const success = await copyToClipboard(shareText);
-
-  if (success) {
-    toast.success(
-      "Información del folleto copiada al portapapeles. ¡Lista para enviar por WhatsApp!",
-    );
-  } else {
-    toast.error("Error al copiar", {
-      description: "No pudimos acceder al portapapeles. Intenta copiarlo manualmente.",
-    });
   }
 };

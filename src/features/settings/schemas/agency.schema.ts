@@ -14,6 +14,13 @@ const agencyFormFields = {
   email: z.email("Debe ser un correo electrónico válido").trim(),
   bankAccountHolder: z.string().trim().nullish().or(emptyStringToUndefined),
   address: z.string().trim().nullish().or(emptyStringToUndefined),
+  // Enlace al aviso de privacidad (LFPDPPP), opcional: se muestra junto a la casilla obligatoria
+  // del registro en el Magic Link (decisión del PM, 2026-11-14). Vacío → la API guarda null.
+  privacyNoticeUrl: z
+    .url("Debe ser un enlace válido (https://…)")
+    .trim()
+    .nullish()
+    .or(z.literal("")),
   clabeNumber: z
     .string("La CLABE es obligatoria")
     .trim()

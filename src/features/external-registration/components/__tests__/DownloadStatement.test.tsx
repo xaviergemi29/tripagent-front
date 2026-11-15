@@ -3,11 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PaidBookingView } from "../PaidBookingView";
 import { PartialPaymentView } from "../PartialPaymentView";
-import type { StatementPDFData } from "../../pdf/payment-receipt.pdf";
+import type { StatementPDFData } from "@/features/statements/pdf/payment-receipt.pdf";
 
 const generate = vi.fn<(data: StatementPDFData) => Promise<void>>();
-vi.mock("../../pdf/payment-receipt.pdf", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../pdf/payment-receipt.pdf")>()),
+vi.mock("@/features/statements/pdf/payment-receipt.pdf", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/statements/pdf/payment-receipt.pdf")>()),
   generatePartialPaymentReceiptPDF: (data: StatementPDFData) => generate(data),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));

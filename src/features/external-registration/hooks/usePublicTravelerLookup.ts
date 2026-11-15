@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import type { TravelerOutput } from "@/features/travelers/schemas/traveler.schema";
+import { PUBLIC_TRAVELER_LOOKUP_KEYS } from "@/shared/api/query-keys";
 
 export function usePublicTravelerLookup(magicToken: string) {
   const queryClient = useQueryClient();
@@ -10,7 +11,7 @@ export function usePublicTravelerLookup(magicToken: string) {
 
     try {
       const result = await queryClient.fetchQuery({
-        queryKey: ["public-traveler-lookup", magicToken, phone],
+        queryKey: PUBLIC_TRAVELER_LOOKUP_KEYS.byPhone(magicToken, phone),
         queryFn: async () => {
           // Petición a la ruta pública enviando el token en la URL
           return await apiClient.get<never, TravelerOutput>(

@@ -1,13 +1,13 @@
 import { apiClient, ApiError } from "@/lib/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { TOUR_DASHBOARD_KEYS } from "./useTourDashboard";
 import {
   PaymentInput,
   PaymentOutput,
   VoidPaymentInput,
   VoidPaymentOutput,
 } from "../schemas/payment.schema";
+import { TOUR_DASHBOARD_KEYS } from "@/shared/api/query-keys";
 
 const createPaymentApi = ({ bookingId, payload: data }: PaymentInput): Promise<PaymentOutput> => {
   return apiClient.post<PaymentOutput, never>(`/payments/${bookingId}/payments`, data);

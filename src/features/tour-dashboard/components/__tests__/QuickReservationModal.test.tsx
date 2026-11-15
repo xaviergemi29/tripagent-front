@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { QuickReservationModal } from "../QuickReservationModal";
+import { QuickReservationModal } from "@/features/tour-dashboard/components/passengers/QuickReservationModal";
 
 const copy = vi.fn<(text: string) => Promise<boolean>>();
 vi.mock("@/shared/utils/clipboard", () => ({ copyToClipboard: (t: string) => copy(t) }));
@@ -9,7 +9,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/features/travelers/hooks/useTravelers", () => ({
   useTravelerLookup: () => ({ lookupTraveler: async () => null }),
 }));
-vi.mock("@/features/external-registration/hooks/useBookings", () => ({
+vi.mock("@/features/tour-dashboard/hooks/useBookingActions", () => ({
   useQuickReservation: () => ({
     isPending: false,
     mutate: (_: unknown, opts: { onSuccess: (r: { token: string }) => void }) =>

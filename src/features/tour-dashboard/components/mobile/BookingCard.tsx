@@ -14,8 +14,8 @@ import { formatCurrency } from "@/shared/utils/currency.util";
 import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
-import { SeatWithoutDepositBadge } from "../SeatWithoutDepositBadge";
-import { UnpaidHoldAge } from "../UnpaidHoldAge";
+import { SeatWithoutDepositBadge } from "@/features/tour-dashboard/components/passengers/SeatWithoutDepositBadge";
+import { UnpaidHoldAge } from "@/features/tour-dashboard/components/passengers/UnpaidHoldAge";
 
 interface BookingCardProps {
   titular: TitularRowOutput;

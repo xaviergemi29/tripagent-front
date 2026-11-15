@@ -32,7 +32,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import type { TourOutput } from "../schemas/tour.schema";
 import { formatTourDateTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
-import { handleShareLink } from "@/shared/utils/clipboard";
+import { handleShareLink } from "@/features/tours/utils/share-tour.util";
 import {
   DEFAULT_CURRENCY,
   TOUR_TEMPORAL_STATUS,
