@@ -41,6 +41,10 @@ export const PASSENGER_ROLE = {
   COMPANION: "COMPANION",
 } as const satisfies Record<PassengerRole, PassengerRole>;
 
+// Rol del usuario de la agencia (enum `agency_roles` de la API; viaja en `GET /auth/me`).
+export const AGENCY_ROLES = ["ADMIN", "SALES", "GUIDE"] as const;
+export type AgencyRole = (typeof AGENCY_ROLES)[number];
+
 /**
  * Estado temporal del tour (`temporalStatus` del listado de tours), calculado por la API con la hora
  * de CDMX. "EN CURSO" lleva espacio, no guion bajo. Espejo de `TOUR_TEMPORAL_STATUS` en

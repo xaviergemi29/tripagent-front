@@ -43,20 +43,117 @@ describe("Configuración → Agencia: número de tarjeta opcional", () => {
     ]);
   });
 
-  it("guarda el enlace al aviso de privacidad (A1)", async () => {
+  it("captura la tarjeta como en el ejemplo (con espacios) y la guarda solo con dígitos", async () => {
     updateAgency.mockClear();
     const user = userEvent.setup();
     render(<AgencyTab />);
 
-    await user.type(
-      screen.getByLabelText(/Enlace al aviso de privacidad/),
-      "https://brujitours.mx/privacidad",
-    );
+    const card = screen.getByLabelText(/Número de Tarjeta/);
+    await user.clear(card);
+    await user.type(card, "4152 3134 1234 5678");
+    expect(card).toHaveValue("4152 3134 1234 5678"); // ya no se corta a 16 caracteres
     await user.click(screen.getByRole("button", { name: /Guardar/ }));
 
     await waitFor(() => expect(updateAgency).toHaveBeenCalledTimes(1));
     expect(updateAgency.mock.calls[0]).toEqual([
-      expect.objectContaining({ privacyNoticeUrl: "https://brujitours.mx/privacidad" }),
+      expect.objectContaining({ cardNumber: "4152313412345678" }),
     ]);
+  });
+
+  it("una CLABE pegada agrupada se guarda solo con dígitos", async () => {
+    updateAgency.mockClear();
+    const user = userEvent.setup();
+    render(<AgencyTab />);
+
+    const clabe = screen.getByLabelText(/CLABE Interbancaria/);
+    await user.clear(clabe);
+    await user.type(clabe, "012 180 00123456789 1");
+    await user.click(screen.getByRole("button", { name: /Guardar/ }));
+
+    await waitFor(() => expect(updateAgency).toHaveBeenCalledTimes(1));
+    expect(updateAgency.mock.calls[0]).toEqual([
+      expect.objectContaining({ clabeNumber: "012180001234567891" }),
+    ]);
+  });
+
+  it("una tarjeta incompleta muestra el error y no se envía", async () => {
+    updateAgency.mockClear();
+    const user = userEvent.setup();
+    render(<AgencyTab />);
+
+    const card = screen.getByLabelText(/Número de Tarjeta/);
+    await user.clear(card);
+    await user.type(card, "4152 3134");
+    await user.click(screen.getByRole("button", { name: /Guardar/ }));
+
+    expect(
+      await screen.findByText("La tarjeta debe contener exactamente 16 números"),
+    ).toBeInTheDocument();
+    expect(updateAgency).not.toHaveBeenCalled();
+  });
+
+  it("ya no captura el aviso de privacidad ni lo envía (la API conserva el valor guardado)", async () => {
+    updateAgency.mockClear();
+    const user = userEvent.setup();
+    render(<AgencyTab />);
+
+    expect(screen.queryByLabelText(/aviso de privacidad/i)).not.toBeInTheDocument();
+    // Sin cambios "Guardar" está deshabilitado: se edita un campo para poder guardar.
+    await user.type(screen.getByLabelText("Nombre Comercial"), " MX");
+    await user.click(screen.getByRole("button", { name: /Guardar/ }));
+
+    await waitFor(() => expect(updateAgency).toHaveBeenCalledTimes(1));
+    expect((updateAgency.mock.calls[0] as unknown[])[0]).not.toHaveProperty("privacyNoticeUrl");
+  });
+});
+
+describe("Configuración → Agencia: botón Guardar", () => {
+  const saveButton = () => screen.getByRole("button", { name: /Guardar/ });
+
+  it("sin cambios está deshabilitado", () => {
+    render(<AgencyTab />);
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it("con la tarjeta inválida se deshabilita y se vuelve a habilitar al corregirla", async () => {
+    const user = userEvent.setup();
+    render(<AgencyTab />);
+    const card = screen.getByLabelText(/Número de Tarjeta/);
+
+    await user.clear(card);
+    await user.type(card, "4152 3134");
+    expect(
+      await screen.findByText("La tarjeta debe contener exactamente 16 números"),
+    ).toBeInTheDocument();
+    expect(saveButton()).toBeDisabled();
+
+    await user.type(card, " 1234 5678");
+    await waitFor(() => expect(saveButton()).toBeEnabled());
+    expect(
+      screen.queryByText("La tarjeta debe contener exactamente 16 números"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("con cualquier otro campo inválido también se deshabilita (CLABE, teléfono, correo)", async () => {
+    const user = userEvent.setup();
+    render(<AgencyTab />);
+
+    await user.clear(screen.getByLabelText(/CLABE Interbancaria/));
+    await user.type(screen.getByLabelText(/CLABE Interbancaria/), "0121");
+    expect(await screen.findByText(/exactamente 18 números/)).toBeInTheDocument();
+    expect(saveButton()).toBeDisabled();
+    await user.clear(screen.getByLabelText(/CLABE Interbancaria/));
+    await user.type(screen.getByLabelText(/CLABE Interbancaria/), "012180001234567899");
+    await waitFor(() => expect(saveButton()).toBeEnabled());
+
+    await user.clear(screen.getByLabelText(/WhatsApp Oficial/));
+    await user.type(screen.getByLabelText(/WhatsApp Oficial/), "228");
+    await waitFor(() => expect(saveButton()).toBeDisabled());
+    await user.clear(screen.getByLabelText(/WhatsApp Oficial/));
+    await user.type(screen.getByLabelText(/WhatsApp Oficial/), "2288492011");
+
+    await user.clear(screen.getByLabelText(/Correo Electrónico/));
+    await user.type(screen.getByLabelText(/Correo Electrónico/), "hola@");
+    await waitFor(() => expect(saveButton()).toBeDisabled());
   });
 });

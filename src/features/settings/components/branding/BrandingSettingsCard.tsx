@@ -1,6 +1,6 @@
 "use client";
 
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useFormState, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Loader2, Palette, Save } from "lucide-react";
 import {
@@ -114,6 +114,9 @@ export function BrandingSettingsCard() {
     control: form.control,
     name: ["primaryColor", "secondaryColor", "accentColor"],
   });
+  // `useFormState` (no `form.formState`): con el React Compiler, leer `form.formState` en el render
+  // queda memorizado y el botón "Guardar" nunca se habilitaba (2026-11-14).
+  const { errors, isDirty, isValid } = useFormState({ control: form.control });
   const effectiveSecondary = previewColor(secondaryColor, DEFAULT_BRANDING_COLORS.secondaryColor);
 
   if (isError) {
@@ -139,8 +142,6 @@ export function BrandingSettingsCard() {
       </Card>
     );
   }
-
-  const { errors, isDirty, isValid } = form.formState;
 
   return (
     <form onSubmit={form.handleSubmit((colors) => updateBranding(colors))}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { Controller, useFormContext, useFormState, useWatch } from "react-hook-form";
 import { AlertCircle, Info, Lock, Wallet } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -69,7 +69,9 @@ const PAYMENT_METHOD_TOGGLES = [
  * cada método necesita (cuentas de la agencia, link de pago, instrucciones de efectivo).
  */
 export function TourFinanceSection({ isPricingFrozen, agency }: TourFinanceSectionProps) {
-  const { control, formState } = useFormContext<TourInput>();
+  const { control } = useFormContext<TourInput>();
+  // `useFormState` (no `formState` del contexto): compatible con el React Compiler.
+  const formState = useFormState({ control });
   // `useWatch` (no `watch`): compatible con el React Compiler.
   const [selectedCurrency, acceptsBankTransfer, acceptsCreditCard, acceptsCash, depositValue] =
     useWatch({

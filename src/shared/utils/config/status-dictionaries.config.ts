@@ -1,5 +1,10 @@
 import type { TourCancellationReason } from "@/shared/constants/domain.constants";
-import type { FormStatus, PassengerRole, PaymentMethod } from "@/shared/constants/domain.constants";
+import type {
+  AgencyRole,
+  FormStatus,
+  PassengerRole,
+  PaymentMethod,
+} from "@/shared/constants/domain.constants";
 
 // Interfaz genérica para estandarizar todos los badges de la UI
 export interface UIStateConfig {
@@ -69,6 +74,13 @@ export const getPaymentMethodText = (method?: string | null): string =>
 export const PASSENGER_ROLE_DICT: Record<PassengerRole, string> = {
   TITULAR: "Titular",
   COMPANION: "Acompañante",
+};
+
+// Rol del usuario de la agencia (Configuración → Seguridad)
+export const AGENCY_ROLE_DICT: Record<AgencyRole, string> = {
+  ADMIN: "Administrador",
+  SALES: "Ventas",
+  GUIDE: "Guía",
 };
 
 /**

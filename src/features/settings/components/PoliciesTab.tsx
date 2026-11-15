@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useFormState, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Loader2, Save, ScrollText } from "lucide-react";
 import {
@@ -33,8 +33,9 @@ const PLACEHOLDER = [
 ].join("\n");
 
 /**
- * Políticas generales de la agencia. Se imprimen en el estado de cuenta PDF (cliente y operador),
- * después de las políticas específicas de cada tour.
+ * Políticas generales de la agencia. Se imprimen al final del estado de cuenta PDF (cliente y
+ * operador). Los tours no tienen políticas propias (regla 17): lo particular de cada tour va en sus
+ * Instrucciones Post-Pago.
  */
 export function PoliciesTab() {
   const { data: agency, isLoading, isError } = useAgency();
@@ -48,6 +49,9 @@ export function PoliciesTab() {
     values: agency ? { policies: agency.policies ?? "" } : undefined,
   });
   const policies = useWatch({ control: form.control, name: "policies" }) ?? "";
+  // `useFormState` antes de los `return` tempranos: con el React Compiler, leer `form.formState`
+  // después de ellos queda memorizado (mismo fallo que tenía "Identidad Visual").
+  const { errors, isDirty, isValid } = useFormState({ control: form.control });
 
   if (isError) {
     return (
@@ -72,7 +76,6 @@ export function PoliciesTab() {
     );
   }
 
-  const { errors, isDirty, isValid } = form.formState;
   const isOverLimit = policies.length > POLICIES_MAX_LENGTH;
 
   return (
@@ -85,7 +88,7 @@ export function PoliciesTab() {
           </CardTitle>
           <CardDescription>
             Condiciones generales de cancelación, pagos y reglas de viaje. Se imprimirán al final
-            del estado de cuenta PDF del viajero..
+            del estado de cuenta PDF del viajero.
           </CardDescription>
         </CardHeader>
 

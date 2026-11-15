@@ -5,19 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, KeyRound, Loader2 } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, useFormState } from "react-hook-form";
 import { ChangePasswordInput, changePasswordSchema } from "@/features/auth/schemas/security.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useChangePassword } from "@/features/auth/hooks/useAuth";
+import { useSession } from "@/features/auth/hooks/useSession";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { AgencyRole } from "@/shared/constants/domain.constants";
+import { AGENCY_ROLE_DICT } from "@/shared/utils/config/status-dictionaries.config";
 
 export function SecurityTab() {
   const { isPending, mutateAsync: changePassword } = useChangePassword();
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isValid },
-  } = useForm<ChangePasswordInput>({
+  const { data: session } = useSession();
+  const { register, handleSubmit, reset, control } = useForm<ChangePasswordInput>({
     resolver: zodResolver(changePasswordSchema),
     mode: "onChange",
     defaultValues: {
@@ -26,11 +26,22 @@ export function SecurityTab() {
       confirmPassword: "",
     },
   });
+  // `useFormState` en lugar de `formState` de `useForm` (mismo criterio que las demás pestañas,
+  // por el React Compiler).
+  const { errors, isValid } = useFormState({ control });
 
   const handlePasswordChange = async (formData: ChangePasswordInput): Promise<void> => {
-    await changePassword(formData);
-    reset();
+    try {
+      await changePassword(formData);
+      reset();
+    } catch {
+      // `useChangePassword` ya muestra el error en un toast; se conservan los campos.
+    }
   };
+
+  const roleLabel = session
+    ? (AGENCY_ROLE_DICT[session.role as AgencyRole] ?? session.role)
+    : undefined;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -49,11 +60,20 @@ export function SecurityTab() {
           <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-4">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase">Sesión Actual</p>
-              <p className="mt-0.5 font-medium text-slate-900">admin@brujitours.com</p>
+              {/* Antes eran textos fijos ("admin@brujitours.com", "Administrador"). */}
+              {session ? (
+                <p className="mt-0.5 font-medium text-slate-900">{session.email}</p>
+              ) : (
+                <Skeleton className="mt-1 h-5 w-48" />
+              )}
             </div>
             <div className="text-right">
               <p className="text-xs font-semibold text-slate-500 uppercase">Rol</p>
-              <p className="mt-0.5 font-medium text-slate-900">Administrador</p>
+              {roleLabel ? (
+                <p className="mt-0.5 font-medium text-slate-900">{roleLabel}</p>
+              ) : (
+                <Skeleton className="mt-1 ml-auto h-5 w-24" />
+              )}
             </div>
           </div>
 
@@ -61,7 +81,14 @@ export function SecurityTab() {
           <form onSubmit={handleSubmit(handlePasswordChange)} className="space-y-4 border-t pt-4">
             <div className="space-y-1.5">
               <Label htmlFor="currentPass">Contraseña Actual</Label>
-              <Input {...register("currentPassword")} type="password" />
+              <Input
+                id="currentPass"
+                {...register("currentPassword")}
+                type="password"
+                autoComplete="current-password"
+                aria-invalid={Boolean(errors.currentPassword)}
+                disabled={isPending}
+              />
               {errors.currentPassword && (
                 <p className="text-xs font-medium text-red-500">{errors.currentPassword.message}</p>
               )}
@@ -70,14 +97,28 @@ export function SecurityTab() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="newPass">Nueva Contraseña</Label>
-                <Input {...register("newPassword")} type="password" />
+                <Input
+                  id="newPass"
+                  {...register("newPassword")}
+                  type="password"
+                  autoComplete="new-password"
+                  aria-invalid={Boolean(errors.newPassword)}
+                  disabled={isPending}
+                />
                 {errors.newPassword && (
                   <p className="text-xs font-medium text-red-500">{errors.newPassword.message}</p>
                 )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="confirmPass">Confirmar Nueva Contraseña</Label>
-                <Input {...register("confirmPassword")} type="password" />
+                <Input
+                  id="confirmPass"
+                  {...register("confirmPassword")}
+                  type="password"
+                  autoComplete="new-password"
+                  aria-invalid={Boolean(errors.confirmPassword)}
+                  disabled={isPending}
+                />
                 {errors.confirmPassword && (
                   <p className="text-xs font-medium text-red-500">
                     {errors.confirmPassword.message}

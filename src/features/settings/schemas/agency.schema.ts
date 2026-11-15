@@ -3,37 +3,55 @@ import { POLICIES_MAX_LENGTH } from "@/shared/constants/domain.constants";
 
 export const subscriptionStatusSchema = z.enum(["trialing", "active", "past_due", "canceled"]);
 const emptyStringToUndefined = z.literal("").transform(() => undefined);
+/** Quita espacios y guiones de una CLABE o tarjeta ("012 180-…" → "012180…"). */
+const stripAccountSeparators = (value: string): string => value.replace(/[\s-]/g, "");
 
 const agencyFormFields = {
-  name: z.string().trim().min(3, "La agencia debe tener al menos 3 caracteres"),
+  // Límites de longitud: mismos que `baseAgencySchema` de la API (antes solo los validaba la API).
+  name: z
+    .string()
+    .trim()
+    .min(3, "La agencia debe tener al menos 3 caracteres")
+    .max(255, "Máximo 255 caracteres"),
   phone: z
     .string()
     .trim()
     .regex(/^(\+)?\d{10,}$/, "El teléfono debe contener solo números (mínimo 10 dígitos)"),
-  bankName: z.string().trim().nullish().or(emptyStringToUndefined),
-  email: z.email("Debe ser un correo electrónico válido").trim(),
-  bankAccountHolder: z.string().trim().nullish().or(emptyStringToUndefined),
-  address: z.string().trim().nullish().or(emptyStringToUndefined),
-  // Enlace al aviso de privacidad (LFPDPPP), opcional: se muestra junto a la casilla obligatoria
-  // del registro en el Magic Link (decisión del PM, 2026-11-14). Vacío → la API guarda null.
-  privacyNoticeUrl: z
-    .url("Debe ser un enlace válido (https://…)")
+  bankName: z
+    .string()
     .trim()
+    .max(100, "Máximo 100 caracteres")
     .nullish()
-    .or(z.literal("")),
+    .or(emptyStringToUndefined),
+  email: z.email("Debe ser un correo electrónico válido").trim().max(255, "Máximo 255 caracteres"),
+  bankAccountHolder: z
+    .string()
+    .trim()
+    .max(255, "Máximo 255 caracteres")
+    .nullish()
+    .or(emptyStringToUndefined),
+  address: z.string().trim().nullish().or(emptyStringToUndefined),
+  // `privacyNoticeUrl` ya no se captura en Configuración (petición del usuario, 2026-11-14): el
+  // formulario no lo envía y la API conserva el valor guardado (sin enviar → no cambia).
+
+  // Se aceptan espacios y guiones (así se copian de la app del banco) y se quitan ANTES de validar:
+  // la API recibe solo dígitos. Antes se validaba primero y un "4123 4567 …" nunca se guardaba.
   clabeNumber: z
     .string("La CLABE es obligatoria")
-    .trim()
-    .min(1, "La CLABE no puede estar vacía")
-    .regex(/^\d{18}$/, "La CLABE debe contener exactamente 18 números sin espacios"),
+    .transform(stripAccountSeparators)
+    .pipe(
+      z
+        .string()
+        .min(1, "La CLABE no puede estar vacía")
+        .regex(/^\d{18}$/, "La CLABE debe contener exactamente 18 números"),
+    ),
 
   // Opcional (decisión del PM): las agencias cobran sobre todo por SPEI/CLABE. Vacío → sin tarjeta.
   cardNumber: z
     .string()
-    .trim()
-    .regex(/^\d{16}$/, "La tarjeta debe contener exactamente 16 números sin espacios")
-    .nullish()
-    .or(z.literal("")),
+    .transform(stripAccountSeparators)
+    .pipe(z.string().regex(/^(\d{16})?$/, "La tarjeta debe contener exactamente 16 números"))
+    .nullish(),
 };
 
 export const agencyOutputSchema = z.object({

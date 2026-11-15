@@ -155,7 +155,7 @@ describe("PartialPaymentView: Dónde hacer tus próximos pagos", () => {
 
     expect(screen.getByText("012 180 00123456789 1")).toBeInTheDocument();
     expect(screen.getByText("4152 3134 1234 5678")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Copiar Número de tarjeta" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copiar Número de Tarjeta" })).toBeInTheDocument();
   });
 
   it("solo con tarjeta (sin CLABE) también muestra la sección", () => {
@@ -163,7 +163,7 @@ describe("PartialPaymentView: Dónde hacer tus próximos pagos", () => {
     render(<PartialPaymentView {...data} agency={{ ...data.agency, clabeNumber: null }} />);
 
     expect(screen.getByText("Dónde hacer tus próximos pagos")).toBeInTheDocument();
-    expect(screen.queryByText("CLABE interbancaria")).not.toBeInTheDocument();
+    expect(screen.queryByText("CLABE Interbancaria")).not.toBeInTheDocument();
     expect(screen.getByText("4152 3134 1234 5678")).toBeInTheDocument();
   });
 });

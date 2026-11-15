@@ -70,21 +70,35 @@ describe("updateAgencyFormSchema", () => {
 
   it("la CLABE debe tener exactamente 18 dígitos sin espacios", () => {
     expect(pathsOf({ ...valid, clabeNumber: "0121800012345678" })).toContain("clabeNumber");
-    expect(pathsOf({ ...valid, clabeNumber: "012 180 00123456789 1" })).toContain("clabeNumber");
+    expect(pathsOf({ ...valid, clabeNumber: "012 180 001234567 89" })).toContain("clabeNumber"); // 17
     expect(pathsOf({ ...valid, clabeNumber: "" })).toContain("clabeNumber");
   });
 
   it("la tarjeta, si se captura, debe tener 16 dígitos", () => {
-    expect(pathsOf({ ...valid, cardNumber: "4152 3134 1234 5678" })).toContain("cardNumber");
+    expect(pathsOf({ ...valid, cardNumber: "4152 3134 1234 567" })).toContain("cardNumber"); // 15
     expect(pathsOf({ ...valid, cardNumber: "415231341234" })).toContain("cardNumber");
   });
 
-  it("valida teléfono, correo, nombre y la URL del aviso de privacidad", () => {
+  it("acepta CLABE y tarjeta con espacios o guiones y envía solo dígitos", () => {
+    const result = updateAgencyFormSchema.parse({
+      ...valid,
+      clabeNumber: "012 180 00123456789 1",
+      cardNumber: "4152-3134-1234-5678",
+    });
+    expect(result.clabeNumber).toBe("012180001234567891");
+    expect(result.cardNumber).toBe("4152313412345678");
+    // Sin tarjeta (vacía o nula) sigue siendo válido.
+    expect(updateAgencyFormSchema.parse({ ...valid, cardNumber: "  " }).cardNumber).toBe("");
+    expect(updateAgencyFormSchema.parse({ ...valid, cardNumber: null }).cardNumber).toBeNull();
+  });
+
+  it("valida teléfono, correo y nombre; descarta el aviso de privacidad", () => {
     expect(pathsOf({ ...valid, phone: "228-123" })).toContain("phone");
     expect(pathsOf({ ...valid, email: "hola@" })).toContain("email");
     expect(pathsOf({ ...valid, name: "VX" })).toContain("name");
-    expect(pathsOf({ ...valid, privacyNoticeUrl: "viajesxalapa.mx/privacidad" })).toContain(
-      "privacyNoticeUrl",
-    );
+    // El aviso de privacidad ya no se captura aquí: si llega, se descarta (no se envía a la API).
+    expect(
+      updateAgencyFormSchema.parse({ ...valid, privacyNoticeUrl: "https://x.mx/aviso" }),
+    ).not.toHaveProperty("privacyNoticeUrl");
   });
 });

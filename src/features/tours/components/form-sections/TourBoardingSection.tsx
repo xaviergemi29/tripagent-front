@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormContext, useFieldArray } from "react-hook-form";
+import { useFieldArray, useFormContext, useFormState, useWatch } from "react-hook-form";
 import { Plus, Trash2, MapPin, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -8,19 +8,17 @@ import { Input } from "@/components/ui/input";
 import { TourInput } from "../../schemas/tour.schema";
 
 export function TourBoardingSection() {
-  const {
-    control,
-    register,
-    watch,
-    formState: { errors },
-  } = useFormContext<TourInput>();
+  // `useWatch` y `useFormState` (no `watch` ni `formState` del contexto): con el React Compiler,
+  // `watch()` quedaba memorizado y al elegir "Hiking" la sección no cambiaba (2026-11-15).
+  const { control, register } = useFormContext<TourInput>();
+  const { errors } = useFormState({ control });
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: "boardingPoints",
   });
 
-  const transportModality = watch("transportModality");
+  const transportModality = useWatch({ control, name: "transportModality" });
   const isHiking = transportModality === "INDEPENDENT_ACCESS";
 
   return (

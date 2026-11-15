@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Building2, Landmark, Save, AlertCircle } from "lucide-react";
 import {
@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAgency, useUpdateAgency } from "../hooks/useAgency";
 import { AgencyInput, updateAgencyFormSchema } from "../schemas/agency.schema";
-import { useEffect } from "react";
 
 export function AgencyTab() {
   const { data: agencyData, isLoading: isFetching, isError } = useAgency();
@@ -25,23 +24,23 @@ export function AgencyTab() {
   const form = useForm<AgencyInput>({
     resolver: zodResolver(updateAgencyFormSchema),
     mode: "onChange",
-    defaultValues: agencyData || {},
+    values: agencyData,
+    resetOptions: { keepDirtyValues: true },
   });
+  // `useFormState` (no `form.formState`) y antes de los `return` tempranos: con el React Compiler,
+  // leer `form.formState` en el render queda memorizado y los errores no se mostraban.
+  const { errors, isDirty, isValid } = useFormState({ control: form.control });
 
-  useEffect(() => {
-    if (agencyData) {
-      form.reset(agencyData);
-    }
-  }, [agencyData, form]);
-
+  // El schema ya quitó espacios y guiones de la CLABE y la tarjeta (`stripAccountSeparators`).
   const onSubmit = async (formData: AgencyInput): Promise<void> => {
-    const sanitizedData = {
-      ...formData,
-      clabeNumber: formData.clabeNumber?.replace(/[\s-]/g, "") || formData.clabeNumber,
-      cardNumber: formData.cardNumber?.replace(/[\s-]/g, "") || formData.cardNumber,
-    };
-
-    await updateAgency(sanitizedData);
+    try {
+      await updateAgency(formData);
+      // Lo guardado deja de contar como cambio pendiente: con `keepDirtyValues`, la recarga de
+      // `values` conservaría los campos "sucios" y "Guardar" seguiría habilitado tras guardar.
+      form.reset(form.getValues());
+    } catch {
+      // `useUpdateAgency` ya muestra el error en un toast; se conservan los cambios para reintentar.
+    }
   };
 
   if (isError) {
@@ -116,41 +115,22 @@ export function AgencyTab() {
               id="address"
               placeholder="Calle, Número, Colonia, Ciudad"
               {...form.register("address")}
+              aria-invalid={Boolean(errors.address)}
               disabled={isFormLocked}
             />
-            {form.formState.errors.address && (
-              <p className="text-xs text-red-500">{form.formState.errors.address.message}</p>
-            )}
-          </div>
-
-          {/* Aviso de privacidad (LFPDPPP) */}
-          <div className="space-y-1.5">
-            <Label htmlFor="privacyNoticeUrl">Enlace al aviso de privacidad (Opcional)</Label>
-            <Input
-              id="privacyNoticeUrl"
-              type="url"
-              placeholder="https://tuagencia.mx/aviso-de-privacidad"
-              {...form.register("privacyNoticeUrl")}
-              disabled={isFormLocked}
-            />
-            <p className="text-[11px] text-slate-500">
-              Tus viajeros deben aceptar el aviso de privacidad al registrarse. Si capturas el
-              enlace, podrán abrirlo desde el formulario.
-            </p>
-            {form.formState.errors.privacyNoticeUrl && (
-              <p className="text-xs text-red-500">
-                {form.formState.errors.privacyNoticeUrl.message}
-              </p>
-            )}
+            {errors.address && <p className="text-xs text-red-500">{errors.address.message}</p>}
           </div>
 
           {/* Nombre Comercial */}
           <div className="space-y-1.5">
             <Label htmlFor="name">Nombre Comercial</Label>
-            <Input id="name" {...form.register("name")} disabled={isFormLocked} />
-            {form.formState.errors.name && (
-              <p className="text-xs text-red-500">{form.formState.errors.name.message}</p>
-            )}
+            <Input
+              id="name"
+              {...form.register("name")}
+              aria-invalid={Boolean(errors.name)}
+              disabled={isFormLocked}
+            />
+            {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
           </div>
 
           {/* Correo Electrónico */}
@@ -161,11 +141,10 @@ export function AgencyTab() {
               type="email"
               placeholder="contacto@tuagencia.com"
               {...form.register("email")}
+              aria-invalid={Boolean(errors.email)}
               disabled={isFormLocked}
             />
-            {form.formState.errors.email && (
-              <p className="text-xs text-red-500">{form.formState.errors.email.message}</p>
-            )}
+            {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
           </div>
 
           {/* Teléfono */}
@@ -177,11 +156,10 @@ export function AgencyTab() {
               maxLength={10}
               placeholder="Ej. 2281234567"
               {...form.register("phone")}
+              aria-invalid={Boolean(errors.phone)}
               disabled={isFormLocked}
             />
-            {form.formState.errors.phone && (
-              <p className="text-xs text-red-500">{form.formState.errors.phone.message}</p>
-            )}
+            {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
           </div>
         </CardContent>
       </Card>
@@ -203,8 +181,10 @@ export function AgencyTab() {
               id="bankName"
               placeholder="Ej: BBVA, Santander, Nu"
               {...form.register("bankName")}
+              aria-invalid={Boolean(errors.bankName)}
               disabled={isFormLocked}
             />
+            {errors.bankName && <p className="text-xs text-red-500">{errors.bankName.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="bankAccountHolder">Titular de la Cuenta</Label>
@@ -212,20 +192,26 @@ export function AgencyTab() {
               id="bankAccountHolder"
               placeholder="Nombre completo"
               {...form.register("bankAccountHolder")}
+              aria-invalid={Boolean(errors.bankAccountHolder)}
               disabled={isFormLocked}
             />
+            {errors.bankAccountHolder && (
+              <p className="text-xs text-red-500">{errors.bankAccountHolder.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="clabeNumber">CLABE Interbancaria *</Label>
             <Input
               id="clabeNumber"
               placeholder="18 dígitos"
-              maxLength={18}
+              // Margen para espacios o guiones al pegarla (se quitan al validar).
+              maxLength={24}
               {...form.register("clabeNumber")}
+              aria-invalid={Boolean(errors.clabeNumber)}
               disabled={isFormLocked}
             />
-            {form.formState.errors.clabeNumber && (
-              <p className="text-xs text-red-500">{form.formState.errors.clabeNumber.message}</p>
+            {errors.clabeNumber && (
+              <p className="text-xs text-red-500">{errors.clabeNumber.message}</p>
             )}
           </div>
           <div className="space-y-1.5">
@@ -233,12 +219,14 @@ export function AgencyTab() {
             <Input
               id="cardNumber"
               placeholder="Ej: 4123 4567 8901 2345"
-              maxLength={16}
+              // 16 dígitos + separadores: antes `maxLength={16}` cortaba el ejemplo con espacios.
+              maxLength={19}
               {...form.register("cardNumber")}
+              aria-invalid={Boolean(errors.cardNumber)}
               disabled={isFormLocked}
             />
-            {form.formState.errors.cardNumber && (
-              <p className="text-xs text-red-500">{form.formState.errors.cardNumber.message}</p>
+            {errors.cardNumber && (
+              <p className="text-xs text-red-500">{errors.cardNumber.message}</p>
             )}
           </div>
         </CardContent>
@@ -246,7 +234,9 @@ export function AgencyTab() {
           <Button
             type="submit"
             className="w-full bg-indigo-600 hover:bg-indigo-700 sm:w-auto"
-            // disabled={isFormLocked || !form.formState.isValid}
+            // Deshabilitado sin cambios, con algún campo inválido (p. ej. la tarjeta incompleta) o
+            // mientras carga o guarda: antes quedaba comentado y el botón siempre estaba activo.
+            disabled={isFormLocked || !isDirty || !isValid}
           >
             {isUpdating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
