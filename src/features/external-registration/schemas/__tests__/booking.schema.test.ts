@@ -27,8 +27,13 @@ const companion = {
   passengerType: "CHILD" as const,
 };
 
-const messagesAt = (result: { success: boolean; error?: { issues: { path: PropertyKey[]; message: string }[] } }, path: string) =>
-  result.success ? [] : result.error!.issues.filter((i) => i.path.join(".") === path).map((i) => i.message);
+const messagesAt = (
+  result: { success: boolean; error?: { issues: { path: PropertyKey[]; message: string }[] } },
+  path: string,
+) =>
+  result.success
+    ? []
+    : result.error!.issues.filter((i) => i.path.join(".") === path).map((i) => i.message);
 
 describe("mainClientSchema (titular)", () => {
   it("acepta un titular válido y la fecha vacía", () => {
@@ -37,14 +42,21 @@ describe("mainClientSchema (titular)", () => {
   });
 
   it("exige WhatsApp de 10 dígitos (acepta +), correo válido y punto de abordaje", () => {
-    expect(mainClientSchema.safeParse({ ...titular, whatsappPhone: "+2281234567" }).success).toBe(true);
-    expect(messagesAt(mainClientSchema.safeParse({ ...titular, whatsappPhone: "228123" }), "whatsappPhone")).toHaveLength(1);
-    expect(messagesAt(mainClientSchema.safeParse({ ...titular, email: "ana@" }), "email")).toContain(
-      "Correo electrónico inválido",
+    expect(mainClientSchema.safeParse({ ...titular, whatsappPhone: "+2281234567" }).success).toBe(
+      true,
     );
-    expect(messagesAt(mainClientSchema.safeParse({ ...titular, boardingPoint: "" }), "boardingPoint")).toContain(
-      "Debes seleccionar en qué punto subirás al autobús",
-    );
+    expect(
+      messagesAt(
+        mainClientSchema.safeParse({ ...titular, whatsappPhone: "228123" }),
+        "whatsappPhone",
+      ),
+    ).toHaveLength(1);
+    expect(
+      messagesAt(mainClientSchema.safeParse({ ...titular, email: "ana@" }), "email"),
+    ).toContain("Correo electrónico inválido");
+    expect(
+      messagesAt(mainClientSchema.safeParse({ ...titular, boardingPoint: "" }), "boardingPoint"),
+    ).toContain("Debes seleccionar en qué punto subirás al autobús");
   });
 
   it("el contacto de emergencia no puede ser el mismo WhatsApp del titular", () => {
@@ -84,7 +96,11 @@ describe("companionSchema (acompañante)", () => {
       "El contacto de emergencia debe ser distinto al WhatsApp del acompañante",
     );
 
-    const child = { ...companion, whatsappPhone: "2285556666", emergencyContactPhone: "2285556666" };
+    const child = {
+      ...companion,
+      whatsappPhone: "2285556666",
+      emergencyContactPhone: "2285556666",
+    };
     expect(messagesAt(companionSchema.safeParse(child), "emergencyContactPhone")).toContain(
       "El contacto de emergencia debe ser distinto al WhatsApp del menor",
     );
@@ -106,7 +122,12 @@ describe("bookingFormSchema (formulario completo)", () => {
   });
 
   it("rechaza el registro sin aceptar las políticas y el aviso de privacidad", () => {
-    expect(messagesAt(bookingFormSchema.safeParse({ ...base, privacyNoticeAccepted: false }), "privacyNoticeAccepted")).toContain(
+    expect(
+      messagesAt(
+        bookingFormSchema.safeParse({ ...base, privacyNoticeAccepted: false }),
+        "privacyNoticeAccepted",
+      ),
+    ).toContain(
       "Es necesario aceptar las políticas y el aviso de privacidad para completar tu registro.",
     );
   });
@@ -116,6 +137,8 @@ describe("bookingFormSchema (formulario completo)", () => {
       ...base,
       companions: [companion, { ...companion, fullName: "Ed" }],
     });
-    expect(messagesAt(result, "companions.1.fullName")).toContain("El nombre completo es obligatorio");
+    expect(messagesAt(result, "companions.1.fullName")).toContain(
+      "El nombre completo es obligatorio",
+    );
   });
 });

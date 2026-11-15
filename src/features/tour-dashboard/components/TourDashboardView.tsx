@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   DEFAULT_DASHBOARD_TAB,
   type DashboardTab,
@@ -12,30 +12,28 @@ import { RefundsPanel } from "@/features/tour-dashboard/components/finance/Refun
 import { TourDashboardHeader } from "@/features/tour-dashboard/components/header/TourDashboardHeader";
 import { useTourDashboardByTourId } from "../hooks/useTourDashboard";
 import { QuickReservationModal } from "@/features/tour-dashboard/components/passengers/QuickReservationModal";
-import { SeatMapCanvas } from "@/features/tour-dashboard/components/seating/SeatMapCanvas";
 import { DashboardTravelerTable } from "@/features/tour-dashboard/components/passengers/DashboardTravelerTable";
 import { useAgency } from "@/features/settings/hooks/useAgency";
 import { useAgencyBranding } from "@/features/settings/hooks/useAgencyBranding";
-import type { StatementPDFData } from "@/features/statements/pdf/payment-receipt.pdf";
-import { buildApiPublicFileUrl } from "@/shared/utils/share-links.util";
-import type {
-  CompanionOutput,
-  FlattenedPassenger,
-  TitularRowOutput,
-} from "../schemas/tour-dashboard.schema";
+import { useDashboardFilters } from "../hooks/useDashboardFilters";
+import {
+  filterDashboardTravelers,
+  findDashboardTraveler,
+  getSeatEligiblePassengers,
+} from "../utils/dashboard-travelers.util";
+import { buildOperatorStatementAgency } from "../utils/statement-agency.util";
 
 import { TravelersTableToolbar } from "@/features/tour-dashboard/components/passengers/TravelersTableToolbar";
 import { TravelerDetailDrawer } from "@/features/tour-dashboard/components/finance/TravelerDetailDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TourTabsNav } from "@/features/tour-dashboard/components/header/TourTabsNav";
-import { VehicleStatusBanner } from "@/features/tour-dashboard/components/seating/VehicleStatusBanner";
-import { UnassignedSeatsPanel } from "@/features/tour-dashboard/components/seating/UnassignedSeatsPanel";
+import { DesktopSeatingTab } from "@/features/tour-dashboard/components/seating/DesktopSeatingTab";
 import { VehicleSelectionModal } from "@/features/tour-dashboard/components/seating/VehicleSelectionModal";
 import { MobileHeader } from "./mobile/MobileHeader";
 import { MobileKpiCards } from "./mobile/MobileKpiCards";
 import { MobileTabsNav } from "./mobile/MobileTabsNav";
 import { MobileFilters } from "./mobile/MobileFilters";
-import { BookingCard } from "./mobile/BookingCard";
+import { MobilePassengersList } from "./mobile/MobilePassengersList";
 import { MobileSeatsTab } from "./mobile/MobileSeatsTab";
 
 interface TourDashboardViewProps {
@@ -48,10 +46,8 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   const { data: agency } = useAgency();
   const { data: branding } = useAgencyBranding();
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("ALL");
-  const [formFilter, setFormFilter] = useState("ALL");
-  const [seatFilter, setSeatFilter] = useState("ALL");
+  const { filters, setSearchQuery, setPaymentFilter, setFormFilter, setSeatFilter, clearFilters } =
+    useDashboardFilters();
 
   // Modo Auditoría (solo lectura): tour FINALIZADO o CANCELADO (pausado). Un tour EN CURSO sigue
   // operable: abonos de último minuto y ajustes de asiento antes de salir (decisión del PM, 2026-11-14).
@@ -80,125 +76,11 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
     }
   };
 
-  const handleClearFilters = (): void => {
-    setSearchQuery("");
-    setPaymentFilter("ALL");
-    setFormFilter("ALL");
-    setSeatFilter("ALL");
-  };
-
-  const flattenedPassengers = useMemo(() => {
-    if (!tour?.travelers) return [];
-
-    return tour.travelers.flatMap((titular) => {
-      // Solo grupos que cubren el anticipo requerido pasan a "Faltan por acomodar".
-      if (!titular.hasSeatRight) return [];
-
-      const eligiblePassengers: FlattenedPassenger[] = [
-        {
-          id: titular.id,
-          fullName: titular.fullName,
-          bookingId: titular.bookingId,
-          seatNumber: titular.seatLabel,
-          role: titular.role,
-          paxCount: titular.groupSize,
-        },
-      ];
-
-      if (titular.companions) {
-        titular.companions.forEach((c) => {
-          eligiblePassengers.push({
-            id: c.id,
-            fullName: c.fullName,
-            bookingId: titular.bookingId,
-            seatNumber: c.seatLabel,
-            role: c.role,
-            paxCount: 1,
-          });
-        });
-      }
-      return eligiblePassengers;
-    });
-  }, [tour?.travelers]);
-
-  const unassignedPassengers = useMemo(() => {
-    return flattenedPassengers.filter((p) => !p.seatNumber);
-  }, [flattenedPassengers]);
-
-  const foundTraveler = useMemo(() => {
-    if (!selectedTravelerId || !tour?.travelers) return null;
-    const allTravelersList: Array<TitularRowOutput | CompanionOutput> = tour.travelers.flatMap(
-      (titular) => [titular, ...(titular.companions || [])],
-    );
-    return allTravelersList.find((t) => t.id === selectedTravelerId) ?? null;
-  }, [selectedTravelerId, tour?.travelers]);
-
-  const filteredTravelers = useMemo(() => {
-    if (!tour?.travelers) return [];
-
-    return tour.travelers.filter((titular) => {
-      const matchSearch = () => {
-        if (!searchQuery.trim()) return true;
-        const query = searchQuery.toLowerCase().trim();
-
-        const titularMatch =
-          titular.fullName.toLowerCase().includes(query) || titular.whatsapp.includes(query);
-
-        if (titularMatch) return true;
-
-        return (
-          titular.companions?.some(
-            (comp) => comp.fullName.toLowerCase().includes(query) || comp.whatsapp.includes(query),
-          ) ?? false
-        );
-      };
-
-      const matchPayment = () => {
-        if (paymentFilter === "ALL") return true;
-
-        let resolvedStatus = "UNPAID";
-        if (titular.paymentStatus === "PAID" || (titular.paidAmount > 0 && titular.balance <= 0)) {
-          resolvedStatus = "PAID";
-        } else if (
-          titular.paidAmount > 0 ||
-          ["ADVANCE", "PARTIAL", "PENDING_VALIDATION"].includes(titular.paymentStatus)
-        ) {
-          resolvedStatus = "PARTIAL";
-        }
-
-        return resolvedStatus === paymentFilter;
-      };
-
-      const matchRegistration = () => {
-        if (formFilter === "ALL") return true;
-
-        const isTitularCompleted = titular.formStatus === "COMPLETED";
-        const areCompanionsCompleted =
-          titular.companions?.every((c) => c.formStatus === "COMPLETED") ?? true;
-
-        const groupStatus = isTitularCompleted && areCompanionsCompleted ? "COMPLETED" : "PENDING";
-        return groupStatus === formFilter;
-      };
-
-      const matchSeat = () => {
-        if (seatFilter === "ALL") return true;
-
-        const groupMembers = [titular, ...(titular.companions || [])];
-
-        if (seatFilter === "UNASSIGNED") {
-          return groupMembers.some((member) => !member.seatLabel);
-        }
-
-        if (seatFilter === "ASSIGNED") {
-          return groupMembers.every((member) => !!member.seatLabel);
-        }
-
-        return true;
-      };
-
-      return matchSearch() && matchPayment() && matchRegistration() && matchSeat();
-    });
-  }, [tour?.travelers, searchQuery, paymentFilter, formFilter, seatFilter]);
+  // Cálculos de presentación (utils/dashboard-travelers.util): los mismos en escritorio y celular.
+  const flattenedPassengers = getSeatEligiblePassengers(tour?.travelers);
+  const unassignedPassengers = flattenedPassengers.filter((p) => !p.seatNumber);
+  const foundTraveler = findDashboardTraveler(tour?.travelers, selectedTravelerId);
+  const filteredTravelers = filterDashboardTravelers(tour?.travelers, filters);
 
   if (isError) {
     return (
@@ -269,13 +151,13 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                 {refundsPanel}
                 <TravelersTableToolbar
                   tourId={tourId}
-                  searchQuery={searchQuery}
+                  searchQuery={filters.searchQuery}
                   onSearchChange={setSearchQuery}
-                  paymentFilter={paymentFilter}
+                  paymentFilter={filters.paymentFilter}
                   onPaymentFilterChange={setPaymentFilter}
-                  formFilter={formFilter}
+                  formFilter={filters.formFilter}
                   onFormFilterChange={setFormFilter}
-                  seatFilter={seatFilter}
+                  seatFilter={filters.seatFilter}
                   onSeatFilterChange={setSeatFilter}
                 />
 
@@ -285,77 +167,35 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                   tourDepartureDate={tour.departureDateTime}
                   tourReturnDate={tour.returnDate ?? null}
                   tourPostPaymentInstructions={tour.postPaymentInstructions ?? null}
-                  statementAgency={
-                    {
-                      name: agency?.name ?? "",
-                      email: agency?.email ?? "",
-                      whatsapp: agency?.phone ?? "",
-                      logoUrl: branding?.logoPath ? buildApiPublicFileUrl(branding.logoPath) : null,
-                      primaryColor: branding?.primaryColor ?? null,
-                      secondaryColor: branding?.secondaryColor ?? null,
-                      accentColor: branding?.accentColor ?? null,
-                      bankInfo:
-                        // Sin número de tarjeta: el PDF solo lleva banco, titular y CLABE.
-                        agency?.bankName || agency?.clabeNumber
-                          ? {
-                              bankName: agency.bankName ?? "",
-                              accountHolder: agency.bankAccountHolder ?? "",
-                              clabe: agency.clabeNumber ?? "",
-                            }
-                          : null,
-                      policies: agency?.policies ?? null,
-                    } satisfies StatementPDFData["agency"]
-                  }
+                  statementAgency={buildOperatorStatementAgency(agency, branding)}
                   travelers={tour.travelers}
-                  searchQuery={searchQuery}
+                  searchQuery={filters.searchQuery}
                   tourCurrency={tour.currency}
-                  paymentFilter={paymentFilter}
-                  formFilter={formFilter}
-                  seatFilter={seatFilter}
+                  paymentFilter={filters.paymentFilter}
+                  formFilter={filters.formFilter}
+                  seatFilter={filters.seatFilter}
                   isAuditMode={isAuditMode}
                   freeSeatsCount={freeSeatsCount}
                   onRowClick={(id) => setSelectedTravelerId(id)}
                   onAssignSeatClick={handleAssignSeatIntent}
-                  onClearFilters={handleClearFilters}
+                  onClearFilters={clearFilters}
                   requiresSeats={requiresSeats}
                 />
               </div>
             )}
 
             {activeTab === "seatmap" && (
-              <div className="animate-in fade-in flex flex-col gap-4 duration-300 lg:flex-row">
-                <div className="flex flex-1 flex-col gap-4">
-                  <VehicleStatusBanner
-                    vehicle={tour.vehicle}
-                    onChangeVehicleClick={
-                      isAuditMode ? undefined : () => setIsVehicleModalOpen(true)
-                    }
-                  />
-
-                  {tour.vehicle?.layoutMap && (
-                    <div className="flex min-h-[500px] items-center justify-center overflow-auto rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                      <SeatMapCanvas
-                        tourId={tourId}
-                        layoutMap={tour.vehicle.layoutMap}
-                        activePassengers={flattenedPassengers}
-                        initialSelectedPassengerId={pendingSeatPassengerId}
-                        staffCapacity={tour.staffCapacity}
-                        readOnly={isAuditMode}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {tour.vehicle?.layoutMap && !isAuditMode && (
-                  <div className="w-full shrink-0 lg:w-80">
-                    <UnassignedSeatsPanel
-                      unassignedPassengers={unassignedPassengers}
-                      onSelectPassenger={setPendingSeatPassengerId}
-                      selectedPassengerId={pendingSeatPassengerId}
-                    />
-                  </div>
-                )}
-              </div>
+              <DesktopSeatingTab
+                tourId={tourId}
+                vehicle={tour.vehicle}
+                staffCapacity={tour.staffCapacity}
+                eligiblePassengers={flattenedPassengers}
+                unassignedPassengers={unassignedPassengers}
+                pendingSeatPassengerId={pendingSeatPassengerId}
+                onSelectPassenger={setPendingSeatPassengerId}
+                onChangeVehicleClick={isAuditMode ? undefined : () => setIsVehicleModalOpen(true)}
+                isAuditMode={isAuditMode}
+              />
             )}
           </div>
         </div>
@@ -387,38 +227,23 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
           <div className="animate-in fade-in space-y-4 duration-300">
             {refundsPanel}
             <MobileFilters
-              searchQuery={searchQuery}
+              searchQuery={filters.searchQuery}
               onSearchChange={setSearchQuery}
-              paymentFilter={paymentFilter}
+              paymentFilter={filters.paymentFilter}
               onPaymentFilterChange={setPaymentFilter}
-              formFilter={formFilter}
+              formFilter={filters.formFilter}
               onFormFilterChange={setFormFilter}
-              seatFilter={seatFilter}
+              seatFilter={filters.seatFilter}
               onSeatFilterChange={setSeatFilter}
             />
 
-            <div className="space-y-3">
-              {filteredTravelers.map((titular) => (
-                <BookingCard
-                  key={titular.id}
-                  titular={titular}
-                  tourCurrency={tour.currency}
-                  onAssignSeatClick={handleAssignSeatIntent}
-                  onRowClick={(id) => setSelectedTravelerId(id)}
-                  isAuditMode={isAuditMode}
-                />
-              ))}
-
-              {filteredTravelers.length === 0 && (
-                <div className="py-12 text-center text-slate-500">
-                  <p>No se encontraron reservas con los filtros actuales.</p>
-                </div>
-              )}
-            </div>
-
-            <div className="py-6 text-center text-xs font-medium text-slate-500">
-              Mostrando {filteredTravelers.length} reservas principales
-            </div>
+            <MobilePassengersList
+              travelers={filteredTravelers}
+              tourCurrency={tour.currency}
+              isAuditMode={isAuditMode}
+              onAssignSeatClick={handleAssignSeatIntent}
+              onRowClick={(id) => setSelectedTravelerId(id)}
+            />
           </div>
         ) : (
           <MobileSeatsTab

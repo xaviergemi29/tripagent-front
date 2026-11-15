@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import {
   useAddPassengerToBooking,
@@ -27,9 +27,14 @@ import {
   type PassengerRole,
 } from "@/shared/constants/domain.constants";
 
-export type PaymentFilter = "ALL" | "UNPAID" | "PARTIAL" | "PAID";
-export type RegistrationFilter = "ALL" | "PENDING" | "COMPLETED";
-export type SeatFilter = "ALL" | "UNASSIGNED" | "ASSIGNED";
+import {
+  filterDashboardTravelers,
+  type PaymentFilter,
+  type RegistrationFilter,
+  type SeatFilter,
+} from "@/features/tour-dashboard/utils/dashboard-travelers.util";
+
+export type { PaymentFilter, RegistrationFilter, SeatFilter };
 
 interface DashboardTravelerTableProps {
   tourId: string;
@@ -101,81 +106,13 @@ export function DashboardTravelerTable({
     titularName: string;
   } | null>(null);
 
-  const filteredTravelers = useMemo(() => {
-    if (!travelers) return [];
-
-    return travelers.filter((titular) => {
-      // Regla 1: Búsqueda. Verifica titular O acompañantes de manera aislada.
-      const matchSearch = () => {
-        if (!searchQuery.trim()) return true;
-        const query = searchQuery.toLowerCase().trim();
-
-        const titularMatch =
-          titular.fullName.toLowerCase().includes(query) || titular.whatsapp.includes(query);
-
-        if (titularMatch) return true;
-
-        return (
-          titular.companions?.some(
-            (comp) => comp.fullName.toLowerCase().includes(query) || comp.whatsapp.includes(query),
-          ) ?? false
-        );
-      };
-
-      // Regla 2: Finanzas (Defensive Programming contra inconsistencias de DB)
-      const matchPayment = () => {
-        if (paymentFilter === "ALL") return true;
-
-        let resolvedStatus = "UNPAID";
-        if (titular.paymentStatus === "PAID" || (titular.paidAmount > 0 && titular.balance <= 0)) {
-          resolvedStatus = "PAID";
-        } else if (
-          titular.paidAmount > 0 ||
-          ["ADVANCE", "PARTIAL", "PENDING_VALIDATION"].includes(titular.paymentStatus)
-        ) {
-          resolvedStatus = "PARTIAL";
-        }
-
-        return resolvedStatus === paymentFilter;
-      };
-
-      // 🚀 Escenario 2 PM: Evaluación de Grupo para el Formulario
-      const matchRegistration = () => {
-        if (formFilter === "ALL") return true;
-
-        const isTitularCompleted = titular.formStatus === "COMPLETED";
-        const areCompanionsCompleted =
-          titular.companions?.every((c) => c.formStatus === "COMPLETED") ?? true;
-
-        // La cadena es tan fuerte como su eslabón más débil
-        const groupStatus = isTitularCompleted && areCompanionsCompleted ? "COMPLETED" : "PENDING";
-
-        return groupStatus === formFilter;
-      };
-
-      // Regla 4: Filtro de Asientos (Evaluación de Grupo)
-      const matchSeat = () => {
-        if (seatFilter === "ALL") return true;
-
-        const groupMembers = [titular, ...(titular.companions || [])];
-
-        if (seatFilter === "UNASSIGNED") {
-          // Si AL MENOS UNO no tiene asiento, el grupo requiere atención
-          return groupMembers.some((member) => !member.seatLabel);
-        }
-
-        if (seatFilter === "ASSIGNED") {
-          // Solo si TODOS tienen asiento, el grupo está completo
-          return groupMembers.every((member) => !!member.seatLabel);
-        }
-
-        return true;
-      };
-
-      // 🚀 Escenario 1 PM: Short-circuit evaluation estricta (AND)
-      return matchSearch() && matchPayment() && matchRegistration() && matchSeat();
-    });
-  }, [travelers, searchQuery, paymentFilter, formFilter, seatFilter]);
+  // Misma regla que la vista móvil (`filterDashboardTravelers`, utils/dashboard-travelers.util).
+  const filteredTravelers = filterDashboardTravelers(travelers, {
+    searchQuery,
+    paymentFilter,
+    formFilter,
+    seatFilter,
+  });
 
   const handleConfirmAddPassenger = (): void => {
     if (confirmAdd.titular) {

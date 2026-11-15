@@ -93,11 +93,12 @@ describe("tourSchema", () => {
   });
 
   it("tarjeta exige enlace de pago válido", () => {
-    expect(errorsAt(validTour({ acceptsCreditCard: true, paymentLink: "" }), "paymentLink")).toContain(
-      "Debes proporcionar un enlace de pago si aceptas tarjeta",
-    );
-    expect(errorsAt(validTour({ acceptsCreditCard: true, paymentLink: "mercadopago" }), "paymentLink"))
-      .toHaveLength(1);
+    expect(
+      errorsAt(validTour({ acceptsCreditCard: true, paymentLink: "" }), "paymentLink"),
+    ).toContain("Debes proporcionar un enlace de pago si aceptas tarjeta");
+    expect(
+      errorsAt(validTour({ acceptsCreditCard: true, paymentLink: "mercadopago" }), "paymentLink"),
+    ).toHaveLength(1);
     expect(
       tourSchema.safeParse(
         validTour({ acceptsCreditCard: true, paymentLink: "https://mpago.la/abc" }),
@@ -132,7 +133,10 @@ describe("tourSchema", () => {
       "Debes agregar al menos un punto de abordaje",
     );
     expect(
-      errorsAt(validTour({ boardingPoints: [{ location: "Plaza", time: "25:00" }] }), "boardingPoints.0.time"),
+      errorsAt(
+        validTour({ boardingPoints: [{ location: "Plaza", time: "25:00" }] }),
+        "boardingPoints.0.time",
+      ),
     ).toContain("Formato HH:MM");
 
     const unordered = validTour({

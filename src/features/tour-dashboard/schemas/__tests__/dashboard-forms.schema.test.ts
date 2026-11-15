@@ -30,14 +30,15 @@ describe("transferPassengerSchema", () => {
   });
 
   it("un adulto exige WhatsApp y correo", () => {
-    expect(pathsOf(transferPassengerSchema.safeParse({ ...adult, whatsapp: "", email: "" }))).toEqual(
-      expect.arrayContaining(["whatsapp", "email"]),
-    );
+    expect(
+      pathsOf(transferPassengerSchema.safeParse({ ...adult, whatsapp: "", email: "" })),
+    ).toEqual(expect.arrayContaining(["whatsapp", "email"]));
   });
 
   it("un menor (acompañante) no necesita WhatsApp ni correo", () => {
     expect(
-      transferPassengerSchema.safeParse({ ...adult, isMinor: true, whatsapp: "", email: "" }).success,
+      transferPassengerSchema.safeParse({ ...adult, isMinor: true, whatsapp: "", email: "" })
+        .success,
     ).toBe(true);
   });
 
@@ -74,21 +75,21 @@ describe("paymentFormSchema", () => {
     expect(
       paymentFormSchema.safeParse({ amount: 500, method: "TRANSFER", type: "PAYMENT" }).success,
     ).toBe(true);
-    expect(pathsOf(paymentFormSchema.safeParse({ amount: 0, method: "TRANSFER", type: "PAYMENT" }))).toContain(
-      "amount",
-    );
-    expect(pathsOf(paymentFormSchema.safeParse({ amount: 100, method: "CRYPTO", type: "PAYMENT" }))).toContain(
-      "method",
-    );
+    expect(
+      pathsOf(paymentFormSchema.safeParse({ amount: 0, method: "TRANSFER", type: "PAYMENT" })),
+    ).toContain("amount");
+    expect(
+      pathsOf(paymentFormSchema.safeParse({ amount: 100, method: "CRYPTO", type: "PAYMENT" })),
+    ).toContain("method");
   });
 
   it("un reembolso también se captura en positivo (la API lo guarda negativo)", () => {
-    expect(paymentFormSchema.safeParse({ amount: 300, method: "TRANSFER", type: "REFUND" }).success).toBe(
-      true,
-    );
-    expect(pathsOf(paymentFormSchema.safeParse({ amount: -300, method: "TRANSFER", type: "REFUND" }))).toContain(
-      "amount",
-    );
+    expect(
+      paymentFormSchema.safeParse({ amount: 300, method: "TRANSFER", type: "REFUND" }).success,
+    ).toBe(true);
+    expect(
+      pathsOf(paymentFormSchema.safeParse({ amount: -300, method: "TRANSFER", type: "REFUND" })),
+    ).toContain("amount");
   });
 });
 

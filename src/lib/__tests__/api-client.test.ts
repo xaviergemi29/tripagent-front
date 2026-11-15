@@ -21,7 +21,13 @@ const respondWith =
   async (config: InternalAxiosRequestConfig) => {
     const response = { data, status, statusText: "", headers: {}, config };
     if (status >= 400) {
-      throw new AxiosError(`Request failed with status code ${status}`, "ERR_BAD_REQUEST", config, null, response);
+      throw new AxiosError(
+        `Request failed with status code ${status}`,
+        "ERR_BAD_REQUEST",
+        config,
+        null,
+        response,
+      );
     }
     return response;
   };
@@ -45,6 +51,20 @@ describe("apiClient: respuestas", () => {
     ).resolves.toEqual({ id: "b1" });
   });
 
+  it("`data` con 0, false o cadena vacía es un valor legítimo (no devuelve el sobre)", async () => {
+    for (const value of [0, false, ""]) {
+      await expect(
+        apiClient.get("/x", { adapter: respondWith(200, { data: value }) }),
+      ).resolves.toBe(value);
+    }
+  });
+
+  it("`data: null` sigue devolviendo el sobre (`??` trata null como ausente)", async () => {
+    await expect(
+      apiClient.get("/x", { adapter: respondWith(200, { data: null }) }),
+    ).resolves.toEqual({ data: null });
+  });
+
   it("devuelve el objeto directo cuando no trae `data` (p. ej. el dashboard)", async () => {
     await expect(
       apiClient.get("/dashboards/t1", { adapter: respondWith(200, { tour: { id: "t1" } }) }),
@@ -63,7 +83,12 @@ describe("apiClient: respuestas", () => {
 describe("apiClient: errores", () => {
   it("normaliza { error } a ApiError con el código de estado", async () => {
     const error = await failWith("/bookings/b1/transfer", 409, { error: "Reserva cancelada" });
-    expect(error).toEqual({ status: 409, message: "Reserva cancelada", code: undefined, issues: [] });
+    expect(error).toEqual({
+      status: 409,
+      message: "Reserva cancelada",
+      code: undefined,
+      issues: [],
+    });
   });
 
   it("prioriza `message` y conserva `code` e `issues` de las validaciones de Zod", async () => {
@@ -74,11 +99,18 @@ describe("apiClient: errores", () => {
       code: "FST_ERR_VALIDATION",
       issues,
     });
-    expect(error).toMatchObject({ status: 400, message: "Correo inválido", code: "FST_ERR_VALIDATION", issues });
+    expect(error).toMatchObject({
+      status: 400,
+      message: "Correo inválido",
+      code: "FST_ERR_VALIDATION",
+      issues,
+    });
   });
 
   it("recorta el prefijo de Fastify ('body/email …')", async () => {
-    const error = await failWith("/tours", 400, { message: "body/email Correo electrónico inválido" });
+    const error = await failWith("/tours", 400, {
+      message: "body/email Correo electrónico inválido",
+    });
     expect(error.message).toBe("Correo electrónico inválido");
   });
 
@@ -86,7 +118,10 @@ describe("apiClient: errores", () => {
     const error = await failWith("/public/pre-booking", 429, {
       error: "Demasiados intentos. Vuelve a intentarlo en 15 minutos.",
     });
-    expect(error).toMatchObject({ status: 429, message: "Demasiados intentos. Vuelve a intentarlo en 15 minutos." });
+    expect(error).toMatchObject({
+      status: 429,
+      message: "Demasiados intentos. Vuelve a intentarlo en 15 minutos.",
+    });
   });
 
   it("sin respuesta del servidor usa el mensaje de axios y estado 500", async () => {
@@ -107,7 +142,11 @@ describe("apiClient: sesión expirada (401)", () => {
   it("no redirige si el 401 viene del propio login (credenciales inválidas)", async () => {
     const error = await (async () => {
       try {
-        await apiClient.post("/auth/login", {}, { adapter: respondWith(401, { error: "Credenciales inválidas" }) });
+        await apiClient.post(
+          "/auth/login",
+          {},
+          { adapter: respondWith(401, { error: "Credenciales inválidas" }) },
+        );
       } catch (e) {
         return e as ApiError;
       }

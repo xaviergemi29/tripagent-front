@@ -27,7 +27,7 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.response.use(
-  (response) => response.data?.data || response.data,
+  (response) => response.data?.data ?? response.data,
   (error: AxiosError<FastifyErrorPayload>) => {
     // 1. Manejo global de sesión expirada (401)
     if (error.response?.status === 401) {
