@@ -99,7 +99,7 @@ describe("Configuración → Agencia: número de tarjeta opcional", () => {
 
     expect(screen.queryByLabelText(/aviso de privacidad/i)).not.toBeInTheDocument();
     // Sin cambios "Guardar" está deshabilitado: se edita un campo para poder guardar.
-    await user.type(screen.getByLabelText("Nombre Comercial"), " MX");
+    await user.type(screen.getByLabelText(/Nombre Comercial/), " MX");
     await user.click(screen.getByRole("button", { name: /Guardar/ }));
 
     await waitFor(() => expect(updateAgency).toHaveBeenCalledTimes(1));
@@ -155,5 +155,24 @@ describe("Configuración → Agencia: botón Guardar", () => {
     await user.clear(screen.getByLabelText(/Correo Electrónico/));
     await user.type(screen.getByLabelText(/Correo Electrónico/), "hola@");
     await waitFor(() => expect(saveButton()).toBeDisabled());
+  });
+});
+
+describe("Configuración → Agencia: estructura responsive", () => {
+  it("dos tarjetas (Perfil Público y Datos Bancarios) con los textos de siempre y la nota", () => {
+    render(<AgencyTab />);
+
+    expect(screen.getByRole("heading", { name: "Perfil Público" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Estos datos aparecerán en tus folletos digitales y mensajes de WhatsApp."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Datos Bancarios" })).toBeInTheDocument();
+    expect(screen.getByText("Transferencias SPEI")).toBeInTheDocument();
+    expect(screen.getByText("18 dígitos SPEI")).toBeInTheDocument();
+    // "+52" es solo visual: el campo conserva los 10 dígitos guardados.
+    expect(screen.getByText("+52")).toBeInTheDocument();
+    expect(screen.getByLabelText(/WhatsApp Oficial/)).toHaveValue("2288492011");
+    expect(screen.getByText(/se refleja de inmediato en los enlaces/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Guardar Configuración/ })).toHaveClass("w-full");
   });
 });

@@ -41,6 +41,18 @@ export const PASSENGER_ROLE = {
   COMPANION: "COMPANION",
 } as const satisfies Record<PassengerRole, PassengerRole>;
 
+// Estado de la suscripción de la agencia (enum `subscription_status` de la API).
+export const SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due", "canceled"] as const;
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+
+/** Acceso por nombre: `status === SUBSCRIPTION_STATUS.TRIALING`. */
+export const SUBSCRIPTION_STATUS = {
+  TRIALING: "trialing",
+  ACTIVE: "active",
+  PAST_DUE: "past_due",
+  CANCELED: "canceled",
+} as const satisfies Record<string, SubscriptionStatus>;
+
 // Rol del usuario de la agencia (enum `agency_roles` de la API; viaja en `GET /auth/me`).
 export const AGENCY_ROLES = ["ADMIN", "SALES", "GUIDE"] as const;
 export type AgencyRole = (typeof AGENCY_ROLES)[number];

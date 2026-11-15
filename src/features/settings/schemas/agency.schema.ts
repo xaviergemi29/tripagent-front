@@ -1,7 +1,7 @@
 import z from "zod";
-import { POLICIES_MAX_LENGTH } from "@/shared/constants/domain.constants";
+import { POLICIES_MAX_LENGTH, SUBSCRIPTION_STATUSES } from "@/shared/constants/domain.constants";
 
-export const subscriptionStatusSchema = z.enum(["trialing", "active", "past_due", "canceled"]);
+export const subscriptionStatusSchema = z.enum(SUBSCRIPTION_STATUSES);
 const emptyStringToUndefined = z.literal("").transform(() => undefined);
 /** Quita espacios y guiones de una CLABE o tarjeta ("012 180-…" → "012180…"). */
 const stripAccountSeparators = (value: string): string => value.replace(/[\s-]/g, "");

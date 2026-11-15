@@ -16,6 +16,11 @@ export const AGENCY_KEYS = {
   all: ["agencies"] as const,
 };
 
+/** `GET /agencies/subscription` (Configuración → Suscripción y su insignia en la pestaña). */
+export const AGENCY_SUBSCRIPTION_KEYS = {
+  all: ["agency-subscription"] as const,
+};
+
 export const AGENCY_BRANDING_KEYS = {
   all: ["agency-branding"] as const,
 };
