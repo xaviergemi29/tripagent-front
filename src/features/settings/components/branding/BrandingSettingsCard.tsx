@@ -31,10 +31,9 @@ import { ColorPickerInput } from "./ColorPickerInput";
 import { LogoUploader } from "./LogoUploader";
 
 const HEX6 = /^#[0-9a-f]{6}$/i;
-const previewColor = (value: string | undefined, fallback: string) =>
+const previewColor = (value: string | undefined, fallback: string): string =>
   value && HEX6.test(value) ? value : fallback;
 
-/** Miniatura del encabezado y la tabla del comprobante con los colores capturados. */
 function ReceiptPreview({
   companyName,
   primaryColor,
@@ -103,7 +102,6 @@ export function BrandingSettingsCard() {
     resolver: zodResolver(brandingFormSchema),
     mode: "onChange",
     defaultValues: { ...DEFAULT_BRANDING_COLORS, accentColor: "" },
-    // Sincroniza el formulario con la API sin efectos (compatible con el React Compiler).
     values: branding
       ? {
           primaryColor: branding.primaryColor,
