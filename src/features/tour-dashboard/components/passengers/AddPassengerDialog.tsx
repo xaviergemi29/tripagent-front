@@ -67,9 +67,9 @@ export function AddPassengerDialog({
             Se apartará 1 lugar adicional en la reserva de{" "}
             <strong className="font-semibold text-slate-900">{titular.fullName}</strong>. El costo
             unitario de este tour (
-            <strong className="font-semibold text-slate-900">{formattedPrice}</strong>
-            {tourCurrency !== "MXN" ? ` ${tourCurrency}` : ""}) se sumará a la deuda pendiente de la
-            reserva.
+            {/* `formatCurrency` ya incluye la divisa ("$1,500.00 USD"); antes se repetía. */}
+            <strong className="font-semibold text-slate-900">{formattedPrice}</strong>) se sumará a
+            la deuda pendiente de la reserva.
           </p>
 
           {/* Caja explicativa sobre el Magic Link */}

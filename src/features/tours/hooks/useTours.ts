@@ -4,6 +4,7 @@ import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
 import { TOUR_DASHBOARD_KEYS, TOUR_KEYS } from "@/shared/api/query-keys";
 import { fetchAllPages } from "@/shared/api/fetch-all-pages";
+import { UPLOAD_TIMEOUT_MS } from "@/lib/api-config";
 
 // ============================================================================
 // 2. CAPA DE RED (Axios API Client)
@@ -46,6 +47,8 @@ const uploadTourBrochureApi = async ({
   formData.append("brochure", file);
   return apiClient.post<never, TourOutput>(`/tours/${tourId}/brochure`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
+    // PDF de hasta 5 MB: más margen que el timeout general de 10 s.
+    timeout: UPLOAD_TIMEOUT_MS,
   });
 };
 

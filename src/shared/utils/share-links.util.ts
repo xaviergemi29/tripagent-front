@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "@/lib/api-config";
+
 /**
  * @description Deja únicamente los dígitos de un teléfono (quita espacios, guiones, "+", paréntesis).
  * @param {string | null | undefined} phone - Teléfono en cualquier formato.
@@ -76,7 +78,7 @@ export const buildBrochureUrl = (tourId: string | undefined): string =>
  * // "http://localhost:3001/public/uploads/brochures/tour-1.pdf"
  */
 export const buildApiPublicFileUrl = (storedPath: string): string => {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+  const apiBase = API_BASE_URL;
   const normalizedPath = storedPath.startsWith("/") ? storedPath : `/${storedPath}`;
   return new URL(`/public${normalizedPath}`, apiBase).toString();
 };

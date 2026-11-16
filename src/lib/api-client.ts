@@ -1,4 +1,5 @@
 import axios, { AxiosError } from "axios";
+import { API_BASE_URL, API_TIMEOUT_MS } from "./api-config";
 
 // Estructura de payload de error devuelta por Fastify / Zod / Custom Handlers
 export interface FastifyErrorPayload {
@@ -18,8 +19,8 @@ export interface ApiError {
 }
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
-  timeout: 10000,
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT_MS,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

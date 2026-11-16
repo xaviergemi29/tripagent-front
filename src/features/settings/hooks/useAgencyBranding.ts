@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient, type ApiError } from "@/lib/api-client";
+import { UPLOAD_TIMEOUT_MS } from "@/lib/api-config";
 import type { AgencyBrandingOutput, BrandingInput } from "../schemas/branding.schema";
 import { AGENCY_BRANDING_KEYS, AUTH_KEYS } from "@/shared/api/query-keys";
 
@@ -18,6 +19,8 @@ const uploadLogoApi = (file: File): Promise<AgencyBrandingOutput> => {
   formData.append("file", file);
   return apiClient.post<never, AgencyBrandingOutput>("/agencies/logo", formData, {
     headers: { "Content-Type": "multipart/form-data" },
+    // Logotipo de hasta 2 MB: más margen que el timeout general de 10 s.
+    timeout: UPLOAD_TIMEOUT_MS,
   });
 };
 

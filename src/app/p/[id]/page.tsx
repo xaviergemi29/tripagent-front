@@ -16,6 +16,7 @@ import {
   toPhoneDigits,
 } from "@/shared/utils/share-links.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { API_BASE_URL } from "@/lib/api-config";
 
 /** Chat con un asesor para resolver dudas antes de reservar (CTA secundario). */
 function buildWhatsAppAdvisorUrl({
@@ -35,7 +36,7 @@ function buildWhatsAppAdvisorUrl({
 
 async function getPublicTour(tourId: string): Promise<PublicTourOutput | null> {
   try {
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/tour-brochure/public/tours/${tourId}`;
+    const apiUrl = `${API_BASE_URL}/tour-brochure/public/tours/${tourId}`;
     const res = await fetch(apiUrl, {
       cache: "no-store",
       headers: {

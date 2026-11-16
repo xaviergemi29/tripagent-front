@@ -52,18 +52,30 @@ describe("enlaces públicos del front", () => {
   });
 });
 
+// `API_BASE_URL` (lib/api-config) se resuelve al cargar el módulo, como en la app (Next inyecta
+// `NEXT_PUBLIC_API_URL` al compilar): cada caso recarga el módulo con la variable que prueba.
+const loadWithApiUrl = async (apiUrl: string) => {
+  vi.stubEnv("NEXT_PUBLIC_API_URL", apiUrl);
+  vi.resetModules();
+  return (await import("../share-links.util")).buildApiPublicFileUrl;
+};
+
 describe("buildApiPublicFileUrl", () => {
-  it("sirve los archivos en <origen API>/public, fuera del prefijo /api", () => {
-    vi.stubEnv("NEXT_PUBLIC_API_URL", "https://api.tripagent.mx/api");
-    expect(buildApiPublicFileUrl("/uploads/brochures/tour-1.pdf")).toBe(
+  it("sirve los archivos en <origen API>/public, fuera del prefijo /api", async () => {
+    const build = await loadWithApiUrl("https://api.tripagent.mx/api");
+    expect(build("/uploads/brochures/tour-1.pdf")).toBe(
       "https://api.tripagent.mx/public/uploads/brochures/tour-1.pdf",
     );
   });
 
-  it("normaliza la ruta sin diagonal inicial y usa el origen local por defecto", () => {
-    vi.stubEnv("NEXT_PUBLIC_API_URL", "");
-    expect(buildApiPublicFileUrl("uploads/logos/agency-1.png")).toBe(
+  it("normaliza la ruta sin diagonal inicial y usa el origen local por defecto", async () => {
+    const build = await loadWithApiUrl("");
+    expect(build("uploads/logos/agency-1.png")).toBe(
       "http://localhost:3001/public/uploads/logos/agency-1.png",
     );
+  });
+
+  it("buildApiPublicFileUrl del import estático usa la misma configuración", () => {
+    expect(buildApiPublicFileUrl("/uploads/x.pdf")).toMatch(/\/public\/uploads\/x\.pdf$/);
   });
 });

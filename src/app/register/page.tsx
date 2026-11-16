@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/lib/api-config";
 import { TourRegistrationView } from "@/features/external-registration/components/TourRegistrationView";
 import { AlertTriangle, Compass, Unlink, HelpCircle } from "lucide-react";
 import { CancelledBookingView } from "@/features/external-registration/components/CancelledBookingView";
@@ -11,7 +12,7 @@ interface PageProps {
 
 async function validateTokenOnServer(token: string): Promise<any> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/magic-tokens/${token}/validate`, {
+    const res = await fetch(`${API_BASE_URL}/magic-tokens/${token}/validate`, {
       cache: "no-store",
     });
     return await res.json();
