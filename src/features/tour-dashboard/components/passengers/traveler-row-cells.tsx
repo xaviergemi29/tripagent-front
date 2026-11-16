@@ -139,6 +139,7 @@ export function RowActionButton({
   tooltip,
   ariaLabel,
   title,
+  guideTarget,
   className,
   onClick,
   children,
@@ -146,6 +147,8 @@ export function RowActionButton({
   tooltip: string;
   ariaLabel?: string;
   title?: string;
+  /** Marca para la guía interactiva (`data-tour`, ver `features/onboarding`). */
+  guideTarget?: string;
   className: string;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   children: ReactNode;
@@ -160,6 +163,7 @@ export function RowActionButton({
           onClick={onClick}
           aria-label={ariaLabel}
           title={title}
+          data-tour={guideTarget}
         >
           {children}
         </Button>
@@ -178,10 +182,13 @@ export function RowActionButton({
 export function TransferMenu({
   label,
   triggerAriaLabel,
+  guideTarget,
   onSelect,
 }: {
   label: string;
   triggerAriaLabel?: string;
+  /** Marca para la guía interactiva (`data-tour`, ver `features/onboarding`). */
+  guideTarget?: string;
   onSelect: () => void;
 }) {
   return (
@@ -192,6 +199,7 @@ export function TransferMenu({
           size="icon"
           className="h-8 w-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
           aria-label={triggerAriaLabel}
+          data-tour={guideTarget}
         >
           <MoreVertical className="h-4 w-4" />
         </Button>

@@ -1,5 +1,7 @@
 import { Calendar, Plus, CalendarX2 } from "lucide-react";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
+import { GuidedTourButton } from "@/features/onboarding/components/GuidedTourButton";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 
 interface MobileHeaderProps {
   tourTitle: string;
@@ -7,6 +9,8 @@ interface MobileHeaderProps {
   onOpenNewBookingModal?: () => void;
   /** Sin acción (tour finalizado o cancelado) no se ofrece cancelar el tour. */
   onCancelTour?: () => void;
+  /** Repite la guía interactiva del Centro de Control («Ver guía»). */
+  onStartGuide?: () => void;
 }
 
 export function MobileHeader({
@@ -14,6 +18,7 @@ export function MobileHeader({
   departureDateTime,
   onOpenNewBookingModal,
   onCancelTour,
+  onStartGuide,
 }: MobileHeaderProps) {
   const dateString = departureDateTime.split("T")[0];
   const formattedDate = formatLocalDate(dateString);
@@ -21,9 +26,14 @@ export function MobileHeader({
   return (
     <div className="space-y-3">
       <div>
-        <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-          Centro de Control Logístico
-        </span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+            Centro de Control Logístico
+          </span>
+          {onStartGuide && (
+            <GuidedTourButton onClick={onStartGuide} className="h-8 rounded-lg px-2.5 text-xs" />
+          )}
+        </div>
         <h1 className="text-2xl leading-tight font-black text-slate-900">{tourTitle}</h1>
         <div className="mt-1 flex items-center gap-1.5 text-sm font-medium text-slate-600">
           <Calendar className="h-4 w-4 text-indigo-500" />
@@ -34,6 +44,7 @@ export function MobileHeader({
       {onOpenNewBookingModal && (
         <button
           onClick={onOpenNewBookingModal}
+          data-tour={TOUR_TARGET.DASHBOARD_NEW_BOOKING}
           className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 active:scale-95 sm:w-auto"
         >
           <Plus className="h-4 w-4" />

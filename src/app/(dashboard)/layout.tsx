@@ -1,5 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+// Estilos base de las guías interactivas (driver.js); el tema TripAgent está en globals.css.
+import "driver.js/dist/driver.css";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (

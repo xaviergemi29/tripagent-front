@@ -17,11 +17,21 @@ import { PoliciesTab } from "./PoliciesTab";
 import { BrandingSettingsCard } from "./branding/BrandingSettingsCard";
 import { SubscriptionTab } from "./subscription/SubscriptionTab";
 import { SubscriptionTabBadge } from "./subscription/SubscriptionTabBadge";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 
 const VALID_TABS = ["security", "agency", "policies", "branding", "subscription"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 /** Una sola lista de pestañas para celular y escritorio (mismos textos, íconos e insignias). */
+/** Marca de cada pestaña para la guía interactiva (`SETTINGS_GUIDED_TOUR`). */
+const TAB_GUIDE_TARGET: Record<TabValue, string> = {
+  security: TOUR_TARGET.SETTINGS_TAB_SECURITY,
+  agency: TOUR_TARGET.SETTINGS_TAB_AGENCY,
+  policies: TOUR_TARGET.SETTINGS_TAB_POLICIES,
+  branding: TOUR_TARGET.SETTINGS_TAB_BRANDING,
+  subscription: TOUR_TARGET.SETTINGS_TAB_SUBSCRIPTION,
+};
+
 const TAB_ITEMS: { value: TabValue; icon: LucideIcon; label: ReactNode; badge?: ReactNode }[] = [
   { value: "security", icon: ShieldCheck, label: "Seguridad" },
   { value: "agency", icon: Building2, label: "Agencia" },
@@ -95,7 +105,12 @@ export function SettingsTabs() {
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
       <TabsList ref={tabsListRef} className={TABS_LIST_CLASS}>
         {TAB_ITEMS.map(({ value, icon: Icon, label, badge }) => (
-          <TabsTrigger key={value} value={value} className={TABS_TRIGGER_CLASS}>
+          <TabsTrigger
+            key={value}
+            value={value}
+            className={TABS_TRIGGER_CLASS}
+            data-tour={TAB_GUIDE_TARGET[value]}
+          >
             <Icon className="h-4 w-4" /> {label}
             {badge}
           </TabsTrigger>

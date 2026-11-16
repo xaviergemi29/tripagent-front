@@ -12,6 +12,7 @@ import {
   SeatCell,
   TransferMenu,
 } from "./traveler-row-cells";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 
 interface TitularRowProps {
   titular: TitularRowOutput;
@@ -138,6 +139,7 @@ export function TitularRow({
               <RowActionButton
                 tooltip="Descargar Comprobante PDF"
                 ariaLabel="Descargar Comprobante PDF"
+                guideTarget={TOUR_TARGET.DASHBOARD_ACTION_RECEIPT}
                 className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-600 shadow-xs transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
                 onClick={(event) => {
                   event.stopPropagation();
@@ -152,6 +154,7 @@ export function TitularRow({
               <RowActionButton
                 tooltip="Copiar Magic Link del viajero"
                 ariaLabel="Copiar Magic Link"
+                guideTarget={TOUR_TARGET.DASHBOARD_ACTION_MAGIC_LINK}
                 className="h-9 w-9 rounded-lg border border-transparent text-slate-500 transition-colors hover:border-indigo-100 hover:bg-indigo-50 hover:text-indigo-600"
                 onClick={(event) => copyMagicLink(event, titular.magicToken)}
               >
@@ -162,6 +165,7 @@ export function TitularRow({
             <RowActionButton
               tooltip="Registrar abonos y pagos"
               ariaLabel="Registrar abonos y pagos"
+              guideTarget={TOUR_TARGET.DASHBOARD_ACTION_PAYMENTS}
               className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-600 shadow-xs transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
               onClick={(event) => {
                 event.stopPropagation();
@@ -172,7 +176,12 @@ export function TitularRow({
             </RowActionButton>
 
             {!isAuditMode && (
-              <TransferMenu label="Transferir titularidad" onSelect={onTransferClick} />
+              <TransferMenu
+                label="Transferir titularidad"
+                triggerAriaLabel="Más acciones del titular"
+                guideTarget={TOUR_TARGET.DASHBOARD_ACTION_TRANSFER}
+                onSelect={onTransferClick}
+              />
             )}
           </div>
         </TooltipProvider>

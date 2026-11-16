@@ -6,12 +6,17 @@ import { Plus, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TourListTable } from "@/features/tours/components/TourListTable";
 import { useTours } from "@/features/tours/hooks/useTours";
+import { GuidedTourButton } from "@/features/onboarding/components/GuidedTourButton";
+import { TOUR_TARGET, TOURS_GUIDED_TOUR } from "@/features/onboarding/constants/guided-tours";
+import { useGuidedTour } from "@/features/onboarding/hooks/useGuidedTour";
 
 export default function ToursPage() {
   const router = useRouter();
   const { data: tours = [], isLoading } = useTours();
 
   const hasTours = tours.length > 0;
+  // Guía interactiva: se abre sola la primera vez, cuando ya cargó el listado.
+  const { start: startGuide } = useGuidedTour(TOURS_GUIDED_TOUR, { autoStart: !isLoading });
 
   return (
     <main className="container mx-auto space-y-6 px-4 py-8">
@@ -27,13 +32,17 @@ export default function ToursPage() {
           </p>
         </div>
 
-        <Button
-          onClick={() => router.push("/tours/new")}
-          className="h-10 self-start rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition-colors hover:bg-indigo-700 sm:self-auto"
-        >
-          <Plus className="mr-2 h-4 w-4 stroke-[2.5]" />
-          <span>Crear Nuevo Tour</span>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <GuidedTourButton onClick={() => void startGuide()} />
+          <Button
+            onClick={() => router.push("/tours/new")}
+            data-tour={TOUR_TARGET.TOURS_CREATE}
+            className="h-10 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+          >
+            <Plus className="mr-2 h-4 w-4 stroke-[2.5]" />
+            <span>Crear Nuevo Tour</span>
+          </Button>
+        </div>
       </div>
 
       {/* 2. Renderizado Condicional: Tabla vs Empty State Principal */}

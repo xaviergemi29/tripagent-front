@@ -11,6 +11,9 @@ import { useTravelersFilter } from "@/features/travelers/hooks/useTravelersFilte
 import { ArrowRight, Users } from "lucide-react";
 import { TravelersMobileCardList } from "@/features/travelers/components/TravelersMobileCardList";
 import { Button } from "@/components/ui/button";
+import { GuidedTourButton } from "@/features/onboarding/components/GuidedTourButton";
+import { TOUR_TARGET, TRAVELERS_GUIDED_TOUR } from "@/features/onboarding/constants/guided-tours";
+import { useGuidedTour } from "@/features/onboarding/hooks/useGuidedTour";
 
 export default function TravelersPage() {
   const router = useRouter();
@@ -39,6 +42,8 @@ export default function TravelersPage() {
 
   const isFiltered = searchQuery.length > 0 || activeFilter !== "all";
   const hasTravelers = travelers.length > 0;
+  // Guía interactiva: se abre sola la primera vez, cuando ya cargó el directorio.
+  const { start: startGuide } = useGuidedTour(TRAVELERS_GUIDED_TOUR, { autoStart: !isLoading });
 
   return (
     <main className="container mx-auto space-y-6 px-4 py-8">
@@ -51,6 +56,7 @@ export default function TravelersPage() {
             Directorio de Viajeros
           </h1>
         </div>
+        <GuidedTourButton onClick={() => void startGuide()} className="self-start sm:self-auto" />
       </div>
 
       {!isLoading && !hasTravelers ? (
@@ -74,15 +80,17 @@ export default function TravelersPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <TravelersFilters
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
-            counts={counts}
-          />
+          <div data-tour={TOUR_TARGET.TRAVELERS_FILTERS}>
+            <TravelersFilters
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+              counts={counts}
+            />
+          </div>
 
-          <div className="hidden md:block">
+          <div className="hidden md:block" data-tour={TOUR_TARGET.TRAVELERS_LIST}>
             <TravelersTable
               travelers={filteredTravelers}
               isLoading={isLoading}
@@ -93,7 +101,7 @@ export default function TravelersPage() {
             />
           </div>
 
-          <div className="block md:hidden">
+          <div className="block md:hidden" data-tour={TOUR_TARGET.TRAVELERS_LIST}>
             <TravelersMobileCardList
               travelers={filteredTravelers}
               isLoading={isLoading}

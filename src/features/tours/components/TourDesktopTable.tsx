@@ -33,6 +33,7 @@ import type { TourOutput } from "../schemas/tour.schema";
 import { formatTourDateTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { handleShareLink } from "@/features/tours/utils/share-tour.util";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import {
   DEFAULT_CURRENCY,
   TOUR_TEMPORAL_STATUS,
@@ -188,6 +189,7 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
                       asChild
                       variant="outline"
                       size="sm"
+                      data-tour={TOUR_TARGET.TOURS_ACTION_CONTROL_CENTER}
                       className="h-8 border-indigo-200 bg-indigo-50/80 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
                     >
                       <Link href={`/tours/${tour.id}`}>
@@ -205,6 +207,7 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
                             className="h-8 w-8 bg-indigo-600 shadow-sm hover:bg-indigo-700"
                             onClick={() => handleShareLink(tour)}
                             aria-label="Compartir folleto digital"
+                            data-tour={TOUR_TARGET.TOURS_ACTION_SHARE}
                           >
                             <Share2 className="h-3.5 w-3.5" />
                           </Button>
@@ -227,6 +230,8 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                aria-label="Opciones del tour"
+                                data-tour={TOUR_TARGET.TOURS_ACTION_MORE}
                                 className="h-8 w-8 rounded-lg border border-slate-200/80 bg-white shadow-xs transition-colors hover:border-slate-300 hover:bg-slate-100"
                               >
                                 <MoreHorizontal className="h-4 w-4 text-slate-500" />

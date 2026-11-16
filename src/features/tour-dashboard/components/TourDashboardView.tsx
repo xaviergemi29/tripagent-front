@@ -35,6 +35,11 @@ import { MobileTabsNav } from "./mobile/MobileTabsNav";
 import { MobileFilters } from "./mobile/MobileFilters";
 import { MobilePassengersList } from "./mobile/MobilePassengersList";
 import { MobileSeatsTab } from "./mobile/MobileSeatsTab";
+import {
+  TOUR_DASHBOARD_GUIDED_TOUR,
+  TOUR_TARGET,
+} from "@/features/onboarding/constants/guided-tours";
+import { useGuidedTour } from "@/features/onboarding/hooks/useGuidedTour";
 
 interface TourDashboardViewProps {
   tourId: string;
@@ -62,6 +67,16 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   // Pestaña única para escritorio y móvil (ver constants/dashboard-tabs.ts).
   const [activeTab, setActiveTab] = useState<DashboardTab>(DEFAULT_DASHBOARD_TAB);
   const [pendingSeatPassengerId, setPendingSeatPassengerId] = useState<string | null>(null);
+  // Guía interactiva: se abre sola la primera vez, cuando el tour ya cargó. Los pasos cuyo
+  // elemento no está en pantalla (p. ej. "Nueva Reserva" en Modo Auditoría) se omiten.
+  const { start: startGuide } = useGuidedTour(TOUR_DASHBOARD_GUIDED_TOUR, {
+    autoStart: Boolean(tour),
+  });
+  // La guía recorre la lista de pasajeros: se abre en esa pestaña.
+  const handleStartGuide = (): void => {
+    setActiveTab("passengers");
+    window.setTimeout(() => void startGuide(), 0);
+  };
 
   const freeSeatsCount =
     (tour?.metrics?.occupancy?.max || 0) - (tour?.metrics?.occupancy?.current || 0);
@@ -133,54 +148,61 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
           logistics={tour.metrics.logistics}
           onNewReservation={isAuditMode ? undefined : () => setIsQuickReservationOpen(true)}
           onCancelTour={openCancelTour}
+          onStartGuide={handleStartGuide}
         />
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
           {tour.cancellation && <CancelledTourBanner cancellation={tour.cancellation} />}
-          <TourTabsNav
-            requiresSeats={requiresSeats}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            totalPassengers={totalEligiblePassengers}
-            assignedSeatsCount={assignedSeatsCount}
-            vehicle={tour.vehicle}
-          />
+          <div data-tour={TOUR_TARGET.DASHBOARD_TABS}>
+            <TourTabsNav
+              requiresSeats={requiresSeats}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              totalPassengers={totalEligiblePassengers}
+              assignedSeatsCount={assignedSeatsCount}
+              vehicle={tour.vehicle}
+            />
+          </div>
 
           <div className="flex-1">
             {activeTab === "passengers" && (
               <div className="animate-in fade-in space-y-4 duration-300">
                 {refundsPanel}
-                <TravelersTableToolbar
-                  tourId={tourId}
-                  searchQuery={filters.searchQuery}
-                  onSearchChange={setSearchQuery}
-                  paymentFilter={filters.paymentFilter}
-                  onPaymentFilterChange={setPaymentFilter}
-                  formFilter={filters.formFilter}
-                  onFormFilterChange={setFormFilter}
-                  seatFilter={filters.seatFilter}
-                  onSeatFilterChange={setSeatFilter}
-                />
+                <div data-tour={TOUR_TARGET.DASHBOARD_FILTERS}>
+                  <TravelersTableToolbar
+                    tourId={tourId}
+                    searchQuery={filters.searchQuery}
+                    onSearchChange={setSearchQuery}
+                    paymentFilter={filters.paymentFilter}
+                    onPaymentFilterChange={setPaymentFilter}
+                    formFilter={filters.formFilter}
+                    onFormFilterChange={setFormFilter}
+                    seatFilter={filters.seatFilter}
+                    onSeatFilterChange={setSeatFilter}
+                  />
+                </div>
 
-                <DashboardTravelerTable
-                  tourId={tourId}
-                  tourTitle={tour.title}
-                  tourDepartureDate={tour.departureDateTime}
-                  tourReturnDate={tour.returnDate ?? null}
-                  tourPostPaymentInstructions={tour.postPaymentInstructions ?? null}
-                  statementAgency={buildOperatorStatementAgency(agency, branding)}
-                  travelers={tour.travelers}
-                  searchQuery={filters.searchQuery}
-                  tourCurrency={tour.currency}
-                  paymentFilter={filters.paymentFilter}
-                  formFilter={filters.formFilter}
-                  seatFilter={filters.seatFilter}
-                  isAuditMode={isAuditMode}
-                  freeSeatsCount={freeSeatsCount}
-                  onRowClick={(id) => setSelectedTravelerId(id)}
-                  onAssignSeatClick={handleAssignSeatIntent}
-                  onClearFilters={clearFilters}
-                  requiresSeats={requiresSeats}
-                />
+                <div data-tour={TOUR_TARGET.DASHBOARD_TRAVELERS}>
+                  <DashboardTravelerTable
+                    tourId={tourId}
+                    tourTitle={tour.title}
+                    tourDepartureDate={tour.departureDateTime}
+                    tourReturnDate={tour.returnDate ?? null}
+                    tourPostPaymentInstructions={tour.postPaymentInstructions ?? null}
+                    statementAgency={buildOperatorStatementAgency(agency, branding)}
+                    travelers={tour.travelers}
+                    searchQuery={filters.searchQuery}
+                    tourCurrency={tour.currency}
+                    paymentFilter={filters.paymentFilter}
+                    formFilter={filters.formFilter}
+                    seatFilter={filters.seatFilter}
+                    isAuditMode={isAuditMode}
+                    freeSeatsCount={freeSeatsCount}
+                    onRowClick={(id) => setSelectedTravelerId(id)}
+                    onAssignSeatClick={handleAssignSeatIntent}
+                    onClearFilters={clearFilters}
+                    requiresSeats={requiresSeats}
+                  />
+                </div>
               </div>
             )}
 
@@ -208,42 +230,51 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
           departureDateTime={tour.departureDateTime}
           onOpenNewBookingModal={isAuditMode ? undefined : () => setIsQuickReservationOpen(true)}
           onCancelTour={openCancelTour}
+          onStartGuide={handleStartGuide}
         />
 
         {tour.cancellation && <CancelledTourBanner cancellation={tour.cancellation} />}
 
-        <MobileKpiCards metrics={tour.metrics} currency={tour.currency} />
+        <div data-tour={TOUR_TARGET.DASHBOARD_KPIS}>
+          <MobileKpiCards metrics={tour.metrics} currency={tour.currency} />
+        </div>
 
-        <MobileTabsNav
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          totalPassengers={totalEligiblePassengers}
-          assignedCount={assignedSeatsCount}
-          totalBookedPax={totalEligiblePassengers}
-          requiresSeats={requiresSeats}
-        />
+        <div data-tour={TOUR_TARGET.DASHBOARD_TABS}>
+          <MobileTabsNav
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            totalPassengers={totalEligiblePassengers}
+            assignedCount={assignedSeatsCount}
+            totalBookedPax={totalEligiblePassengers}
+            requiresSeats={requiresSeats}
+          />
+        </div>
 
         {activeTab === "passengers" ? (
           <div className="animate-in fade-in space-y-4 duration-300">
             {refundsPanel}
-            <MobileFilters
-              searchQuery={filters.searchQuery}
-              onSearchChange={setSearchQuery}
-              paymentFilter={filters.paymentFilter}
-              onPaymentFilterChange={setPaymentFilter}
-              formFilter={filters.formFilter}
-              onFormFilterChange={setFormFilter}
-              seatFilter={filters.seatFilter}
-              onSeatFilterChange={setSeatFilter}
-            />
+            <div data-tour={TOUR_TARGET.DASHBOARD_FILTERS}>
+              <MobileFilters
+                searchQuery={filters.searchQuery}
+                onSearchChange={setSearchQuery}
+                paymentFilter={filters.paymentFilter}
+                onPaymentFilterChange={setPaymentFilter}
+                formFilter={filters.formFilter}
+                onFormFilterChange={setFormFilter}
+                seatFilter={filters.seatFilter}
+                onSeatFilterChange={setSeatFilter}
+              />
+            </div>
 
-            <MobilePassengersList
-              travelers={filteredTravelers}
-              tourCurrency={tour.currency}
-              isAuditMode={isAuditMode}
-              onAssignSeatClick={handleAssignSeatIntent}
-              onRowClick={(id) => setSelectedTravelerId(id)}
-            />
+            <div data-tour={TOUR_TARGET.DASHBOARD_TRAVELERS}>
+              <MobilePassengersList
+                travelers={filteredTravelers}
+                tourCurrency={tour.currency}
+                isAuditMode={isAuditMode}
+                onAssignSeatClick={handleAssignSeatIntent}
+                onRowClick={(id) => setSelectedTravelerId(id)}
+              />
+            </div>
           </div>
         ) : (
           <MobileSeatsTab

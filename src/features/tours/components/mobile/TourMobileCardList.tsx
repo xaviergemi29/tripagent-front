@@ -21,6 +21,7 @@ import { formatCurrency } from "@/shared/utils/currency.util";
 import { formatSpanishLongDate } from "@/shared/utils/tour-date.util";
 import type { TourOutput } from "../../schemas/tour.schema";
 import { handleShareLink } from "@/features/tours/utils/share-tour.util";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface TourMobileCardListProps {
@@ -52,7 +53,13 @@ export function TourMobileCardList({ tours, onDeleteRequest }: TourMobileCardLis
               {/* DropdownMenu Contextual */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-slate-500">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Opciones del tour"
+                    data-tour={TOUR_TARGET.TOURS_ACTION_MORE}
+                    className="h-8 w-8 shrink-0 text-slate-500"
+                  >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -116,6 +123,7 @@ export function TourMobileCardList({ tours, onDeleteRequest }: TourMobileCardLis
               <Button
                 asChild
                 variant="outline"
+                data-tour={TOUR_TARGET.TOURS_ACTION_CONTROL_CENTER}
                 className="flex-1 border-indigo-200 bg-indigo-50/80 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
               >
                 <Link href={`/tours/${tour.id}`}>
@@ -126,6 +134,7 @@ export function TourMobileCardList({ tours, onDeleteRequest }: TourMobileCardLis
                 onClick={() => handleShareLink(tour)}
                 size="icon"
                 aria-label="Compartir folleto digital"
+                data-tour={TOUR_TARGET.TOURS_ACTION_SHARE}
                 className="shrink-0 bg-indigo-600 hover:bg-indigo-700"
               >
                 <Share2 className="h-4 w-4" />

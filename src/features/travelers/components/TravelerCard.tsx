@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { getInitials, getAvatarColor } from "@/shared/utils/travelers-helpers";
 import { formatBirthdateAndAge } from "@/shared/utils/tour-date.util";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import type { TravelerTableRow } from "./TravelersTable"; // Reutilizamos el tipo extendido
 
 interface TravelerCardProps {
@@ -133,6 +134,7 @@ export function TravelerCard({ traveler, onEdit, onDelete, onViewHistory }: Trav
         <Button
           variant="outline"
           onClick={() => onViewHistory(traveler.id!)}
+          data-tour={TOUR_TARGET.TRAVELERS_ACTION_HISTORY}
           className="h-10 flex-1 rounded-xl border-indigo-200/80 bg-indigo-50/70 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
         >
           <Activity className="mr-1.5 h-3.5 w-3.5" />
@@ -141,6 +143,7 @@ export function TravelerCard({ traveler, onEdit, onDelete, onViewHistory }: Trav
         <Button
           variant="outline"
           onClick={() => onEdit(traveler)}
+          data-tour={TOUR_TARGET.TRAVELERS_ACTION_EDIT}
           className="h-10 flex-1 rounded-xl border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50"
         >
           <Pencil className="mr-1.5 h-3.5 w-3.5" />
@@ -151,6 +154,7 @@ export function TravelerCard({ traveler, onEdit, onDelete, onViewHistory }: Trav
           onClick={() => onDelete(traveler.id!)}
           className="h-10 w-10 shrink-0 rounded-xl border-rose-200 bg-rose-50/50 p-0 text-rose-600 hover:bg-rose-100"
           aria-label="Eliminar viajero"
+          data-tour={TOUR_TARGET.TRAVELERS_ACTION_DELETE}
         >
           <Trash2 className="h-4 w-4" />
         </Button>

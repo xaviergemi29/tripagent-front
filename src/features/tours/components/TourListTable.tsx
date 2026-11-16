@@ -9,6 +9,7 @@ import { TourBannerInfo } from "./TourBannerInfo";
 import { TourFilters } from "./TourFilters";
 import { TourMobileCardList } from "./mobile/TourMobileCardList";
 import { TourDesktopTable } from "./TourDesktopTable";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 
 interface TourListTableProps {
   tours: TourOutput[];
@@ -33,7 +34,9 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
     <div className="space-y-4">
       <TourBannerInfo />
 
-      <TourFilters {...filters} />
+      <div data-tour={TOUR_TARGET.TOURS_FILTERS}>
+        <TourFilters {...filters} />
+      </div>
 
       <div className="mt-4">
         {filters.filteredTours.length === 0 ? (
@@ -42,10 +45,10 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
           </div>
         ) : (
           <>
-            <div className="hidden md:block">
+            <div className="hidden md:block" data-tour={TOUR_TARGET.TOURS_LIST}>
               <TourDesktopTable tours={filters.filteredTours} onDeleteRequest={setTourToDelete} />
             </div>
-            <div className="block md:hidden">
+            <div className="block md:hidden" data-tour={TOUR_TARGET.TOURS_LIST}>
               <TourMobileCardList tours={filters.filteredTours} onDeleteRequest={setTourToDelete} />
             </div>
           </>

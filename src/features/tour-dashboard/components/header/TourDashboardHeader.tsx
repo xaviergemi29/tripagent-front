@@ -18,6 +18,8 @@ import type { TourMetrics } from "@/features/tour-dashboard/schemas/tour-dashboa
 import type { Currency } from "@/shared/constants/domain.constants";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
+import { GuidedTourButton } from "@/features/onboarding/components/GuidedTourButton";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 
 interface TourDashboardHeaderProps {
   title: string;
@@ -28,6 +30,8 @@ interface TourDashboardHeaderProps {
   onNewReservation?: () => void;
   /** Sin acción (tour finalizado o cancelado) no se ofrece cancelar el tour. */
   onCancelTour?: () => void;
+  /** Repite la guía interactiva del Centro de Control («Ver guía»). */
+  onStartGuide?: () => void;
 }
 
 export function TourDashboardHeader({
@@ -38,6 +42,7 @@ export function TourDashboardHeader({
   logistics,
   onNewReservation,
   onCancelTour,
+  onStartGuide,
 }: TourDashboardHeaderProps) {
   const occupancyStats = useMemo(() => {
     const maxCapacity = metrics.occupancy.max;
@@ -73,8 +78,9 @@ export function TourDashboardHeader({
             <span>{displayDate}</span>
           </div>
         </div>
-        {(onNewReservation || onCancelTour) && (
+        {(onNewReservation || onCancelTour || onStartGuide) && (
           <div className="flex flex-wrap gap-2">
+            {onStartGuide && <GuidedTourButton onClick={onStartGuide} className="h-10" />}
             {onCancelTour && (
               <Button
                 size="lg"
@@ -88,6 +94,7 @@ export function TourDashboardHeader({
             {onNewReservation && (
               <Button
                 size="lg"
+                data-tour={TOUR_TARGET.DASHBOARD_NEW_BOOKING}
                 className="w-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 sm:w-auto"
                 onClick={onNewReservation}
               >
@@ -99,7 +106,7 @@ export function TourDashboardHeader({
       </div>
 
       {/* KPI GRID */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3" data-tour={TOUR_TARGET.DASHBOARD_KPIS}>
         {/* KPI 1: OCCUPANCY */}
         <Card className="flex flex-col justify-between border border-slate-200/80 bg-white p-5 shadow-sm">
           <div>

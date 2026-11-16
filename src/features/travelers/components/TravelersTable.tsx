@@ -28,6 +28,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { getInitials, getAvatarColor } from "@/shared/utils/travelers-helpers";
 import type { TravelerOutput } from "../schemas/traveler.schema";
 import { formatBirthdateAndAge } from "@/shared/utils/tour-date.util";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 
 export interface TravelerTableRow extends TravelerOutput {
   tripCount?: number;
@@ -219,6 +220,8 @@ export function TravelersTable({
                               size="icon"
                               className="h-9 w-9 rounded-lg border border-slate-200/80 bg-white text-slate-500 shadow-xs transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
                               onClick={() => onEdit?.(traveler)}
+                              aria-label="Editar viajero"
+                              data-tour={TOUR_TARGET.TRAVELERS_ACTION_EDIT}
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -240,6 +243,8 @@ export function TravelersTable({
                               onClick={() => {
                                 if (traveler.id) onViewHistory?.(traveler.id);
                               }}
+                              aria-label="Ver Historial"
+                              data-tour={TOUR_TARGET.TRAVELERS_ACTION_HISTORY}
                             >
                               <Activity className="h-4 w-4" />
                             </Button>
@@ -261,6 +266,8 @@ export function TravelersTable({
                               onClick={() => {
                                 if (traveler.id) setDeletingId(traveler.id);
                               }}
+                              aria-label="Eliminar viajero"
+                              data-tour={TOUR_TARGET.TRAVELERS_ACTION_DELETE}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

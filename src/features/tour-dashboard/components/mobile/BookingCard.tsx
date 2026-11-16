@@ -16,6 +16,7 @@ import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { SeatWithoutDepositBadge } from "@/features/tour-dashboard/components/passengers/SeatWithoutDepositBadge";
 import { UnpaidHoldAge } from "@/features/tour-dashboard/components/passengers/UnpaidHoldAge";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 
 interface BookingCardProps {
   titular: TitularRowOutput;
@@ -248,6 +249,8 @@ export function BookingCard({
           </button>
           <button
             onClick={() => onRowClick?.(titular.id)}
+            aria-label="Registrar abonos y pagos"
+            data-tour={TOUR_TARGET.DASHBOARD_ACTION_PAYMENTS}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
           >
             <WalletCards className="h-4 w-4" />
