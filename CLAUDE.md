@@ -24,7 +24,7 @@
 | driver.js                                                                            | 1.10.2 (exacta)       | Guías interactivas del panel (`features/onboarding`). Versión fija: las 1.11–1.14 tenían menos de dos semanas el 2026-11-15                                            |
 | Vitest + Testing Library + jsdom                                                     | ^4.1                  | `vitest.config.ts` (compila con `babel-plugin-react-compiler`, igual que la app, desde el 2026-11-15), `vitest.setup.ts`                                               |
 
-En `dependencies` sobra `@fastify/cors`, que no se usa en el front. No lo quites sin autorización. `cn` **sí se usa**: es el `cn()` (clsx + tailwind-merge) que importan los componentes de `components/ui` (`dialog`, `button`, `tabs`, …); `@/lib/utils` exporta otro `cn` para el resto de la app.
+`@fastify/cors` se quitó de `dependencies` el 2026-11-16 (no se usaba en el front; a petición del usuario). `cn` **sí se usa**: es el `cn()` (clsx + tailwind-merge) que importan los componentes de `components/ui` (`dialog`, `button`, `tabs`, …); `@/lib/utils` exporta otro `cn` para el resto de la app.
 
 ## Scripts
 

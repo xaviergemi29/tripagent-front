@@ -12,10 +12,6 @@ import { fetchAllPages } from "@/shared/api/fetch-all-pages";
 // ============================================================================
 // 2. CAPA DE RED (Axios API Client)
 // ============================================================================
-const createTravalerApi = async (travelerData: TravelerInput): Promise<TravelerOutput> => {
-  return apiClient.post<never, TravelerOutput>("travelers", travelerData);
-};
-
 // Todas las páginas (la API entrega máximo 100 por página); el directorio filtra en el cliente.
 const fetchTravelersApi = async (search?: string): Promise<TravelerOutput[]> => {
   return fetchAllPages<TravelerOutput>("/travelers", { search: search || undefined });

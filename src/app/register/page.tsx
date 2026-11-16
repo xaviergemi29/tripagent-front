@@ -16,7 +16,7 @@ async function validateTokenOnServer(token: string): Promise<any> {
       cache: "no-store",
     });
     return await res.json();
-  } catch (e) {
+  } catch {
     return {
       isValid: false,
       error: { code: "SERVER_ERROR", message: "Error de conexión con el servidor." },

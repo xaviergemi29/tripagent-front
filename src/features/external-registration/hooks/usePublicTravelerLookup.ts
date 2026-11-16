@@ -25,7 +25,7 @@ export function usePublicTravelerLookup(magicToken: string) {
       });
 
       return result || null;
-    } catch (error) {
+    } catch {
       // 🛡️ Silenciamos el error para que NUNCA afecte la experiencia del usuario ni redirija
       console.warn("Viajero no encontrado en catálogo previo");
       return null;

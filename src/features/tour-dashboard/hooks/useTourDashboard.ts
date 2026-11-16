@@ -125,7 +125,7 @@ export function useAddPassengerToBooking() {
   return useMutation({
     mutationFn: ({ bookingId, tourId }: { bookingId: string; tourId: string }) =>
       apiClient.post(`/bookings/${bookingId}/add-passenger`, { tourId }),
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       // Invalidar para actualizar métricas financieras y tamaño de grupo
       queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
       toast.success("Acompañante agregado", {

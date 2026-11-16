@@ -15,7 +15,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useCreatePayment } from "@/features/tour-dashboard/hooks/usePayments";
-import { Info, Check, X } from "lucide-react";
+import { Info, Check } from "lucide-react";
 import {
   type CreatePaymentInput,
   paymentFormSchema,

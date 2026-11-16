@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Check } from "lucide-react";
+import { Check } from "lucide-react";
 
 export interface PickupPoint {
   id: string;

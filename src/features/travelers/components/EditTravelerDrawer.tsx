@@ -3,16 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  X,
-  UserCheck,
-  ShieldAlert,
-  Calendar,
-  CalendarOff,
-  AlertTriangle,
-  User,
-  Baby,
-} from "lucide-react";
+import { X, ShieldAlert, Calendar, CalendarOff, AlertTriangle, User, Baby } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,21 +60,19 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: Props) {
   const onSubmit = async (formData: EditTravelerFormInput) => {
     if (!traveler?.id) return;
 
-    // 1. Destructuramos para aislar 'passengerType'
-    const { passengerType, ...cleanData } = formData;
-
-    // 2. Sanitizamos el payload (strings vacíos a undefined)
+    // 1. Payload campo por campo (strings vacíos a undefined); `passengerType` es solo del
+    //    formulario y no se envía.
     const payload: Partial<TravelerInput> = {
-      fullName: cleanData.fullName,
-      birthDate: cleanData.birthDate,
-      whatsappPhone: cleanData.whatsappPhone || undefined,
-      email: cleanData.email || undefined,
-      emergencyContactName: cleanData.emergencyContactName,
-      emergencyContactPhone: cleanData.emergencyContactPhone,
-      medicalNotes: cleanData.medicalNotes || undefined,
+      fullName: formData.fullName,
+      birthDate: formData.birthDate,
+      whatsappPhone: formData.whatsappPhone || undefined,
+      email: formData.email || undefined,
+      emergencyContactName: formData.emergencyContactName,
+      emergencyContactPhone: formData.emergencyContactPhone,
+      medicalNotes: formData.medicalNotes || undefined,
     };
 
-    // 3. Ejecutamos la mutación con el key correcto: 'travelerData'
+    // 2. Ejecutamos la mutación con el key correcto: 'travelerData'
     await updateTraveler({
       travelerId: traveler.id,
       travelerData: payload as TravelerInput,

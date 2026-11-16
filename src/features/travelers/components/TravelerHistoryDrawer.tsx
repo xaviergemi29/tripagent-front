@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useTravelerHistory } from "../hooks/useTravelers";
 import {
   Loader2,
@@ -40,32 +40,31 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
   if (lifetimeValueLines.length === 0) lifetimeValueLines.push([DEFAULT_CURRENCY, 0] as const);
   const [activeFilter, setActiveFilter] = useState<FilterType>("ALL");
 
-  const history = traveler?.history || [];
+  const history = traveler?.history ?? [];
 
-  // Contadores memorizados
-  const counts = useMemo(() => {
-    return {
-      all: history.length,
-      national: history.filter(
-        (h) =>
-          h.destinationType === "NATIONAL" &&
-          h.passengerStatus !== "CANCELLED" &&
-          h.bookingStatus !== "CANCELLED",
-      ).length,
-      international: history.filter(
-        (h) =>
-          h.destinationType === "INTERNATIONAL" &&
-          h.passengerStatus !== "CANCELLED" &&
-          h.bookingStatus !== "CANCELLED",
-      ).length,
-      cancelled: history.filter(
-        (h) => h.passengerStatus === "CANCELLED" || h.bookingStatus === "CANCELLED",
-      ).length,
-    };
-  }, [history]);
+  // Contadores y filtrado sin `useMemo`: el React Compiler ya memoriza estos cálculos. Con el
+  // memo manual, `history` (un arreglo nuevo en cada render cuando no hay datos) invalidaba las
+  // dependencias en cada render (advertencia de lint, 2026-11-16).
+  const counts = {
+    all: history.length,
+    national: history.filter(
+      (h) =>
+        h.destinationType === "NATIONAL" &&
+        h.passengerStatus !== "CANCELLED" &&
+        h.bookingStatus !== "CANCELLED",
+    ).length,
+    international: history.filter(
+      (h) =>
+        h.destinationType === "INTERNATIONAL" &&
+        h.passengerStatus !== "CANCELLED" &&
+        h.bookingStatus !== "CANCELLED",
+    ).length,
+    cancelled: history.filter(
+      (h) => h.passengerStatus === "CANCELLED" || h.bookingStatus === "CANCELLED",
+    ).length,
+  };
 
-  // Filtrado de registros
-  const filteredBookings = useMemo(() => {
+  const filterBookings = () => {
     if (activeFilter === "ALL") return history;
     if (activeFilter === "CANCELLED") {
       return history.filter(
@@ -80,7 +79,8 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
     if (activeFilter === "EXTRANJERO")
       return activeHistory.filter((h) => h.destinationType === "INTERNATIONAL");
     return history;
-  }, [history, activeFilter]);
+  };
+  const filteredBookings = filterBookings();
 
   if (!travelerId) return null;
 

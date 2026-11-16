@@ -38,7 +38,6 @@ export function TravelerGroupDialogs({
         isOpen={!!slotToRelease}
         onClose={actions.closeReleaseSlot}
         titularName={slotToRelease?.titularName || ""}
-        slotId={slotToRelease?.bookingId}
         onConfirm={actions.confirmReleaseSlot}
       />
 

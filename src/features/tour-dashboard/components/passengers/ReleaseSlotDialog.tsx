@@ -17,8 +17,6 @@ export interface ReleaseSlotDialogProps {
   isOpen: boolean;
   onClose: () => void;
   titularName: string;
-  /** Identificador de la reserva o del acompañante/lugar a eliminar */
-  slotId?: string | number;
   onConfirm: () => Promise<void> | void;
 }
 
@@ -26,7 +24,6 @@ export function ReleaseSlotDialog({
   isOpen,
   onClose,
   titularName,
-  slotId,
   onConfirm,
 }: ReleaseSlotDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
