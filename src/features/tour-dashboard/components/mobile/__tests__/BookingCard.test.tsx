@@ -47,7 +47,10 @@ const renderCard = (
     onAssignSeatClick: vi.fn(),
     onRowClick: vi.fn(),
     onDownloadReceiptClick: vi.fn(),
-    onTransferClick: vi.fn(),
+    onTransferPassengerClick: vi.fn(),
+    onRemovePassengerClick: vi.fn(),
+    onRemoveGhostSlotClick: vi.fn(),
+    onAddPassengerClick: vi.fn(),
   };
   render(<BookingCard titular={data} tourCurrency="MXN" {...handlers} {...props} />);
   return handlers;
@@ -79,7 +82,13 @@ describe("BookingCard (celular): acciones", () => {
     const h = renderCard();
     await userEvent.click(screen.getByRole("button", { name: "Más acciones del titular" }));
     await userEvent.click(await screen.findByText("Transferir titularidad"));
-    expect(h.onTransferClick).toHaveBeenCalledTimes(1);
+    expect(h.onTransferPassengerClick).toHaveBeenCalledWith(
+      "33333333-3333-4333-8333-333333333333",
+      "11111111-1111-4111-8111-111111111111",
+      PASSENGER_ROLE.TITULAR,
+      "Ana Torres",
+      "2281234567",
+    );
   });
 
   it("registrar abonos abre el detalle de la reserva", async () => {
@@ -88,9 +97,12 @@ describe("BookingCard (celular): acciones", () => {
     expect(h.onRowClick).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111");
   });
 
-  it("Modo Auditoría: sin transferencia", () => {
-    renderCard({ isAuditMode: true });
+  it("Modo Auditoría: sin transferencia ni acciones del grupo", () => {
+    renderCard({ isAuditMode: true }, groupData());
     expect(screen.queryByRole("button", { name: "Más acciones del titular" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Dar de baja/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Liberar lugar apartado" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Agregar lugar/ })).toBeNull();
   });
 
   it("un nombre largo hace salto de línea y el estado de pago no se recorta", () => {
@@ -101,6 +113,76 @@ describe("BookingCard (celular): acciones", () => {
     );
     expect(screen.getByText("ABONO PARCIAL")).toHaveClass("whitespace-nowrap");
     expect(screen.getByText(/^Debe:/)).toHaveClass("whitespace-nowrap");
+  });
+});
+
+// Grupo de 3 lugares: titular, un acompañante registrado y un lugar pendiente.
+const COMPANION = {
+  id: "22222222-2222-4222-8222-222222222222",
+  bookingId: "33333333-3333-4333-8333-333333333333",
+  role: PASSENGER_ROLE.COMPANION,
+  fullName: "Luis Torres",
+  whatsapp: "2289998888",
+  formStatus: "COMPLETED",
+  seatLabel: null,
+  boardingPoint: null,
+  boardingPointDetails: null,
+};
+const groupData = () =>
+  titular({
+    groupSize: 3,
+    formStatus: "PENDING",
+    companions: [COMPANION] as TitularRowOutput["companions"],
+  });
+
+describe("BookingCard (celular): acciones del grupo, como en escritorio", () => {
+  it("da de baja y transfiere el lugar de un acompañante", async () => {
+    const h = renderCard({}, groupData());
+
+    await userEvent.click(screen.getByRole("button", { name: "Dar de baja a Luis Torres" }));
+    expect(h.onRemovePassengerClick).toHaveBeenCalledWith(
+      COMPANION.bookingId,
+      COMPANION.id,
+      "Luis Torres",
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Más acciones de Luis Torres" }));
+    await userEvent.click(await screen.findByText("Transferir lugar"));
+    expect(h.onTransferPassengerClick).toHaveBeenCalledWith(
+      COMPANION.bookingId,
+      COMPANION.id,
+      PASSENGER_ROLE.COMPANION,
+      "Luis Torres",
+      "2289998888",
+    );
+  });
+
+  it("libera un lugar pendiente y agrega un lugar al grupo", async () => {
+    const h = renderCard({ freeSeatsCount: 4 }, groupData());
+
+    await userEvent.click(screen.getByRole("button", { name: "Liberar lugar apartado" }));
+    expect(h.onRemoveGhostSlotClick).toHaveBeenCalledWith(COMPANION.bookingId);
+
+    await userEvent.click(screen.getByRole("button", { name: /Agregar lugar al grupo/ }));
+    expect(h.onAddPassengerClick).toHaveBeenCalledWith(
+      expect.objectContaining({ fullName: "Ana Torres" }),
+    );
+  });
+
+  it("sin lugares libres o con el formulario completo no se agrega lugar", () => {
+    const { unmount } = render(
+      <BookingCard
+        titular={groupData()}
+        onAssignSeatClick={vi.fn()}
+        onAddPassengerClick={vi.fn()}
+        freeSeatsCount={0}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /Agregar lugar al grupo/ })).toBeDisabled();
+    unmount();
+
+    renderCard({}, titular({ formStatus: "COMPLETED" }));
+    expect(screen.queryByRole("button", { name: /Agregar lugar al grupo/ })).toBeNull();
   });
 });
 

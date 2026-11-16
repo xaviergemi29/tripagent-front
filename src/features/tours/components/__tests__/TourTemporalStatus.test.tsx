@@ -40,7 +40,13 @@ describe("Estado temporal del tour en /tours", () => {
   it("los contadores y el filtro 'En curso' reconocen 'EN CURSO'", () => {
     const { result } = renderHook(() => useTourFilters(tours));
 
-    expect(result.current.counts).toEqual({ all: 3, upcoming: 1, inProgress: 1, completed: 1 });
+    expect(result.current.counts).toEqual({
+      all: 3,
+      upcoming: 1,
+      inProgress: 1,
+      completed: 1,
+      cancelled: 0,
+    });
 
     act(() => result.current.setStatusFilter("IN_PROGRESS"));
     expect(result.current.filteredTours.map((t) => t.title)).toEqual(["Zacatlán de las manzanas"]);

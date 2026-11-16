@@ -192,7 +192,7 @@ export const TOUR_DASHBOARD_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.DASHBOARD_ACTION_TRANSFER,
       title: "Más acciones",
       description:
-        "«Transferir titularidad» pasa la reserva y su saldo a otra persona. Al desplegar el grupo, cada acompañante tiene «Dar de baja pasajero» y «Transferir lugar», y cada lugar pendiente «Liberar lugar apartado» y «Enviar Link».",
+        "«Transferir titularidad» pasa la reserva y su saldo a otra persona. Al desplegar el grupo, cada acompañante tiene «Dar de baja pasajero» y «Transferir lugar», y cada lugar pendiente «Liberar lugar apartado».",
       side: "left",
       align: "center",
     },

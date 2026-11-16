@@ -1,12 +1,11 @@
 import { CornerDownRight, Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { copyMagicLink, SeatCell } from "./traveler-row-cells";
+import { SeatCell } from "./traveler-row-cells";
 
 interface PendingSlotRowProps {
   /** Número del lugar dentro del grupo ("Lugar reservado #3"). */
   slotNumber: number;
   hasSeatRight: boolean;
-  magicToken?: string | null;
   isAuditMode?: boolean;
   requiresSeats?: boolean;
   isRemoving?: boolean;
@@ -15,11 +14,13 @@ interface PendingSlotRowProps {
   onRemove: () => void;
 }
 
-/** Lugar apartado que el cliente aún no registra en su Magic Link. */
+/**
+ * Lugar apartado que el cliente aún no registra en su Magic Link. Sin «Enviar Link» (petición
+ * del usuario, 2026-11-16): el enlace es del grupo y se copia desde la fila del titular.
+ */
 export function PendingSlotRow({
   slotNumber,
   hasSeatRight,
-  magicToken,
   isAuditMode,
   requiresSeats,
   isRemoving,
@@ -70,16 +71,6 @@ export function PendingSlotRow({
             title="Liberar lugar apartado"
           >
             <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
-        {magicToken && !isAuditMode && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 border-amber-200 bg-amber-50 px-2 text-[10px] text-amber-700 hover:bg-amber-100"
-            onClick={(event) => copyMagicLink(event, magicToken)}
-          >
-            Enviar Link
           </Button>
         )}
       </td>

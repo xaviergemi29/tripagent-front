@@ -183,7 +183,7 @@ describe("TravelerGroup: grupo expandido", () => {
     );
   });
 
-  it("lugar pendiente: liberar lugar, enviar link y asignar asiento al titular", async () => {
+  it("lugar pendiente: liberar lugar y asignar asiento al titular (sin «Enviar Link»)", async () => {
     const user = userEvent.setup();
     const h = renderGroup();
     await expand(user);
@@ -191,8 +191,8 @@ describe("TravelerGroup: grupo expandido", () => {
     await user.click(screen.getByTitle("Liberar lugar apartado"));
     expect(h.onRemoveGhostSlotClick).toHaveBeenCalledWith(BOOKING_ID);
 
-    await user.click(screen.getByRole("button", { name: "Enviar Link" }));
-    expect(copy).toHaveBeenCalledWith(`${window.location.origin}/register?token=tok123`);
+    // El Magic Link se copia desde la fila del titular, no desde el lugar pendiente.
+    expect(screen.queryByRole("button", { name: "Enviar Link" })).not.toBeInTheDocument();
 
     const ghostRow = screen.getByText("Acompañante pendiente de registro").closest("tr")!;
     await user.click(within(ghostRow).getByText("[ Asignar Asiento ]"));

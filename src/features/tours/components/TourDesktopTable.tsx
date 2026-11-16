@@ -34,47 +34,13 @@ import { formatTourDateTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { handleShareLink } from "@/features/tours/utils/share-tour.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
-import {
-  DEFAULT_CURRENCY,
-  TOUR_TEMPORAL_STATUS,
-  type TourTemporalStatus,
-} from "@/shared/constants/domain.constants";
+import { TourTemporalStatusBadge } from "./TourTemporalStatusBadge";
+import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface TourDesktopTableProps {
   tours: TourOutput[];
   onDeleteRequest: (id: string) => void;
 }
-
-const getStatusBadge = (temporalStatus?: TourTemporalStatus) => {
-  switch (temporalStatus) {
-    // Cancelado por la agencia (decisión del PM, 2026-11-14). "Pausado" ya no existe.
-    case TOUR_TEMPORAL_STATUS.CANCELLED:
-      return (
-        <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
-          Cancelado
-        </Badge>
-      );
-    case TOUR_TEMPORAL_STATUS.IN_PROGRESS:
-      return (
-        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
-          En Curso
-        </Badge>
-      );
-    case TOUR_TEMPORAL_STATUS.FINISHED:
-      return (
-        <Badge variant="outline" className="border-slate-200 bg-slate-100 text-slate-600">
-          Finalizado
-        </Badge>
-      );
-    case TOUR_TEMPORAL_STATUS.UPCOMING:
-    default:
-      return (
-        <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
-          Próximo
-        </Badge>
-      );
-  }
-};
 
 export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTableProps) {
   return (
@@ -178,7 +144,7 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
 
                 {/* 5. ESTADO TEMPORAL */}
                 <TableCell className="text-center">
-                  {getStatusBadge(tour?.temporalStatus)}
+                  <TourTemporalStatusBadge status={tour?.temporalStatus} />
                 </TableCell>
 
                 {/* 6. ACCIONES (NUEVO DISEÑO) */}

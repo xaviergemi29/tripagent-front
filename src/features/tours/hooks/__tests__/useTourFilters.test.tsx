@@ -4,8 +4,7 @@ import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
 import type { TourOutput } from "../../schemas/tour.schema";
 import { useTourFilters } from "../useTourFilters";
 
-// El listado de /tours pide hasta 100 tours y filtra en el cliente (el interceptor pierde la
-// paginación). Los estados vienen de la API (`temporalStatus`, regla 9) y se comparan con
+// El listado de /tours pide todas las páginas (`fetchAllPages`) y filtra en el cliente. Los estados vienen de la API (`temporalStatus`, regla 9) y se comparan con
 // TOUR_TEMPORAL_STATUS, nunca con el texto.
 
 const tour = (overrides: Partial<TourOutput>): TourOutput =>
@@ -25,6 +24,7 @@ const TOURS = [
   tour({ title: "Disney Orlando", currency: "USD", destinationType: "INTERNATIONAL" }),
   tour({ title: "Nueva York Express", currency: "USD" }), // USD sin destino internacional marcado
   tour({ title: "Sin estado", temporalStatus: undefined }),
+  tour({ title: "Real de Catorce", temporalStatus: TOUR_TEMPORAL_STATUS.CANCELLED }),
 ];
 
 const titles = (list: TourOutput[]) => list.map((t) => t.title);
@@ -84,7 +84,23 @@ describe("useTourFilters", () => {
   it("los contadores no dependen de los filtros activos", () => {
     const { result } = renderHook(() => useTourFilters(TOURS));
     act(() => result.current.setSearchTerm("huasteca"));
-    expect(result.current.counts).toEqual({ all: 6, upcoming: 4, inProgress: 1, completed: 1 });
+    expect(result.current.counts).toEqual({
+      all: 7,
+      upcoming: 4,
+      inProgress: 1,
+      completed: 1,
+      cancelled: 1,
+    });
+  });
+
+  it("los cancelados tienen su propio filtro y no entran en finalizados", () => {
+    const { result } = renderHook(() => useTourFilters(TOURS));
+
+    act(() => result.current.setStatusFilter("CANCELLED"));
+    expect(titles(result.current.filteredTours)).toEqual(["Real de Catorce"]);
+
+    act(() => result.current.setStatusFilter("COMPLETED"));
+    expect(titles(result.current.filteredTours)).not.toContain("Real de Catorce");
   });
 
   it("con lista vacía no falla", () => {

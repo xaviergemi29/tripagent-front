@@ -114,7 +114,6 @@ export function TravelerGroup({
             key={`ghost-${titular.id}-${index}`}
             slotNumber={registeredCount + index + 1}
             hasSeatRight={titular.hasSeatRight}
-            magicToken={titular.magicToken}
             isAuditMode={isAuditMode}
             requiresSeats={requiresSeats}
             isRemoving={isRemovingGhost}

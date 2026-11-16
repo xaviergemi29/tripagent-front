@@ -1,8 +1,23 @@
 import { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
-import { MapPin, Phone, FileText, Link2, WalletCards, Trash2, Lock } from "lucide-react";
+import {
+  MapPin,
+  Phone,
+  FileText,
+  Link2,
+  WalletCards,
+  Trash2,
+  Lock,
+  UserMinus,
+  UserPlus,
+} from "lucide-react";
 import { getInitials } from "@/shared/utils/travelers-helpers";
 import { formatCurrency } from "@/shared/utils/currency.util";
-import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import {
+  type Currency,
+  DEFAULT_CURRENCY,
+  PASSENGER_ROLE,
+  type PassengerRole,
+} from "@/shared/constants/domain.constants";
 import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { SeatWithoutDepositBadge } from "@/features/tour-dashboard/components/passengers/SeatWithoutDepositBadge";
@@ -21,12 +36,31 @@ interface BookingCardProps {
   onAssignSeatClick: (passengerId: string) => void;
   /** Modo Auditoría (tour finalizado, pausado o cancelado): sin acciones sobre asientos. */
   isAuditMode?: boolean;
-  onRemoveGhostSlotClick?: (bookingId: string) => void;
   onRowClick?: (id: string) => void;
   /** Estado de cuenta PDF (solo con abonos registrados, igual que en escritorio). */
   onDownloadReceiptClick?: (titular: TitularRowOutput) => void;
-  /** «Transferir titularidad»; sin acción (Modo Auditoría) no se muestra el menú. */
-  onTransferClick?: (titular: TitularRowOutput) => void;
+  /*
+   * Acciones del grupo (las mismas de `TravelerGroup` en escritorio, `useTravelerGroupActions`).
+   * Ninguna se ofrece en Modo Auditoría.
+   */
+  /** «Transferir titularidad» (titular) y «Transferir lugar» (acompañante). */
+  onTransferPassengerClick?: (
+    bookingId: string,
+    passengerId: string,
+    role: PassengerRole,
+    currentName: string,
+    whatsapp: string,
+  ) => void;
+  /** «Dar de baja pasajero» de un acompañante. */
+  onRemovePassengerClick?: (bookingId: string, passengerId: string, name: string) => void;
+  /** «Liberar lugar apartado» de un lugar pendiente de registro. */
+  onRemoveGhostSlotClick?: (bookingId: string) => void;
+  /** «+ Agregar lugar al grupo» (solo con el formulario pendiente, igual que en escritorio). */
+  onAddPassengerClick?: (titular: TitularRowOutput) => void;
+  isAdding?: boolean;
+  isRemovingGhost?: boolean;
+  /** Lugares libres del tour: sin lugares, "Agregar lugar" se deshabilita. */
+  freeSeatsCount?: number;
 }
 
 export function BookingCard({
@@ -36,10 +70,19 @@ export function BookingCard({
   onAssignSeatClick,
   isAuditMode = false,
   onRowClick,
-  onRemoveGhostSlotClick,
   onDownloadReceiptClick,
-  onTransferClick,
+  onTransferPassengerClick,
+  onRemovePassengerClick,
+  onRemoveGhostSlotClick,
+  onAddPassengerClick,
+  isAdding = false,
+  isRemovingGhost = false,
+  freeSeatsCount,
 }: BookingCardProps) {
+  const canEditGroup = !isAuditMode;
+  const canAddSlot =
+    canEditGroup && Boolean(onAddPassengerClick) && titular.formStatus === "PENDING";
+  const hasNoFreeSeats = typeof freeSeatsCount === "number" && freeSeatsCount <= 0;
   const canDownloadReceipt = Boolean(onDownloadReceiptClick) && hasRegisteredPayments(titular);
   const isPaid =
     titular.paymentStatus === "PAID" || (titular.paidAmount > 0 && titular.balance <= 0);
@@ -213,7 +256,40 @@ export function BookingCard({
                   </button>
                 ) : null}
               </div>
-              <span className="text-[10px] text-slate-400 italic">Cubierto por titular</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] text-slate-400 italic">Cubierto por titular</span>
+                {canEditGroup && (onRemovePassengerClick || onTransferPassengerClick) && (
+                  <div className="flex items-center gap-1">
+                    {onRemovePassengerClick && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onRemovePassengerClick(comp.bookingId, comp.id, comp.fullName)
+                        }
+                        aria-label={`Dar de baja a ${comp.fullName}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                      >
+                        <UserMinus className="h-4 w-4" />
+                      </button>
+                    )}
+                    {onTransferPassengerClick && (
+                      <TransferMenu
+                        label="Transferir lugar"
+                        triggerAriaLabel={`Más acciones de ${comp.fullName}`}
+                        onSelect={() =>
+                          onTransferPassengerClick(
+                            comp.bookingId,
+                            comp.id,
+                            PASSENGER_ROLE.COMPANION,
+                            comp.fullName,
+                            comp.whatsapp,
+                          )
+                        }
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
 
@@ -232,10 +308,13 @@ export function BookingCard({
                   Lugar reservado #{registeredCount + i + 1}
                 </span>
               </div>
-              {onRemoveGhostSlotClick && (
+              {canEditGroup && onRemoveGhostSlotClick && (
                 <button
+                  type="button"
                   onClick={() => onRemoveGhostSlotClick(titular.bookingId)}
-                  className="rounded p-1 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                  disabled={isRemovingGhost}
+                  aria-label="Liberar lugar apartado"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -243,6 +322,24 @@ export function BookingCard({
             </div>
           ))}
         </div>
+      )}
+
+      {/* 5. "+ Agregar lugar al grupo": misma condición que `AddSlotRow` en escritorio. */}
+      {canAddSlot && (
+        <button
+          type="button"
+          onClick={() => onAddPassengerClick?.(titular)}
+          disabled={isAdding || hasNoFreeSeats}
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-200 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-50 disabled:opacity-50"
+        >
+          <UserPlus className="h-4 w-4" />
+          <span>+ Agregar lugar al grupo</span>
+          {typeof freeSeatsCount === "number" && (
+            <span className="rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+              {freeSeatsCount} libres
+            </span>
+          )}
+        </button>
       )}
 
       {/* 6. Botonera Inferior */}
@@ -281,12 +378,20 @@ export function BookingCard({
             <WalletCards className="h-4 w-4" />
           </button>
         </div>
-        {onTransferClick && !isAuditMode && (
+        {canEditGroup && onTransferPassengerClick && (
           <TransferMenu
             label="Transferir titularidad"
             triggerAriaLabel="Más acciones del titular"
             guideTarget={TOUR_TARGET.DASHBOARD_ACTION_TRANSFER}
-            onSelect={() => onTransferClick(titular)}
+            onSelect={() =>
+              onTransferPassengerClick(
+                titular.bookingId,
+                titular.id,
+                PASSENGER_ROLE.TITULAR,
+                titular.fullName,
+                titular.whatsapp,
+              )
+            }
           />
         )}
       </div>

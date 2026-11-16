@@ -40,38 +40,42 @@ export function TourFilters(props: TourFiltersProps) {
       {/* Píldoras con overflow táctil */}
       <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 text-sm">
         <div className="flex shrink-0 rounded-lg bg-slate-100 p-1">
-          {(["ALL", "UPCOMING", "IN_PROGRESS", "COMPLETED"] as StatusFilter[]).map((status) => {
-            const labelMap = {
-              ALL: "Todos",
-              UPCOMING: "Próximos",
-              IN_PROGRESS: "En curso",
-              COMPLETED: "Finalizados",
-            };
-            const countKeyMap = {
-              ALL: "all",
-              UPCOMING: "upcoming",
-              IN_PROGRESS: "inProgress",
-              COMPLETED: "completed",
-            };
-            const isActive = statusFilter === status;
+          {(["ALL", "UPCOMING", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as StatusFilter[]).map(
+            (status) => {
+              const labelMap = {
+                ALL: "Todos",
+                UPCOMING: "Próximos",
+                IN_PROGRESS: "En curso",
+                COMPLETED: "Finalizados",
+                CANCELLED: "Cancelados",
+              };
+              const countKeyMap = {
+                ALL: "all",
+                UPCOMING: "upcoming",
+                IN_PROGRESS: "inProgress",
+                COMPLETED: "completed",
+                CANCELLED: "cancelled",
+              } as const;
+              const isActive = statusFilter === status;
 
-            return (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  isActive
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {labelMap[status]}
-                <span className="rounded-full bg-slate-200/50 px-1.5 py-0.5 text-[10px] text-slate-500">
-                  {counts[countKeyMap[status]]}
-                </span>
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    isActive
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  {labelMap[status]}
+                  <span className="rounded-full bg-slate-200/50 px-1.5 py-0.5 text-[10px] text-slate-500">
+                    {counts[countKeyMap[status]]}
+                  </span>
+                </button>
+              );
+            },
+          )}
         </div>
 
         <div className="flex shrink-0 rounded-lg bg-slate-100 p-1">

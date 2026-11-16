@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import type { TourOutput } from "../schemas/tour.schema";
 import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
 
-export type StatusFilter = "ALL" | "UPCOMING" | "IN_PROGRESS" | "COMPLETED";
+// "CANCELLED" (2026-11-16): antes un tour cancelado solo aparecía en "Todos" y en ningún contador.
+export type StatusFilter = "ALL" | "UPCOMING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 export type DestinationFilter = "ALL" | "NATIONAL" | "INTERNATIONAL";
 
 export function useTourFilters(tours: TourOutput[]) {
@@ -26,6 +27,7 @@ export function useTourFilters(tours: TourOutput[]) {
         if (statusFilter === "IN_PROGRESS")
           matchStatus = status === TOUR_TEMPORAL_STATUS.IN_PROGRESS;
         if (statusFilter === "COMPLETED") matchStatus = status === TOUR_TEMPORAL_STATUS.FINISHED;
+        if (statusFilter === "CANCELLED") matchStatus = status === TOUR_TEMPORAL_STATUS.CANCELLED;
       }
 
       // 3. Filtro por Destino (Asumiendo campo destinationType o divisa como fallback)
@@ -52,6 +54,7 @@ export function useTourFilters(tours: TourOutput[]) {
       ).length,
       inProgress: tours.filter((t) => t.temporalStatus === TOUR_TEMPORAL_STATUS.IN_PROGRESS).length,
       completed: tours.filter((t) => t.temporalStatus === TOUR_TEMPORAL_STATUS.FINISHED).length,
+      cancelled: tours.filter((t) => t.temporalStatus === TOUR_TEMPORAL_STATUS.CANCELLED).length,
     };
   }, [tours]);
 

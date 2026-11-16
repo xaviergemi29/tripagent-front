@@ -84,9 +84,11 @@ export default async function PublicTourLanding({ params }: PublicTourLanding) {
   // Decisión del PM: un tour que ya salió se ve "Finalizado" (no "Agotado") y no acepta reservas.
   const unavailableLabel = hasDeparted ? "Finalizado" : "Agotado";
 
+  // Primera hora de abordaje sobre una copia: `sort` en el arreglo original reordenaba también la
+  // lista "Puntos de Abordaje", que debe conservar el orden que capturó el operador (2026-11-16).
   const firstBoardingTime =
     tour.boardingPoints?.length > 0
-      ? tour.boardingPoints.sort((a, b) => a.time.localeCompare(b.time))[0].time
+      ? [...tour.boardingPoints].sort((a, b) => a.time.localeCompare(b.time))[0].time
       : null;
 
   return (

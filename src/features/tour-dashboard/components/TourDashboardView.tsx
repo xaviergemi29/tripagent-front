@@ -278,6 +278,9 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
 
             <div data-tour={TOUR_TARGET.DASHBOARD_TRAVELERS}>
               <MobilePassengersList
+                tourId={tourId}
+                requiresSeats={requiresSeats}
+                freeSeatsCount={freeSeatsCount}
                 travelers={filteredTravelers}
                 tourCurrency={tour.currency}
                 isAuditMode={isAuditMode}

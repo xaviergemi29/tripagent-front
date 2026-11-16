@@ -22,6 +22,7 @@ import { formatSpanishLongDate } from "@/shared/utils/tour-date.util";
 import type { TourOutput } from "../../schemas/tour.schema";
 import { handleShareLink } from "@/features/tours/utils/share-tour.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
+import { TourTemporalStatusBadge } from "../TourTemporalStatusBadge";
 import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 
 interface TourMobileCardListProps {
@@ -80,8 +81,12 @@ export function TourMobileCardList({ tours, onDeleteRequest }: TourMobileCardLis
               </DropdownMenu>
             </div>
 
-            {/* Badges de Modalidad y Destino */}
-            <div className="mt-3 flex gap-2">
+            {/* Estado del tour (igual que en escritorio) y destino */}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <TourTemporalStatusBadge
+                status={tour.temporalStatus}
+                className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+              />
               {!isInternational ? (
                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/60 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                   <MapPin className="h-3 w-3" /> Nacional
