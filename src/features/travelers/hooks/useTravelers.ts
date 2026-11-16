@@ -7,6 +7,7 @@ import type {
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
 import { TRAVELER_KEYS } from "@/shared/api/query-keys";
+import { fetchAllPages } from "@/shared/api/fetch-all-pages";
 
 // ============================================================================
 // 2. CAPA DE RED (Axios API Client)
@@ -15,10 +16,9 @@ const createTravalerApi = async (travelerData: TravelerInput): Promise<TravelerO
   return apiClient.post<never, TravelerOutput>("travelers", travelerData);
 };
 
+// Todas las páginas (la API entrega máximo 100 por página); el directorio filtra en el cliente.
 const fetchTravelersApi = async (search?: string): Promise<TravelerOutput[]> => {
-  return apiClient.get<never, TravelerOutput[]>("/travelers", {
-    params: search ? { search } : undefined,
-  });
+  return fetchAllPages<TravelerOutput>("/travelers", { search: search || undefined });
 };
 
 const updateTravelerApi = async ({

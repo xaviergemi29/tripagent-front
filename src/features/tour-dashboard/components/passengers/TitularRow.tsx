@@ -13,6 +13,7 @@ import {
   TransferMenu,
 } from "./traveler-row-cells";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
+import { hasRegisteredPayments } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
 
 interface TitularRowProps {
   titular: TitularRowOutput;
@@ -43,7 +44,7 @@ export function TitularRow({
   onDownloadReceiptClick,
 }: TitularRowProps) {
   const isGroup = titular.groupSize > 1;
-  const hasPaid = titular.paidAmount > 0 || titular.paymentStatus !== "PENDING";
+  const hasPaid = hasRegisteredPayments(titular);
 
   return (
     <tr className="cursor-pointer transition-colors hover:bg-slate-50/50" onClick={onToggle}>

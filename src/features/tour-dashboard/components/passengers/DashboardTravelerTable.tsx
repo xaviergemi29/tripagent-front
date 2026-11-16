@@ -13,22 +13,13 @@ import { TravelerGroup } from "@/features/tour-dashboard/components/passengers/T
 import { Button } from "@/components/ui/button";
 import { ReleaseSlotDialog } from "@/features/tour-dashboard/components/passengers/ReleaseSlotDialog";
 import { TransferPassengerModal } from "@/features/tour-dashboard/components/passengers/TransferPassengerModal";
-import {
-  buildStatementPayments,
-  generatePartialPaymentReceiptPDF,
-  type StatementPDFData,
-} from "@/features/statements/pdf/payment-receipt.pdf";
-import { resolveBoardingPointDisplay } from "@/shared/utils/boarding-point.util";
-import { toast } from "sonner";
-import {
-  type Currency,
-  DEFAULT_CURRENCY,
-  PASSENGER_ROLE,
-  type PassengerRole,
-} from "@/shared/constants/domain.constants";
+import type { StatementPDFData } from "@/features/statements/pdf/payment-receipt.pdf";
+import { downloadOperatorStatement } from "@/features/tour-dashboard/utils/statement-agency.util";
+import { type Currency, type PassengerRole } from "@/shared/constants/domain.constants";
 
 import {
   filterDashboardTravelers,
+  toTransferWhatsapp,
   type PaymentFilter,
   type RegistrationFilter,
   type SeatFilter,
@@ -155,76 +146,20 @@ export function DashboardTravelerTable({
       passengerId,
       role,
       currentName,
-      currentWhatsapp: /^\d{10}$/.test(whatsapp) ? whatsapp : null,
+      currentWhatsapp: toTransferWhatsapp(whatsapp),
     });
   };
 
-  const handleDownloadReceipt = async (titularData: TitularRowOutput): Promise<void> => {
-    const toStatementPassenger = (passenger: {
-      fullName: string;
-      role: PassengerRole;
-      whatsapp: string;
-      seatLabel: string | null;
-      boardingPoint: string | null;
-      boardingPointDetails?: { location: string; time: string } | null;
-    }) => {
-      const point = resolveBoardingPointDisplay(passenger);
-      return {
-        fullName: passenger.fullName,
-        isMainPassenger: passenger.role === PASSENGER_ROLE.TITULAR,
-        pickupPointName: point?.location ?? "Por coordinar",
-        pickupTime: point?.time ?? null,
-        seatNumber: passenger.seatLabel,
-        // La API manda "Sin teléfono" cuando no hay WhatsApp; el PDF lo resuelve por dígitos.
-        phone: passenger.whatsapp,
-      };
-    };
-
-    // El cliente solo ve abonos válidos (decisión del PM): sin REFUND ni el abono anulado.
-    const validPayments = (titularData.payments || [])
-      .filter(
-        (payment) =>
-          payment.type === "PAYMENT" &&
-          !(titularData.payments || []).some(
-            (refund) =>
-              refund.type === "REFUND" && refund.referenceInfo?.includes(`(Ref: ${payment.id})`),
-          ),
-      )
-      .map((payment) => ({
-        id: payment.id,
-        date: payment.createdAt,
-        amount: payment.amount,
-        method: payment.method,
-        reference: payment.referenceInfo ?? null,
-      }));
-
-    const groupPassengers = [titularData, ...(titularData.companions || [])];
-
-    try {
-      await generatePartialPaymentReceiptPDF({
-        agency: statementAgency,
-        tour: {
-          title: tourTitle,
-          departureDate: tourDepartureDate,
-          returnDate: tourReturnDate ?? null,
-          totalPassengers: titularData.groupSize,
-          registeredPassengers: groupPassengers.length,
-          postPaymentInstructions: tourPostPaymentInstructions ?? null,
-        },
-        passengers: groupPassengers.map(toStatementPassenger),
-        financials: {
-          currency: tourCurrency || DEFAULT_CURRENCY,
-          totalAmount: titularData.paidAmount + titularData.balance,
-          paidAmount: titularData.paidAmount,
-          balanceDue: titularData.balance,
-          payments: buildStatementPayments(validPayments),
-        },
-      });
-    } catch (error) {
-      console.error("Error al generar el estado de cuenta PDF:", error);
-      toast.error("No se pudo generar el estado de cuenta. Intenta de nuevo.");
-    }
-  };
+  // Misma generación que la tarjeta del celular (`downloadOperatorStatement`).
+  const handleDownloadReceipt = (titularData: TitularRowOutput): Promise<void> =>
+    downloadOperatorStatement(titularData, {
+      agency: statementAgency,
+      tourTitle,
+      tourDepartureDate,
+      tourReturnDate,
+      tourPostPaymentInstructions,
+      tourCurrency,
+    });
 
   return (
     <>

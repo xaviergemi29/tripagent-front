@@ -127,6 +127,16 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   // Reembolsos: se registran salvo en un tour FINALIZADO (excepción del Modo Auditoría para los
   // tours cancelados).
   const canRegisterRefunds = tour.temporalStatus !== TOUR_TEMPORAL_STATUS.FINISHED;
+  // Estado de cuenta PDF del operador: mismos datos en escritorio y celular.
+  const statementAgency = buildOperatorStatementAgency(agency, branding);
+  const statementContext = {
+    agency: statementAgency,
+    tourTitle: tour.title,
+    tourDepartureDate: tour.departureDateTime,
+    tourReturnDate: tour.returnDate ?? null,
+    tourPostPaymentInstructions: tour.postPaymentInstructions ?? null,
+    tourCurrency: tour.currency,
+  };
   const refundsPanel = (
     <RefundsPanel
       tourId={tourId}
@@ -188,7 +198,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                     tourDepartureDate={tour.departureDateTime}
                     tourReturnDate={tour.returnDate ?? null}
                     tourPostPaymentInstructions={tour.postPaymentInstructions ?? null}
-                    statementAgency={buildOperatorStatementAgency(agency, branding)}
+                    statementAgency={statementAgency}
                     travelers={tour.travelers}
                     searchQuery={filters.searchQuery}
                     tourCurrency={tour.currency}
@@ -271,6 +281,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                 travelers={filteredTravelers}
                 tourCurrency={tour.currency}
                 isAuditMode={isAuditMode}
+                statementContext={statementContext}
                 onAssignSeatClick={handleAssignSeatIntent}
                 onRowClick={(id) => setSelectedTravelerId(id)}
               />

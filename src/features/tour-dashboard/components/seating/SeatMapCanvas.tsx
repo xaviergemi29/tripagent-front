@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   ShieldAlert,
   RefreshCcw,
@@ -45,7 +44,13 @@ interface SeatMapCanvasProps {
   tourId: string;
   layoutMap: LayoutMap;
   activePassengers: Passenger[];
-  initialSelectedPassengerId?: string | null;
+  /**
+   * Pasajero que se está acomodando. Lo controla el contenedor (el mismo estado que resalta
+   * "Faltan por acomodar"); hasta el 2026-11-16 el croquis guardaba una copia sincronizada con un
+   * efecto y volver a elegir al mismo pasajero no lo seleccionaba.
+   */
+  selectedPassengerId?: string | null;
+  onSelectedPassengerChange?: (passengerId: string | null) => void;
   /** Lugares de staff del tour: tope de asientos de staff (croquis + bloqueos). La API lo valida. */
   staffCapacity?: number;
   /**
@@ -70,20 +75,16 @@ function SeatCornerLabel({ label }: { label: string }) {
 export function SeatMapCanvas({
   tourId,
   layoutMap,
-  initialSelectedPassengerId,
+  selectedPassengerId = null,
+  onSelectedPassengerChange,
   staffCapacity = 0,
   readOnly = false,
 }: SeatMapCanvasProps) {
   const { data: assignedSeats = [] } = useTourSeats(tourId);
   const { mutate: updateSeat } = useUpdateSeat(tourId);
 
-  const [selectedPassengerId, setSelectedPassengerId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (initialSelectedPassengerId) {
-      setSelectedPassengerId(initialSelectedPassengerId);
-    }
-  }, [initialSelectedPassengerId]);
+  const setSelectedPassengerId = (passengerId: string | null): void =>
+    onSelectedPassengerChange?.(passengerId);
 
   const layout = parseVehicleLayout(layoutMap);
   const layoutSeats = layout.seats;
@@ -120,14 +121,20 @@ export function SeatMapCanvas({
       toast.info("Selecciona primero a un pasajero de la lista.");
       return;
     }
-    updateSeat({ seatLabel, status: "ASSIGNED", passengerId: selectedPassengerId });
+    // El asiento se pinta al instante (actualización optimista de `useUpdateSeat`), pero el aviso
+    // de éxito espera a que la API lo confirme; si lo rechaza, el hook revierte y avisa el error.
+    updateSeat(
+      { seatLabel, status: "ASSIGNED", passengerId: selectedPassengerId },
+      { onSuccess: () => toast.success(`✅ Asiento ${seatLabel} asignado.`) },
+    );
     setSelectedPassengerId(null);
-    toast.success(`✅ Asiento ${seatLabel} asignado.`);
   };
 
   const handleRemoveSeat = (seatLabel: string): void => {
-    updateSeat({ seatLabel, status: "AVAILABLE", passengerId: null });
-    toast.success("🗑️ Pasajero regresado a la lista de espera.");
+    updateSeat(
+      { seatLabel, status: "AVAILABLE", passengerId: null },
+      { onSuccess: () => toast.success("🗑️ Pasajero regresado a la lista de espera.") },
+    );
   };
 
   const handleChangeSeat = (passengerId: string): void => {

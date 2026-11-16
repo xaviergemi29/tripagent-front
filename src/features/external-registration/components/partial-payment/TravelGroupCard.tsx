@@ -1,6 +1,8 @@
 import { MapPin, User, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PartialPaymentPassenger } from "./types";
+import { resolveBoardingPointDisplay } from "@/shared/utils/boarding-point.util";
+import { formatPickupTime } from "@/shared/utils/tour-date.util";
 
 /** "Personas en este viaje": titular y acompañantes con su punto de abordaje. */
 export function TravelGroupCard({ passengers }: { passengers: PartialPaymentPassenger[] }) {
@@ -24,12 +26,14 @@ export function TravelGroupCard({ passengers }: { passengers: PartialPaymentPass
           {passengers.map((pass, idx) => {
             const isLead = pass.type?.toLowerCase() === "titular";
 
+            // Punto configurado en el tour (`boardingPointDetails`, misma regla que el pase de
+            // abordaje y el PDF) con la hora en formato 12 h: "06:00 AM".
+            const point = resolveBoardingPointDisplay(pass);
+            const pointTime = point?.time ?? pass.departureTime;
             const meetingInfo =
               pass.pickupReference ||
-              (pass.boardingPoint
-                ? `${pass.boardingPoint}${
-                    pass.departureTime ? ` • Salida: ${pass.departureTime}` : ""
-                  }`
+              (point
+                ? `${point.location}${pointTime ? ` • Salida: ${formatPickupTime(pointTime)}` : ""}`
                 : "Punto de abordaje: Por coordinar");
 
             return (

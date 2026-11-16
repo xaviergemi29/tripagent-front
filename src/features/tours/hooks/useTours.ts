@@ -3,14 +3,14 @@ import type { TourOutput, TourInput } from "../schemas/tour.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
 import { TOUR_DASHBOARD_KEYS, TOUR_KEYS } from "@/shared/api/query-keys";
+import { fetchAllPages } from "@/shared/api/fetch-all-pages";
 
 // ============================================================================
 // 2. CAPA DE RED (Axios API Client)
 // ============================================================================
+// Todas las páginas (la API entrega máximo 100 por página); el listado filtra en el cliente.
 const fetchToursApi = async (search?: string): Promise<TourOutput[]> => {
-  return apiClient.get<never, TourOutput[]>("/tours", {
-    params: search ? { search } : undefined,
-  });
+  return fetchAllPages<TourOutput>("/tours", { search: search || undefined });
 };
 
 const fetchTourById = async (id: string): Promise<TourOutput> => {

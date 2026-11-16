@@ -1,14 +1,5 @@
 import { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
-import {
-  MapPin,
-  Phone,
-  FileText,
-  Link2,
-  WalletCards,
-  MoreVertical,
-  Trash2,
-  Lock,
-} from "lucide-react";
+import { MapPin, Phone, FileText, Link2, WalletCards, Trash2, Lock } from "lucide-react";
 import { getInitials } from "@/shared/utils/travelers-helpers";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
@@ -17,6 +8,11 @@ import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { SeatWithoutDepositBadge } from "@/features/tour-dashboard/components/passengers/SeatWithoutDepositBadge";
 import { UnpaidHoldAge } from "@/features/tour-dashboard/components/passengers/UnpaidHoldAge";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
+import {
+  copyMagicLink,
+  TransferMenu,
+} from "@/features/tour-dashboard/components/passengers/traveler-row-cells";
+import { hasRegisteredPayments } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
 
 interface BookingCardProps {
   titular: TitularRowOutput;
@@ -27,6 +23,10 @@ interface BookingCardProps {
   isAuditMode?: boolean;
   onRemoveGhostSlotClick?: (bookingId: string) => void;
   onRowClick?: (id: string) => void;
+  /** Estado de cuenta PDF (solo con abonos registrados, igual que en escritorio). */
+  onDownloadReceiptClick?: (titular: TitularRowOutput) => void;
+  /** «Transferir titularidad»; sin acción (Modo Auditoría) no se muestra el menú. */
+  onTransferClick?: (titular: TitularRowOutput) => void;
 }
 
 export function BookingCard({
@@ -37,7 +37,10 @@ export function BookingCard({
   isAuditMode = false,
   onRowClick,
   onRemoveGhostSlotClick,
+  onDownloadReceiptClick,
+  onTransferClick,
 }: BookingCardProps) {
+  const canDownloadReceipt = Boolean(onDownloadReceiptClick) && hasRegisteredPayments(titular);
   const isPaid =
     titular.paymentStatus === "PAID" || (titular.paidAmount > 0 && titular.balance <= 0);
   const registeredCount = 1 + (titular.companions?.length || 0);
@@ -46,13 +49,15 @@ export function BookingCard({
   return (
     <div className="space-y-3.5 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm">
       {/* 1. Cabecera */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3">
+      {/* `min-w-0 flex-1`: el nombre ocupa el espacio libre y hace salto de línea en lugar de
+          empujar el estado de pago fuera de la tarjeta. */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-700">
             {getInitials(titular.fullName)}
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-base leading-tight font-bold text-slate-900">
+            <span className="line-clamp-2 text-base leading-tight font-bold break-words text-slate-900">
               {titular.fullName}
             </span>
             <span className="text-xs text-slate-500">
@@ -60,7 +65,7 @@ export function BookingCard({
             </span>
           </div>
         </div>
-        <div className="flex flex-shrink-0 flex-col items-end">
+        <div className="flex shrink-0 flex-col items-end text-right">
           {isPaid ? (
             <>
               <span className="rounded border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
@@ -70,10 +75,10 @@ export function BookingCard({
             </>
           ) : (
             <>
-              <span className="rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+              <span className="rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap text-amber-800">
                 {titular.paidAmount > 0 ? "ABONO PARCIAL" : "SIN PAGO"}
               </span>
-              <span className="mt-0.5 text-xs font-bold text-slate-500">
+              <span className="mt-0.5 text-xs font-bold whitespace-nowrap text-slate-500">
                 Debe: {formatCurrency(titular.balance, { currency: tourCurrency })}
               </span>
             </>
@@ -182,9 +187,11 @@ export function BookingCard({
               className="relative flex flex-col gap-1.5 border-l-2 border-indigo-100 pl-3"
             >
               <span className="absolute top-0 -left-[9px] text-xs text-indigo-300">↳</span>
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="block text-sm font-medium text-slate-800">{comp.fullName}</span>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="block text-sm font-medium break-words text-slate-800">
+                    {comp.fullName}
+                  </span>
                   <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
                     Acompañante de {titular.fullName.split(" ")[0]}
                   </span>
@@ -240,14 +247,32 @@ export function BookingCard({
 
       {/* 6. Botonera Inferior */}
       <div className="mt-1 flex items-center justify-between border-t border-slate-100 pt-3">
+        {/* Mismas acciones que la fila de escritorio (`TitularRow`). */}
         <div className="flex gap-2">
-          <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900">
-            <FileText className="h-4 w-4" />
-          </button>
-          <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-slate-500 transition-colors hover:border-indigo-100 hover:bg-indigo-50 hover:text-indigo-600">
-            <Link2 className="h-4 w-4" />
-          </button>
+          {canDownloadReceipt && (
+            <button
+              type="button"
+              onClick={() => onDownloadReceiptClick?.(titular)}
+              aria-label="Descargar Comprobante PDF"
+              data-tour={TOUR_TARGET.DASHBOARD_ACTION_RECEIPT}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+            >
+              <FileText className="h-4 w-4" />
+            </button>
+          )}
+          {titular.magicToken && (
+            <button
+              type="button"
+              onClick={(event) => void copyMagicLink(event, titular.magicToken)}
+              aria-label="Copiar Magic Link"
+              data-tour={TOUR_TARGET.DASHBOARD_ACTION_MAGIC_LINK}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-slate-500 transition-colors hover:border-indigo-100 hover:bg-indigo-50 hover:text-indigo-600"
+            >
+              <Link2 className="h-4 w-4" />
+            </button>
+          )}
           <button
+            type="button"
             onClick={() => onRowClick?.(titular.id)}
             aria-label="Registrar abonos y pagos"
             data-tour={TOUR_TARGET.DASHBOARD_ACTION_PAYMENTS}
@@ -256,9 +281,14 @@ export function BookingCard({
             <WalletCards className="h-4 w-4" />
           </button>
         </div>
-        <button className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900">
-          <MoreVertical className="h-4 w-4" />
-        </button>
+        {onTransferClick && !isAuditMode && (
+          <TransferMenu
+            label="Transferir titularidad"
+            triggerAriaLabel="Más acciones del titular"
+            guideTarget={TOUR_TARGET.DASHBOARD_ACTION_TRANSFER}
+            onSelect={() => onTransferClick(titular)}
+          />
+        )}
       </div>
     </div>
   );

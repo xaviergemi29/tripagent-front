@@ -53,6 +53,21 @@ export function resolveGroupPaymentStatus({
   return "UNPAID";
 }
 
+/**
+ * La reserva ya tiene dinero registrado: habilita el estado de cuenta PDF del operador
+ * (misma regla en la fila de escritorio y en la tarjeta del celular).
+ */
+export function hasRegisteredPayments(
+  titular: Pick<GroupPaymentInput, "paymentStatus" | "paidAmount">,
+) {
+  return titular.paidAmount > 0 || titular.paymentStatus !== "PENDING";
+}
+
+/** WhatsApp precargado en la transferencia: la API manda "Sin teléfono" si no hay número. */
+export function toTransferWhatsapp(whatsapp: string): string | null {
+  return /^\d{10}$/.test(whatsapp) ? whatsapp : null;
+}
+
 const matchesSearch = (titular: TitularRowOutput, searchQuery: string): boolean => {
   const query = searchQuery.toLowerCase().trim();
   if (!query) return true;

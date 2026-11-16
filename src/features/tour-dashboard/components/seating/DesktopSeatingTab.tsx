@@ -43,7 +43,8 @@ export function DesktopSeatingTab({
               tourId={tourId}
               layoutMap={vehicle.layoutMap}
               activePassengers={eligiblePassengers}
-              initialSelectedPassengerId={pendingSeatPassengerId}
+              selectedPassengerId={pendingSeatPassengerId}
+              onSelectedPassengerChange={onSelectPassenger}
               staffCapacity={staffCapacity}
               readOnly={isAuditMode}
             />

@@ -14,7 +14,7 @@ interface VehicleAssignedViewProps {
   pendingSeatPassengerId: string | null;
   /** Sin acciones = Modo Auditoría: sin cambiar vehículo ni acomodar pasajeros. */
   onChangeVehicleClick?: () => void;
-  onSelectPassenger?: (id: string) => void;
+  onSelectPassenger?: (id: string | null) => void;
 }
 
 export function VehicleAssignedView({
@@ -115,7 +115,8 @@ export function VehicleAssignedView({
           tourId={tourId}
           layoutMap={vehicle.layoutMap}
           activePassengers={allEligiblePassengers}
-          initialSelectedPassengerId={pendingSeatPassengerId}
+          selectedPassengerId={pendingSeatPassengerId}
+          onSelectedPassengerChange={onSelectPassenger}
           staffCapacity={staffCapacity}
           readOnly={!onSelectPassenger}
         />

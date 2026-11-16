@@ -3,7 +3,7 @@ import { PublicBookingLayout } from "@/components/layout/public/PublicBookingLay
 import { FileText, FileDown, Bus, Footprints } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatLocalDate } from "@/shared/utils/tour-date.util";
+import { formatLocalDate, formatPickupTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { TourSchedule } from "@/features/public-tours/components/TourSchedule";
 import { notFound } from "next/navigation";
@@ -177,7 +177,7 @@ export default async function PublicTourLanding({ params }: PublicTourLanding) {
                   variant="secondary"
                   className="rounded-lg bg-indigo-100/70 px-2.5 py-0.5 text-xs font-bold text-indigo-950"
                 >
-                  {stop.time}
+                  {formatPickupTime(stop.time)}
                 </Badge>
               </div>
             ))}

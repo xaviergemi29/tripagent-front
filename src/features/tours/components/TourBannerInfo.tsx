@@ -1,23 +1,48 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function TourBannerInfo() {
-  const [isVisible, setIsVisible] = useState(false);
+const DISMISS_STORAGE_KEY = "tripagent_dismiss_tour_banner";
 
-  useEffect(() => {
-    const isDismissed = localStorage.getItem("tripagent_dismiss_tour_banner");
-    if (!isDismissed) setIsVisible(true);
-  }, []);
+// localStorage puede lanzar (cookies bloqueadas, ventana privada de algunos navegadores). Hasta el
+// 2026-11-16 se leía sin protección y el error tumbaba todo /tours; ahora, si falla, el aviso se
+// muestra y cerrarlo solo dura mientras la pantalla siga abierta.
+function readDismissed(): boolean {
+  try {
+    return window.localStorage.getItem(DISMISS_STORAGE_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+function saveDismissed(): void {
+  try {
+    window.localStorage.setItem(DISMISS_STORAGE_KEY, "true");
+  } catch {
+    // Sin almacenamiento el aviso volverá a aparecer en la próxima visita; no es un error.
+  }
+}
+
+// Se lee como fuente externa (`useSyncExternalStore`) en lugar de copiarlo a un estado dentro de
+// un efecto: en el servidor el aviso no se pinta (no hay localStorage) y el cliente lo resuelve al
+// hidratar sin un render extra. El evento `storage` sincroniza otras pestañas.
+function subscribe(onChange: () => void): () => void {
+  window.addEventListener("storage", onChange);
+  return () => window.removeEventListener("storage", onChange);
+}
+
+export function TourBannerInfo() {
+  const storedDismissed = useSyncExternalStore(subscribe, readDismissed, () => true);
+  const [dismissedNow, setDismissedNow] = useState(false);
 
   const handleDismiss = (): void => {
-    localStorage.setItem("tripagent_dismiss_tour_banner", "true");
-    setIsVisible(false);
+    saveDismissed();
+    setDismissedNow(true);
   };
 
-  if (!isVisible) return null;
+  if (storedDismissed || dismissedNow) return null;
 
   return (
     <div className="flex items-start gap-3 rounded-xl border border-blue-200/60 bg-blue-50/70 p-3.5 shadow-sm transition-all">
