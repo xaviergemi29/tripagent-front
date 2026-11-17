@@ -7,6 +7,8 @@ import { AgencyLogo } from "@/components/shared/AgencyLogo";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useLogout } from "@/features/auth/hooks/useAuth";
 import { Button } from "../ui/button";
+import { AGENCY_ROLE_DICT } from "@/shared/utils/config/status-dictionaries.config";
+import type { AgencyRole } from "@/shared/constants/domain.constants";
 
 const navigationItems = [
   { name: "Tours", href: "/tours", icon: Calendar },
@@ -112,8 +114,11 @@ export function Sidebar() {
                 <p className="truncate text-xs font-semibold text-white">
                   {user?.fullName || "Usuario"}
                 </p>
-                <p className="truncate text-[10px] text-slate-500 capitalize">
-                  {user?.role?.toLowerCase() || "Operador"}
+                {/* Misma etiqueta que Configuración → Seguridad ("Administrador", "Ventas", "Guía"). */}
+                <p className="truncate text-[10px] text-slate-500">
+                  {(user?.role && AGENCY_ROLE_DICT[user.role as AgencyRole]) ||
+                    user?.role ||
+                    "Operador"}
                 </p>
               </div>
             </div>

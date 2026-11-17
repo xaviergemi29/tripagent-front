@@ -69,7 +69,13 @@ export function useTravelerLookup() {
         staleTime: 1000 * 60 * 5,
       });
 
-      return results.length > 0 ? results[0] : null;
+      // La búsqueda de /travelers es parcial (nombre, correo y teléfono): solo cuenta el viajero cuyo
+      // WhatsApp es exactamente el escrito (antes se tomaba el primer resultado, que podía ser otro
+      // viajero con esos dígitos en el correo).
+      const digits = cleanTerm.replace(/\D/g, "");
+      return (
+        results.find((traveler) => traveler.whatsappPhone?.replace(/\D/g, "") === digits) ?? null
+      );
     } catch (error) {
       console.error("Error buscando viajero existente:", error);
       return null;
