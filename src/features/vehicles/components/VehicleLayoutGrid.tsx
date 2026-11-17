@@ -95,13 +95,13 @@ export function VehicleLayoutGrid({
               <div
                 key={`driver-${item.row}-${item.col}`}
                 style={place(item)}
-                title="Operador (chofer): no es un asiento de pasajero"
+                title="Chofer: no es un asiento de pasajero"
                 className="flex flex-col items-center justify-center rounded-lg border-2 border-slate-700 bg-slate-800 text-white"
               >
                 <SteeringWheelIcon className={isSmall ? "h-3.5 w-3.5" : "h-5 w-5"} />
                 {!isSmall && (
                   <span className="mt-0.5 text-[7px] font-bold tracking-tight uppercase sm:text-[9px] sm:tracking-wide">
-                    Operador
+                    Chofer
                   </span>
                 )}
               </div>

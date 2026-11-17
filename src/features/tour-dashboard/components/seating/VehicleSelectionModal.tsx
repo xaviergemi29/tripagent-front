@@ -166,7 +166,7 @@ export function VehicleSelectionModal({
             </span>
             <span className="text-xs text-slate-500">
               {passenger} pasajeros
-              {staff > 0 && ` + ${staff} staff`} · {total} asientos · operador aparte
+              {staff > 0 && ` + ${staff} staff`} · {total} asientos · chofer aparte
             </span>
             {tooSmall && (
               <span className="text-xs font-medium text-red-600">
@@ -188,7 +188,7 @@ export function VehicleSelectionModal({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Elige una plantilla del catálogo. El operador (chofer) nunca cuenta como asiento.
+            Elige una plantilla del catálogo. El chofer nunca cuenta como asiento.
           </DialogDescription>
         </DialogHeader>
 
@@ -229,8 +229,8 @@ export function VehicleSelectionModal({
                       Unidades anteriores de tu agencia
                     </h4>
                     <p className="-mt-2 text-xs text-slate-500">
-                      Croquis sin operador ni staff, creados antes del catálogo. Se conservan para
-                      los tours que ya los usan.
+                      Croquis sin chofer ni staff, creados antes del catálogo. Se conservan para los
+                      tours que ya los usan.
                     </p>
                     {legacyOptions.map(renderOption)}
                   </>

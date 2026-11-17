@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type Query, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TourOutput, TourInput } from "../schemas/tour.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -130,21 +130,27 @@ export function useUpdateTour() {
   });
 }
 
+/** Consulta del listado (`TOUR_KEYS.lists(search)` = ["tours", { search }]). */
+const isTourListQuery = (query: Query) => {
+  const [, scope] = query.queryKey;
+  return query.queryKey.length === 2 && typeof scope === "object" && scope !== null;
+};
+
 export function useDeleteTour() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: deleteTourApi,
     onMutate: async (deletedId) => {
-      await queryClient.cancelQueries({ queryKey: TOUR_KEYS.all });
-      const previousTours = queryClient.getQueryData<TourOutput[]>(TOUR_KEYS.all);
-
-      if (previousTours) {
-        queryClient.setQueryData<TourOutput[]>(
-          TOUR_KEYS.all,
-          previousTours.filter((tour) => tour.id !== deletedId),
-        );
-      }
+      // El listado vive en `TOUR_KEYS.lists(search)`, no en `TOUR_KEYS.all` (hasta el 2026-11-16 se
+      // escribía en ["tours"] y la fila no desaparecía hasta recargar). Solo listas: el detalle y
+      // los asientos también cuelgan de ["tours"].
+      const listFilter = { queryKey: TOUR_KEYS.all, predicate: isTourListQuery };
+      await queryClient.cancelQueries(listFilter);
+      const previousTours = queryClient.getQueriesData<TourOutput[]>(listFilter);
+      queryClient.setQueriesData<TourOutput[]>(listFilter, (tours) =>
+        tours?.filter((tour) => tour.id !== deletedId),
+      );
 
       return { previousTours };
     },
@@ -154,9 +160,7 @@ export function useDeleteTour() {
       });
     },
     onError: (error: ApiError, _, context) => {
-      if (context?.previousTours) {
-        queryClient.setQueryData(TOUR_KEYS.all, context.previousTours);
-      }
+      context?.previousTours.forEach(([key, tours]) => queryClient.setQueryData(key, tours));
 
       toast.error("Error al eliminar el tour", {
         description: error.message || "La operación no pudo completarse.",

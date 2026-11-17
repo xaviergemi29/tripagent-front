@@ -426,7 +426,7 @@ export function SeatMapCanvas({
         {layoutStaffSeats > 0 && (
           <LegendItem className="border border-amber-400 bg-amber-100" label="Asiento de staff" />
         )}
-        {hasDriver && <LegendItem className="bg-slate-800" label="Operador (no es asiento)" />}
+        {hasDriver && <LegendItem className="bg-slate-800" label="Chofer (no es asiento)" />}
         {hasWc && (
           <LegendItem className="border border-dashed border-sky-300 bg-sky-50" label="WC" />
         )}

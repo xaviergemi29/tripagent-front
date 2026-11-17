@@ -3,7 +3,11 @@ import { PublicBookingLayout } from "@/components/layout/public/PublicBookingLay
 import { FileText, FileDown, Bus, Footprints } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatLocalDate, formatPickupTime } from "@/shared/utils/tour-date.util";
+import {
+  formatLocalDate,
+  formatPickupTime,
+  getEarliestBoardingTime,
+} from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { TourSchedule } from "@/features/public-tours/components/TourSchedule";
 import { notFound } from "next/navigation";
@@ -85,12 +89,9 @@ export default async function PublicTourLanding({ params }: PublicTourLanding) {
   // Decisión del PM: un tour que ya salió se ve "Finalizado" (no "Agotado") y no acepta reservas.
   const unavailableLabel = hasDeparted ? "Finalizado" : "Agotado";
 
-  // Primera hora de abordaje sobre una copia: `sort` en el arreglo original reordenaba también la
-  // lista "Puntos de Abordaje", que debe conservar el orden que capturó el operador (2026-11-16).
-  const firstBoardingTime =
-    tour.boardingPoints?.length > 0
-      ? [...tour.boardingPoints].sort((a, b) => a.time.localeCompare(b.time))[0].time
-      : null;
+  // Hora más temprana sin reordenar la lista "Puntos de Abordaje", que conserva el orden capturado
+  // por el operador (misma regla que el listado de /tours).
+  const firstBoardingTime = getEarliestBoardingTime(tour.boardingPoints);
 
   return (
     // pb-40: espacio para el CTA fijo inferior (BrochureCallToAction).

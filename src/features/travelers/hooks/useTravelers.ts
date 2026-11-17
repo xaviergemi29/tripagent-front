@@ -121,9 +121,14 @@ export function useDeleteTraveler() {
       const previousQueries = queryClient.getQueriesData<TravelerOutput[]>({
         queryKey: TRAVELER_KEYS.all,
       });
-      queryClient.setQueriesData<TravelerOutput[]>({ queryKey: TRAVELER_KEYS.all }, (oldData) => {
-        return oldData ? oldData.filter((traveler) => traveler.id !== deletedId) : [];
-      });
+      // Bajo ["travelers"] también viven el detalle y el historial (objetos, no listas): solo se
+      // filtran las listas. Hasta el 2026-11-16 se llamaba `.filter` sobre todo, y con un historial
+      // en caché la mutación fallaba antes de llamar a la API ("oldData.filter is not a function").
+      queryClient.setQueriesData({ queryKey: TRAVELER_KEYS.all }, (oldData: unknown) =>
+        Array.isArray(oldData)
+          ? (oldData as TravelerOutput[]).filter((traveler) => traveler.id !== deletedId)
+          : oldData,
+      );
 
       return { previousQueries };
     },
@@ -138,9 +143,8 @@ export function useDeleteTraveler() {
       });
     },
     onSuccess: () => {
-      toast.success("Viajero eliminado", {
-        description: "El registro fue borrado permanentemente de la base de datos.",
-      });
+      // Texto genérico: la API hace un borrado lógico (`deletedAt`), no uno permanente.
+      toast.success("Se ha eliminado el viajero");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: TRAVELER_KEYS.all });

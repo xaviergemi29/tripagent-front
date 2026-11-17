@@ -119,6 +119,22 @@ export const formatPickupTime = (timeStr?: string | null): string => {
  * @example
  * formatTourDateTime("2026-10-23", [{ time: "15:30" }]) // "Viernes, 23 de octubre • 03:30 PM"
  */
+/**
+ * @description Hora de abordaje más temprana ("HH:mm", 24 h) entre los puntos del tour, sin
+ * reordenar el arreglo original. Es la hora de salida que muestran el listado de `/tours` y el
+ * folleto público (hasta el 2026-11-16 el listado tomaba la del primer punto capturado).
+ * @example getEarliestBoardingTime([{ time: "07:00" }, { time: "06:00" }]) // "06:00"
+ */
+export const getEarliestBoardingTime = (
+  boardingPoints?: ReadonlyArray<{ time?: string | null }> | null,
+): string | null => {
+  const times = (boardingPoints ?? [])
+    .map((point) => point.time?.trim())
+    .filter((time): time is string => Boolean(time));
+  if (times.length === 0) return null;
+  return times.reduce((earliest, time) => (time.localeCompare(earliest) < 0 ? time : earliest));
+};
+
 export const formatTourDateTime = (
   dateString?: string | null,
   boardingPoints?: ReadonlyArray<{ time?: string | null }> | null,
@@ -126,9 +142,8 @@ export const formatTourDateTime = (
   if (!dateString) return "";
   const baseDate = formatSpanishLongDate(dateString);
 
-  if (boardingPoints && boardingPoints.length > 0 && boardingPoints[0].time) {
-    return `${baseDate} • ${formatPickupTime(boardingPoints[0].time)}`;
-  }
+  const earliestTime = getEarliestBoardingTime(boardingPoints);
+  if (earliestTime) return `${baseDate} • ${formatPickupTime(earliestTime)}`;
 
   return baseDate;
 };

@@ -6,6 +6,7 @@ import {
   formatPickupTime,
   formatSpanishLongDate,
   formatTourDateTime,
+  getEarliestBoardingTime,
   getTodayIsoString,
   parseDateOnly,
 } from "../tour-date.util";
@@ -74,6 +75,14 @@ describe("formatPickupTime", () => {
 });
 
 describe("formatTourDateTime", () => {
+  it("usa la hora más temprana aunque los puntos se hayan capturado en desorden", () => {
+    const points = [{ time: "07:00" }, { time: "" }, { time: "06:00" }];
+    expect(formatTourDateTime("2026-11-14", points)).toBe("Sábado, 14 de noviembre • 06:00 AM");
+    expect(points.map((p) => p.time)).toEqual(["07:00", "", "06:00"]); // no reordena
+    expect(getEarliestBoardingTime(points)).toBe("06:00");
+    expect(getEarliestBoardingTime([])).toBeNull();
+  });
+
   it("agrega la hora del primer punto de abordaje", () => {
     expect(formatTourDateTime("2026-11-14", [{ time: "06:30" }, { time: "08:00" }])).toBe(
       "Sábado, 14 de noviembre • 06:30 AM",

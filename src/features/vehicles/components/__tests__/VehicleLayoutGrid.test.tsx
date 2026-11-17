@@ -58,7 +58,7 @@ describe("VehicleLayoutGrid", () => {
       />,
     );
 
-    expect(screen.getByTitle(/Operador \(chofer\)/)).toBeInTheDocument();
+    expect(screen.getByTitle(/^Chofer/)).toBeInTheDocument();
     expect(screen.getByTitle("Asiento 1 · Staff")).toBeInTheDocument();
     expect(screen.getByTitle("Asiento 50")).toBeInTheDocument();
 
