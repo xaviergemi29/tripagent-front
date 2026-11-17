@@ -9,8 +9,10 @@ import {
   UserPlus,
   AlertTriangle,
   BadgeCheck,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import {
   useTourSeats,
   useUpdateSeat,
@@ -80,7 +82,14 @@ export function SeatMapCanvas({
   staffCapacity = 0,
   readOnly = false,
 }: SeatMapCanvasProps) {
-  const { data: assignedSeats = [] } = useTourSeats(tourId);
+  const {
+    data: seatsData,
+    isError: seatsFailed,
+    error: seatsError,
+    refetch: refetchSeats,
+    isFetching: isFetchingSeats,
+  } = useTourSeats(tourId);
+  const assignedSeats = seatsData ?? [];
   const { mutate: updateSeat } = useUpdateSeat(tourId);
 
   const setSelectedPassengerId = (passengerId: string | null): void =>
@@ -361,6 +370,25 @@ export function SeatMapCanvas({
       </DropdownMenu>
     );
   };
+
+  // Sin los asientos no se dibuja el croquis: con la lista vacía todos se verían libres y, como la
+  // API reasigna un asiento ocupado sin avisar, el operador podía quitarle el lugar a otro pasajero
+  // o borrar un bloqueo de staff (2026-11-16). Mientras carga tampoco se permite asignar.
+  if (!seatsData) {
+    return seatsFailed ? (
+      <QueryErrorState
+        title="No pudimos cargar los asientos"
+        error={seatsError}
+        onRetry={() => void refetchSeats()}
+        isRetrying={isFetchingSeats}
+      />
+    ) : (
+      <div className="flex min-h-[260px] items-center justify-center" aria-busy="true">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <span className="sr-only">Cargando asientos…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-full flex-col gap-3">

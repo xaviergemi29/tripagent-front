@@ -17,6 +17,7 @@ import {
 } from "@/features/tour-dashboard/hooks/useTourDashboard";
 import type { VehicleOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import { cn } from "@/lib/utils";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { useTourSeats } from "@/features/tour-dashboard/hooks/useTourSeats";
 import { useVehicleTemplates } from "@/features/vehicles/hooks/useVehicleTemplates";
 import type { LayoutMap, VehicleCapacityOutput } from "@/features/vehicles/schemas/vehicle.schema";
@@ -55,10 +56,23 @@ export function VehicleSelectionModal({
   onSuccess,
 }: VehicleSelectionModalProps) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const { data: templates = [], isLoading: isLoadingTemplates } = useVehicleTemplates();
-  const { data: vehicles = [], isLoading: isLoadingVehicles } = useVehicles();
+  const templatesQuery = useVehicleTemplates();
+  const vehiclesQuery = useVehicles();
   const { mutateAsync: assignVehicle, isPending: isSubmitting } = useAssignVehicleToTour();
-  const { data: seats = [] } = useTourSeats(tourId);
+  const seatsQuery = useTourSeats(tourId);
+  const templates = templatesQuery.data ?? [];
+  const vehicles = vehiclesQuery.data ?? [];
+  const seats = seatsQuery.data ?? [];
+
+  // Las tres consultas son necesarias: sin plantillas el catálogo saldría vacío y sin asientos la
+  // vista previa diría que no se libera ninguno. Si alguna falló sin datos no se permite asignar
+  // (2026-11-16; antes se mostraba un catálogo vacío o "no se libera ningún asiento").
+  const loadQueries = [templatesQuery, vehiclesQuery, seatsQuery];
+  const failedQuery = loadQueries.find((query) => query.isError && !query.data);
+  const isLoadingData = !failedQuery && loadQueries.some((query) => !query.data);
+  const retryLoad = (): void => {
+    loadQueries.filter((query) => query.isError).forEach((query) => void query.refetch());
+  };
 
   // Catálogo de TripAgent: la API reutiliza o crea la unidad de la agencia para la plantilla.
   const catalogOptions: VehicleOption[] = templates.map((template) => ({
@@ -214,7 +228,14 @@ export function VehicleSelectionModal({
 
         <div className="grid gap-5 py-2 md:grid-cols-[minmax(0,1fr)_15rem]">
           <div className="grid content-start gap-3">
-            {isLoadingTemplates || isLoadingVehicles ? (
+            {failedQuery ? (
+              <QueryErrorState
+                title="No pudimos cargar los vehículos"
+                error={failedQuery.error}
+                onRetry={retryLoad}
+                isRetrying={loadQueries.some((query) => query.isFetching)}
+              />
+            ) : isLoadingData ? (
               <div className="flex flex-col items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
               </div>
@@ -311,7 +332,14 @@ export function VehicleSelectionModal({
           </Button>
           <Button
             onClick={handleConfirmVehicle}
-            disabled={!selected || isSubmitting || isSelectedTooSmall || selected.isCurrent}
+            disabled={
+              !selected ||
+              isSubmitting ||
+              isSelectedTooSmall ||
+              selected.isCurrent ||
+              Boolean(failedQuery) ||
+              isLoadingData
+            }
             className="order-1 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 font-bold text-white hover:bg-indigo-700 sm:order-2 sm:w-auto"
           >
             {isSubmitting ? (
