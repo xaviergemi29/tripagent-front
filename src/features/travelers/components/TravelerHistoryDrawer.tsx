@@ -16,6 +16,7 @@ import {
   Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 import { formatCurrency } from "@/shared/utils/currency.util";
 import {
@@ -90,7 +91,16 @@ const matcherFor = (value: HistoryFilter) =>
   HISTORY_FILTERS.find((f) => f.value === value)!.matches;
 
 export function TravelerHistoryDrawer({ travelerId, onClose }: PropsTravelerHistoryDrawer) {
-  const { data: traveler, isLoading } = useTravelerHistory(travelerId);
+  const {
+    data: traveler,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useTravelerHistory(travelerId);
+  // Falló sin datos: no es un viajero con 0 viajes y LTV $0.
+  const loadFailed = isError && !traveler;
 
   const ltvByCurrency = traveler?.metrics?.lifetimeValueByCurrency ?? {};
   const lifetimeValueLines = CURRENCIES.flatMap((currency) => {
@@ -129,6 +139,15 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: PropsTravelerHist
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+          </div>
+        ) : loadFailed ? (
+          <div className="flex-1 p-6">
+            <QueryErrorState
+              title="No pudimos cargar el historial"
+              error={error}
+              onRetry={() => void refetch()}
+              isRetrying={isFetching}
+            />
           </div>
         ) : (
           <div className="flex-1 space-y-6 overflow-y-auto p-6">

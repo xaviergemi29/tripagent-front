@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Compass } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { TourListTable } from "@/features/tours/components/TourListTable";
 import { useTours } from "@/features/tours/hooks/useTours";
 import { GuidedTourButton } from "@/features/onboarding/components/GuidedTourButton";
@@ -12,11 +13,16 @@ import { useGuidedTour } from "@/features/onboarding/hooks/useGuidedTour";
 
 export default function ToursPage() {
   const router = useRouter();
-  const { data: tours = [], isLoading } = useTours();
+  const { data, isLoading, isError, error, refetch, isFetching } = useTours();
+  const tours = data ?? [];
+  // Falló sin datos: no es "No tienes tours" (antes el operador lo veía así y podía duplicarlos).
+  const loadFailed = isError && !data;
 
   const hasTours = tours.length > 0;
   // Guía interactiva: se abre sola la primera vez, cuando ya cargó el listado.
-  const { start: startGuide } = useGuidedTour(TOURS_GUIDED_TOUR, { autoStart: !isLoading });
+  const { start: startGuide } = useGuidedTour(TOURS_GUIDED_TOUR, {
+    autoStart: !isLoading && !loadFailed,
+  });
 
   return (
     <main className="container mx-auto space-y-6 px-4 py-8">
@@ -46,7 +52,14 @@ export default function ToursPage() {
       </div>
 
       {/* 2. Renderizado Condicional: Tabla vs Empty State Principal */}
-      {!isLoading && !hasTours ? (
+      {loadFailed ? (
+        <QueryErrorState
+          title="No pudimos cargar tus tours"
+          error={error}
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+      ) : !isLoading && !hasTours ? (
         <div className="flex min-h-[380px] flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white p-12 text-center shadow-sm">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
             <Compass className="h-7 w-7 stroke-[1.75]" />

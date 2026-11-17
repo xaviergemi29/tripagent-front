@@ -11,13 +11,17 @@ import { useTravelersFilter } from "@/features/travelers/hooks/useTravelersFilte
 import { ArrowRight, Users } from "lucide-react";
 import { TravelersMobileCardList } from "@/features/travelers/components/TravelersMobileCardList";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { GuidedTourButton } from "@/features/onboarding/components/GuidedTourButton";
 import { TOUR_TARGET, TRAVELERS_GUIDED_TOUR } from "@/features/onboarding/constants/guided-tours";
 import { useGuidedTour } from "@/features/onboarding/hooks/useGuidedTour";
 
 export default function TravelersPage() {
   const router = useRouter();
-  const { data: travelers = [], isLoading } = useTravelers();
+  const { data, isLoading, isError, error, refetch, isFetching } = useTravelers();
+  const travelers = data ?? [];
+  // Falló sin datos: no es "Aún no hay viajeros registrados".
+  const loadFailed = isError && !data;
   const { mutate: deleteTraveler } = useDeleteTraveler();
 
   const { searchQuery, setSearchQuery, activeFilter, setActiveFilter, filteredTravelers, counts } =
@@ -43,7 +47,9 @@ export default function TravelersPage() {
   const isFiltered = searchQuery.length > 0 || activeFilter !== "all";
   const hasTravelers = travelers.length > 0;
   // Guía interactiva: se abre sola la primera vez, cuando ya cargó el directorio.
-  const { start: startGuide } = useGuidedTour(TRAVELERS_GUIDED_TOUR, { autoStart: !isLoading });
+  const { start: startGuide } = useGuidedTour(TRAVELERS_GUIDED_TOUR, {
+    autoStart: !isLoading && !loadFailed,
+  });
 
   return (
     <main className="container mx-auto space-y-6 px-4 py-8">
@@ -59,7 +65,14 @@ export default function TravelersPage() {
         <GuidedTourButton onClick={() => void startGuide()} className="self-start sm:self-auto" />
       </div>
 
-      {!isLoading && !hasTravelers ? (
+      {loadFailed ? (
+        <QueryErrorState
+          title="No pudimos cargar tus viajeros"
+          error={error}
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+      ) : !isLoading && !hasTravelers ? (
         <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white p-12 text-center shadow-sm">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
             <Users className="h-7 w-7 stroke-[1.75]" />
