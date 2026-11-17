@@ -230,12 +230,15 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-slate-700">
+            <Label
+              htmlFor="edit-traveler-fullname"
+              className="text-xs font-semibold text-slate-700"
+            >
               {watchPassengerType === PASSENGER_TYPE.CHILD
                 ? "Nombre Completo del Menor *"
                 : "Nombre Completo *"}
             </Label>
-            <Input {...register("fullName")} />
+            <Input id="edit-traveler-fullname" {...register("fullName")} />
             {errors.fullName && (
               <p className="text-destructive text-xs">{errors.fullName.message}</p>
             )}
@@ -243,12 +246,18 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-700">Fecha de Nacimiento *</label>
+              <label
+                htmlFor="edit-traveler-birthdate"
+                className="text-xs font-semibold text-slate-700"
+              >
+                Fecha de Nacimiento *
+              </label>
               <span className="rounded border border-indigo-100 bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">
                 Requerido para seguro
               </span>
             </div>
             <Input
+              id="edit-traveler-birthdate"
               type="date"
               max={getTodayInMexico()}
               {...register("birthDate")}
@@ -262,13 +271,17 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700">
+            <label
+              htmlFor="edit-traveler-whatsappphone"
+              className="text-xs font-semibold text-slate-700"
+            >
               WhatsApp{" "}
               {watchPassengerType === PASSENGER_TYPE.ADULT
                 ? "*"
                 : "(Opcional si tiene celular en ruta)"}
             </label>
             <PhoneField
+              id="edit-traveler-whatsappphone"
               registration={register("whatsappPhone")}
               country={whatsappCountry}
               onCountryChange={(country) => {
@@ -292,8 +305,15 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
 
           {watchPassengerType === PASSENGER_TYPE.ADULT ? (
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Correo Electrónico *</Label>
-              <Input {...register("email")} type="email" placeholder="correo@ejemplo.com" />
+              <Label htmlFor="edit-traveler-email" className="text-xs font-semibold text-slate-700">
+                Correo Electrónico *
+              </Label>
+              <Input
+                id="edit-traveler-email"
+                {...register("email")}
+                type="email"
+                placeholder="correo@ejemplo.com"
+              />
               {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
             </div>
           ) : (
@@ -306,19 +326,29 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">
+              <Label
+                htmlFor="edit-traveler-emergencycontactname"
+                className="text-xs font-semibold text-slate-700"
+              >
                 Contacto de Emergencia *
               </Label>
-              <Input {...register("emergencyContactName")} />
+              <Input
+                id="edit-traveler-emergencycontactname"
+                {...register("emergencyContactName")}
+              />
               {errors.emergencyContactName && (
                 <p className="text-destructive text-xs">{errors.emergencyContactName.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">
+              <Label
+                htmlFor="edit-traveler-emergencycontactphone"
+                className="text-xs font-semibold text-slate-700"
+              >
                 Teléfono de Emergencia *
               </Label>
               <PhoneField
+                id="edit-traveler-emergencycontactphone"
                 registration={register("emergencyContactPhone")}
                 country={emergencyContactCountry}
                 onCountryChange={(country) => {
@@ -338,10 +368,14 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
           <hr className="my-2 border-slate-100" />
 
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-1 text-xs font-semibold text-slate-700">
+            <Label
+              htmlFor="edit-traveler-medicalnotes"
+              className="flex items-center gap-1 text-xs font-semibold text-slate-700"
+            >
               <ShieldAlert className="h-3.5 w-3.5 text-slate-400" /> Notas Médicas / Alergias
             </Label>
             <textarea
+              id="edit-traveler-medicalnotes"
               {...register("medicalNotes")}
               rows={3}
               className="w-full rounded-md border border-slate-200 p-3 text-base focus:ring-2 focus:ring-indigo-500 focus:outline-none sm:text-sm"

@@ -68,10 +68,14 @@ export function TourBoardingSection() {
               className="group flex flex-col items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all sm:flex-row sm:items-start"
             >
               <div className="w-full space-y-1.5 sm:flex-1">
-                <Label className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+                <Label
+                  htmlFor={`tour-boarding-${index}-location`}
+                  className="text-xs font-bold tracking-wider text-slate-500 uppercase"
+                >
                   {isHiking ? "Referencia de punto de encuentro" : "Referencia de Parada"}
                 </Label>
                 <Input
+                  id={`tour-boarding-${index}-location`}
                   {...register(`boardingPoints.${index}.location`)}
                   placeholder={
                     isHiking ? "Ej. Refugio 1, Parque Nacional" : "Ej. Oxxo Tec, Veracruz"
@@ -87,10 +91,14 @@ export function TourBoardingSection() {
               </div>
 
               <div className="w-full space-y-1.5 sm:w-32">
-                <Label className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+                <Label
+                  htmlFor={`tour-boarding-${index}-time`}
+                  className="text-xs font-bold tracking-wider text-slate-500 uppercase"
+                >
                   Hora (HH:MM)
                 </Label>
                 <Input
+                  id={`tour-boarding-${index}-time`}
                   type="time"
                   {...register(`boardingPoints.${index}.time`)}
                   className={`h-11 bg-white text-base sm:text-sm ${timeError ? "border-red-500 focus-visible:ring-red-400" : ""}`}

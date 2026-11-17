@@ -38,6 +38,13 @@ interface PhoneFieldProps {
   onBlur?: (value: string) => void;
   /** Texto accesible del campo del número (si no hay `<Label htmlFor>`). */
   "aria-label"?: string;
+  /**
+   * Autocompletado del navegador. Por defecto `"off"`: casi siempre es el teléfono de **otra**
+   * persona (acompañante, contacto de emergencia, viajero que captura el operador) y el celular
+   * sugeriría el propio. Usa `"tel-national"` solo donde la persona escribe **su** número (titular
+   * del Magic Link, pre-reserva del folleto, WhatsApp de la agencia).
+   */
+  autoComplete?: string;
 }
 
 /**
@@ -60,6 +67,7 @@ export function PhoneField({
   inputClassName,
   className,
   onBlur,
+  autoComplete = "off",
   "aria-label": ariaLabel,
 }: PhoneFieldProps) {
   // Mientras el formulario carga sus valores, el país puede llegar vacío.
@@ -79,7 +87,7 @@ export function PhoneField({
         id={id}
         type="tel"
         inputMode="tel"
-        autoComplete="tel-national"
+        autoComplete={autoComplete}
         maxLength={20}
         placeholder={placeholder}
         disabled={disabled}

@@ -259,10 +259,14 @@ export function TourFinanceSection({
               control={control}
               render={({ field, fieldState }) => (
                 <div className="space-y-1.5">
-                  <Label className="text-sm font-semibold text-slate-700">
+                  <Label
+                    htmlFor="tour-finance-link-de-pago-mercadopago-clip-"
+                    className="text-sm font-semibold text-slate-700"
+                  >
                     Link de Pago (MercadoPago, Clip, etc.)
                   </Label>
                   <Input
+                    id="tour-finance-link-de-pago-mercadopago-clip-"
                     {...field}
                     type="url"
                     value={field.value ?? ""}
@@ -283,10 +287,14 @@ export function TourFinanceSection({
               control={control}
               render={({ field, fieldState }) => (
                 <div className="space-y-1.5">
-                  <Label className="text-sm font-semibold text-slate-700">
+                  <Label
+                    htmlFor="tour-finance-instrucciones-para-efectivo"
+                    className="text-sm font-semibold text-slate-700"
+                  >
                     Instrucciones para Efectivo
                   </Label>
                   <Input
+                    id="tour-finance-instrucciones-para-efectivo"
                     {...field}
                     value={field.value ?? ""}
                     placeholder="Ej. Paga directo al abordar"

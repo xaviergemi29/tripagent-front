@@ -144,6 +144,7 @@ export function PreBookingDialog({
                   WhatsApp
                 </Label>
                 <PhoneField
+                  autoComplete="tel-national"
                   id="pre-booking-whatsapp"
                   registration={register("whatsapp")}
                   country={whatsappCountry}

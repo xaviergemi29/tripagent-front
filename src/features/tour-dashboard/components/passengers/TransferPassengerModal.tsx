@@ -348,16 +348,26 @@ export function TransferPassengerModal({
                     </p>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold text-slate-700">
+                        <Label
+                          htmlFor="transfer-emergencycontactname"
+                          className="text-xs font-semibold text-slate-700"
+                        >
                           Contacto de emergencia
                         </Label>
-                        <Input {...register("emergencyContactName")} />
+                        <Input
+                          id="transfer-emergencycontactname"
+                          {...register("emergencyContactName")}
+                        />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold text-slate-700">
+                        <Label
+                          htmlFor="transfer-emergencycontactphone"
+                          className="text-xs font-semibold text-slate-700"
+                        >
                           Teléfono de emergencia
                         </Label>
                         <PhoneField
+                          id="transfer-emergencycontactphone"
                           registration={register("emergencyContactPhone")}
                           country={emergencyContactCountry}
                           onCountryChange={(country) => {
@@ -371,8 +381,13 @@ export function TransferPassengerModal({
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-slate-700">Notas médicas</Label>
-                      <Textarea rows={2} {...register("medicalNotes")} />
+                      <Label
+                        htmlFor="transfer-medicalnotes"
+                        className="text-xs font-semibold text-slate-700"
+                      >
+                        Notas médicas
+                      </Label>
+                      <Textarea id="transfer-medicalnotes" rows={2} {...register("medicalNotes")} />
                     </div>
                   </div>
                 )}

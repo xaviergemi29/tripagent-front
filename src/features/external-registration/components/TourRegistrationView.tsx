@@ -267,8 +267,15 @@ export function TourRegistrationView({
               </p>
             )}
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-slate-700">Teléfono de WhatsApp *</Label>
+              <Label
+                htmlFor="titular-mainclient-whatsappphone"
+                className="text-xs font-semibold text-slate-700"
+              >
+                Teléfono de WhatsApp *
+              </Label>
               <PhoneField
+                autoComplete="tel-national"
+                id="titular-mainclient-whatsappphone"
                 registration={methods.register("mainClient.whatsappPhone")}
                 country={whatsappCountry}
                 onCountryChange={handleWhatsappCountryChange}
@@ -291,8 +298,15 @@ export function TourRegistrationView({
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">Nombre Completo *</Label>
+                <Label
+                  htmlFor="titular-mainclient-fullname"
+                  className="text-xs font-semibold text-slate-700"
+                >
+                  Nombre Completo *
+                </Label>
                 <Input
+                  id="titular-mainclient-fullname"
+                  autoComplete="name"
                   {...methods.register("mainClient.fullName")}
                   placeholder="Nombre y Apellidos"
                   className={`h-11 text-base transition-colors sm:text-sm ${
@@ -304,8 +318,15 @@ export function TourRegistrationView({
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">Correo Electrónico *</Label>
+                <Label
+                  htmlFor="titular-mainclient-email"
+                  className="text-xs font-semibold text-slate-700"
+                >
+                  Correo Electrónico *
+                </Label>
                 <Input
+                  id="titular-mainclient-email"
+                  autoComplete="email"
                   {...methods.register("mainClient.email")}
                   type="email"
                   placeholder="correo@ejemplo.com"
@@ -322,10 +343,15 @@ export function TourRegistrationView({
             {/* Fecha de Nacimiento y Notas Médicas del Titular */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">
+                <Label
+                  htmlFor="titular-mainclient-birthdate"
+                  className="text-xs font-semibold text-slate-700"
+                >
                   Fecha de Nacimiento *
                 </Label>
                 <Input
+                  id="titular-mainclient-birthdate"
+                  autoComplete="bday"
                   suppressHydrationWarning
                   {...methods.register("mainClient.birthDate")}
                   type="date"
@@ -345,10 +371,14 @@ export function TourRegistrationView({
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">
+                <Label
+                  htmlFor="titular-mainclient-medicalnotes"
+                  className="text-xs font-semibold text-slate-700"
+                >
                   Notas Médicas (Opcional)
                 </Label>
                 <Input
+                  id="titular-mainclient-medicalnotes"
                   {...methods.register("mainClient.medicalNotes")}
                   placeholder="Ej. Alergias, condiciones especiales..."
                   className={`h-11 text-base transition-colors sm:text-sm ${
@@ -376,10 +406,14 @@ export function TourRegistrationView({
             </div>
             <div className="grid grid-cols-1 gap-3 border-t pt-4 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">
+                <Label
+                  htmlFor="titular-mainclient-emergencycontactnam"
+                  className="text-xs font-semibold text-slate-700"
+                >
                   Contacto de Emergencia *
                 </Label>
                 <Input
+                  id="titular-mainclient-emergencycontactnam"
                   {...methods.register("mainClient.emergencyContactName")}
                   placeholder="Nombre del familiar"
                   className="h-11 text-base sm:text-sm"
@@ -392,10 +426,14 @@ export function TourRegistrationView({
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">
+                <Label
+                  htmlFor="titular-mainclient-emergencycontactpho"
+                  className="text-xs font-semibold text-slate-700"
+                >
                   Teléfono de Emergencia *
                 </Label>
                 <PhoneField
+                  id="titular-mainclient-emergencycontactpho"
                   registration={methods.register("mainClient.emergencyContactPhone")}
                   country={emergencyCountry}
                   onCountryChange={(country) => {

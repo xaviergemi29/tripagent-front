@@ -184,8 +184,9 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
             <div className="space-y-4 p-6">
               <div className="space-y-1.5">
-                <Label>Nombre del Titular *</Label>
+                <Label htmlFor="quick-booking-fullname">Nombre del Titular *</Label>
                 <Input
+                  id="quick-booking-fullname"
                   {...register("fullName")}
                   placeholder="Ej. Carlos Pérez"
                   disabled={isPending || isTravelerFound}
@@ -196,7 +197,7 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
               </div>
 
               <div className="space-y-1.5">
-                <Label>WhatsApp de Contacto *</Label>
+                <Label htmlFor="quick-booking-whatsapp">WhatsApp de Contacto *</Label>
                 {isLookingUp && <span className="text-xs text-indigo-600">Buscando...</span>}
                 {isTravelerFound && (
                   <button
@@ -208,6 +209,7 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
                   </button>
                 )}
                 <PhoneField
+                  id="quick-booking-whatsapp"
                   registration={register("whatsapp")}
                   country={whatsappCountry}
                   onCountryChange={handleCountryChange}
@@ -223,8 +225,9 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Email *</Label>
+                <Label htmlFor="quick-booking-email">Email *</Label>
                 <Input
+                  id="quick-booking-email"
                   {...register("email")}
                   type="email"
                   placeholder="email@gmail.com"
@@ -236,8 +239,11 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Cantidad de Lugares a Apartar *</Label>
+                <Label htmlFor="quick-booking-numberpassengers">
+                  Cantidad de Lugares a Apartar *
+                </Label>
                 <Input
+                  id="quick-booking-numberpassengers"
                   {...register("numberPassengers", { valueAsNumber: true })}
                   type="number"
                   min="1"

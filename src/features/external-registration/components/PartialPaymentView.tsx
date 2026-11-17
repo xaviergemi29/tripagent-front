@@ -56,7 +56,7 @@ export function PartialPaymentView({
             variant="outline"
             className="border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"
           >
-            • Viaje confirmado
+            • Anticipo pagado
           </Badge>
         ) : (
           <Badge

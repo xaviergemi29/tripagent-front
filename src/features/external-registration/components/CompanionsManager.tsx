@@ -8,14 +8,35 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { BookingInput } from "../schemas/booking.schema";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { PassengerTypeSwitch, type PassengerCategory } from "./PassengerTypeSwitch";
 import { PickupPointSelector } from "./PickupPointSelector";
 import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 import { PASSENGER_TYPE } from "@/shared/constants/domain.constants";
 import { PhoneField } from "@/components/shared/PhoneField";
-import { DEFAULT_PHONE_COUNTRY, toE164, type PhoneCountry } from "@/shared/utils/phone.util";
+import {
+  DEFAULT_PHONE_COUNTRY,
+  parseStoredPhone,
+  toE164,
+  type PhoneCountry,
+} from "@/shared/utils/phone.util";
+
+/** Campos del acompañante que copian al titular mientras su casilla está marcada. */
+type CompanionSyncPath =
+  | `companions.${number}.emergencyContactName`
+  | `companions.${number}.emergencyContactCountry`
+  | `companions.${number}.emergencyContactPhone`
+  | `companions.${number}.boardingPoint`;
+
+/** Acompañante encontrado por WhatsApp (`lookup-traveler`). */
+interface FoundCompanion {
+  hasEmail: boolean;
+  hasBirthDate: boolean;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  emergencyContactCountry: PhoneCountry;
+}
 
 interface CompanionsManagerProps {
   boardingPoints: { id: string; location: string; time: string }[];
@@ -35,9 +56,15 @@ export function CompanionsManager({
     formState: { errors },
   } = useFormContext<BookingInput>();
 
-  const [lockedCompanions, setLockedCompanions] = useState<Record<number, boolean>>({});
-  const [sameEmergencyContact, setSameEmergencyContact] = useState<Record<number, boolean>>({});
-  const [sameBoardingPoint, setSameBoardingPoint] = useState<Record<number, boolean>>({});
+  // Estado por acompañante, indexado por `field.id` de useFieldArray (estable al eliminar uno; con el
+  // índice, al borrar el acompañante 1 el 2 heredaba su "Verificado" y sus casillas).
+  // - foundCompanions: encontrados por WhatsApp: qué campos llegaron con valor (solo esos se
+  //   bloquean) y su propio contacto de emergencia, que se usa al desmarcar la casilla.
+  // - ownEmergencyContact / ownBoardingPoint: casillas "igual que el titular" DESMARCADAS. Sin
+  //   entrada = marcada (el valor por defecto de todo acompañante nuevo).
+  const [foundCompanions, setFoundCompanions] = useState<Record<string, FoundCompanion>>({});
+  const [ownEmergencyContact, setOwnEmergencyContact] = useState<Record<string, boolean>>({});
+  const [ownBoardingPoint, setOwnBoardingPoint] = useState<Record<string, boolean>>({});
   const token = getValues("token");
   const { lookupTraveler } = usePublicTravelerLookup(token);
   const hasCompanions = useWatch({ control, name: "hasCompanions", defaultValue: false });
@@ -53,23 +80,93 @@ export function CompanionsManager({
   const { fields, append, remove } = useFieldArray({ control, name: "companions" });
   const watchedCompanions = useWatch({ control, name: "companions" }) || [];
 
+  // Con la casilla marcada, el acompañante sigue al titular: si el titular cambia su contacto de
+  // emergencia o su punto de abordaje después de agregar acompañantes, se copian de nuevo (antes se
+  // enviaba la copia del momento en que se agregó). Se valida para mantener `isValid` al día.
+  useEffect(() => {
+    const sync = (path: CompanionSyncPath, value: string): boolean => {
+      if (getValues(path) === value) return false;
+      setValue(path, value, { shouldValidate: true });
+      return true;
+    };
+    fields.forEach((field, index) => {
+      if (!ownEmergencyContact[field.id]) {
+        sync(`companions.${index}.emergencyContactName`, mainEmergencyName || "");
+        const countryChanged = sync(
+          `companions.${index}.emergencyContactCountry`,
+          mainEmergencyCountry,
+        );
+        const phoneChanged = sync(
+          `companions.${index}.emergencyContactPhone`,
+          mainEmergencyPhone || "",
+        );
+        if (countryChanged && !phoneChanged) {
+          void trigger(`companions.${index}.emergencyContactPhone`);
+        }
+      }
+      if (!ownBoardingPoint[field.id]) {
+        sync(`companions.${index}.boardingPoint`, mainBoardingPoint || "");
+      }
+    });
+  }, [
+    fields,
+    ownEmergencyContact,
+    ownBoardingPoint,
+    mainEmergencyName,
+    mainEmergencyPhone,
+    mainEmergencyCountry,
+    mainBoardingPoint,
+    getValues,
+    setValue,
+    trigger,
+  ]);
+
+  // Mientras el contacto del titular sea inválido, su propio error ya se ve junto a su campo: bajo la
+  // casilla del acompañante solo se avisa lo propio (p. ej., que es su mismo WhatsApp).
+  const mainEmergencyHasErrors = Boolean(
+    errors.mainClient?.emergencyContactName || errors.mainClient?.emergencyContactPhone,
+  );
+
   const isStrictlySingle = maxAllowedCompanions === 0;
   const canAddMore = maxAllowedCompanions === undefined || fields.length < maxAllowedCompanions;
 
-  const handleCompanionPhoneBlur = async (index: number, phoneValue: string): Promise<void> => {
+  const handleCompanionPhoneBlur = async (
+    index: number,
+    fieldId: string,
+    phoneValue: string,
+  ): Promise<void> => {
+    // El esquema compara el WhatsApp con el contacto de emergencia (puede estar oculto si se usa el
+    // del titular): sin revalidarlo, el botón quedaba deshabilitado sin ningún error visible.
+    void trigger(`companions.${index}.emergencyContactPhone`);
     const phone = toE164(phoneValue, getValues(`companions.${index}.whatsappCountry`));
-    if (!phone || lockedCompanions[index]) return;
+    if (!phone || foundCompanions[fieldId]) return;
 
     const traveler = await lookupTraveler(phone);
     if (traveler) {
+      // El correo "N/A" de un menor cuenta como vacío (regla 3).
+      const email = traveler.email && traveler.email !== "N/A" ? traveler.email : "";
+      const birthDate = traveler.birthDate || "";
+      const emergencyPhone = parseStoredPhone(
+        traveler.emergencyContactPhone,
+        null,
+        mainEmergencyCountry,
+      );
       setValue(`companions.${index}.fullName`, traveler.fullName, { shouldValidate: true });
+      setValue(`companions.${index}.email`, email, { shouldValidate: true });
       setValue(`companions.${index}.medicalNotes`, traveler.medicalNotes || "", {
         shouldValidate: true,
       });
-      setValue(`companions.${index}.birthDate`, traveler.birthDate || "", {
-        shouldValidate: true,
-      });
-      setLockedCompanions((prev) => ({ ...prev, [index]: true }));
+      setValue(`companions.${index}.birthDate`, birthDate, { shouldValidate: true });
+      setFoundCompanions((prev) => ({
+        ...prev,
+        [fieldId]: {
+          hasEmail: email !== "",
+          hasBirthDate: birthDate !== "",
+          emergencyContactName: traveler.emergencyContactName || "",
+          emergencyContactPhone: emergencyPhone.nationalNumber,
+          emergencyContactCountry: emergencyPhone.country,
+        },
+      }));
       toast.success(`Acompañante ${index + 1} encontrado`, {
         description: "Se cargaron sus datos históricos.",
       });
@@ -95,7 +192,6 @@ export function CompanionsManager({
     const defaultBp = mainBoardingPoint || "";
     const defaultEmName = mainEmergencyName || "";
     const defaultEmPhone = mainEmergencyPhone || "";
-    const newIndex = fields.length;
 
     append({
       fullName: "",
@@ -110,9 +206,6 @@ export function CompanionsManager({
       passengerType: PASSENGER_TYPE.ADULT,
       boardingPoint: defaultBp,
     });
-
-    setSameEmergencyContact((prev) => ({ ...prev, [newIndex]: true }));
-    setSameBoardingPoint((prev) => ({ ...prev, [newIndex]: true }));
   };
 
   const mappedPoints = boardingPoints.map((point) => ({
@@ -170,8 +263,6 @@ export function CompanionsManager({
                   passengerType: PASSENGER_TYPE.ADULT,
                   boardingPoint: mainBoardingPoint || "",
                 });
-                setSameEmergencyContact({ 0: true });
-                setSameBoardingPoint({ 0: true });
               }
             }}
             className={`flex min-h-[72px] flex-col items-center justify-center rounded-xl border-2 p-4 transition-all ${
@@ -193,9 +284,12 @@ export function CompanionsManager({
       {hasCompanions && (
         <div className="space-y-6 border-t pt-6">
           {fields.map((field, index) => {
-            const isLocked = !!lockedCompanions[index];
-            const isSameEmergency = !!sameEmergencyContact[index];
-            const isSameBp = !!sameBoardingPoint[index];
+            const found = foundCompanions[field.id];
+            const isLocked = !!found;
+            const emergencyNameError = errors.companions?.[index]?.emergencyContactName?.message;
+            const emergencyPhoneError = errors.companions?.[index]?.emergencyContactPhone?.message;
+            const isSameEmergency = !ownEmergencyContact[field.id];
+            const isSameBp = !ownBoardingPoint[field.id];
             const currentCompanion = watchedCompanions[index] || field;
             const isAdult = currentCompanion.passengerType === PASSENGER_TYPE.ADULT;
 
@@ -245,8 +339,15 @@ export function CompanionsManager({
 
                 {/* Nombre Completo */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-slate-700">Nombre Completo *</Label>
+                  <Label
+                    htmlFor={`companion-${index}-fullname`}
+                    className="text-xs font-semibold text-slate-700"
+                  >
+                    Nombre Completo *
+                  </Label>
                   <Input
+                    id={`companion-${index}-fullname`}
+                    autoComplete="off"
                     {...register(`companions.${index}.fullName`)}
                     disabled={isLocked}
                     placeholder="Ej. Lizeth Colorado"
@@ -263,7 +364,10 @@ export function CompanionsManager({
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {/* WhatsApp (Siempre visible. Obligatorio para Adulto, Opcional para Niño) */}
                   <div className="animate-in fade-in space-y-1 duration-200">
-                    <Label className="text-xs font-semibold text-slate-600">
+                    <Label
+                      htmlFor={`companion-${index}-whatsappphone`}
+                      className="text-xs font-semibold text-slate-600"
+                    >
                       WhatsApp{" "}
                       {isAdult ? (
                         "*"
@@ -272,6 +376,7 @@ export function CompanionsManager({
                       )}
                     </Label>
                     <PhoneField
+                      id={`companion-${index}-whatsappphone`}
                       registration={register(`companions.${index}.whatsappPhone`)}
                       country={currentCompanion.whatsappCountry ?? mainWhatsappCountry}
                       onCountryChange={(country) => setCompanionCountry(index, "whatsapp", country)}
@@ -280,7 +385,7 @@ export function CompanionsManager({
                       invalid={Boolean(errors.companions?.[index]?.whatsappPhone)}
                       disabled={isLocked}
                       inputClassName="h-11 bg-white text-base sm:text-sm"
-                      onBlur={(value) => handleCompanionPhoneBlur(index, value)}
+                      onBlur={(value) => handleCompanionPhoneBlur(index, field.id, value)}
                     />
                     {errors.companions?.[index]?.whatsappPhone && (
                       <p className="text-xs text-red-500">
@@ -292,14 +397,19 @@ export function CompanionsManager({
                   {/* Email SOLO para Adultos */}
                   {isAdult && (
                     <div className="animate-in fade-in space-y-1 duration-200">
-                      <Label className="text-xs font-semibold text-slate-600">
+                      <Label
+                        htmlFor={`companion-${index}-email`}
+                        className="text-xs font-semibold text-slate-600"
+                      >
                         Correo Electrónico *
                       </Label>
                       <Input
+                        id={`companion-${index}-email`}
+                        autoComplete="off"
                         {...register(`companions.${index}.email`)}
                         type="email"
                         placeholder="correo@ejemplo.com"
-                        disabled={isLocked}
+                        disabled={!!found?.hasEmail}
                         className="h-11 bg-white text-base sm:text-sm"
                       />
                       {errors.companions?.[index]?.email && (
@@ -312,14 +422,19 @@ export function CompanionsManager({
 
                   {/* Fecha de Nacimiento (OBLIGATORIO PARA AMBOS) */}
                   <div className={`space-y-1 ${isAdult && "sm:col-span-2"}`}>
-                    <Label className="text-xs font-semibold text-slate-700">
+                    <Label
+                      htmlFor={`companion-${index}-birthdate`}
+                      className="text-xs font-semibold text-slate-700"
+                    >
                       Fecha de Nacimiento *
                     </Label>
                     <Input
+                      id={`companion-${index}-birthdate`}
+                      autoComplete="off"
                       {...register(`companions.${index}.birthDate`)}
                       type="date"
                       max={getTodayInMexico()}
-                      disabled={isLocked && getValues(`companions.${index}.birthDate`) !== ""}
+                      disabled={!!found?.hasBirthDate}
                       className="w-max-full h-11 appearance-none bg-white text-base sm:text-sm"
                     />
                     {errors.companions?.[index]?.birthDate && (
@@ -350,7 +465,7 @@ export function CompanionsManager({
                       checked={isSameBp}
                       onChange={(e) => {
                         const checked = e.target.checked;
-                        setSameBoardingPoint((prev) => ({ ...prev, [index]: checked }));
+                        setOwnBoardingPoint((prev) => ({ ...prev, [field.id]: !checked }));
                         if (checked) {
                           setValue(`companions.${index}.boardingPoint`, mainBoardingPoint || "", {
                             shouldValidate: true,
@@ -388,28 +503,43 @@ export function CompanionsManager({
                       checked={isSameEmergency}
                       onChange={(e) => {
                         const checked = e.target.checked;
-                        setSameEmergencyContact((prev) => ({ ...prev, [index]: checked }));
-                        if (checked) {
-                          setValue(
-                            `companions.${index}.emergencyContactName`,
-                            mainEmergencyName || "",
-                            { shouldValidate: true },
-                          );
-                          setValue(
-                            `companions.${index}.emergencyContactCountry`,
-                            mainEmergencyCountry,
-                          );
-                          setValue(
-                            `companions.${index}.emergencyContactPhone`,
-                            mainEmergencyPhone || "",
-                            { shouldValidate: true },
-                          );
-                        }
+                        setOwnEmergencyContact((prev) => ({ ...prev, [field.id]: !checked }));
+                        // Marcado: el contacto del titular. Desmarcado: el propio del acompañante
+                        // encontrado por WhatsApp o vacío (antes quedaba el del titular).
+                        const contact = checked
+                          ? {
+                              name: mainEmergencyName || "",
+                              phone: mainEmergencyPhone || "",
+                              country: mainEmergencyCountry,
+                            }
+                          : {
+                              name: found?.emergencyContactName ?? "",
+                              phone: found?.emergencyContactPhone ?? "",
+                              country: found?.emergencyContactCountry ?? mainEmergencyCountry,
+                            };
+                        setValue(`companions.${index}.emergencyContactName`, contact.name, {
+                          shouldValidate: true,
+                        });
+                        setValue(`companions.${index}.emergencyContactCountry`, contact.country);
+                        setValue(`companions.${index}.emergencyContactPhone`, contact.phone, {
+                          shouldValidate: true,
+                        });
                       }}
                       className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                     />
                     Usar el mismo contacto de emergencia que el titular
                   </label>
+
+                  {/* Con la casilla marcada los campos no se ven, pero pueden ser inválidos (p. ej.,
+                      el titular puso de emergencia al propio acompañante): el error debe verse. */}
+                  {isSameEmergency &&
+                    !mainEmergencyHasErrors &&
+                    (emergencyNameError || emergencyPhoneError) && (
+                      <p className="text-xs text-red-500">
+                        {emergencyPhoneError ?? emergencyNameError} Desmarca la casilla para
+                        capturar otro contacto.
+                      </p>
+                    )}
 
                   {!isSameEmergency && (
                     <div className="grid grid-cols-1 gap-3 border-t border-slate-100 pt-2 sm:grid-cols-2">
@@ -449,10 +579,14 @@ export function CompanionsManager({
 
                 {/* Notas Médicas */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-slate-600">
+                  <Label
+                    htmlFor={`companion-${index}-medicalnotes`}
+                    className="text-xs font-semibold text-slate-600"
+                  >
                     Notas Médicas (Opcional)
                   </Label>
                   <Input
+                    id={`companion-${index}-medicalnotes`}
                     {...register(`companions.${index}.medicalNotes`)}
                     placeholder="Ej. Alergias, mareos..."
                     className="h-11 bg-white text-base sm:text-sm"

@@ -361,7 +361,10 @@ export function TravelerDetailDrawer({
                         </label>
                         {!isFullRetention && (
                           <div className="animate-in slide-in-from-top-2 pt-2">
-                            <label className="text-xs font-bold text-slate-700">
+                            <label
+                              htmlFor="cancel-booking-retencion-manual-mxn"
+                              className="text-xs font-bold text-slate-700"
+                            >
                               Retención manual (MXN)
                             </label>
                             <div className="relative mt-1">
@@ -369,6 +372,7 @@ export function TravelerDetailDrawer({
                                 <DollarSign className="h-3.5 w-3.5 text-slate-400" />
                               </div>
                               <input
+                                id="cancel-booking-retencion-manual-mxn"
                                 type="number"
                                 min="0"
                                 onWheel={blurNumberInputOnWheel}
