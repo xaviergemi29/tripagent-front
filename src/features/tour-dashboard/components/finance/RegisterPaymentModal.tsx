@@ -82,6 +82,16 @@ function RegisterPaymentForm({
       });
       return;
     }
+    // Un abono nunca supera el saldo pendiente (decisión del usuario, 2026-11-17; la API también lo
+    // valida). En una corrección ("Anular y corregir") el saldo puede llegar antes de que se recargue
+    // el Centro de Control: se admite hasta el monto anulado y la API revisa el saldo real.
+    const maxPayment = correctionData ? Math.max(balance, correctionData.amount) : balance;
+    if (!isRefund && Number(watchAmountUSD || formData.amount) > maxPayment + 0.005) {
+      form.setError("amount", {
+        message: `El abono no puede superar el saldo pendiente de ${formatCurrency(maxPayment, { currency: tourCurrency })}`,
+      });
+      return;
+    }
     const payload: CreatePaymentInput = {
       amount: Number(watchAmountUSD || formData.amount),
       currency: isUSD ? CURRENCY.USD : CURRENCY.MXN,

@@ -157,6 +157,67 @@ describe("TourDashboardView", () => {
     expect(screen.getAllByRole("button", { name: /Cancelar tour/ }).length).toBeGreaterThan(0);
   });
 
+  it("filtro «Canceladas»: reservas canceladas por el cliente en solo lectura; el drawer solo permite anular", async () => {
+    // Decisión del usuario (2026-11-17): corte de caja de un abono mal capturado después de cancelar.
+    const user = userEvent.setup();
+    dashboardQuery.mockReturnValue({
+      data: dashboard({
+        cancelledTravelers: [
+          titular("33333333-3333-4333-8333-333333333333", "Carla Díaz", {
+            bookingStatus: "CANCELLED",
+            paymentStatus: "PAID",
+            paidAmount: 1500,
+            balance: 0,
+            payments: [
+              {
+                id: "pay-1",
+                amount: 1500,
+                method: "CASH",
+                type: "PAYMENT",
+                createdAt: "2026-11-11T10:00:00.000Z",
+                referenceInfo: null,
+                registeredBy: null,
+                amountUSD: null,
+                amountMXN: null,
+                exchangeRate: null,
+              },
+            ],
+          }),
+        ],
+      } as unknown as Partial<TourDashboardOutput>),
+      isLoading: false,
+      isError: false,
+    });
+    renderView();
+
+    const [desktopPaymentFilter] = screen.getAllByDisplayValue("Pagos: Todos");
+    await user.selectOptions(desktopPaymentFilter!, "CANCELLED");
+
+    expect(screen.getAllByText("Carla Díaz").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Ana Torres")).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Retenido: \$1,500\.00 MXN/).length).toBeGreaterThan(0);
+
+    await user.click(screen.getAllByRole("button", { name: "Registrar abonos y pagos" })[0]!);
+    // Solo lectura: sin registrar abonos ni cancelar; "Anular" sí.
+    expect(screen.queryByText(/Registrar Abono/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Cancelar Reserva Completa (Todos)")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Anular abono" }));
+
+    // Ya no acepta abonos: no se ofrece volver a capturar, y se explica el efecto en la retención.
+    expect(screen.queryByText("Anular y volver a capturar")).not.toBeInTheDocument();
+    expect(screen.getByText(/la retención bajará a lo que realmente se abonó/)).toBeInTheDocument();
+  });
+
+  it("filtro «Canceladas» sin reservas canceladas: lo dice en lugar de una lista vacía", async () => {
+    const user = userEvent.setup();
+    renderView();
+    const [desktopPaymentFilter] = screen.getAllByDisplayValue("Pagos: Todos");
+    await user.selectOptions(desktopPaymentFilter!, "CANCELLED");
+    expect(
+      screen.getByText("No hay reservas canceladas por el cliente en este tour."),
+    ).toBeInTheDocument();
+  });
+
   it("Modo Auditoría (FINALIZADO): sin nueva reserva ni cancelar", () => {
     dashboardQuery.mockReturnValue({
       data: dashboard({ temporalStatus: TOUR_TEMPORAL_STATUS.FINISHED }),

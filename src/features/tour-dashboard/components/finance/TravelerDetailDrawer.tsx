@@ -31,6 +31,7 @@ import {
   type Currency,
   PASSENGER_ROLE,
   type PaymentMethod,
+  BOOKING_STATUS,
   CURRENCY,
   DEFAULT_CURRENCY,
   PAYMENT_TYPE,
@@ -43,6 +44,12 @@ interface TravelerDetailDrawerProps {
   traveler: TitularRowOutput | CompanionOutput | null;
   isOpen: boolean;
   isAuditMode?: boolean;
+  /**
+   * Permite "Anular" abonos aunque el drawer esté en solo lectura (por defecto, solo fuera de
+   * Modo Auditoría). Una reserva cancelada por el cliente se abre en solo lectura con anulación
+   * habilitada (corte de caja, 2026-11-17).
+   */
+  canVoidPayments?: boolean;
   onClose: () => void;
 }
 
@@ -51,6 +58,7 @@ export function TravelerDetailDrawer({
   traveler,
   isOpen,
   isAuditMode,
+  canVoidPayments = !isAuditMode,
   tourCurrency,
   onClose,
 }: TravelerDetailDrawerProps) {
@@ -70,11 +78,12 @@ export function TravelerDetailDrawer({
   if (!isOpen || !traveler) return null;
   const isUSD = tourCurrency === CURRENCY.USD;
   const isTitular = traveler.role === PASSENGER_ROLE.TITULAR;
+  const isCancelledBooking =
+    "bookingStatus" in traveler && traveler.bookingStatus === BOOKING_STATUS.CANCELLED;
 
   const titularPayments = isTitular && "payments" in traveler ? traveler.payments : [];
   const titularBalance = isTitular && "balance" in traveler ? traveler.balance : 0;
   const titularPaidAmount = isTitular && "paidAmount" in traveler ? traveler.paidAmount : 0;
-  const titularUnitPrice = isTitular && "unitPrice" in traveler ? traveler.unitPrice : 0;
 
   const voidedOriginalIds = new Set(
     titularPayments
@@ -116,8 +125,32 @@ export function TravelerDetailDrawer({
     );
   };
 
+  // Retención de una cancelación del cliente (decisión del usuario, 2026-11-17; la API lo valida):
+  // nunca menos que lo abonado (no queda un saldo a favor sin salida) ni más que el total (o que lo
+  // abonado, si una reserva anterior se pagó de más). "Sin Devolución" retiene todo lo abonado.
+  const currency = tourCurrency ?? DEFAULT_CURRENCY;
+  const minRetention = titularPaidAmount;
+  const maxRetention = Math.max(titularPaidAmount + titularBalance, titularPaidAmount);
+  const manualPenaltyValue = parseFloat(manualPenalty);
+  const manualRetentionError = isFullRetention
+    ? null
+    : Number.isNaN(manualPenaltyValue)
+      ? "Ingresa el monto a retener."
+      : manualPenaltyValue < minRetention - 0.005
+        ? `No puede ser menor a lo ya abonado (${formatCurrency(minRetention, { currency })}).`
+        : manualPenaltyValue > maxRetention + 0.005
+          ? `No puede superar el total de la reserva (${formatCurrency(maxRetention, { currency })}).`
+          : null;
+
+  const toggleFullRetention = (): void => {
+    // Al pasar a retención manual se parte de lo abonado (el mínimo permitido).
+    if (isFullRetention) setManualPenalty(String(titularPaidAmount));
+    setIsFullRetention(!isFullRetention);
+  };
+
   const handleConfirmCancellation = (): void => {
-    const penaltyAmount = isFullRetention ? titularUnitPrice : parseFloat(manualPenalty) || 0;
+    if (manualRetentionError) return;
+    const penaltyAmount = isFullRetention ? titularPaidAmount : manualPenaltyValue;
 
     cancelFullBooking({ bookingId: traveler.bookingId, penaltyAmount });
 
@@ -284,7 +317,7 @@ export function TravelerDetailDrawer({
                             {formatShortDateTime(payment.createdAt)}
                           </p>
                         </div>
-                        {!isVoided && !isAuditMode && payment.type === PAYMENT_TYPE.PAYMENT && (
+                        {!isVoided && canVoidPayments && payment.type === PAYMENT_TYPE.PAYMENT && (
                           <TooltipProvider delayDuration={150}>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -348,15 +381,14 @@ export function TravelerDetailDrawer({
                               <Square className="h-4 w-4" />
                             )}
                           </div>
-                          <div
-                            className="flex-1"
-                            onClick={() => setIsFullRetention(!isFullRetention)}
-                          >
+                          <div className="flex-1" onClick={toggleFullRetention}>
                             <p className="text-xs font-bold text-slate-800">
                               Aplicar política &quot;Sin Devolución&quot;
                             </p>
                             <p className="text-[11px] leading-tight text-slate-500">
-                              Se retendrá el 100% del costo del asiento.
+                              {titularPaidAmount > 0
+                                ? `Se retendrá todo lo abonado (${formatCurrency(titularPaidAmount, { currency })}) y el saldo pendiente queda en ${formatCurrency(0, { currency })}.`
+                                : "Sin abonos registrados: se cancela sin retención."}
                             </p>
                           </div>
                         </label>
@@ -366,7 +398,7 @@ export function TravelerDetailDrawer({
                               htmlFor="cancel-booking-retencion-manual-mxn"
                               className="text-xs font-bold text-slate-700"
                             >
-                              Retención manual ({tourCurrency ?? DEFAULT_CURRENCY})
+                              Retención manual ({currency})
                             </label>
                             <div className="relative mt-1">
                               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -375,14 +407,24 @@ export function TravelerDetailDrawer({
                               <input
                                 id="cancel-booking-retencion-manual-mxn"
                                 type="number"
-                                min="0"
+                                min={minRetention}
+                                max={maxRetention}
                                 onWheel={blurNumberInputOnWheel}
                                 value={manualPenalty}
                                 onChange={(e) => setManualPenalty(e.target.value)}
+                                aria-invalid={Boolean(manualRetentionError)}
+                                aria-describedby="cancel-booking-retencion-manual-hint"
                                 className="w-full rounded border border-slate-300 py-1.5 pr-3 pl-8 text-base focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none sm:text-sm"
                                 placeholder="0.00"
                               />
                             </div>
+                            <p
+                              id="cancel-booking-retencion-manual-hint"
+                              className={`mt-1 text-[11px] leading-tight ${manualRetentionError ? "font-medium text-red-600" : "text-slate-500"}`}
+                            >
+                              {manualRetentionError ??
+                                `Mínimo lo ya abonado (${formatCurrency(minRetention, { currency })}): cuando el cliente cancela, la agencia retiene lo pagado.`}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -398,7 +440,7 @@ export function TravelerDetailDrawer({
                         <Button
                           size="sm"
                           className="w-full bg-red-600 text-white hover:bg-red-700"
-                          disabled={isCancelling}
+                          disabled={isCancelling || Boolean(manualRetentionError)}
                           onClick={handleConfirmCancellation}
                         >
                           Confirmar Baja
@@ -432,7 +474,13 @@ export function TravelerDetailDrawer({
         isOpen={!!paymentToVoid}
         onClose={() => setPaymentToVoid(null)}
         onConfirmVoid={handleVoidOnly}
-        onVoidAndRecapture={handleVoidAndCorrect}
+        // Una reserva cancelada ya no acepta abonos: solo se anula (sin volver a capturar).
+        onVoidAndRecapture={isCancelledBooking ? undefined : handleVoidAndCorrect}
+        note={
+          isCancelledBooking
+            ? "La reserva está cancelada: la retención bajará a lo que realmente se abonó."
+            : undefined
+        }
         isSubmitting={isVoiding}
         travelerName={traveler.fullName}
         amountFormatted={

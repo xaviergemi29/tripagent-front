@@ -161,6 +161,12 @@ export const tourDashboardOutputSchema = z.object({
   // Lugares de staff del tour: tope de asientos que se pueden bloquear en el croquis.
   staffCapacity: z.number().default(0),
   travelers: z.array(titularSchema),
+  /**
+   * Reservas canceladas por el cliente (mismo formato, `bookingStatus: CANCELLED`): filtro
+   * "Canceladas" del Centro de Control, solo para consultar y anular abonos mal capturados
+   * (2026-11-17). Vacío si la agencia canceló el tour: esas van en `refunds`.
+   */
+  cancelledTravelers: z.array(titularSchema).default([]),
   cancellation: tourCancellationSchema.nullable().default(null),
   refunds: z.array(refundRowSchema).default([]),
 });

@@ -2,7 +2,11 @@ import { ChevronDown, FileDown, Link2, User, Users, Wallet } from "lucide-react"
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UnpaidHoldAge } from "@/features/tour-dashboard/components/passengers/UnpaidHoldAge";
 import type { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
-import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import {
+  BOOKING_STATUS,
+  type Currency,
+  DEFAULT_CURRENCY,
+} from "@/shared/constants/domain.constants";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import {
   copyMagicLink,
@@ -117,25 +121,38 @@ export function TitularRow({
         <RegistrationStatusBadge status={titular.formStatus} />
       </td>
       <td className="px-6 py-3.5">
-        <div className="flex flex-col items-start gap-1">
-          <FinancialStatusBadge
-            status={titular.paymentStatus}
-            paidAmount={titular.paidAmount}
-            balance={titular.balance}
-          />
-          {titular.balance > 0 ? (
-            <span className="text-[11px] font-bold whitespace-nowrap text-slate-500">
-              Debe:{" "}
-              {formatCurrency(titular.balance, { currency: tourCurrency || DEFAULT_CURRENCY })}
+        {/* Cancelada por el cliente (filtro "Canceladas"): la agencia retiene lo abonado. */}
+        {titular.bookingStatus === BOOKING_STATUS.CANCELLED ? (
+          <div className="flex flex-col items-start gap-1">
+            <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-slate-600 uppercase">
+              Cancelada
             </span>
-          ) : (
-            <span className="text-[11px] font-medium text-slate-400">Sin adeudos</span>
-          )}
-          {/* Revisión manual de las 48 h (regla 13): solo apartados sin ningún pago. */}
-          {titular.paidAmount <= 0 && titular.balance > 0 && (
-            <UnpaidHoldAge bookedAt={titular.bookedAt} />
-          )}
-        </div>
+            <span className="text-[11px] font-bold whitespace-nowrap text-slate-500">
+              Retenido:{" "}
+              {formatCurrency(titular.paidAmount, { currency: tourCurrency || DEFAULT_CURRENCY })}
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-start gap-1">
+            <FinancialStatusBadge
+              status={titular.paymentStatus}
+              paidAmount={titular.paidAmount}
+              balance={titular.balance}
+            />
+            {titular.balance > 0 ? (
+              <span className="text-[11px] font-bold whitespace-nowrap text-slate-500">
+                Debe:{" "}
+                {formatCurrency(titular.balance, { currency: tourCurrency || DEFAULT_CURRENCY })}
+              </span>
+            ) : (
+              <span className="text-[11px] font-medium text-slate-400">Sin adeudos</span>
+            )}
+            {/* Revisión manual de las 48 h (regla 13): solo apartados sin ningún pago. */}
+            {titular.paidAmount <= 0 && titular.balance > 0 && (
+              <UnpaidHoldAge bookedAt={titular.bookedAt} />
+            )}
+          </div>
+        )}
       </td>
       <td className="px-6 py-3.5 text-right whitespace-nowrap">
         <TooltipProvider delayDuration={150}>

@@ -7,7 +7,9 @@ import {
   filterDashboardTravelers,
   findDashboardTraveler,
   getSeatEligiblePassengers,
+  previewCompanionDropRetention,
   resolveGroupPaymentStatus,
+  selectDashboardGroups,
 } from "../dashboard-travelers.util";
 
 // Filtros y listas del Centro de Control (escritorio y celular usan las mismas funciones).
@@ -168,5 +170,45 @@ describe("applyLiveSeats", () => {
 
   it("sin asientos cargados respeta el dato del dashboard", () => {
     expect(applyLiveSeats(passengers, undefined)).toBe(passengers);
+  });
+});
+
+describe("selectDashboardGroups (filtro «Canceladas», 2026-11-17)", () => {
+  const active = group({ fullName: "Ana Torres", paymentStatus: "PAID", paidAmount: 1000 });
+  const cancelled = group({ fullName: "Carla Díaz", bookingStatus: "CANCELLED" });
+  const otherCancelled = group({ fullName: "Beto Ruiz", bookingStatus: "CANCELLED" });
+  const dashboard = { travelers: [active], cancelledTravelers: [cancelled, otherCancelled] };
+
+  it("sin «Canceladas» muestra solo los grupos activos filtrados", () => {
+    expect(selectDashboardGroups(dashboard, EMPTY_DASHBOARD_FILTERS)).toEqual([active]);
+  });
+
+  it("con «Canceladas» muestra las canceladas por el cliente y respeta la búsqueda", () => {
+    const filters = { ...EMPTY_DASHBOARD_FILTERS, paymentFilter: "CANCELLED" };
+    expect(selectDashboardGroups(dashboard, filters)).toEqual([cancelled, otherCancelled]);
+    expect(selectDashboardGroups(dashboard, { ...filters, searchQuery: "carla" })).toEqual([
+      cancelled,
+    ]);
+  });
+
+  it("con «Canceladas» ignora los filtros de formulario y asiento (no aplican a una cancelada)", () => {
+    const filters = {
+      ...EMPTY_DASHBOARD_FILTERS,
+      paymentFilter: "CANCELLED",
+      formFilter: "PENDING",
+      seatFilter: "ASSIGNED",
+    };
+    expect(selectDashboardGroups(dashboard, filters)).toHaveLength(2);
+  });
+});
+
+describe("previewCompanionDropRetention (aviso antes de dar de baja)", () => {
+  it.each([
+    ["$2,500 abonados de $3,000: retiene el excedente de $500", 2500, 500, 500],
+    ["$900 abonados: cabe en el nuevo total, no retiene nada", 900, 2100, 0],
+    ["liquidada ($3,000): retiene el precio completo del lugar", 3000, 0, 1000],
+    ["sin pagos: no retiene nada", 0, 3000, 0],
+  ])("%s", (_, paidAmount, balance, expected) => {
+    expect(previewCompanionDropRetention({ paidAmount, balance, unitPrice: 1000 })).toBe(expected);
   });
 });

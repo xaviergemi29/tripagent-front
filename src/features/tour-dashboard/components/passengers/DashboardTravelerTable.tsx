@@ -10,7 +10,8 @@ import { downloadOperatorStatement } from "@/features/tour-dashboard/utils/state
 import { type Currency } from "@/shared/constants/domain.constants";
 
 import {
-  filterDashboardTravelers,
+  isCancelledFilter,
+  selectDashboardGroups,
   type PaymentFilter,
   type RegistrationFilter,
   type SeatFilter,
@@ -32,6 +33,8 @@ interface DashboardTravelerTableProps {
   tourPostPaymentInstructions?: string | null;
   requiresSeats: boolean;
   travelers: TitularRowOutput[];
+  /** Canceladas por el cliente: se muestran con el filtro de pagos "Canceladas". */
+  cancelledTravelers?: TitularRowOutput[];
   searchQuery: string;
   paymentFilter: PaymentFilter | string;
   formFilter: RegistrationFilter | string;
@@ -54,6 +57,7 @@ export function DashboardTravelerTable({
   tourPostPaymentInstructions,
   requiresSeats,
   travelers,
+  cancelledTravelers = [],
   searchQuery,
   paymentFilter,
   formFilter,
@@ -68,13 +72,10 @@ export function DashboardTravelerTable({
   // Agregar lugar, dar de baja, liberar y transferir: compartido con el celular.
   const groupActions = useTravelerGroupActions(tourId);
 
-  // Misma regla que la vista móvil (`filterDashboardTravelers`, utils/dashboard-travelers.util).
-  const filteredTravelers = filterDashboardTravelers(travelers, {
-    searchQuery,
-    paymentFilter,
-    formFilter,
-    seatFilter,
-  });
+  // Misma regla que la vista móvil (`selectDashboardGroups`, utils/dashboard-travelers.util).
+  const filters = { searchQuery, paymentFilter, formFilter, seatFilter };
+  const isCancelledView = isCancelledFilter(filters);
+  const filteredTravelers = selectDashboardGroups({ travelers, cancelledTravelers }, filters);
 
   // Misma generación que la tarjeta del celular (`downloadOperatorStatement`).
   const handleDownloadReceipt = (titularData: TitularRowOutput): Promise<void> =>
@@ -128,12 +129,14 @@ export function DashboardTravelerTable({
                 />
               ))}
 
-              {filteredTravelers.length === 0 && travelers?.length > 0 && (
+              {filteredTravelers.length === 0 && (isCancelledView || travelers?.length > 0) && (
                 <tr>
                   <td colSpan={requiresSeats ? 8 : 7} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center gap-3 text-slate-500">
                       <p className="text-sm font-medium">
-                        No se encontraron viajeros con los filtros actuales.
+                        {isCancelledView && cancelledTravelers.length === 0
+                          ? "No hay reservas canceladas por el cliente en este tour."
+                          : "No se encontraron viajeros con los filtros actuales."}
                       </p>
                       {onClearFilters && (
                         <Button
@@ -150,7 +153,7 @@ export function DashboardTravelerTable({
                 </tr>
               )}
 
-              {travelers?.length === 0 && (
+              {!isCancelledView && travelers?.length === 0 && (
                 <tr>
                   <td
                     colSpan={requiresSeats ? 8 : 7}
@@ -168,6 +171,7 @@ export function DashboardTravelerTable({
         actions={groupActions}
         tourCurrency={tourCurrency}
         freeSeatsCount={freeSeatsCount}
+        travelers={travelers}
       />
     </>
   );

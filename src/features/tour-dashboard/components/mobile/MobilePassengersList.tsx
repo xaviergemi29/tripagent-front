@@ -83,6 +83,7 @@ export function MobilePassengersList({
         actions={groupActions}
         tourCurrency={tourCurrency}
         freeSeatsCount={freeSeatsCount}
+        travelers={travelers}
       />
     </>
   );

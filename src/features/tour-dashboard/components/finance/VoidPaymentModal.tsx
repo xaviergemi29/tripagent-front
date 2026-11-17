@@ -8,7 +8,10 @@ interface VoidPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirmVoid: () => void | Promise<void>;
-  onVoidAndRecapture: () => void | Promise<void>;
+  /** Sin esta acción (reserva cancelada: ya no acepta abonos) solo se ofrece anular. */
+  onVoidAndRecapture?: () => void | Promise<void>;
+  /** Aviso adicional bajo la explicación (p. ej. el efecto en la retención de una cancelada). */
+  note?: string;
   amountFormatted: string;
   travelerName: string;
   isSubmitting?: boolean;
@@ -22,6 +25,7 @@ export const VoidPaymentModal: React.FC<VoidPaymentModalProps> = ({
   amountFormatted,
   travelerName,
   isSubmitting = false,
+  note,
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -61,6 +65,11 @@ export const VoidPaymentModal: React.FC<VoidPaymentModalProps> = ({
               guardará el registro del movimiento.
             </p>
           </div>
+          {note && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 sm:text-sm">
+              {note}
+            </p>
+          )}
         </div>
 
         {/* 🚀 FIX: Eliminamos sm:flex-wrap para forzar una sola línea y alineamos con gap-3 */}
@@ -75,15 +84,17 @@ export const VoidPaymentModal: React.FC<VoidPaymentModalProps> = ({
             {isSubmitting ? "Anulando..." : "Confirmar anulación"}
           </Button>
 
-          <Button
-            type="button"
-            disabled={isSubmitting}
-            onClick={onVoidAndRecapture}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-700 active:scale-[0.98] sm:w-auto sm:text-sm"
-          >
-            <RefreshCw className="h-3.5 w-3.5 stroke-[2.5]" />
-            <span>Anular y volver a capturar</span>
-          </Button>
+          {onVoidAndRecapture && (
+            <Button
+              type="button"
+              disabled={isSubmitting}
+              onClick={onVoidAndRecapture}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-700 active:scale-[0.98] sm:w-auto sm:text-sm"
+            >
+              <RefreshCw className="h-3.5 w-3.5 stroke-[2.5]" />
+              <span>Anular y volver a capturar</span>
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

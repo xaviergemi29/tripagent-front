@@ -117,4 +117,37 @@ describe("RegisterPaymentModal", () => {
     fireEvent.change(amount, { target: { value: "5" } });
     expect(amount.value).toBe("5");
   });
+
+  it("un abono mayor al saldo pendiente no se envía y explica el tope (2026-11-17)", async () => {
+    const user = userEvent.setup();
+    open("MXN"); // saldo pendiente $3,000
+    const amount = await screen.findByLabelText(/Monto a abonar/);
+    await user.clear(amount);
+    await user.type(amount, "5000");
+    await user.click(screen.getByRole("button", { name: /Guardar Abono/ }));
+
+    expect(
+      await screen.findByText("El abono no puede superar el saldo pendiente de $3,000.00 MXN"),
+    ).toBeInTheDocument();
+    expect(createPayment).not.toHaveBeenCalled();
+  });
+
+  it("corrección: admite hasta el monto anulado aunque el saldo aún no se haya recargado", async () => {
+    const user = userEvent.setup();
+    render(
+      <RegisterPaymentModal
+        isOpen
+        onClose={vi.fn()}
+        bookingId="b1"
+        tourId="t1"
+        tourCurrency="MXN"
+        balance={0}
+        correctionData={{ amount: 800, method: "CASH" }}
+      />,
+    );
+    await screen.findByLabelText(/Monto a abonar/);
+    await user.click(screen.getByRole("button", { name: /Guardar Abono/ }));
+
+    expect(createPayment.mock.calls[0]![0].payload).toMatchObject({ amount: 800 });
+  });
 });

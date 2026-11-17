@@ -14,6 +14,7 @@ import { getInitials } from "@/shared/utils/travelers-helpers";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import {
   type Currency,
+  BOOKING_STATUS,
   DEFAULT_CURRENCY,
   PASSENGER_ROLE,
   type PassengerRole,
@@ -114,7 +115,17 @@ export function BookingCard({
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end text-right">
-          {isPaid ? (
+          {/* Cancelada por el cliente (filtro "Canceladas"): la agencia retiene lo abonado. */}
+          {titular.bookingStatus === BOOKING_STATUS.CANCELLED ? (
+            <>
+              <span className="rounded border border-slate-300 bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
+                CANCELADA
+              </span>
+              <span className="mt-0.5 text-xs font-bold whitespace-nowrap text-slate-500">
+                Retenido: {formatCurrency(titular.paidAmount, { currency: tourCurrency })}
+              </span>
+            </>
+          ) : isPaid ? (
             <>
               <span className="rounded border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
                 LIQUIDADO

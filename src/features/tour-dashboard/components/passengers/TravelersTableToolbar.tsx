@@ -59,6 +59,8 @@ export function TravelersTableToolbar({
           <option value="UNPAID">Sin Pago</option>
           <option value="PARTIAL">Abono Parcial / Validando</option>
           <option value="PAID">Liquidados</option>
+          {/* Reservas canceladas por el cliente: solo consulta y anular abonos (2026-11-17). */}
+          <option value="CANCELLED">Canceladas</option>
         </select>
 
         <select

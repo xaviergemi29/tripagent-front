@@ -13,7 +13,17 @@ import { matchesSearch } from "@/shared/utils/search.util";
  * clasifica lo que ya viene calculado. Única implementación para escritorio y celular.
  */
 
-export type PaymentFilter = "ALL" | "UNPAID" | "PARTIAL" | "PAID";
+export type PaymentFilter = "ALL" | "UNPAID" | "PARTIAL" | "PAID" | "CANCELLED";
+
+/**
+ * Opción "Canceladas" del filtro de pagos (2026-11-17): en lugar de los grupos activos muestra las
+ * reservas que canceló el cliente (`cancelledTravelers`), en solo lectura salvo "Anular" abonos.
+ */
+export const CANCELLED_PAYMENT_FILTER = "CANCELLED";
+
+/** ¿El filtro de pagos muestra las reservas canceladas por el cliente? */
+export const isCancelledFilter = (filters: Pick<DashboardFilters, "paymentFilter">): boolean =>
+  filters.paymentFilter === CANCELLED_PAYMENT_FILTER;
 export type RegistrationFilter = "ALL" | "PENDING" | "COMPLETED";
 export type SeatFilter = "ALL" | "UNASSIGNED" | "ASSIGNED";
 
@@ -48,7 +58,7 @@ export function resolveGroupPaymentStatus({
   paymentStatus,
   paidAmount,
   balance,
-}: GroupPaymentInput): Exclude<PaymentFilter, "ALL"> {
+}: GroupPaymentInput): Exclude<PaymentFilter, "ALL" | "CANCELLED"> {
   if (paymentStatus === PAYMENT_STATUS.PAID || (paidAmount > 0 && balance <= 0)) return "PAID";
   if (paidAmount > 0 || ["ADVANCE", "PARTIAL", "PENDING_VALIDATION"].includes(paymentStatus)) {
     return "PARTIAL";
@@ -109,6 +119,38 @@ export function filterDashboardTravelers(
       (formFilter === "ALL" || groupRegistrationStatus(titular) === formFilter) &&
       (seatFilter === "ALL" || matchesSeat(titular, seatFilter)),
   );
+}
+
+/**
+ * Vista previa de la retención al dar de baja a un acompañante, para avisar ANTES de confirmar
+ * (2026-11-17). La API decide y aplica la regla (`BookingPassengerService.cancelPassenger`): si lo
+ * abonado supera el total sin ese lugar, el excedente se retiene, con tope del precio de un lugar.
+ * Ejemplo: $2,500 abonados de $3,000, lugar de $1,000 → se retienen $500.
+ */
+export function previewCompanionDropRetention(
+  group: Pick<TitularRowOutput, "paidAmount" | "balance" | "unitPrice">,
+): number {
+  const totalWithoutSeat = group.paidAmount + group.balance - group.unitPrice;
+  const retained = Math.min(Math.max(0, group.paidAmount - totalWithoutSeat), group.unitPrice);
+  return Math.round(retained * 100) / 100;
+}
+
+/**
+ * Grupos que muestra la lista del Centro de Control según los filtros (escritorio y celular):
+ * con "Canceladas", las reservas canceladas por el cliente (solo se aplica la búsqueda: formulario
+ * y asiento ya no significan nada en una reserva cancelada); si no, los grupos activos filtrados.
+ */
+export function selectDashboardGroups(
+  dashboard:
+    { travelers?: TitularRowOutput[]; cancelledTravelers?: TitularRowOutput[] } | undefined,
+  filters: DashboardFilters,
+): TitularRowOutput[] {
+  if (isCancelledFilter(filters)) {
+    return (dashboard?.cancelledTravelers ?? []).filter((titular) =>
+      groupMatchesSearch(titular, filters.searchQuery),
+    );
+  }
+  return filterDashboardTravelers(dashboard?.travelers, filters);
 }
 
 /**

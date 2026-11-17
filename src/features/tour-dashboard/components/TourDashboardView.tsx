@@ -19,7 +19,8 @@ import { useAgencyBranding } from "@/features/settings/hooks/useAgencyBranding";
 import { useDashboardFilters } from "../hooks/useDashboardFilters";
 import {
   applyLiveSeats,
-  filterDashboardTravelers,
+  isCancelledFilter,
+  selectDashboardGroups,
   findDashboardTraveler,
   getSeatEligiblePassengers,
 } from "../utils/dashboard-travelers.util";
@@ -118,8 +119,15 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
     tour?.vehicle ? liveSeats : undefined,
   );
   const unassignedPassengers = flattenedPassengers.filter((p) => !p.seatNumber);
-  const foundTraveler = findDashboardTraveler(tour?.travelers, selectedTravelerId);
-  const filteredTravelers = filterDashboardTravelers(tour?.travelers, filters);
+  // Filtro "Canceladas" (2026-11-17): la lista muestra las reservas que canceló el cliente, en
+  // solo lectura; en su drawer solo se puede "Anular" un abono mal capturado (corte de caja).
+  const isCancelledView = isCancelledFilter(filters);
+  const foundTraveler = findDashboardTraveler(
+    isCancelledView ? tour?.cancelledTravelers : tour?.travelers,
+    selectedTravelerId,
+  );
+  const filteredTravelers = selectDashboardGroups(tour, filters);
+  const isListReadOnly = isAuditMode || isCancelledView;
 
   // Falló sin datos: motivo + Reintentar (antes el mensaje técnico sin forma de recuperarse). Un 404
   // (tour inexistente o de otra agencia) no se reintenta. Si falla una recarga con datos en caché,
@@ -245,12 +253,13 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                     statementAgency={statementAgency}
                     onStatementAgencyMissing={retryStatementAgency}
                     travelers={tour.travelers}
+                    cancelledTravelers={tour.cancelledTravelers}
                     searchQuery={filters.searchQuery}
                     tourCurrency={tour.currency}
                     paymentFilter={filters.paymentFilter}
                     formFilter={filters.formFilter}
                     seatFilter={filters.seatFilter}
-                    isAuditMode={isAuditMode}
+                    isAuditMode={isListReadOnly}
                     freeSeatsCount={freeSeatsCount}
                     onRowClick={(id) => setSelectedTravelerId(id)}
                     onAssignSeatClick={handleAssignSeatIntent}
@@ -330,7 +339,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                 freeSeatsCount={freeSeatsCount}
                 travelers={filteredTravelers}
                 tourCurrency={tour.currency}
-                isAuditMode={isAuditMode}
+                isAuditMode={isListReadOnly}
                 statementContext={statementContext}
                 onAssignSeatClick={handleAssignSeatIntent}
                 onRowClick={(id) => setSelectedTravelerId(id)}
@@ -360,7 +369,10 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
         tourCurrency={tour.currency}
         isOpen={!!selectedTravelerId}
         onClose={() => setSelectedTravelerId(null)}
-        isAuditMode={isAuditMode}
+        // Reserva cancelada por el cliente: solo lectura, pero se puede anular un abono mal
+        // capturado (corte de caja). En Modo Auditoría (tour finalizado o cancelado), nada.
+        isAuditMode={isListReadOnly}
+        canVoidPayments={!isAuditMode}
       />
 
       <QuickReservationModal

@@ -1,6 +1,8 @@
 "use client";
 
 import type { TravelerGroupActions } from "@/features/tour-dashboard/hooks/useTravelerGroupActions";
+import type { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
+import { previewCompanionDropRetention } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
 import type { Currency } from "@/shared/constants/domain.constants";
 import { AddPassengerDialog } from "./AddPassengerDialog";
 import { ReleaseSlotDialog } from "./ReleaseSlotDialog";
@@ -15,12 +17,18 @@ export function TravelerGroupDialogs({
   actions,
   tourCurrency,
   freeSeatsCount,
+  travelers = [],
 }: {
   actions: TravelerGroupActions;
   tourCurrency?: Currency;
   freeSeatsCount?: number;
+  /** Grupos de la lista: la baja de un acompañante avisa cuánto se retendría de lo abonado. */
+  travelers?: TitularRowOutput[];
 }) {
   const { titularToGrow, passengerToRemove, slotToRelease, transferTarget } = actions;
+  const groupOfRemoved = passengerToRemove
+    ? travelers.find((titular) => titular.bookingId === passengerToRemove.bookingId)
+    : undefined;
 
   return (
     <>
@@ -47,6 +55,9 @@ export function TravelerGroupDialogs({
         onConfirm={actions.confirmRemovePassenger}
         passengerName={passengerToRemove?.name}
         isSubmitting={actions.isRemoving}
+        paidAmount={groupOfRemoved?.paidAmount}
+        retainedAmount={groupOfRemoved ? previewCompanionDropRetention(groupOfRemoved) : 0}
+        tourCurrency={tourCurrency}
       />
 
       {transferTarget && (
