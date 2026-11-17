@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RegisterPaymentModal } from "../RegisterPaymentModal";
@@ -107,5 +107,14 @@ describe("RegisterPaymentModal", () => {
     await user.clear(amount);
     await user.type(amount, "50");
     expect(screen.getByText("$35.00 MXN / USD")).toBeInTheDocument();
+  });
+
+  it("al borrar el monto el campo queda vacío (antes se reescribía un 0 y lo escrito se pegaba: 0500)", async () => {
+    open("MXN");
+    const amount = (await screen.findByLabelText(/Monto a abonar/)) as HTMLInputElement;
+    fireEvent.change(amount, { target: { value: "" } });
+    expect(amount.value).toBe("");
+    fireEvent.change(amount, { target: { value: "5" } });
+    expect(amount.value).toBe("5");
   });
 });

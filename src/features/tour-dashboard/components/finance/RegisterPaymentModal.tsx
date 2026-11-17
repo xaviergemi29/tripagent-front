@@ -5,6 +5,7 @@ import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/shared/NumericInput";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -152,16 +153,17 @@ function RegisterPaymentForm({
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <span className="font-medium text-slate-400 sm:text-sm">$</span>
                 </div>
-                <Input
-                  {...field}
+                <NumericInput
                   id="amount"
-                  type="number"
+                  name={field.name}
+                  ref={field.ref}
+                  onBlur={field.onBlur}
+                  value={field.value}
+                  onValueChange={field.onChange}
                   step="0.01"
-                  inputMode="decimal"
                   autoFocus
                   onFocus={(e) => e.target.select()}
                   className="block w-full [appearance:textfield] rounded-lg border border-slate-200 py-2 pr-12 pl-7 text-base font-medium text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                 />
                 {isUSD && (
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">

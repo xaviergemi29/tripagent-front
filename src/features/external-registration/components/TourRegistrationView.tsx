@@ -27,6 +27,7 @@ import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 import { useRouter } from "next/navigation";
 import type { Currency } from "@/shared/constants/domain.constants";
 import { PhoneField } from "@/components/shared/PhoneField";
+import { SavedMedicalNotesHint } from "./SavedMedicalNotesHint";
 import {
   getStoredPhoneCountry,
   parseStoredPhone,
@@ -381,12 +382,19 @@ export function TourRegistrationView({
                   id="titular-mainclient-medicalnotes"
                   {...methods.register("mainClient.medicalNotes")}
                   placeholder="Ej. Alergias, condiciones especiales..."
-                  className={`h-11 text-base transition-colors sm:text-sm ${
-                    isMainClientFound
-                      ? "cursor-not-allowed border-slate-200 bg-slate-100/80 font-semibold text-slate-700"
-                      : "bg-white"
-                  }`}
+                  // Sigue editable con el viajero encontrado (antes se veía gris como si estuviera
+                  // bloqueado): las notas no llegan de la búsqueda y aquí se pueden completar.
+                  aria-describedby={
+                    isMainClientFound ? "titular-mainclient-medicalnotes-hint" : undefined
+                  }
+                  className="h-11 bg-white text-base sm:text-sm"
                 />
+                {isMainClientFound && (
+                  <SavedMedicalNotesHint
+                    id="titular-mainclient-medicalnotes-hint"
+                    agencyName={agencyName}
+                  />
+                )}
               </div>
             </div>
             {/* 3. Selector de Abordaje para el Titular (Refactorizado con Controller) */}
@@ -459,6 +467,7 @@ export function TourRegistrationView({
           <CompanionsManager
             boardingPoints={boardingPoints}
             maxAllowedCompanions={maxAllowedCompanions}
+            agencyName={agencyName}
           />
 
           {/* Políticas y aviso de privacidad (LFPDPPP): casilla obligatoria (regla 19). El modal

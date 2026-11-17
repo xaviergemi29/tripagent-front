@@ -116,6 +116,27 @@ describe("TourForm — creación", () => {
     expect(submitButton()).toBeDisabled();
   });
 
+  it("los campos numéricos no pegan lo escrito a un 0 y aceptan un anticipo de 0.5", () => {
+    render(<TourForm />);
+    const staff = screen.getByLabelText(/Lugares bloqueados para staff/) as HTMLInputElement;
+    const capacity = screen.getByLabelText(/Capacidad total del vehículo/) as HTMLInputElement;
+    const deposit = screen.getByLabelText(/Anticipo/) as HTMLInputElement;
+
+    // El 0 por defecto se ve vacío: lo escrito no queda como "02".
+    expect(staff.value).toBe("");
+    fireEvent.change(staff, { target: { value: "2" } });
+    expect(staff.value).toBe("2");
+    // Al borrar no se reescribe un 0.
+    fireEvent.change(capacity, { target: { value: "20" } });
+    fireEvent.change(capacity, { target: { value: "" } });
+    expect(capacity.value).toBe("");
+    // Un "0" escrito no desaparece (antes se borraba y no se podía capturar 0.50).
+    fireEvent.change(deposit, { target: { value: "0" } });
+    expect(deposit.value).toBe("0");
+    fireEvent.change(deposit, { target: { value: "0.5" } });
+    expect(deposit.value).toBe("0.5");
+  });
+
   it("Transferencia muestra los datos bancarios de la agencia, incluido el número de tarjeta", async () => {
     const user = userEvent.setup();
     render(<TourForm />);

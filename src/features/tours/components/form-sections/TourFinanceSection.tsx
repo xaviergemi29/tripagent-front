@@ -1,10 +1,12 @@
 "use client";
 
 import { Controller, useFormContext, useFormState, useWatch } from "react-hook-form";
+import type { ComponentProps } from "react";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { AlertCircle, Info, Lock, Wallet } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/shared/NumericInput";
 import { Label } from "@/components/ui/label";
 import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 import { formatCurrency } from "@/shared/utils/currency.util";
@@ -24,40 +26,21 @@ interface TourFinanceSectionProps {
   isRetryingAgency?: boolean;
 }
 
-/** Campo numérico de dinero: vacío ⇄ 0, con el código de divisa como prefijo. */
+/** Campo numérico de dinero (vacío ⇄ 0, ver `NumericInput`) con el código de divisa como prefijo. */
 function MoneyInput({
-  id,
   currency,
-  value,
-  onChange,
-  disabled,
-  field,
-}: {
-  id: string;
-  currency: string;
-  value: unknown;
-  onChange: (value: number) => void;
-  disabled?: boolean;
-  field: object;
-}) {
+  ...inputProps
+}: { currency: string } & ComponentProps<typeof NumericInput>) {
   return (
     <div className="relative">
       <div className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-xs font-bold text-slate-400">
         $ {currency}
       </div>
-      <Input
-        {...field}
-        id={id}
-        type="number"
+      <NumericInput
         min="0"
         step="any"
-        disabled={disabled}
         className="rounded-xl bg-white pl-14 text-base font-semibold text-slate-900 sm:text-sm"
-        value={value === 0 ? "" : (value as number | string)}
-        onChange={(event) => {
-          const raw = event.target.value;
-          onChange(raw === "" ? 0 : Number(raw));
-        }}
+        {...inputProps}
       />
     </div>
   );
@@ -131,9 +114,11 @@ export function TourFinanceSection({
               <MoneyInput
                 id="tour-price"
                 currency={String(selectedCurrency)}
-                field={field}
+                name={field.name}
+                ref={field.ref}
+                onBlur={field.onBlur}
                 value={field.value}
-                onChange={field.onChange}
+                onValueChange={field.onChange}
                 disabled={isPricingFrozen}
               />
               {fieldState.error && (
@@ -162,9 +147,11 @@ export function TourFinanceSection({
               <MoneyInput
                 id="tour-deposit"
                 currency={String(selectedCurrency)}
-                field={field}
+                name={field.name}
+                ref={field.ref}
+                onBlur={field.onBlur}
                 value={field.value}
-                onChange={field.onChange}
+                onValueChange={field.onChange}
               />
 
               {/* Error del anticipo o ayuda con lo que pagará el cliente hoy */}

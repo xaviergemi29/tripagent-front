@@ -4,6 +4,7 @@ import { useFormContext, useWatch, Controller } from "react-hook-form";
 import { MapPin, AlertCircle, Users } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/shared/NumericInput";
 import { Textarea } from "@/components/ui/textarea";
 import { TOUR_FORM_COPY } from "@/features/tours/constants/copy";
 import { TourInput } from "@/features/tours/schemas/tour.schema"; // Ajusta tu ruta de importación
@@ -179,17 +180,16 @@ export function TourGeneralSection({ minDepartureDate }: { minDepartureDate?: st
                 <Label htmlFor="tour-capacity" className="text-xs font-bold text-slate-700">
                   Capacidad total del vehículo <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  {...field}
+                <NumericInput
                   id="tour-capacity"
-                  type="number"
+                  name={field.name}
+                  ref={field.ref}
+                  onBlur={field.onBlur}
+                  inputMode="numeric"
                   min={1}
                   placeholder="Ej. 20"
-                  value={field.value === 0 ? "" : field.value}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    field.onChange(val === "" ? 0 : Number(val));
-                  }}
+                  value={field.value}
+                  onValueChange={field.onChange}
                   className={`h-11 rounded-xl bg-white text-sm ${fieldState.error ? "border-red-500" : "border-slate-200"}`}
                 />
                 {fieldState.error && (
@@ -209,17 +209,16 @@ export function TourGeneralSection({ minDepartureDate }: { minDepartureDate?: st
                 <Label htmlFor="tour-staff-capacity" className="text-xs font-bold text-slate-700">
                   Lugares bloqueados para staff
                 </Label>
-                <Input
-                  {...field}
+                <NumericInput
                   id="tour-staff-capacity"
-                  type="number"
+                  name={field.name}
+                  ref={field.ref}
+                  onBlur={field.onBlur}
+                  inputMode="numeric"
                   min={0}
                   placeholder="Ej. 2 (chofer y guía)"
-                  value={field.value ?? 0}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    field.onChange(val === "" ? 0 : Number(val));
-                  }}
+                  value={field.value}
+                  onValueChange={field.onChange}
                   className={`h-11 rounded-xl bg-white text-sm ${fieldState.error ? "border-red-500" : "border-slate-200"}`}
                 />
                 {fieldState.error && (
