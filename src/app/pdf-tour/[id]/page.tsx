@@ -1,7 +1,7 @@
 "use client";
 
 import { useTourManifest } from "@/features/tour-dashboard/hooks/useTourManifest";
-import { formatLocalDate } from "@/shared/utils/tour-date.util";
+import { formatLocalDate, formatPickupTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { useEffect, use } from "react";
 
@@ -54,10 +54,11 @@ export default function ManifestPrintView({ params }: PageProps) {
         </p>
       </div>
 
-      {manifest.boardingPoints.map((point) => (
-        <div key={point.id || point.location} className="mb-8 break-inside-avoid">
+      {/* Clave con el índice: el schema da "sin-id" a un punto sin id y dos así se repetirían. */}
+      {manifest.boardingPoints.map((point, index) => (
+        <div key={`${point.id}-${index}`} className="mb-8 break-inside-avoid">
           <h2 className="mb-4 border border-slate-300 bg-slate-200 p-2 text-lg font-bold uppercase">
-            📍 {point.location} - {point.time}
+            📍 {point.location} - {formatPickupTime(point.time)}
           </h2>
 
           <table className="w-full border-collapse border border-slate-400">

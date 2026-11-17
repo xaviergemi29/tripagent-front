@@ -6,7 +6,7 @@ import { EditTravelerDrawer } from "../EditTravelerDrawer";
 // Como en /travelers: el drawer empieza cerrado y se abre con un viajero. Debe cargar sus datos y
 // enviar lo editado (no los valores con los que se abrió).
 
-const update = vi.fn(async () => ({}));
+const update = vi.fn<(...args: unknown[]) => Promise<object>>(async () => ({}));
 vi.mock("../../hooks/useTravelers", () => ({
   useUpdateTraveler: () => ({ mutateAsync: update, isPending: false }),
 }));
@@ -77,6 +77,20 @@ describe("EditTravelerDrawer", () => {
 
     expect(await screen.findByDisplayValue("Ana Torres")).toBeInTheDocument();
     expect(screen.queryByDisplayValue(/sin guardar/)).not.toBeInTheDocument();
+  });
+
+  it("si la API rechaza (WhatsApp duplicado), sigue abierto y el error no queda sin manejar", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    update.mockRejectedValueOnce(new Error("Ya existe un viajero registrado con ese WhatsApp"));
+    render(<EditTravelerDrawer traveler={traveler} isOpen onClose={onClose} />);
+    await screen.findByDisplayValue("Ana Torres");
+
+    await user.click(screen.getByRole("button", { name: /Guardar Cambios/ }));
+
+    expect(update).toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue("Ana Torres")).toBeInTheDocument();
   });
 
   it("menor: cambia las etiquetas y oculta el correo", async () => {

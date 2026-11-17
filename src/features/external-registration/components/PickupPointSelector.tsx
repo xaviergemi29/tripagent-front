@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { formatPickupTime } from "@/shared/utils/tour-date.util";
 
 export interface PickupPoint {
   id: string;
@@ -80,7 +81,7 @@ export function PickupPointSelector({ points, value, onChange, error }: PickupPo
                     isSelected ? "font-bold text-indigo-700" : "font-semibold text-slate-600"
                   }`}
                 >
-                  {point.time}
+                  {formatPickupTime(point.time)}
                 </span>
                 {isSelected && (
                   <span className="hidden rounded-md bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-800 sm:inline-block">

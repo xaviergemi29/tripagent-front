@@ -69,11 +69,17 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
       medicalNotes: formData.medicalNotes || undefined,
     };
 
-    // 2. Ejecutamos la mutación con el key correcto: 'travelerData'
-    await updateTraveler({
-      travelerId: traveler.id,
-      travelerData: payload as TravelerInput,
-    });
+    // 2. Ejecutamos la mutación con el key correcto: 'travelerData'. Si la API rechaza (p. ej. 409
+    //    por WhatsApp duplicado), `useUpdateTraveler` ya muestra el aviso: el drawer sigue abierto
+    //    con lo capturado y el error no queda sin manejar (antes Next mostraba su pantalla roja).
+    try {
+      await updateTraveler({
+        travelerId: traveler.id,
+        travelerData: payload as TravelerInput,
+      });
+    } catch {
+      return;
+    }
     handleClose();
   };
 
