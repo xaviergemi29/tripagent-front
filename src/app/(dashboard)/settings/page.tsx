@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SettingsTabs } from "@/features/settings/components/SettingsTabs";
 import { SettingsGuideButton } from "@/features/settings/components/SettingsGuideButton";
+
+export const metadata: Metadata = { title: "Configuración" };
 
 export default function SettingsPage() {
   return (

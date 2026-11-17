@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "@/lib/api-config";
+import { toInternationalDigits } from "./phone.util";
 
 /**
  * @description Deja únicamente los dígitos de un teléfono (quita espacios, guiones, "+", paréntesis).
@@ -9,52 +10,45 @@ import { API_BASE_URL } from "@/lib/api-config";
  */
 export const toPhoneDigits = (phone?: string | null): string => (phone || "").replace(/\D/g, "");
 
-/** Lada de México: se antepone a los teléfonos de 10 dígitos en los enlaces `wa.me`. */
-const MEXICO_COUNTRY_CODE = "52";
-
 interface WhatsAppUrlOptions {
   /** Texto prellenado del chat. Se codifica con `encodeURIComponent`. */
   message?: string;
   /**
-   * Prefijo de país que se antepone a los dígitos. Si se omite, se agrega "52" a un número de 10
-   * dígitos (México); uno más largo se considera ya internacional y se deja igual.
+   * Prefijo de país que se antepone a los dígitos. Si se omite, se usa el número tal como viene:
+   * un E.164 ya trae su lada y un registro anterior de 10 dígitos se toma como mexicano (+52).
    */
   countryCode?: string;
 }
 
 /**
- * @description Teléfono para mostrar, sin prefijo de país: los últimos 10 dígitos agrupados
- * 3-3-4. Si no hay 10 dígitos, devuelve el valor tal cual.
+ * Teléfono para mostrar: México en formato nacional ("228 849 2011"), otros países en formato
+ * internacional ("+1 212 555 1234"). Implementación en `phone.util.ts`.
  * @example formatPhoneForDisplay("+522288492011") // "228 849 2011"
  */
-export const formatPhoneForDisplay = (phone?: string | null): string => {
-  const digits = toPhoneDigits(phone);
-  if (digits.length < 10) return (phone || "").trim();
-  const local = digits.slice(-10);
-  return `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`;
-};
+export { formatPhoneForDisplay } from "./phone.util";
 
 /**
  * @description Construye un enlace `wa.me` para abrir un chat de WhatsApp.
  * No hay integración con la API de WhatsApp; solo enlaces.
  *
- * @param {string | null | undefined} phone - Teléfono del destinatario (se limpia a dígitos).
+ * @param {string | null | undefined} phone - Teléfono del destinatario: E.164 ("+522281234567") o
+ * los 10 dígitos de un registro anterior.
  * @param {WhatsAppUrlOptions} [options] - Mensaje prellenado y prefijo de país opcionales.
  * @returns {string} URL `https://wa.me/...`.
- * Los teléfonos se capturan a 10 dígitos y `wa.me` exige la lada del país: sin ella,
- * `wa.me/2281234567` se lee como +228 (Togo). Por eso un número de 10 dígitos lleva "52" por
- * defecto (2026-11-16; antes cada pantalla debía pasarlo y cuatro botones no lo hacían).
+ * `wa.me` exige la lada. Desde el 2026-11-16 los teléfonos se guardan en E.164 con su país, así que
+ * la lada sale del propio número: antes se anteponía "52" a todo número de 10 dígitos y un número de
+ * EE. UU. o Canadá (también de 10 dígitos) abría el chat de otro número en México. Solo un registro
+ * anterior (10 dígitos sin "+") se sigue tomando como mexicano.
  * @example
- * buildWhatsAppUrl("228 123 4567", { message: "Hola" }) // "https://wa.me/522281234567?text=Hola"
- * buildWhatsAppUrl("522281234567") // "https://wa.me/522281234567"
+ * buildWhatsAppUrl("+12125551234", { message: "Hola" }) // "https://wa.me/12125551234?text=Hola"
+ * buildWhatsAppUrl("2281234567") // "https://wa.me/522281234567" (registro anterior)
  */
 export const buildWhatsAppUrl = (
   phone: string | null | undefined,
   { message, countryCode }: WhatsAppUrlOptions = {},
 ): string => {
-  const digits = toPhoneDigits(phone);
-  const prefix = countryCode ?? (digits.length === 10 ? MEXICO_COUNTRY_CODE : "");
-  const base = `https://wa.me/${prefix}${digits}`;
+  const number = countryCode ? `${countryCode}${toPhoneDigits(phone)}` : toInternationalDigits(phone);
+  const base = `https://wa.me/${number}`;
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 };
 

@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import {
   formatLocalDate,
   formatPickupTime,
+  formatSpanishLongDate,
   getEarliestBoardingTime,
 } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { TourSchedule } from "@/features/public-tours/components/TourSchedule";
+import { cache } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BrochureAvailability } from "@/features/public-tours/components/BrochureAvailability";
 import { BrochureCallToAction } from "@/features/public-tours/components/BrochureCallToAction";
@@ -38,7 +41,8 @@ function buildWhatsAppAdvisorUrl({
   return buildWhatsAppUrl(agencyPhone, { message });
 }
 
-async function getPublicTour(tourId: string): Promise<PublicTourOutput | null> {
+// `cache`: `generateMetadata` y la página piden el mismo tour en una sola llamada a la API.
+const getPublicTour = cache(async (tourId: string): Promise<PublicTourOutput | null> => {
   try {
     const apiUrl = `${API_BASE_URL}/tour-brochure/public/tours/${tourId}`;
     const res = await fetch(apiUrl, {
@@ -55,6 +59,24 @@ async function getPublicTour(tourId: string): Promise<PublicTourOutput | null> {
     console.error("[Next.js Server] Error crítico de red en fetch:", error);
     return notFound();
   }
+});
+
+/**
+ * Título y vista previa del folleto (pestaña y tarjeta al compartir el enlace por WhatsApp): el
+ * nombre del tour y de la agencia, no "Panel de Administración" (2026-11-16).
+ */
+export async function generateMetadata({ params }: PublicTourLanding): Promise<Metadata> {
+  const { id } = await params;
+  const tour = await getPublicTour(id);
+  if (!tour) return { title: "Folleto no disponible", robots: { index: false } };
+
+  const title = `${tour.title} | ${tour.agency.name}`;
+  const description = `Salida: ${formatSpanishLongDate(tour.departureDateTime)}. Consulta horarios, puntos de abordaje y aparta tu lugar.`;
+  return {
+    title: { absolute: title },
+    description,
+    openGraph: { title, description, type: "website", locale: "es_MX", siteName: tour.agency.name },
+  };
 }
 
 interface PublicTourLanding {

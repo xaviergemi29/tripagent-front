@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { TourForm } from "@/features/tours/components/TourForm";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+
+export const metadata: Metadata = { title: "Nuevo tour" };
 
 export default function NewTourPage() {
   return (

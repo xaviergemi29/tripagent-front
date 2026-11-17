@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google"; // O 'Inter' según prefieras
-// import { Toaster } from "sonner"
+import { Geist, Geist_Mono } from "next/font/google";
 import { ReactQueryProvider } from "@/providers/ReactQueryProvider";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -17,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TripAgent | Panel de Administración",
+  title: { default: "TripAgent", template: "%s · TripAgent" },
   description: "Plataforma de gestión para guías y agencias de tours",
 };
 
@@ -28,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es-MX"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >

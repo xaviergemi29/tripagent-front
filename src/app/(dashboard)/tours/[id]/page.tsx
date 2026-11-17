@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { TourDashboardView } from "@/features/tour-dashboard/components/TourDashboardView";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = { title: "Centro de Control" };
 
 interface PageProps {
   params: Promise<{

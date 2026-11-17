@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import type { Metadata } from "next";
 import { API_BASE_URL } from "@/lib/api-config";
 import { TourRegistrationView } from "@/features/external-registration/components/TourRegistrationView";
 import { AlertTriangle, Compass, Unlink, HelpCircle } from "lucide-react";
@@ -11,6 +12,12 @@ import {
   describeValidationError,
   type MagicLinkValidation,
 } from "@/features/external-registration/utils/magic-link-validation";
+
+// Enlace privado del cliente (Magic Link): título neutro y sin indexar.
+export const metadata: Metadata = {
+  title: "Tu reservación",
+  robots: { index: false, follow: false },
+};
 
 interface PageProps {
   searchParams: Promise<{ token: string }>;
