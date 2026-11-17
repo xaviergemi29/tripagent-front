@@ -32,6 +32,7 @@ import {
   PASSENGER_ROLE,
   type PaymentMethod,
   CURRENCY,
+  DEFAULT_CURRENCY,
   PAYMENT_TYPE,
 } from "@/shared/constants/domain.constants";
 import { formatPhoneForDisplay } from "@/shared/utils/phone.util";
@@ -365,7 +366,7 @@ export function TravelerDetailDrawer({
                               htmlFor="cancel-booking-retencion-manual-mxn"
                               className="text-xs font-bold text-slate-700"
                             >
-                              Retención manual (MXN)
+                              Retención manual ({tourCurrency ?? DEFAULT_CURRENCY})
                             </label>
                             <div className="relative mt-1">
                               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">

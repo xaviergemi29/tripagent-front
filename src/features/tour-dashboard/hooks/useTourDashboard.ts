@@ -186,15 +186,16 @@ export function useTransferPassenger() {
   });
 }
 
-// Nota: Esta es una simplificación UX de tu lógica previa de "CancelPassenger"
-// que requiere penalización manual. Aquí asumimos la baja rápida o conectamos a tu hook existente.
+// Baja de un acompañante sin retención (la API acepta `penaltyAmount`, pero la interfaz no lo
+// captura). Descuenta el precio de un lugar = total ÷ lugares apartados; el titular no se da de baja
+// por aquí (409): se transfiere o se cancela la reserva completa (2026-11-17).
 export function useQuickRemovePassenger() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ bookingId, passengerId }: { bookingId: string; passengerId: string }) =>
       apiClient.patch(`/bookingPassengers/${bookingId}/passengers/${passengerId}/cancel`, {
-        penaltyAmount: 0, // Simplificado para UX rápida, si necesitas penalty, abre el Drawer en su lugar.
+        penaltyAmount: 0,
       }),
     onSuccess: () => {
       invalidateBookingChange(queryClient);

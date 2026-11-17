@@ -35,9 +35,8 @@ export function RemovePassengerDialog({
           </AlertDialogTitle>
           <AlertDialogDescription>
             Estás a punto de cancelar el lugar de <strong>{passengerName}</strong>. Si tiene un
-            asiento asignado, se liberará. El saldo total de la reserva se ajustará automáticamente
-            (sin retención de fondos). Si necesitas aplicar una penalización manual, abre su perfil
-            completo.
+            asiento asignado, se liberará. Al total de la reserva se le descontará el precio de un
+            lugar, sin retención; lo ya abonado no cambia.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
