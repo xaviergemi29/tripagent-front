@@ -32,7 +32,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import type { TourOutput } from "../schemas/tour.schema";
 import { formatTourDateTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
-import { handleShareLink } from "@/features/tours/utils/share-tour.util";
+import { canShareBrochure, handleShareLink } from "@/features/tours/utils/share-tour.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { TourTemporalStatusBadge } from "./TourTemporalStatusBadge";
 import { DEFAULT_CURRENCY, DESTINATION_TYPE, CURRENCY } from "@/shared/constants/domain.constants";
@@ -164,29 +164,30 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
                       </Link>
                     </Button>
 
-                    {/* Botón Compartir */}
-                    <TooltipProvider delayDuration={150}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="default"
-                            size="icon"
-                            className="h-8 w-8 bg-indigo-600 shadow-sm hover:bg-indigo-700"
-                            onClick={() => handleShareLink(tour)}
-                            aria-label="Compartir folleto digital"
-                            data-tour={TOUR_TARGET.TOURS_ACTION_SHARE}
+                    {canShareBrochure(tour) && (
+                      <TooltipProvider delayDuration={150}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="default"
+                              size="icon"
+                              className="h-8 w-8 bg-indigo-600 shadow-sm hover:bg-indigo-700"
+                              onClick={() => handleShareLink(tour)}
+                              aria-label="Compartir folleto digital"
+                              data-tour={TOUR_TARGET.TOURS_ACTION_SHARE}
+                            >
+                              <Share2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
                           >
-                            <Share2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="top"
-                          className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
-                        >
-                          Compartir folleto digital
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                            Compartir folleto digital
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
 
                     {/* Dropdown Menu (Más opciones) */}
                     <DropdownMenu>

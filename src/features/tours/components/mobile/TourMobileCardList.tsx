@@ -20,7 +20,7 @@ import {
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { formatSpanishLongDate } from "@/shared/utils/tour-date.util";
 import type { TourOutput } from "../../schemas/tour.schema";
-import { handleShareLink } from "@/features/tours/utils/share-tour.util";
+import { canShareBrochure, handleShareLink } from "@/features/tours/utils/share-tour.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { TourTemporalStatusBadge } from "../TourTemporalStatusBadge";
 import { DEFAULT_CURRENCY, DESTINATION_TYPE, CURRENCY } from "@/shared/constants/domain.constants";
@@ -136,15 +136,17 @@ export function TourMobileCardList({ tours, onDeleteRequest }: TourMobileCardLis
                   <LayoutGrid className="mr-2 h-4 w-4" /> Centro de Control
                 </Link>
               </Button>
-              <Button
-                onClick={() => handleShareLink(tour)}
-                size="icon"
-                aria-label="Compartir folleto digital"
-                data-tour={TOUR_TARGET.TOURS_ACTION_SHARE}
-                className="shrink-0 bg-indigo-600 hover:bg-indigo-700"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
+              {canShareBrochure(tour) && (
+                <Button
+                  onClick={() => handleShareLink(tour)}
+                  size="icon"
+                  aria-label="Compartir folleto digital"
+                  data-tour={TOUR_TARGET.TOURS_ACTION_SHARE}
+                  className="shrink-0 bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         );

@@ -3,7 +3,7 @@ import type { TourOutput } from "../schemas/tour.schema";
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { formatSpanishLongDate } from "@/shared/utils/tour-date.util";
-import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { DEFAULT_CURRENCY, TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
 import { buildBrochureUrl } from "@/shared/utils/share-links.util";
 
 /**
@@ -11,6 +11,10 @@ import { buildBrochureUrl } from "@/shared/utils/share-links.util";
  * anticipo si es mayor a cero y enlace a `/p/:id`). Antes vivía en `shared/utils/clipboard.ts`,
  * pero es lógica del catálogo de tours.
  */
+export const canShareBrochure = (tour: Pick<TourOutput, "temporalStatus">): boolean =>
+  tour.temporalStatus !== TOUR_TEMPORAL_STATUS.CANCELLED &&
+  tour.temporalStatus !== TOUR_TEMPORAL_STATUS.FINISHED;
+
 export const handleShareLink = async (tour: TourOutput): Promise<void> => {
   const publicUrl = buildBrochureUrl(tour.id);
   const formattedDate = formatSpanishLongDate(tour.departureDateTime);
