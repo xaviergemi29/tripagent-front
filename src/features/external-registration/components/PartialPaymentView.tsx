@@ -2,7 +2,7 @@
 
 import { ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { DEFAULT_CURRENCY, BOOKING_STATUS } from "@/shared/constants/domain.constants";
 import { PublicBookingLayout } from "@/components/layout/public/PublicBookingLayout";
 import { TourInstructionsCard } from "@/features/external-registration/components/TourInstructionsCard";
 import { PaymentSummaryCard } from "./partial-payment/PaymentSummaryCard";
@@ -51,7 +51,7 @@ export function PartialPaymentView({
     >
       {/* Estado de confirmación (CONFIRMED = anticipo cubierto + formulario lleno) */}
       <div className="flex flex-col items-center gap-2 text-center">
-        {bookingStatus === "CONFIRMED" ? (
+        {bookingStatus === BOOKING_STATUS.CONFIRMED ? (
           <Badge
             variant="outline"
             className="border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"

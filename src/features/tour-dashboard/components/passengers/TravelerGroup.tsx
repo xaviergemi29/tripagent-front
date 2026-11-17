@@ -4,6 +4,7 @@ import {
   type Currency,
   PASSENGER_ROLE,
   type PassengerRole,
+  FORM_STATUS,
 } from "@/shared/constants/domain.constants";
 import { TitularRow } from "./TitularRow";
 import { CompanionRow } from "./CompanionRow";
@@ -122,7 +123,7 @@ export function TravelerGroup({
           />
         ))}
 
-      {!isAuditMode && isExpanded && titular.formStatus === "PENDING" && (
+      {!isAuditMode && isExpanded && titular.formStatus === FORM_STATUS.PENDING && (
         <AddSlotRow
           colSpan={requiresSeats ? 8 : 7}
           isAdding={isAdding}

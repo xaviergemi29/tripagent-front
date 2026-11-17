@@ -29,6 +29,8 @@ import {
   type Currency,
   PASSENGER_ROLE,
   type PaymentMethod,
+  CURRENCY,
+  PAYMENT_TYPE,
 } from "@/shared/constants/domain.constants";
 
 interface TravelerDetailDrawerProps {
@@ -62,7 +64,7 @@ export function TravelerDetailDrawer({
   } | null>(null);
 
   if (!isOpen || !traveler) return null;
-  const isUSD = tourCurrency === "USD";
+  const isUSD = tourCurrency === CURRENCY.USD;
   const isTitular = traveler.role === PASSENGER_ROLE.TITULAR;
 
   const titularPayments = isTitular && "payments" in traveler ? traveler.payments : [];
@@ -72,7 +74,7 @@ export function TravelerDetailDrawer({
 
   const voidedOriginalIds = new Set(
     titularPayments
-      .filter((p) => p.type === "REFUND" && p.referenceInfo?.includes("Ref:"))
+      .filter((p) => p.type === PAYMENT_TYPE.REFUND && p.referenceInfo?.includes("Ref:"))
       .map((p) => {
         const match = p.referenceInfo?.match(/Ref:\s*([a-f0-9-]+)/i);
         return match ? match[1] : null;
@@ -243,8 +245,8 @@ export function TravelerDetailDrawer({
                               className={`font-semibold ${isVoided ? "text-slate-500 line-through" : isNegative ? "text-red-600" : "text-slate-800"}`}
                             >
                               {isPaymentUSD && payment.amountUSD
-                                ? formatCurrency(payment.amountUSD, { currency: "USD" })
-                                : formatCurrency(payment.amount, { currency: "MXN" })}{" "}
+                                ? formatCurrency(payment.amountUSD, { currency: CURRENCY.USD })
+                                : formatCurrency(payment.amount, { currency: CURRENCY.MXN })}{" "}
                             </p>
                             {isVoided && (
                               <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
@@ -259,7 +261,7 @@ export function TravelerDetailDrawer({
                               <p className="text-xs font-medium text-slate-600">
                                 Equivalente:{" "}
                                 <span className="font-semibold text-slate-900">
-                                  {formatCurrency(payment.amountMXN, { currency: "MXN" })}
+                                  {formatCurrency(payment.amountMXN, { currency: CURRENCY.MXN })}
                                 </span>
                               </p>
                               {payment.exchangeRate && (
@@ -275,7 +277,7 @@ export function TravelerDetailDrawer({
                             {formatShortDateTime(payment.createdAt)}
                           </p>
                         </div>
-                        {!isVoided && !isAuditMode && payment.type === "PAYMENT" && (
+                        {!isVoided && !isAuditMode && payment.type === PAYMENT_TYPE.PAYMENT && (
                           <TooltipProvider delayDuration={150}>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -426,7 +428,7 @@ export function TravelerDetailDrawer({
                 (isUSD || paymentToVoid.amountUSD) && paymentToVoid.amountUSD
                   ? paymentToVoid.amountUSD
                   : paymentToVoid.amount,
-                { currency: isUSD || paymentToVoid.amountUSD ? "USD" : "MXN" },
+                { currency: isUSD || paymentToVoid.amountUSD ? CURRENCY.USD : CURRENCY.MXN },
               )
             : formatCurrency(0, { currency: tourCurrency })
         }

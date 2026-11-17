@@ -8,6 +8,7 @@ import {
   VoidPaymentOutput,
 } from "../schemas/payment.schema";
 import { invalidateBookingChange } from "@/shared/api/invalidate-booking-change";
+import { PAYMENT_TYPE } from "@/shared/constants/domain.constants";
 
 const createPaymentApi = ({ bookingId, payload: data }: PaymentInput): Promise<PaymentOutput> => {
   return apiClient.post<PaymentOutput, never>(`/payments/${bookingId}/payments`, data);
@@ -28,14 +29,14 @@ export const useCreatePayment = (tourId: string) => {
     onSuccess: (_data, { payload }) => {
       invalidateBookingChange(queryClient, tourId);
       toast.success(
-        payload.type === "REFUND"
+        payload.type === PAYMENT_TYPE.REFUND
           ? "Reembolso registrado correctamente"
           : "Abono registrado correctamente",
       );
     },
     onError: (error: ApiError, { payload }) => {
       toast.error(
-        payload.type === "REFUND"
+        payload.type === PAYMENT_TYPE.REFUND
           ? "Error al registrar el reembolso"
           : "Error al registrar el abono",
         {

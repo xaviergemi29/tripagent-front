@@ -12,6 +12,7 @@ import { useState } from "react";
 import { PassengerTypeSwitch, type PassengerCategory } from "./PassengerTypeSwitch";
 import { PickupPointSelector } from "./PickupPointSelector";
 import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
+import { PASSENGER_TYPE } from "@/shared/constants/domain.constants";
 
 interface CompanionsManagerProps {
   boardingPoints: { id: string; location: string; time: string }[];
@@ -80,7 +81,7 @@ export function CompanionsManager({
       emergencyContactName: defaultEmName,
       emergencyContactPhone: defaultEmPhone,
       medicalNotes: "",
-      passengerType: "ADULT",
+      passengerType: PASSENGER_TYPE.ADULT,
       boardingPoint: defaultBp,
     });
 
@@ -138,7 +139,7 @@ export function CompanionsManager({
                   emergencyContactName: mainEmergencyName || "",
                   emergencyContactPhone: mainEmergencyPhone || "",
                   medicalNotes: "",
-                  passengerType: "ADULT",
+                  passengerType: PASSENGER_TYPE.ADULT,
                   boardingPoint: mainBoardingPoint || "",
                 });
                 setSameEmergencyContact({ 0: true });
@@ -168,7 +169,7 @@ export function CompanionsManager({
             const isSameEmergency = !!sameEmergencyContact[index];
             const isSameBp = !!sameBoardingPoint[index];
             const currentCompanion = watchedCompanions[index] || field;
-            const isAdult = currentCompanion.passengerType === "ADULT";
+            const isAdult = currentCompanion.passengerType === PASSENGER_TYPE.ADULT;
 
             return (
               <div
@@ -206,7 +207,7 @@ export function CompanionsManager({
                       value={field.value as PassengerCategory}
                       onChange={(val) => {
                         field.onChange(val);
-                        if (val === "CHILD") {
+                        if (val === PASSENGER_TYPE.CHILD) {
                           setValue(`companions.${index}.email`, "", { shouldValidate: true });
                         }
                       }}

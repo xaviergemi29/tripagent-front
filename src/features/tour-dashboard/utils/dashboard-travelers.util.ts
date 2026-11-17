@@ -3,6 +3,7 @@ import type {
   FlattenedPassenger,
   TitularRowOutput,
 } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
+import { FORM_STATUS, PAYMENT_STATUS } from "@/shared/constants/domain.constants";
 
 /**
  * Lógica de presentación del Centro de Control sobre la lista de grupos que entrega la API
@@ -46,7 +47,7 @@ export function resolveGroupPaymentStatus({
   paidAmount,
   balance,
 }: GroupPaymentInput): Exclude<PaymentFilter, "ALL"> {
-  if (paymentStatus === "PAID" || (paidAmount > 0 && balance <= 0)) return "PAID";
+  if (paymentStatus === PAYMENT_STATUS.PAID || (paidAmount > 0 && balance <= 0)) return "PAID";
   if (paidAmount > 0 || ["ADVANCE", "PARTIAL", "PENDING_VALIDATION"].includes(paymentStatus)) {
     return "PARTIAL";
   }
@@ -60,7 +61,7 @@ export function resolveGroupPaymentStatus({
 export function hasRegisteredPayments(
   titular: Pick<GroupPaymentInput, "paymentStatus" | "paidAmount">,
 ) {
-  return titular.paidAmount > 0 || titular.paymentStatus !== "PENDING";
+  return titular.paidAmount > 0 || titular.paymentStatus !== PAYMENT_STATUS.PENDING;
 }
 
 /** WhatsApp precargado en la transferencia: la API manda "Sin teléfono" si no hay número. */
@@ -78,8 +79,8 @@ const matchesSearch = (titular: TitularRowOutput, searchQuery: string): boolean 
 
 /** El grupo está completo solo si el titular y todos sus acompañantes llenaron el formulario. */
 const groupRegistrationStatus = (titular: TitularRowOutput): "COMPLETED" | "PENDING" =>
-  titular.formStatus === "COMPLETED" &&
-  (titular.companions?.every((c) => c.formStatus === "COMPLETED") ?? true)
+  titular.formStatus === FORM_STATUS.COMPLETED &&
+  (titular.companions?.every((c) => c.formStatus === FORM_STATUS.COMPLETED) ?? true)
     ? "COMPLETED"
     : "PENDING";
 

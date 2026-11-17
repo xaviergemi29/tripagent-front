@@ -10,20 +10,72 @@
 export const CURRENCIES = ["MXN", "USD"] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
+/** Acceso por nombre: `currency === CURRENCY.USD`. */
+export const CURRENCY = {
+  MXN: "MXN",
+  USD: "USD",
+} as const satisfies Record<string, Currency>;
+
 /** Moneda que se asume cuando un tour o pago no especifica una. */
-export const DEFAULT_CURRENCY: Currency = "MXN";
+export const DEFAULT_CURRENCY: Currency = CURRENCY.MXN;
 
 // Métodos de pago (enum `payment_method` de la API)
 export const PAYMENT_METHODS = ["CASH", "TRANSFER", "CARD", "OTHER"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
+/** Acceso por nombre: `method === PAYMENT_METHOD.CASH`. */
+export const PAYMENT_METHOD = {
+  CASH: "CASH",
+  TRANSFER: "TRANSFER",
+  CARD: "CARD",
+  OTHER: "OTHER",
+} as const satisfies Record<string, PaymentMethod>;
+
 /** Estado del formulario de registro de un pasajero en el Centro de Control (lo calcula la API). */
 export const FORM_STATUSES = ["COMPLETED", "PENDING"] as const;
 export type FormStatus = (typeof FORM_STATUSES)[number];
 
+/** Acceso por nombre: `formStatus === FORM_STATUS.COMPLETED`. */
+export const FORM_STATUS = {
+  COMPLETED: "COMPLETED",
+  PENDING: "PENDING",
+} as const satisfies Record<string, FormStatus>;
+
 /** Tipo de movimiento del libro de pagos (enum `payment_type` de la API). */
 export const PAYMENT_TYPES = ["PAYMENT", "REFUND"] as const;
 export type PaymentType = (typeof PAYMENT_TYPES)[number];
+
+/** Acceso por nombre: `payment.type === PAYMENT_TYPE.REFUND`. */
+export const PAYMENT_TYPE = {
+  PAYMENT: "PAYMENT",
+  REFUND: "REFUND",
+} as const satisfies Record<string, PaymentType>;
+
+/**
+ * Estado de pago de una reserva (enum `payment_status` de la API). El tipo se llama
+ * `BookingPaymentStatus` porque `tour-dashboard.schema.ts` exporta otro `PaymentStatus` con valores
+ * desalineados (`ADVANCE`, `PENDING_VALIDATION`; deuda conocida, corregirlo requiere autorización).
+ */
+export const PAYMENT_STATUSES = ["PENDING", "PARTIAL", "PAID", "REFUNDED"] as const;
+export type BookingPaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+/** Acceso por nombre: `paymentStatus === PAYMENT_STATUS.PAID`. */
+export const PAYMENT_STATUS = {
+  PENDING: "PENDING",
+  PARTIAL: "PARTIAL",
+  PAID: "PAID",
+  REFUNDED: "REFUNDED",
+} as const satisfies Record<string, BookingPaymentStatus>;
+
+// Tipo de pasajero (enum `passenger_type` de la API).
+export const PASSENGER_TYPES = ["ADULT", "CHILD"] as const;
+export type PassengerType = (typeof PASSENGER_TYPES)[number];
+
+/** Acceso por nombre: `passengerType === PASSENGER_TYPE.CHILD`. */
+export const PASSENGER_TYPE = {
+  ADULT: "ADULT",
+  CHILD: "CHILD",
+} as const satisfies Record<string, PassengerType>;
 
 // Estado de un pasajero dentro de la reserva (enum `passenger_status` de la API)
 export const PASSENGER_STATUSES = ["ACTIVE", "CANCELLED"] as const;
@@ -129,3 +181,10 @@ export const TOUR_CANCELLATION_NOTE_MAX_LENGTH = 200;
 /** Estado de la devolución de una reserva cancelada (`summarizeRefunds` de la API). */
 export const REFUND_STATUSES = ["NONE", "PENDING", "COMPLETED"] as const;
 export type RefundStatus = (typeof REFUND_STATUSES)[number];
+
+/** Acceso por nombre: `refundStatus === REFUND_STATUS.PENDING`. */
+export const REFUND_STATUS = {
+  NONE: "NONE",
+  PENDING: "PENDING",
+  COMPLETED: "COMPLETED",
+} as const satisfies Record<string, RefundStatus>;

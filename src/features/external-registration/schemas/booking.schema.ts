@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PASSENGER_TYPE, PASSENGER_TYPES } from "@/shared/constants/domain.constants";
 
 const mexicanPhoneRegex = /^(\+)?\d{10}$/;
 
@@ -34,10 +35,10 @@ export const companionSchema = basePassengerSchema
       .optional()
       .or(z.literal("")),
     email: z.email("Correo inválido").optional().or(z.literal("")),
-    passengerType: z.enum(["ADULT", "CHILD"]),
+    passengerType: z.enum(PASSENGER_TYPES),
   })
   .superRefine((data, ctx) => {
-    if (data.passengerType === "ADULT") {
+    if (data.passengerType === PASSENGER_TYPE.ADULT) {
       if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
         ctx.addIssue({
           code: "custom",
@@ -52,7 +53,7 @@ export const companionSchema = basePassengerSchema
           path: ["emergencyContactPhone"],
         });
       }
-    } else if (data.passengerType === "CHILD") {
+    } else if (data.passengerType === PASSENGER_TYPE.CHILD) {
       if (data.whatsappPhone && data.whatsappPhone === data.emergencyContactPhone) {
         ctx.addIssue({
           code: "custom",

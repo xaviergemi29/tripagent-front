@@ -1,6 +1,10 @@
 import { useState, useMemo } from "react";
 import type { TourOutput } from "../schemas/tour.schema";
-import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
+import {
+  TOUR_TEMPORAL_STATUS,
+  DESTINATION_TYPE,
+  CURRENCY,
+} from "@/shared/constants/domain.constants";
 
 // "CANCELLED" (2026-11-16): antes un tour cancelado solo aparecía en "Todos" y en ningún contador.
 export type StatusFilter = "ALL" | "UPCOMING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
@@ -34,9 +38,10 @@ export function useTourFilters(tours: TourOutput[]) {
       let matchDest = true;
       if (destinationFilter !== "ALL") {
         // Ajusta la propiedad real de tu backend aquí
-        const isInternational = tour.destinationType === "INTERNATIONAL" || tour.currency === "USD";
-        if (destinationFilter === "NATIONAL") matchDest = !isInternational;
-        if (destinationFilter === "INTERNATIONAL") matchDest = isInternational;
+        const isInternational =
+          tour.destinationType === DESTINATION_TYPE.INTERNATIONAL || tour.currency === CURRENCY.USD;
+        if (destinationFilter === DESTINATION_TYPE.NATIONAL) matchDest = !isInternational;
+        if (destinationFilter === DESTINATION_TYPE.INTERNATIONAL) matchDest = isInternational;
       }
 
       // Combinación aditiva estricta (AND)

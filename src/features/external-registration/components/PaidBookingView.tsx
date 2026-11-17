@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { PublicBookingLayout } from "@/components/layout/public/PublicBookingLayout";
-import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { DEFAULT_CURRENCY, PASSENGER_STATUS } from "@/shared/constants/domain.constants";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { resolveBoardingPointDisplay } from "@/shared/utils/boarding-point.util";
 import { buildWhatsAppUrl, toPhoneDigits } from "@/shared/utils/share-links.util";
@@ -37,7 +37,7 @@ export function PaidBookingView({
 
   // Solo pasajeros activos; el titular siempre es el viajero 1.
   const travelers = passengers
-    .filter((p) => p.status !== "CANCELLED")
+    .filter((p) => p.status !== PASSENGER_STATUS.CANCELLED)
     .sort((a, b) => Number(b.isTitular) - Number(a.isTitular));
 
   const titularName = travelers.find((p) => p.isTitular)?.name;

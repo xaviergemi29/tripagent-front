@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { DESTINATION_TYPE } from "@/shared/constants/domain.constants";
 import { Input } from "@/components/ui/input";
 import type { StatusFilter, DestinationFilter } from "../hooks/useTourFilters";
 
@@ -96,8 +97,8 @@ export function TourFilters(props: TourFiltersProps) {
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                {dest === "NATIONAL" && "🟢 "}
-                {dest === "INTERNATIONAL" && "🟣 "}
+                {dest === DESTINATION_TYPE.NATIONAL && "🟢 "}
+                {dest === DESTINATION_TYPE.INTERNATIONAL && "🟣 "}
                 {labelMap[dest]}
               </button>
             );

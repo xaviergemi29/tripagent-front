@@ -23,6 +23,7 @@ import {
 } from "@/features/tour-dashboard/schemas/payment.schema";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import type { Currency, PaymentMethod, PaymentType } from "@/shared/constants/domain.constants";
+import { CURRENCY, PAYMENT_METHOD, PAYMENT_TYPE } from "@/shared/constants/domain.constants";
 
 interface RegisterPaymentModalProps {
   isOpen: boolean;
@@ -52,11 +53,11 @@ function RegisterPaymentForm({
   tourCurrency,
   balance,
   correctionData,
-  mode = "PAYMENT",
+  mode = PAYMENT_TYPE.PAYMENT,
 }: Omit<RegisterPaymentModalProps, "isOpen">) {
-  const isRefund = mode === "REFUND";
+  const isRefund = mode === PAYMENT_TYPE.REFUND;
   const { mutate: createPayment, isPending } = useCreatePayment(tourId);
-  const isUSD = tourCurrency === "USD";
+  const isUSD = tourCurrency === CURRENCY.USD;
   const [amountMXN, setAmountMXN] = useState<string>("");
 
   // Una corrección precarga el monto y el método del abono anulado; si no, el saldo y SPEI.
@@ -64,8 +65,8 @@ function RegisterPaymentForm({
     resolver: zodResolver(paymentFormSchema),
     defaultValues: {
       amount: correctionData ? correctionData.amount : balance,
-      method: correctionData ? correctionData.method : "TRANSFER",
-      type: "PAYMENT",
+      method: correctionData ? correctionData.method : PAYMENT_METHOD.TRANSFER,
+      type: PAYMENT_TYPE.PAYMENT,
       referenceInfo: "",
     },
   });
@@ -82,13 +83,13 @@ function RegisterPaymentForm({
     }
     const payload: CreatePaymentInput = {
       amount: Number(watchAmountUSD || formData.amount),
-      currency: isUSD ? "USD" : "MXN",
+      currency: isUSD ? CURRENCY.USD : CURRENCY.MXN,
       method: formData.method,
       type: mode,
       referenceInfo: formData.referenceInfo,
       ...(isUSD && {
         collectedAmount: Number(amountMXN),
-        collectedCurrency: "MXN",
+        collectedCurrency: CURRENCY.MXN,
         exchangeRate: Number((Number(amountMXN) / Number(watchAmountUSD)).toFixed(4)),
       }),
     };
@@ -240,38 +241,38 @@ function RegisterPaymentForm({
               <Label>{isRefund ? "Método de devolución" : "Método de cobro"}</Label>
               <div className="grid grid-cols-3 gap-2">
                 <label
-                  className={`cursor-pointer rounded-md border p-2.5 text-center text-sm transition-colors ${field.value === "CASH" ? "border-indigo-300 bg-indigo-50 font-semibold text-indigo-700 shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
+                  className={`cursor-pointer rounded-md border p-2.5 text-center text-sm transition-colors ${field.value === PAYMENT_METHOD.CASH ? "border-indigo-300 bg-indigo-50 font-semibold text-indigo-700 shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
                 >
                   <input
                     type="radio"
                     className="hidden"
                     {...field}
-                    value="CASH"
-                    checked={field.value === "CASH"}
+                    value={PAYMENT_METHOD.CASH}
+                    checked={field.value === PAYMENT_METHOD.CASH}
                   />{" "}
                   Efectivo
                 </label>
                 <label
-                  className={`cursor-pointer rounded-md border p-2.5 text-center text-sm transition-colors ${field.value === "TRANSFER" ? "border-indigo-300 bg-indigo-50 font-semibold text-indigo-700 shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
+                  className={`cursor-pointer rounded-md border p-2.5 text-center text-sm transition-colors ${field.value === PAYMENT_METHOD.TRANSFER ? "border-indigo-300 bg-indigo-50 font-semibold text-indigo-700 shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
                 >
                   <input
                     type="radio"
                     className="hidden"
                     {...field}
-                    value="TRANSFER"
-                    checked={field.value === "TRANSFER"}
+                    value={PAYMENT_METHOD.TRANSFER}
+                    checked={field.value === PAYMENT_METHOD.TRANSFER}
                   />{" "}
                   SPEI / Transf.
                 </label>
                 <label
-                  className={`cursor-pointer rounded-md border p-2.5 text-center text-sm transition-colors ${field.value === "CARD" ? "border-indigo-300 bg-indigo-50 font-semibold text-indigo-700 shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
+                  className={`cursor-pointer rounded-md border p-2.5 text-center text-sm transition-colors ${field.value === PAYMENT_METHOD.CARD ? "border-indigo-300 bg-indigo-50 font-semibold text-indigo-700 shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
                 >
                   <input
                     type="radio"
                     className="hidden"
                     {...field}
-                    value="CARD"
-                    checked={field.value === "CARD"}
+                    value={PAYMENT_METHOD.CARD}
+                    checked={field.value === PAYMENT_METHOD.CARD}
                   />{" "}
                   Tarjeta
                 </label>

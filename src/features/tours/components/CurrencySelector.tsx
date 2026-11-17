@@ -4,7 +4,7 @@ import { useController, useFormContext } from "react-hook-form";
 import { HelpCircle, CheckCircle2, Lightbulb, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { type Currency, DEFAULT_CURRENCY, CURRENCY } from "@/shared/constants/domain.constants";
 
 interface CurrencySelectorProps {
   /** Moneda congelada: el tour ya tiene pagos registrados (la API rechaza el cambio con 409). */
@@ -57,12 +57,12 @@ export function CurrencySelector({ disabled = false }: CurrencySelectorProps) {
       >
         <button
           type="button"
-          onClick={() => field.onChange("MXN")}
+          onClick={() => field.onChange(CURRENCY.MXN)}
           disabled={disabled}
           role="radio"
-          aria-checked={selectedCurrency === "MXN"}
+          aria-checked={selectedCurrency === CURRENCY.MXN}
           className={`flex items-start justify-between rounded-xl border p-3.5 text-left transition-all ${
-            selectedCurrency === "MXN"
+            selectedCurrency === CURRENCY.MXN
               ? "border-indigo-600 bg-indigo-50/20 shadow-xs ring-1 ring-indigo-600/20"
               : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
           }`}
@@ -70,7 +70,7 @@ export function CurrencySelector({ disabled = false }: CurrencySelectorProps) {
           <div className="flex items-start gap-3">
             <div
               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
-                selectedCurrency === "MXN"
+                selectedCurrency === CURRENCY.MXN
                   ? "bg-indigo-600 text-white"
                   : "bg-slate-100 text-slate-600"
               }`}
@@ -91,18 +91,20 @@ export function CurrencySelector({ disabled = false }: CurrencySelectorProps) {
             >
               NACIONAL
             </Badge>
-            {selectedCurrency === "MXN" && <CheckCircle2 className="h-4 w-4 text-indigo-600" />}
+            {selectedCurrency === CURRENCY.MXN && (
+              <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+            )}
           </div>
         </button>
 
         <button
           type="button"
-          onClick={() => field.onChange("USD")}
+          onClick={() => field.onChange(CURRENCY.USD)}
           disabled={disabled}
           role="radio"
-          aria-checked={selectedCurrency === "USD"}
+          aria-checked={selectedCurrency === CURRENCY.USD}
           className={`flex items-start justify-between rounded-xl border p-3.5 text-left transition-all ${
-            selectedCurrency === "USD"
+            selectedCurrency === CURRENCY.USD
               ? "border-indigo-600 bg-indigo-50/20 shadow-xs ring-1 ring-indigo-600/20"
               : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
           }`}
@@ -110,7 +112,7 @@ export function CurrencySelector({ disabled = false }: CurrencySelectorProps) {
           <div className="flex items-start gap-3">
             <div
               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
-                selectedCurrency === "USD"
+                selectedCurrency === CURRENCY.USD
                   ? "bg-indigo-600 text-white"
                   : "bg-slate-100 text-slate-600"
               }`}
@@ -133,12 +135,14 @@ export function CurrencySelector({ disabled = false }: CurrencySelectorProps) {
             >
               INTERNACIONAL
             </Badge>
-            {selectedCurrency === "USD" && <CheckCircle2 className="h-4 w-4 text-indigo-600" />}
+            {selectedCurrency === CURRENCY.USD && (
+              <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+            )}
           </div>
         </button>
       </div>
 
-      {selectedCurrency === "USD" && (
+      {selectedCurrency === CURRENCY.USD && (
         <div className="animate-in fade-in-50 zoom-in-95 flex items-start gap-2.5 rounded-xl border border-indigo-100/90 bg-indigo-50/60 p-3.5 duration-200">
           <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
           <p className="text-xs leading-relaxed font-medium text-indigo-950">

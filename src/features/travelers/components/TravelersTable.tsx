@@ -29,10 +29,11 @@ import { getInitials, getAvatarColor } from "@/shared/utils/travelers-helpers";
 import type { TravelerOutput } from "../schemas/traveler.schema";
 import { formatBirthdateAndAge } from "@/shared/utils/tour-date.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
+import { type PassengerType } from "@/shared/constants/domain.constants";
 
 export interface TravelerTableRow extends TravelerOutput {
   tripCount?: number;
-  passengerType?: "ADULT" | "CHILD";
+  passengerType?: PassengerType;
 }
 
 interface TravelersTableProps {

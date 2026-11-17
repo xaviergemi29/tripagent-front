@@ -17,6 +17,8 @@ import {
   DEFAULT_CURRENCY,
   PASSENGER_ROLE,
   type PassengerRole,
+  FORM_STATUS,
+  PAYMENT_STATUS,
 } from "@/shared/constants/domain.constants";
 import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
@@ -81,11 +83,12 @@ export function BookingCard({
 }: BookingCardProps) {
   const canEditGroup = !isAuditMode;
   const canAddSlot =
-    canEditGroup && Boolean(onAddPassengerClick) && titular.formStatus === "PENDING";
+    canEditGroup && Boolean(onAddPassengerClick) && titular.formStatus === FORM_STATUS.PENDING;
   const hasNoFreeSeats = typeof freeSeatsCount === "number" && freeSeatsCount <= 0;
   const canDownloadReceipt = Boolean(onDownloadReceiptClick) && hasRegisteredPayments(titular);
   const isPaid =
-    titular.paymentStatus === "PAID" || (titular.paidAmount > 0 && titular.balance <= 0);
+    titular.paymentStatus === PAYMENT_STATUS.PAID ||
+    (titular.paidAmount > 0 && titular.balance <= 0);
   const registeredCount = 1 + (titular.companions?.length || 0);
   const missingCount = Math.max(0, titular.groupSize - registeredCount);
 
@@ -172,15 +175,17 @@ export function BookingCard({
             </span>
             <span
               className={`flex items-center gap-1.5 text-xs font-medium ${
-                titular.formStatus === "COMPLETED" ? "text-emerald-700" : "text-amber-700"
+                titular.formStatus === FORM_STATUS.COMPLETED ? "text-emerald-700" : "text-amber-700"
               }`}
             >
               <span
                 className={`h-2 w-2 rounded-full ${
-                  titular.formStatus === "COMPLETED" ? "bg-emerald-500" : "animate-pulse bg-red-500"
+                  titular.formStatus === FORM_STATUS.COMPLETED
+                    ? "bg-emerald-500"
+                    : "animate-pulse bg-red-500"
                 }`}
               />
-              {titular.formStatus === "COMPLETED" ? "Completo" : "Pendiente"}
+              {titular.formStatus === FORM_STATUS.COMPLETED ? "Completo" : "Pendiente"}
             </span>
           </div>
         </div>

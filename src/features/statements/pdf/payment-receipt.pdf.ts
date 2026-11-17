@@ -4,6 +4,7 @@ import {
   type Currency,
   DEFAULT_CURRENCY,
   PASSENGER_ROLE,
+  PAYMENT_METHOD,
 } from "@/shared/constants/domain.constants";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { hexToRgb, type RgbTuple } from "@/shared/utils/color.util";
@@ -684,7 +685,7 @@ export function createPaymentReceiptDocument(
 
   /** Sin referencia: nula, vacía o pago en efectivo. */
   const isMissingReference = (p: PaymentItem) =>
-    !p.reference?.trim() || p.method?.toUpperCase() === "CASH";
+    !p.reference?.trim() || p.method?.toUpperCase() === PAYMENT_METHOD.CASH;
 
   autoTable(doc, {
     startY: y + 8,

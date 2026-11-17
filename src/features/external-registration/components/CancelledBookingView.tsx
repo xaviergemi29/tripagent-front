@@ -7,6 +7,7 @@ import type {
 } from "@/shared/constants/domain.constants";
 import { TOUR_CANCELLATION_REASON_DICT } from "@/shared/utils/config/status-dictionaries.config";
 import { formatCurrency } from "@/shared/utils/currency.util";
+import { REFUND_STATUS } from "@/shared/constants/domain.constants";
 
 /** Payload de `flowState = CANCELLED` del Magic Link (props serializables: Server Component). */
 export interface CancelledBookingData {
@@ -116,11 +117,11 @@ export function CancelledBookingView({ agency, data }: CancelledBookingViewProps
             <div className="flex items-start justify-between gap-3 border-t border-slate-200 pt-2">
               <dt className="text-slate-500">Estado de devolución</dt>
               <dd className="text-right font-semibold">
-                {refund.refundStatus === "COMPLETED" ? (
+                {refund.refundStatus === REFUND_STATUS.COMPLETED ? (
                   <span className="inline-flex items-center gap-1 text-emerald-700">
                     <CheckCircle2 className="h-4 w-4" /> Reembolsado con éxito
                   </span>
-                ) : refund.refundStatus === "PENDING" ? (
+                ) : refund.refundStatus === REFUND_STATUS.PENDING ? (
                   <span className="inline-flex flex-col items-end text-amber-700">
                     <span className="inline-flex items-center gap-1">
                       <Clock className="h-4 w-4" /> En proceso de transferencia SPEI

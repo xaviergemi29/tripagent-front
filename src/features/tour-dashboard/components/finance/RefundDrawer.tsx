@@ -9,6 +9,7 @@ import { formatCurrency } from "@/shared/utils/currency.util";
 import { formatShortDateTime } from "@/shared/utils/tour-date.util";
 import { PAYMENT_METHOD_DICT } from "@/shared/utils/config/status-dictionaries.config";
 import { RegisterPaymentModal } from "@/features/tour-dashboard/components/finance/RegisterPaymentModal";
+import { REFUND_STATUS } from "@/shared/constants/domain.constants";
 
 interface RefundDrawerProps {
   tourId: string;
@@ -95,7 +96,7 @@ export function RefundDrawer({
                   <RotateCcw className="mr-2 h-4 w-4" /> Registrar reembolso
                 </Button>
               )}
-              {refund.refundStatus === "COMPLETED" && (
+              {refund.refundStatus === REFUND_STATUS.COMPLETED && (
                 <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs font-medium text-emerald-800">
                   Reembolso completo: el neto de esta reserva es $0.00.
                 </p>

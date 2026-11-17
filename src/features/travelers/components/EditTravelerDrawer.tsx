@@ -12,6 +12,7 @@ import { parseDateOnly } from "@/shared/utils/tour-date.util";
 import { useUpdateTraveler } from "../hooks/useTravelers";
 import { editTravelerSchema, type EditTravelerFormInput } from "../schemas/traveler.schema";
 import type { TravelerInput, TravelerOutput } from "../schemas/traveler.schema";
+import { PASSENGER_TYPE } from "@/shared/constants/domain.constants";
 
 interface ExtendedTraveler extends TravelerOutput {
   nextTourName?: string | null;
@@ -30,10 +31,10 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
 
   const { register, handleSubmit, setValue, control, reset } = useForm<EditTravelerFormInput>({
     resolver: zodResolver(editTravelerSchema),
-    defaultValues: { passengerType: "ADULT" },
+    defaultValues: { passengerType: PASSENGER_TYPE.ADULT },
     values: traveler
       ? {
-          passengerType: "ADULT",
+          passengerType: PASSENGER_TYPE.ADULT,
           whatsappPhone: traveler.whatsappPhone || "",
           email: traveler.email || "",
           fullName: traveler.fullName,
@@ -163,10 +164,10 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
             <div className="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
               <button
                 type="button"
-                onClick={() => setValue("passengerType", "ADULT")}
+                onClick={() => setValue("passengerType", PASSENGER_TYPE.ADULT)}
                 className={cn(
                   "flex items-center justify-center gap-2 rounded-md py-2 text-xs font-semibold transition-all",
-                  watchPassengerType === "ADULT"
+                  watchPassengerType === PASSENGER_TYPE.ADULT
                     ? "border border-slate-200 bg-white text-indigo-700 shadow-xs"
                     : "text-slate-600 hover:text-slate-900",
                 )}
@@ -175,10 +176,10 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
               </button>
               <button
                 type="button"
-                onClick={() => setValue("passengerType", "CHILD")}
+                onClick={() => setValue("passengerType", PASSENGER_TYPE.CHILD)}
                 className={cn(
                   "flex items-center justify-center gap-2 rounded-md py-2 text-xs font-semibold transition-all",
-                  watchPassengerType === "CHILD"
+                  watchPassengerType === PASSENGER_TYPE.CHILD
                     ? "bg-indigo-600 text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900",
                 )}
@@ -187,7 +188,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
               </button>
             </div>
             <p className="text-[11px] text-slate-500">
-              {watchPassengerType === "CHILD"
+              {watchPassengerType === PASSENGER_TYPE.CHILD
                 ? "Para menores: WhatsApp opcional, correo omitido y cobertura de seguro sujeta a edad."
                 : "Tarifa estándar de adulto con contacto y correo oficial obligatorio."}
             </p>
@@ -195,7 +196,9 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
 
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">
-              {watchPassengerType === "CHILD" ? "Nombre Completo del Menor *" : "Nombre Completo *"}
+              {watchPassengerType === PASSENGER_TYPE.CHILD
+                ? "Nombre Completo del Menor *"
+                : "Nombre Completo *"}
             </Label>
             <Input {...register("fullName")} />
             {errors.fullName && (
@@ -219,7 +222,9 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700">
               WhatsApp{" "}
-              {watchPassengerType === "ADULT" ? "*" : "(Opcional si tiene celular en ruta)"}
+              {watchPassengerType === PASSENGER_TYPE.ADULT
+                ? "*"
+                : "(Opcional si tiene celular en ruta)"}
             </label>
             <Input
               {...register("whatsappPhone")}
@@ -232,7 +237,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
             )}
           </div>
 
-          {watchPassengerType === "ADULT" ? (
+          {watchPassengerType === PASSENGER_TYPE.ADULT ? (
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">Correo Electrónico *</Label>
               <Input {...register("email")} type="email" placeholder="correo@ejemplo.com" />

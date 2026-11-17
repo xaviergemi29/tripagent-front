@@ -23,7 +23,7 @@ import type { TourOutput } from "../../schemas/tour.schema";
 import { handleShareLink } from "@/features/tours/utils/share-tour.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { TourTemporalStatusBadge } from "../TourTemporalStatusBadge";
-import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { DEFAULT_CURRENCY, DESTINATION_TYPE, CURRENCY } from "@/shared/constants/domain.constants";
 
 interface TourMobileCardListProps {
   tours: TourOutput[];
@@ -34,7 +34,8 @@ export function TourMobileCardList({ tours, onDeleteRequest }: TourMobileCardLis
   return (
     <div className="flex flex-col gap-4">
       {tours.map((tour) => {
-        const isInternational = tour.destinationType === "INTERNATIONAL" || tour.currency === "USD";
+        const isInternational =
+          tour.destinationType === DESTINATION_TYPE.INTERNATIONAL || tour.currency === CURRENCY.USD;
         const occupied = tour.currentOccupancy || 0;
         const total = tour.sellableCapacity ?? tour.maxCapacity;
         const progress = total > 0 ? (occupied / total) * 100 : 0;

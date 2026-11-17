@@ -13,6 +13,7 @@ import {
   DEFAULT_CURRENCY,
   PASSENGER_ROLE,
   type PassengerRole,
+  PAYMENT_TYPE,
 } from "@/shared/constants/domain.constants";
 import { toast } from "sonner";
 
@@ -90,10 +91,11 @@ export function buildOperatorStatement(
   const validPayments = payments
     .filter(
       (payment) =>
-        payment.type === "PAYMENT" &&
+        payment.type === PAYMENT_TYPE.PAYMENT &&
         !payments.some(
           (refund) =>
-            refund.type === "REFUND" && refund.referenceInfo?.includes(`(Ref: ${payment.id})`),
+            refund.type === PAYMENT_TYPE.REFUND &&
+            refund.referenceInfo?.includes(`(Ref: ${payment.id})`),
         ),
     )
     .map((payment) => ({

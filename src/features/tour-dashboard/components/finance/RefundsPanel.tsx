@@ -7,6 +7,7 @@ import type { Currency, RefundStatus } from "@/shared/constants/domain.constants
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { cn } from "@/lib/utils";
 import { RefundDrawer } from "@/features/tour-dashboard/components/finance/RefundDrawer";
+import { REFUND_STATUS } from "@/shared/constants/domain.constants";
 
 interface RefundsPanelProps {
   tourId: string;
@@ -32,7 +33,7 @@ export const REFUND_STATUS_BADGE: Record<RefundStatus, { label: string; classNam
 export function RefundsPanel({ tourId, currency, refunds, canRegisterRefunds }: RefundsPanelProps) {
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const selected = refunds.find((row) => row.bookingId === selectedBookingId) ?? null;
-  const pendingRows = refunds.filter((row) => row.refundStatus === "PENDING");
+  const pendingRows = refunds.filter((row) => row.refundStatus === REFUND_STATUS.PENDING);
   const pendingTotal = pendingRows.reduce((sum, row) => sum + row.refundableAmount, 0);
 
   if (refunds.length === 0) return null;
@@ -81,7 +82,7 @@ export function RefundsPanel({ tourId, currency, refunds, canRegisterRefunds }: 
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  {row.refundStatus === "PENDING" && (
+                  {row.refundStatus === REFUND_STATUS.PENDING && (
                     <span className="text-sm font-bold text-slate-900">
                       {formatCurrency(row.refundableAmount, { currency })}
                     </span>

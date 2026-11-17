@@ -35,7 +35,7 @@ import { formatCurrency } from "@/shared/utils/currency.util";
 import { handleShareLink } from "@/features/tours/utils/share-tour.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { TourTemporalStatusBadge } from "./TourTemporalStatusBadge";
-import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { DEFAULT_CURRENCY, DESTINATION_TYPE, CURRENCY } from "@/shared/constants/domain.constants";
 
 interface TourDesktopTableProps {
   tours: TourOutput[];
@@ -87,7 +87,8 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
             }
 
             const isInternational =
-              tour.destinationType === "INTERNATIONAL" || tour.currency === "USD";
+              tour.destinationType === DESTINATION_TYPE.INTERNATIONAL ||
+              tour.currency === CURRENCY.USD;
 
             return (
               <TableRow key={tour.id} className="transition-colors hover:bg-slate-50/50">

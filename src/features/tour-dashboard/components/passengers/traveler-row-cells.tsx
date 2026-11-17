@@ -19,6 +19,7 @@ import {
 } from "@/shared/utils/config/status-dictionaries.config";
 import { buildMagicLinkUrl } from "@/shared/utils/share-links.util";
 import { resolveGroupPaymentStatus } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
+import { FORM_STATUS } from "@/shared/constants/domain.constants";
 
 /**
  * Piezas comunes de las filas de la tabla de pasajeros (`TravelerGroup`): la celda de asiento,
@@ -62,7 +63,7 @@ export function FinancialStatusBadge({
 export function RegistrationStatusBadge({ status }: { status: FormStatus | string }) {
   const safeStatus = (status as FormStatus) || "PENDING";
   const config = FORM_STATUS_DICT[safeStatus] || FORM_STATUS_DICT.PENDING;
-  const isCompleted = safeStatus === "COMPLETED";
+  const isCompleted = safeStatus === FORM_STATUS.COMPLETED;
 
   return (
     <span className={`flex items-center gap-1.5 text-xs font-medium ${config.style}`}>

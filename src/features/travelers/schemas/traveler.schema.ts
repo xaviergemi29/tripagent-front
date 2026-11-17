@@ -5,6 +5,8 @@ import {
   DESTINATION_TYPES,
   PASSENGER_STATUSES,
   TOUR_TEMPORAL_STATUSES,
+  PASSENGER_TYPE,
+  PASSENGER_TYPES,
 } from "@/shared/constants/domain.constants";
 
 export const travelerSchema = z.object({
@@ -76,7 +78,7 @@ export const travelerHistoryOutputSchema = z.object({
 
 export const editTravelerSchema = z
   .object({
-    passengerType: z.enum(["ADULT", "CHILD"]),
+    passengerType: z.enum(PASSENGER_TYPES),
     fullName: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
     birthDate: z.string().min(1, "La fecha de nacimiento es obligatoria para el seguro carretero"),
     whatsappPhone: z.string().optional(),
@@ -88,7 +90,7 @@ export const editTravelerSchema = z
     medicalNotes: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.passengerType === "ADULT") {
+    if (data.passengerType === PASSENGER_TYPE.ADULT) {
       if (!data.whatsappPhone || !/^\d{10}$/.test(data.whatsappPhone.trim())) {
         ctx.addIssue({
           code: "custom",

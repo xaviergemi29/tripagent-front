@@ -1,8 +1,9 @@
 "use client";
 
 import { User, Smile } from "lucide-react";
+import { PASSENGER_TYPE, type PassengerType } from "@/shared/constants/domain.constants";
 
-export type PassengerCategory = "ADULT" | "CHILD";
+export type PassengerCategory = PassengerType;
 
 interface PassengerTypeSwitchProps {
   value: PassengerCategory;
@@ -18,9 +19,9 @@ export function PassengerTypeSwitch({ value, onChange }: PassengerTypeSwitchProp
         {/* Opción Adulto */}
         <button
           type="button"
-          onClick={() => onChange("ADULT")}
+          onClick={() => onChange(PASSENGER_TYPE.ADULT)}
           className={`flex min-h-[44px] items-center justify-center gap-2 rounded-lg text-xs transition-all duration-200 ${
-            value === "ADULT"
+            value === PASSENGER_TYPE.ADULT
               ? "bg-indigo-600 font-bold text-white shadow-xs"
               : "font-medium text-slate-600 hover:text-slate-900"
           }`}
@@ -32,9 +33,9 @@ export function PassengerTypeSwitch({ value, onChange }: PassengerTypeSwitchProp
         {/* Opción Niño */}
         <button
           type="button"
-          onClick={() => onChange("CHILD")}
+          onClick={() => onChange(PASSENGER_TYPE.CHILD)}
           className={`flex min-h-[44px] items-center justify-center gap-2 rounded-lg text-xs transition-all duration-200 ${
-            value === "CHILD"
+            value === PASSENGER_TYPE.CHILD
               ? "bg-indigo-600 font-bold text-white shadow-xs"
               : "font-medium text-slate-600 hover:text-slate-900"
           }`}
