@@ -1,8 +1,9 @@
 "use client";
 
 import { Controller, useForm, useFormState, useWatch } from "react-hook-form";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Loader2, Palette, Save } from "lucide-react";
+import { Loader2, Palette, Save } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -92,7 +93,13 @@ function ReceiptPreview({
  * marca (se guardan con "Guardar Configuración"). Los usa el comprobante / estado de cuenta PDF.
  */
 export function BrandingSettingsCard() {
-  const { data: branding, isLoading, isError } = useAgencyBranding();
+  const {
+    data: branding,
+    isLoading,
+    isError,
+    refetch: refetchLoad,
+    isFetching: isRefetchingLoad,
+  } = useAgencyBranding();
   const { data: agency } = useAgency();
   const { mutate: updateBranding, isPending: isSaving } = useUpdateBranding();
   const { mutate: uploadLogo, isPending: isUploading } = useUploadAgencyLogo();
@@ -119,12 +126,16 @@ export function BrandingSettingsCard() {
   const { errors, isDirty, isValid } = useFormState({ control: form.control });
   const effectiveSecondary = previewColor(secondaryColor, DEFAULT_BRANDING_COLORS.secondaryColor);
 
-  if (isError) {
+  // Falló sin datos: motivo + Reintentar (2026-11-16; antes un aviso fijo). Con datos en caché se
+  // sigue mostrando el formulario.
+  if (isError && !branding) {
     return (
-      <div className="flex h-40 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-red-600">
-        <AlertCircle className="h-5 w-5" />
-        <p className="text-sm font-semibold">Error al cargar la identidad visual de la agencia.</p>
-      </div>
+      <QueryErrorState
+        resourceArticle="tu"
+        resourceName="identidad visual"
+        onRetry={() => void refetchLoad()}
+        isRetrying={isRefetchingLoad}
+      />
     );
   }
 

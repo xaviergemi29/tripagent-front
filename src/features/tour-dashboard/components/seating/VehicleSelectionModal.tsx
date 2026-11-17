@@ -230,8 +230,9 @@ export function VehicleSelectionModal({
           <div className="grid content-start gap-3">
             {failedQuery ? (
               <QueryErrorState
-                title="No pudimos cargar los vehículos"
-                error={failedQuery.error}
+                variant="compact"
+                resourceArticle="los"
+                resourceName="vehículos"
                 onRetry={retryLoad}
                 isRetrying={loadQueries.some((query) => query.isFetching)}
               />

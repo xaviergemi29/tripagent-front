@@ -25,7 +25,9 @@ interface DashboardTravelerTableProps {
   tourDepartureDate: string;
   tourReturnDate?: string | null;
   /** Marca, contacto, datos bancarios y políticas generales de la agencia para el PDF. */
-  statementAgency: StatementPDFData["agency"];
+  /** `null` mientras no hay datos de la agencia: el PDF no se genera (ver `downloadOperatorStatement`). */
+  statementAgency: StatementPDFData["agency"] | null;
+  onStatementAgencyMissing?: () => void;
   /** Instrucciones Post-Pago (logística) del tour que se imprimen al final del PDF. */
   tourPostPaymentInstructions?: string | null;
   requiresSeats: boolean;
@@ -48,6 +50,7 @@ export function DashboardTravelerTable({
   tourDepartureDate,
   tourReturnDate,
   statementAgency,
+  onStatementAgencyMissing,
   tourPostPaymentInstructions,
   requiresSeats,
   travelers,
@@ -77,6 +80,7 @@ export function DashboardTravelerTable({
   const handleDownloadReceipt = (titularData: TitularRowOutput): Promise<void> =>
     downloadOperatorStatement(titularData, {
       agency: statementAgency,
+      onAgencyMissing: onStatementAgencyMissing,
       tourTitle,
       tourDepartureDate,
       tourReturnDate,

@@ -42,7 +42,7 @@ describe("Croquis sin asientos cargados", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent("No pudimos cargar los asientos");
     expect(screen.queryByTitle("Disponible")).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /Reintentar/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Volver a intentar/ }));
     expect(refetchSeats).toHaveBeenCalledOnce();
   });
 

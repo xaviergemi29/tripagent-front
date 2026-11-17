@@ -109,16 +109,35 @@ describe("TourDashboardView", () => {
     expect(screen.queryByText("Huasteca Potosina")).not.toBeInTheDocument();
   });
 
-  it("si falla muestra el error con el mensaje", () => {
+  it("si falla muestra el aviso con Volver a intentar, sin el error técnico", async () => {
+    const refetch = vi.fn();
     dashboardQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
       isError: true,
-      error: new Error("Tour no encontrado"),
+      error: { status: 500, message: "Error interno del servidor" },
+      refetch,
+      isFetching: false,
     });
     renderView();
-    expect(screen.getByText("Error cargando el Centro de Control")).toBeInTheDocument();
-    expect(screen.getByText("Tour no encontrado")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("No pudimos cargar el Centro de Control");
+    expect(screen.queryByText(/Error interno del servidor/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Volver a intentar/ }));
+    expect(refetch).toHaveBeenCalledOnce();
+  });
+
+  it("un 404 dice 'Tour no encontrado' y no ofrece reintentar", () => {
+    dashboardQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { status: 404, message: "Tour no encontrado" },
+      refetch: vi.fn(),
+      isFetching: false,
+    });
+    renderView();
+    expect(screen.getByRole("heading", { name: "Tour no encontrado" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Volver a intentar/ })).not.toBeInTheDocument();
   });
 
   it("los filtros son un solo estado para escritorio y celular", async () => {

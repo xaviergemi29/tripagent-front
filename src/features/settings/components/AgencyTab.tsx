@@ -1,8 +1,9 @@
 "use client";
 
 import { FormProvider, useForm, useFormState } from "react-hook-form";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAgency, useUpdateAgency } from "../hooks/useAgency";
 import { AgencyInput, updateAgencyFormSchema } from "../schemas/agency.schema";
@@ -39,7 +40,13 @@ function AgencyTabSkeleton() {
  * son los mismos de siempre.
  */
 export function AgencyTab() {
-  const { data: agencyData, isLoading: isFetching, isError } = useAgency();
+  const {
+    data: agencyData,
+    isLoading: isFetching,
+    isError,
+    refetch: refetchLoad,
+    isFetching: isRefetchingLoad,
+  } = useAgency();
   const { mutateAsync: updateAgency, isPending: isUpdating } = useUpdateAgency();
   // El WhatsApp guardado (E.164 o 10 dígitos anteriores) se edita como país + número nacional.
   const storedPhone = parseStoredPhone(agencyData?.phone, agencyData?.phoneCountry);
@@ -71,12 +78,16 @@ export function AgencyTab() {
     }
   };
 
-  if (isError) {
+  // Falló sin datos: motivo + Reintentar (2026-11-16; antes un aviso fijo). Con datos en caché se
+  // sigue mostrando el formulario.
+  if (isError && !agencyData) {
     return (
-      <div className="flex h-40 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-red-600">
-        <AlertCircle className="h-5 w-5" />
-        <p className="text-sm font-semibold">Error al cargar la información de la agencia.</p>
-      </div>
+      <QueryErrorState
+        resourceArticle="la información de tu"
+        resourceName="agencia"
+        onRetry={() => void refetchLoad()}
+        isRetrying={isRefetchingLoad}
+      />
     );
   }
 

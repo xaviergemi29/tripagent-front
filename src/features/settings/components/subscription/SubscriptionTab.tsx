@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle } from "lucide-react";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useAgencySubscription } from "../../hooks/useAgencySubscription";
@@ -16,16 +16,20 @@ import { TrialLockInfo } from "./TrialLockInfo";
  * y pago por tarjeta (Stripe Payment Link) o SPEI. Todo viene de `GET /agencies/subscription`.
  */
 export function SubscriptionTab() {
-  const { data: subscription, isLoading, isError } = useAgencySubscription();
+  const { data: subscription, isLoading, isError, refetch, isFetching } = useAgencySubscription();
   const { data: session } = useSession();
   const [isSpeiOpen, setIsSpeiOpen] = useState(false);
 
-  if (isError) {
+  // Falló sin datos: motivo + Reintentar (2026-11-16; antes un aviso fijo sin forma de recuperarse).
+  // Si falla una recarga con datos en caché, se siguen mostrando.
+  if (isError && !subscription) {
     return (
-      <div className="flex h-40 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-red-600">
-        <AlertCircle className="h-5 w-5" />
-        <p className="text-sm font-semibold">Error al cargar la suscripción de la agencia.</p>
-      </div>
+      <QueryErrorState
+        resourceArticle="tu"
+        resourceName="suscripción"
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
     );
   }
 

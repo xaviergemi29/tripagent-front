@@ -85,7 +85,6 @@ export function SeatMapCanvas({
   const {
     data: seatsData,
     isError: seatsFailed,
-    error: seatsError,
     refetch: refetchSeats,
     isFetching: isFetchingSeats,
   } = useTourSeats(tourId);
@@ -377,8 +376,8 @@ export function SeatMapCanvas({
   if (!seatsData) {
     return seatsFailed ? (
       <QueryErrorState
-        title="No pudimos cargar los asientos"
-        error={seatsError}
+        resourceArticle="los"
+        resourceName="asientos"
         onRetry={() => void refetchSeats()}
         isRetrying={isFetchingSeats}
       />

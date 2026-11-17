@@ -56,6 +56,20 @@ export interface OperatorStatementContext {
   tourCurrency?: Currency;
 }
 
+/**
+ * Contexto para descargar el PDF: la agencia es `null` mientras sus datos (perfil, banco y marca) no
+ * han cargado o si su consulta falló. En ese caso no se genera un PDF sin nombre ni CLABE (hasta el
+ * 2026-11-16 salía así, sin aviso): se avisa y se reintenta con `onAgencyMissing`.
+ */
+export type OperatorStatementDownloadContext = Omit<OperatorStatementContext, "agency"> & {
+  agency: StatementPDFData["agency"] | null;
+  onAgencyMissing?: () => void;
+};
+
+/** Aviso cuando aún no están los datos de la agencia para el estado de cuenta. */
+export const STATEMENT_AGENCY_MISSING_MESSAGE =
+  "Aún no tenemos los datos de tu agencia (nombre, cuenta bancaria y logo) para el estado de cuenta.";
+
 type StatementSourcePassenger = {
   fullName: string;
   role: PassengerRole;
@@ -132,10 +146,17 @@ export function buildOperatorStatement(
 /** Genera y descarga el PDF; si falla, avisa con un toast. */
 export async function downloadOperatorStatement(
   titular: TitularRowOutput,
-  context: OperatorStatementContext,
+  { agency, onAgencyMissing, ...tour }: OperatorStatementDownloadContext,
 ): Promise<void> {
+  if (!agency) {
+    toast.error(STATEMENT_AGENCY_MISSING_MESSAGE, {
+      description: "Los estamos volviendo a pedir; intenta de nuevo en unos segundos.",
+    });
+    onAgencyMissing?.();
+    return;
+  }
   try {
-    await generatePartialPaymentReceiptPDF(buildOperatorStatement(titular, context));
+    await generatePartialPaymentReceiptPDF(buildOperatorStatement(titular, { ...tour, agency }));
   } catch (error) {
     console.error("Error al generar el estado de cuenta PDF:", error);
     toast.error("No se pudo generar el estado de cuenta. Intenta de nuevo.");

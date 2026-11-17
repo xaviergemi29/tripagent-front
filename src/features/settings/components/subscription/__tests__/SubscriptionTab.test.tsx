@@ -29,8 +29,17 @@ const baseSubscription = (): SubscriptionOutput => ({
 });
 
 let subscription: SubscriptionOutput | undefined;
+let loadError: Error | null = null;
+const refetchSubscription = vi.fn();
 vi.mock("../../../hooks/useAgencySubscription", () => ({
-  useAgencySubscription: () => ({ data: subscription, isLoading: false, isError: false }),
+  useAgencySubscription: () => ({
+    data: subscription,
+    isLoading: false,
+    isError: Boolean(loadError),
+    error: loadError,
+    refetch: refetchSubscription,
+    isFetching: false,
+  }),
 }));
 vi.mock("@/features/auth/hooks/useSession", () => ({
   useSession: () => ({ data: { agencyId: AGENCY_ID, agencyName: "Bruji Tours" } }),
@@ -179,6 +188,19 @@ describe("Configuración → Suscripción", () => {
 
     expect(screen.getByText("Prueba vencida")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Venció:/ })).toBeInTheDocument();
+  });
+});
+
+describe("Suscripción: consulta fallida", () => {
+  it("muestra el aviso tranquilizador con Volver a intentar, sin tecnicismos", async () => {
+    subscription = undefined;
+    loadError = new Error("Error interno del servidor");
+    render(<SubscriptionTab />);
+    expect(screen.getByRole("alert")).toHaveTextContent("No pudimos cargar tu suscripción");
+    expect(screen.queryByText(/Error interno del servidor/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Volver a intentar/ }));
+    expect(refetchSubscription).toHaveBeenCalledOnce();
+    loadError = null;
   });
 });
 

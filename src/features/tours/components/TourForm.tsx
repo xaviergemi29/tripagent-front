@@ -51,7 +51,8 @@ export function TourForm({ tour }: TourFormProps) {
   const { mutateAsync: createTour, isPending: isCreating } = useCreateTour();
   const { mutateAsync: updateTour, isPending: isUpdating } = useUpdateTour();
   const { mutateAsync: uploadBrochureTour, isPending: isUploading } = useUploadTourBrochure();
-  const { data: agencyData } = useAgency();
+  const agencyQuery = useAgency();
+  const agencyData = agencyQuery.data;
 
   // Incluye la subida del folleto: mientras sube, "Guardar" sigue deshabilitado (evita duplicados).
   const isProcessing = isCreating || isUpdating || isUploading;
@@ -209,7 +210,13 @@ export function TourForm({ tour }: TourFormProps) {
             <TourGeneralSection />
             <TourBoardingSection />
 
-            <TourFinanceSection isPricingFrozen={isPricingFrozen} agency={agencyData} />
+            <TourFinanceSection
+              isPricingFrozen={isPricingFrozen}
+              agency={agencyData}
+              agencyLoadFailed={agencyQuery.isError && !agencyData}
+              onRetryAgency={() => void agencyQuery.refetch()}
+              isRetryingAgency={agencyQuery.isFetching}
+            />
             <TourInstructionsField />
 
             <TourAssetSection

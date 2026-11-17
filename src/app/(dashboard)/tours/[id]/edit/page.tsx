@@ -3,19 +3,33 @@
 import { Button } from "@/components/ui/button";
 import { TourForm } from "@/features/tours/components/TourForm";
 import { useTourById } from "@/features/tours/hooks/useTours";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { isNotFoundError } from "@/lib/api-error";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
 export default function EditTourPage() {
   const params = useParams<{ id: string }>();
-  const { data: tour, isLoading } = useTourById(params.id);
+  const { data: tour, isLoading, isError, error, refetch, isFetching } = useTourById(params.id);
 
   if (isLoading) {
     return <div className="animate-pulse p-10 text-center">Cargando datos del tour...</div>;
   }
 
   if (!tour) {
+    if (isError && !isNotFoundError(error)) {
+      return (
+        <div className="mx-auto max-w-3xl p-6">
+          <QueryErrorState
+            resourceArticle="el"
+            resourceName="tour"
+            onRetry={() => void refetch()}
+            isRetrying={isFetching}
+          />
+        </div>
+      );
+    }
     return <div className="text-destructive p-10 text-center">Tour no encontrado.</div>;
   }
 

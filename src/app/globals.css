@@ -4,6 +4,25 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Pulso suave del ícono de QueryErrorState ("respiración" de ~2.8 s). Tailwind 4 genera la
+   utilidad `animate-soft-pulse` a partir de `--animate-soft-pulse`; se usa con `motion-safe:` para
+   respetar "reducir movimiento". */
+@theme {
+  --animate-soft-pulse: softPulse 2.8s ease-in-out infinite;
+
+  @keyframes softPulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.95;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

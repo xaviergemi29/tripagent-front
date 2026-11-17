@@ -95,7 +95,6 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: PropsTravelerHist
     data: traveler,
     isLoading,
     isError,
-    error,
     refetch,
     isFetching,
   } = useTravelerHistory(travelerId);
@@ -143,8 +142,9 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: PropsTravelerHist
         ) : loadFailed ? (
           <div className="flex-1 p-6">
             <QueryErrorState
-              title="No pudimos cargar el historial"
-              error={error}
+              variant="compact"
+              resourceArticle="el"
+              resourceName="historial del viajero"
               onRetry={() => void refetch()}
               isRetrying={isFetching}
             />

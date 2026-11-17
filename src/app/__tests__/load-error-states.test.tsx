@@ -5,7 +5,7 @@ import ToursPage from "../(dashboard)/tours/page";
 import TravelersPage from "../(dashboard)/travelers/page";
 import { TravelerHistoryDrawer } from "@/features/travelers/components/TravelerHistoryDrawer";
 
-// Si la API falla, las pantallas dicen que no se pudo cargar (con "Reintentar"), no que no hay
+// Si la API falla, las pantallas dicen que no se pudo cargar (con "Volver a intentar"), no que no hay
 // datos: antes mostraban "No tienes tours programados" / "Aún no hay viajeros" (2026-11-16).
 
 const refetch = vi.fn();
@@ -40,9 +40,10 @@ describe("Pantallas con la consulta fallida", () => {
   it("/tours: error con Reintentar, no el estado vacío", async () => {
     render(<ToursPage />);
     expect(screen.getByRole("alert")).toHaveTextContent("No pudimos cargar tus tours");
-    expect(screen.getByText(/timeout of 10000ms exceeded/)).toBeInTheDocument();
+    // Sin tecnicismos: el error de la API no se muestra.
+    expect(screen.queryByText(/timeout/)).not.toBeInTheDocument();
     expect(screen.queryByText("No tienes tours programados")).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /Reintentar/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Volver a intentar/ }));
     expect(refetch).toHaveBeenCalledOnce();
   });
 

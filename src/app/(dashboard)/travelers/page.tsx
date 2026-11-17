@@ -18,7 +18,7 @@ import { useGuidedTour } from "@/features/onboarding/hooks/useGuidedTour";
 
 export default function TravelersPage() {
   const router = useRouter();
-  const { data, isLoading, isError, error, refetch, isFetching } = useTravelers();
+  const { data, isLoading, isError, refetch, isFetching } = useTravelers();
   const travelers = data ?? [];
   // Falló sin datos: no es "Aún no hay viajeros registrados".
   const loadFailed = isError && !data;
@@ -67,8 +67,7 @@ export default function TravelersPage() {
 
       {loadFailed ? (
         <QueryErrorState
-          title="No pudimos cargar tus viajeros"
-          error={error}
+          resourceName="viajeros"
           onRetry={() => void refetch()}
           isRetrying={isFetching}
         />

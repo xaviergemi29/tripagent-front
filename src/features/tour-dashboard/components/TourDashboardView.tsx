@@ -22,6 +22,8 @@ import {
   getSeatEligiblePassengers,
 } from "../utils/dashboard-travelers.util";
 import { buildOperatorStatementAgency } from "../utils/statement-agency.util";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { isNotFoundError } from "@/lib/api-error";
 
 import { TravelersTableToolbar } from "@/features/tour-dashboard/components/passengers/TravelersTableToolbar";
 import { TravelerDetailDrawer } from "@/features/tour-dashboard/components/finance/TravelerDetailDrawer";
@@ -46,10 +48,19 @@ interface TourDashboardViewProps {
 }
 
 export function TourDashboardView({ tourId }: TourDashboardViewProps) {
-  const { data: tour, isLoading, isError, error } = useTourDashboardByTourId(tourId);
+  const {
+    data: tour,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useTourDashboardByTourId(tourId);
   // Datos de la agencia para el estado de cuenta PDF (perfil, banco y colores de marca).
-  const { data: agency } = useAgency();
-  const { data: branding } = useAgencyBranding();
+  const agencyQuery = useAgency();
+  const brandingQuery = useAgencyBranding();
+  const agency = agencyQuery.data;
+  const branding = brandingQuery.data;
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const { filters, setSearchQuery, setPaymentFilter, setFormFilter, setSeatFilter, clearFilters } =
     useDashboardFilters();
@@ -97,15 +108,27 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   const foundTraveler = findDashboardTraveler(tour?.travelers, selectedTravelerId);
   const filteredTravelers = filterDashboardTravelers(tour?.travelers, filters);
 
-  if (isError) {
+  // Falló sin datos: motivo + Reintentar (antes el mensaje técnico sin forma de recuperarse). Un 404
+  // (tour inexistente o de otra agencia) no se reintenta. Si falla una recarga con datos en caché,
+  // se siguen mostrando.
+  if (isError && !tour) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
-          <h3 className="mb-2 text-lg font-bold">Error cargando el Centro de Control</h3>
-          <p className="rounded border border-red-200 bg-red-100/50 p-3 font-mono text-sm">
-            {error instanceof Error ? error.message : "Error desconocido"}
-          </p>
-        </div>
+      <div className="mx-auto max-w-4xl p-4 sm:p-8">
+        {isNotFoundError(error) ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <h3 className="text-lg font-bold text-slate-900">Tour no encontrado</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Es posible que se haya eliminado o que el enlace esté incompleto.
+            </p>
+          </div>
+        ) : (
+          <QueryErrorState
+            resourceArticle="el"
+            resourceName="Centro de Control"
+            onRetry={() => void refetch()}
+            isRetrying={isFetching}
+          />
+        )}
       </div>
     );
   }
@@ -128,9 +151,17 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   // tours cancelados).
   const canRegisterRefunds = tour.temporalStatus !== TOUR_TEMPORAL_STATUS.FINISHED;
   // Estado de cuenta PDF del operador: mismos datos en escritorio y celular.
-  const statementAgency = buildOperatorStatementAgency(agency, branding);
+  // Sin los datos de la agencia (cargando o consulta fallida) no se genera el PDF: saldría sin
+  // nombre ni CLABE. `retryStatementAgency` vuelve a pedirlos al intentar descargar.
+  const statementAgency =
+    agency && branding ? buildOperatorStatementAgency(agency, branding) : null;
+  const retryStatementAgency = (): void => {
+    if (!agency) void agencyQuery.refetch();
+    if (!branding) void brandingQuery.refetch();
+  };
   const statementContext = {
     agency: statementAgency,
+    onAgencyMissing: retryStatementAgency,
     tourTitle: tour.title,
     tourDepartureDate: tour.departureDateTime,
     tourReturnDate: tour.returnDate ?? null,
@@ -199,6 +230,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                     tourReturnDate={tour.returnDate ?? null}
                     tourPostPaymentInstructions={tour.postPaymentInstructions ?? null}
                     statementAgency={statementAgency}
+                    onStatementAgencyMissing={retryStatementAgency}
                     travelers={tour.travelers}
                     searchQuery={filters.searchQuery}
                     tourCurrency={tour.currency}

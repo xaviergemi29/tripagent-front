@@ -1,6 +1,7 @@
 "use client";
 
 import { Controller, useFormContext, useFormState, useWatch } from "react-hook-form";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { AlertCircle, Info, Lock, Wallet } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,10 @@ interface TourFinanceSectionProps {
   isPricingFrozen: boolean;
   /** Datos bancarios de la agencia (Configuración → Agencia) para el aviso de transferencia. */
   agency?: Pick<AgencyOutput, "bankName" | "bankAccountHolder" | "clabeNumber" | "cardNumber">;
+  /** La consulta de la agencia falló sin datos: no se afirma que "no hay cuentas configuradas". */
+  agencyLoadFailed?: boolean;
+  onRetryAgency?: () => void;
+  isRetryingAgency?: boolean;
 }
 
 /** Campo numérico de dinero: vacío ⇄ 0, con el código de divisa como prefijo. */
@@ -68,7 +73,13 @@ const PAYMENT_METHOD_TOGGLES = [
  * Sección 3 del formulario de tour: moneda, precio, anticipo, métodos de cobro y los datos que
  * cada método necesita (cuentas de la agencia, link de pago, instrucciones de efectivo).
  */
-export function TourFinanceSection({ isPricingFrozen, agency }: TourFinanceSectionProps) {
+export function TourFinanceSection({
+  isPricingFrozen,
+  agency,
+  agencyLoadFailed = false,
+  onRetryAgency,
+  isRetryingAgency = false,
+}: TourFinanceSectionProps) {
   const { control } = useFormContext<TourInput>();
   // `useFormState` (no `formState` del contexto): compatible con el React Compiler.
   const formState = useFormState({ control });
@@ -220,7 +231,18 @@ export function TourFinanceSection({ isPricingFrozen, agency }: TourFinanceSecti
       {/* Datos que necesita cada método habilitado */}
       {(acceptsBankTransfer || acceptsCreditCard || acceptsCash) && (
         <div className="space-y-4 border-t border-indigo-100 pt-3">
-          {acceptsBankTransfer && (
+          {acceptsBankTransfer && agencyLoadFailed && (
+            // Sin los datos de la agencia no se sabe si tiene cuentas: antes decía "Aún no has
+            // configurado las cuentas bancarias" aunque sí las tuviera (2026-11-16).
+            <QueryErrorState
+              variant="compact"
+              resourceArticle="las"
+              resourceName="cuentas bancarias de tu agencia"
+              onRetry={() => onRetryAgency?.()}
+              isRetrying={isRetryingAgency}
+            />
+          )}
+          {acceptsBankTransfer && !agencyLoadFailed && (
             <AgencyBankDetailsBanner
               bankName={agency?.bankName}
               accountHolder={agency?.bankAccountHolder}

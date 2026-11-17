@@ -6,7 +6,7 @@ import { useTravelerGroupActions } from "@/features/tour-dashboard/hooks/useTrav
 import { TravelerGroupDialogs } from "@/features/tour-dashboard/components/passengers/TravelerGroupDialogs";
 import {
   downloadOperatorStatement,
-  type OperatorStatementContext,
+  type OperatorStatementDownloadContext,
 } from "@/features/tour-dashboard/utils/statement-agency.util";
 import { BookingCard } from "./BookingCard";
 
@@ -20,7 +20,7 @@ interface MobilePassengersListProps {
   /** Lugares libres del tour (para "Agregar lugar al grupo"). */
   freeSeatsCount?: number;
   /** Datos del tour y la agencia para el estado de cuenta PDF (los mismos que en escritorio). */
-  statementContext: OperatorStatementContext;
+  statementContext: OperatorStatementDownloadContext;
   onAssignSeatClick: (passengerId: string) => void;
   onRowClick: (id: string) => void;
 }

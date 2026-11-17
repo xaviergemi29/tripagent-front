@@ -3,6 +3,7 @@
 import { useTourManifest } from "@/features/tour-dashboard/hooks/useTourManifest";
 import { formatLocalDate, formatPickupTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { useEffect, use } from "react";
 import { formatPhoneForDisplay } from "@/shared/utils/phone.util";
 
@@ -14,7 +15,7 @@ interface PageProps {
 
 export default function ManifestPrintView({ params }: PageProps) {
   const { id } = use(params);
-  const { data: manifest, isLoading, isError, error } = useTourManifest(id);
+  const { data: manifest, isLoading, isError, refetch, isFetching } = useTourManifest(id);
 
   useEffect(() => {
     if (!isLoading && manifest) {
@@ -26,8 +27,13 @@ export default function ManifestPrintView({ params }: PageProps) {
   if (isLoading) return <div className="p-8 font-sans text-slate-500">Generando manifiesto...</div>;
   if (isError || !manifest)
     return (
-      <div className="p-8 font-sans text-red-600">
-        Error: {error instanceof Error ? error.message : "Desconocido"}
+      <div className="mx-auto max-w-2xl p-4 font-sans sm:p-8">
+        <QueryErrorState
+          resourceArticle="el"
+          resourceName="manifiesto"
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
       </div>
     );
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useForm, useFormState, useWatch } from "react-hook-form";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Loader2, Save, ScrollText } from "lucide-react";
+import { Loader2, Save, ScrollText } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -38,14 +39,19 @@ const PLACEHOLDER = [
  * Instrucciones Post-Pago.
  */
 export function PoliciesTab() {
-  const { data: agency, isLoading, isError } = useAgency();
+  const {
+    data: agency,
+    isLoading,
+    isError,
+    refetch: refetchLoad,
+    isFetching: isRefetchingLoad,
+  } = useAgency();
   const { mutate: savePolicies, isPending } = useUpdateAgencyPolicies();
 
   const form = useForm<AgencyPoliciesFormInput, unknown, AgencyPoliciesInput>({
     resolver: zodResolver(agencyPoliciesFormSchema),
     mode: "onChange",
     defaultValues: { policies: "" },
-    // Sincroniza con la API sin efectos (compatible con el React Compiler).
     values: agency ? { policies: agency.policies ?? "" } : undefined,
   });
   const policies = useWatch({ control: form.control, name: "policies" }) ?? "";
@@ -53,12 +59,15 @@ export function PoliciesTab() {
   // después de ellos queda memorizado (mismo fallo que tenía "Identidad Visual").
   const { errors, isDirty, isValid } = useFormState({ control: form.control });
 
-  if (isError) {
+  // Falló sin datos: motivo + Reintentar (2026-11-16; antes un aviso fijo). Con datos en caché se
+  // sigue mostrando el formulario.
+  if (isError && !agency) {
     return (
-      <div className="flex h-40 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-red-600">
-        <AlertCircle className="h-5 w-5" />
-        <p className="text-sm font-semibold">Error al cargar las políticas de la agencia.</p>
-      </div>
+      <QueryErrorState
+        resourceName="políticas"
+        onRetry={() => void refetchLoad()}
+        isRetrying={isRefetchingLoad}
+      />
     );
   }
 

@@ -13,7 +13,7 @@ import { useGuidedTour } from "@/features/onboarding/hooks/useGuidedTour";
 
 export default function ToursPage() {
   const router = useRouter();
-  const { data, isLoading, isError, error, refetch, isFetching } = useTours();
+  const { data, isLoading, isError, refetch, isFetching } = useTours();
   const tours = data ?? [];
   // Falló sin datos: no es "No tienes tours" (antes el operador lo veía así y podía duplicarlos).
   const loadFailed = isError && !data;
@@ -54,8 +54,7 @@ export default function ToursPage() {
       {/* 2. Renderizado Condicional: Tabla vs Empty State Principal */}
       {loadFailed ? (
         <QueryErrorState
-          title="No pudimos cargar tus tours"
-          error={error}
+          resourceName="tours"
           onRetry={() => void refetch()}
           isRetrying={isFetching}
         />
