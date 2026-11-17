@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormContext, useFieldArray, useWatch, Controller } from "react-hook-form";
+import { getPassengerTypeAgeHint, getTodayInMexico } from "@/shared/utils/tour-date.util";
 import { Users, User, Plus, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
@@ -317,12 +318,25 @@ export function CompanionsManager({
                     <Input
                       {...register(`companions.${index}.birthDate`)}
                       type="date"
+                      max={getTodayInMexico()}
                       disabled={isLocked && getValues(`companions.${index}.birthDate`) !== ""}
                       className="w-max-full h-11 appearance-none bg-white text-base sm:text-sm"
                     />
                     {errors.companions?.[index]?.birthDate && (
                       <p className="text-xs text-red-500">
                         {errors.companions[index]?.birthDate?.message}
+                      </p>
+                    )}
+                    {/* Aviso, no bloquea: la edad no coincide con Adulto / Niño (2026-11-17). */}
+                    {getPassengerTypeAgeHint(
+                      currentCompanion.passengerType,
+                      currentCompanion.birthDate,
+                    ) && (
+                      <p className="flex items-start gap-1 text-xs text-amber-700">
+                        {getPassengerTypeAgeHint(
+                          currentCompanion.passengerType,
+                          currentCompanion.birthDate,
+                        )}
                       </p>
                     )}
                   </div>

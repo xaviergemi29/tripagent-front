@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm, FormProvider, useWatch, Controller } from "react-hook-form";
+import { getTodayInMexico } from "@/shared/utils/tour-date.util";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Edit2 } from "lucide-react";
 import { useState } from "react";
@@ -321,11 +322,14 @@ export function TourRegistrationView({
             {/* Fecha de Nacimiento y Notas Médicas del Titular */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">Fecha de Nacimiento</Label>
+                <Label className="text-xs font-semibold text-slate-700">
+                  Fecha de Nacimiento *
+                </Label>
                 <Input
                   suppressHydrationWarning
-                  {...methods.register("mainClient.birthDate")} // O "companions.${index}.birthDate"
+                  {...methods.register("mainClient.birthDate")}
                   type="date"
+                  max={getTodayInMexico()}
                   disabled={isMainClientFound && methods.getValues("mainClient.birthDate") != ""}
                   className={`w-max-full h-11 appearance-none text-base transition-colors sm:text-sm ${
                     isMainClientFound
@@ -333,6 +337,11 @@ export function TourRegistrationView({
                       : "bg-white"
                   }`}
                 />
+                {methods.formState.errors.mainClient?.birthDate && (
+                  <p className="text-xs text-red-500">
+                    {methods.formState.errors.mainClient.birthDate.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">

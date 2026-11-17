@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FUTURE_BIRTH_DATE_ERROR, getTodayInMexico } from "@/shared/utils/tour-date.util";
 import {
   BOOKING_STATUSES,
   CURRENCIES,
@@ -83,7 +84,10 @@ export const editTravelerSchema = z
   .object({
     passengerType: z.enum(PASSENGER_TYPES),
     fullName: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
-    birthDate: z.string().min(1, "La fecha de nacimiento es obligatoria para el seguro carretero"),
+    birthDate: z
+      .string()
+      .min(1, "La fecha de nacimiento es obligatoria para el seguro carretero")
+      .refine((date) => date <= getTodayInMexico(), FUTURE_BIRTH_DATE_ERROR),
     // Número nacional + país (PhoneField); se envían en E.164 con `toE164`.
     whatsappPhone: z.string().optional(),
     whatsappCountry: phoneCountrySchema,

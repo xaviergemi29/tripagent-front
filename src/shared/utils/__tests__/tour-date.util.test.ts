@@ -7,6 +7,8 @@ import {
   formatSpanishLongDate,
   formatTourDateTime,
   getEarliestBoardingTime,
+  getPassengerTypeAgeHint,
+  getTodayInMexico,
   getTodayIsoString,
   parseDateOnly,
 } from "../tour-date.util";
@@ -149,5 +151,28 @@ describe("fechas sin hora en la zona horaria de CDMX", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 10, 16, 20, 0)); // 16 nov 20:00 CDMX = 17 nov 02:00 UTC
     expect(getTodayIsoString()).toBe("2026-11-16");
+  });
+});
+
+describe("getPassengerTypeAgeHint (aviso, no bloquea; 2026-11-17)", () => {
+  beforeEach(() => vi.stubEnv("TZ", "America/Mexico_City"));
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+  });
+
+  it("avisa a un 'Adulto' menor de 18 y a un 'Niño' de 18 o más; nada si coinciden", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 17, 10, 0));
+    expect(getPassengerTypeAgeHint("ADULT", "2020-01-10")).toMatch(/6 años.*Niño/);
+    expect(getPassengerTypeAgeHint("CHILD", "1990-05-29")).toMatch(/36 años.*Adulto/);
+    expect(getPassengerTypeAgeHint("ADULT", "1990-05-29")).toBeNull();
+    expect(getPassengerTypeAgeHint("CHILD", "2015-03-10")).toBeNull();
+    expect(getPassengerTypeAgeHint("ADULT", "")).toBeNull();
+  });
+
+  it("getTodayInMexico usa la fecha de CDMX, no la UTC", () => {
+    // 17 nov 02:00 UTC = 16 nov 20:00 en CDMX.
+    expect(getTodayInMexico(new Date("2026-11-17T02:00:00Z"))).toBe("2026-11-16");
   });
 });

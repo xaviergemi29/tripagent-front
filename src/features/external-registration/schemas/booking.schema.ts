@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  BIRTH_DATE_REQUIRED_ERROR,
+  FUTURE_BIRTH_DATE_ERROR,
+  getTodayInMexico,
+} from "@/shared/utils/tour-date.util";
 import { PASSENGER_TYPE, PASSENGER_TYPES } from "@/shared/constants/domain.constants";
 import { phoneCountrySchema, refinePhone } from "@/shared/schemas/phone.schema";
 import { toE164, type PhoneCountry } from "@/shared/utils/phone.util";
@@ -23,7 +28,17 @@ const basePassengerSchema = z.object({
   emergencyContactCountry: phoneCountrySchema,
   medicalNotes: z.string().trim().optional(),
   boardingPoint: z.string().min(1, "Debes seleccionar en qué punto subirás al autobús"),
-  birthDate: z.union([z.iso.date("Formato YYYY-MM-DD"), z.literal("")]).optional(),
+  // Obligatoria (seguro carretero, igual que "Editar viajero") y no futura; hasta el 2026-11-17 se
+  // aceptaba vacía aunque el campo del acompañante dijera "*". Misma regla en la API.
+  birthDate: z
+    .string(BIRTH_DATE_REQUIRED_ERROR)
+    .trim()
+    .min(1, BIRTH_DATE_REQUIRED_ERROR)
+    .pipe(
+      z.iso
+        .date("Formato YYYY-MM-DD")
+        .refine((date) => date <= getTodayInMexico(), FUTURE_BIRTH_DATE_ERROR),
+    ),
 });
 
 export const mainClientSchema = basePassengerSchema

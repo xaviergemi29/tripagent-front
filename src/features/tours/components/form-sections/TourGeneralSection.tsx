@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { TOUR_FORM_COPY } from "@/features/tours/constants/copy";
 import { TourInput } from "@/features/tours/schemas/tour.schema"; // Ajusta tu ruta de importación
 
-export function TourGeneralSection() {
+/** `minDepartureDate`: hoy (CDMX) o, al editar, la fecha guardada si ya pasó. */
+export function TourGeneralSection({ minDepartureDate }: { minDepartureDate?: string } = {}) {
   const { control } = useFormContext<TourInput>();
   const [maxCapacity, staffCapacity] = useWatch({
     control,
@@ -128,6 +129,7 @@ export function TourGeneralSection() {
                 {...field}
                 id="tour-departure"
                 type="date"
+                min={minDepartureDate}
                 className={`h-11 rounded-xl bg-slate-50/50 text-sm ${fieldState.error ? "border-red-500" : "border-slate-200"}`}
               />
               {fieldState.error && (

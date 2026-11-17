@@ -18,7 +18,7 @@ const titular = {
   emergencyContactPhone: "2281112222",
   emergencyContactCountry: "MX" as const,
   medicalNotes: "",
-  birthDate: "",
+  birthDate: "1990-05-29",
   boardingPoint: "Plaza Xalapeña (06:00)",
 };
 
@@ -31,7 +31,7 @@ const companion = {
   emergencyContactPhone: "2281234567",
   emergencyContactCountry: "MX" as const,
   medicalNotes: "",
-  birthDate: "",
+  birthDate: "2015-03-10",
   boardingPoint: "Plaza Xalapeña (06:00)",
   passengerType: "CHILD" as const,
 };
@@ -45,9 +45,21 @@ const messagesAt = (
     : result.error!.issues.filter((i) => i.path.join(".") === path).map((i) => i.message);
 
 describe("mainClientSchema (titular)", () => {
-  it("acepta un titular válido y la fecha vacía", () => {
+  it("acepta un titular válido", () => {
     expect(mainClientSchema.safeParse(titular).success).toBe(true);
-    expect(mainClientSchema.safeParse({ ...titular, birthDate: "1990-05-29" }).success).toBe(true);
+  });
+
+  it("la fecha de nacimiento es obligatoria y no puede ser futura (2026-11-17)", () => {
+    expect(
+      messagesAt(mainClientSchema.safeParse({ ...titular, birthDate: "" }), "birthDate"),
+    ).toContain("La fecha de nacimiento es obligatoria");
+    expect(
+      messagesAt(companionSchema.safeParse({ ...companion, birthDate: "" }), "birthDate"),
+    ).toContain("La fecha de nacimiento es obligatoria");
+    const tomorrow = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
+    expect(
+      messagesAt(mainClientSchema.safeParse({ ...titular, birthDate: tomorrow }), "birthDate"),
+    ).toContain("La fecha de nacimiento no puede ser futura");
   });
 
   it("exige un WhatsApp válido para su país (acepta el número completo con +), correo y punto", () => {

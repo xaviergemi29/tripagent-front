@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getTodayInMexico, PAST_DEPARTURE_ERROR } from "@/shared/utils/tour-date.util";
 import {
   CURRENCIES,
   DEFAULT_CURRENCY,
@@ -180,6 +181,20 @@ export const tourOutputSchema = baseTourSchema.extend({
   // Solo en GET /tours/:id: con pagos registrados, la moneda y el precio quedan congelados.
   hasPayments: z.boolean().optional(),
 });
+
+/**
+ * Schema del formulario de tour con la regla de la salida (2026-11-17): no puede ser anterior a hoy
+ * (hora de CDMX). Al editar se permite conservar la fecha guardada aunque ya haya pasado
+ * (`originalDepartureDate`), pero no moverla al pasado. La API aplica la misma regla.
+ */
+export const buildTourFormSchema = (originalDepartureDate?: string | null) =>
+  tourSchema.superRefine((data, ctx) => {
+    const departure = data.departureDateTime;
+    if (!departure || departure === originalDepartureDate) return;
+    if (departure < getTodayInMexico()) {
+      ctx.addIssue({ code: "custom", message: PAST_DEPARTURE_ERROR, path: ["departureDateTime"] });
+    }
+  });
 
 export type TourInput = z.input<typeof tourSchema>;
 export type TourOutput = z.infer<typeof tourOutputSchema>;

@@ -18,14 +18,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { tourSchema, type TourInput, type TourOutput } from "../schemas/tour.schema";
+import { buildTourFormSchema, type TourInput, type TourOutput } from "../schemas/tour.schema";
 import {
   extractTourId,
   useCreateTour,
   useUpdateTour,
   useUploadTourBrochure,
 } from "../hooks/useTours";
-import { formatForDateInput } from "@/shared/utils/tour-date.util";
+import { formatForDateInput, getTodayInMexico } from "@/shared/utils/tour-date.util";
 import { useAgency } from "@/features/settings/hooks/useAgency";
 import { TourGeneralSection } from "./form-sections/TourGeneralSection";
 import { TourBoardingSection } from "./form-sections/TourBoardingSection";
@@ -60,8 +60,14 @@ export function TourForm({ tour }: TourFormProps) {
   // (protege la contabilidad). La API también lo valida y responde 409.
   const isPricingFrozen = !!tour?.hasPayments;
 
+  // Salida no anterior a hoy; al editar se puede conservar la fecha guardada aunque ya pasó.
+  const originalDepartureDate = tour ? formatForDateInput(tour.departureDateTime) : null;
+  const today = getTodayInMexico();
+  const minDepartureDate =
+    originalDepartureDate && originalDepartureDate < today ? originalDepartureDate : today;
+
   const form = useForm<TourInput>({
-    resolver: zodResolver(tourSchema),
+    resolver: zodResolver(buildTourFormSchema(originalDepartureDate)),
     mode: "onChange",
     defaultValues: tour
       ? {
@@ -207,7 +213,7 @@ export function TourForm({ tour }: TourFormProps) {
       <CardContent className="px-6 pt-6 sm:px-8">
         <FormProvider {...form}>
           <form id="tour-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <TourGeneralSection />
+            <TourGeneralSection minDepartureDate={minDepartureDate} />
             <TourBoardingSection />
 
             <TourFinanceSection

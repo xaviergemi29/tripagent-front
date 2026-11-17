@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TourRegistrationView } from "../TourRegistrationView";
@@ -33,12 +33,17 @@ const renderView = (reservedSeats: number) =>
     />,
   );
 
+const dateInputs = () =>
+  Array.from(document.querySelectorAll<HTMLInputElement>('input[type="date"]'));
+
 const fillTitular = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.type(screen.getByPlaceholderText("Ej. 2281234567"), "2281234567");
   await user.type(screen.getByPlaceholderText("Nombre y Apellidos"), "Ana Torres");
   await user.type(screen.getAllByPlaceholderText("correo@ejemplo.com")[0]!, "ana@correo.mx");
   await user.type(screen.getAllByPlaceholderText("Nombre del familiar")[0]!, "Luis Torres");
   await user.type(screen.getAllByPlaceholderText("Teléfono")[0]!, "2281112222");
+  // Fecha de nacimiento obligatoria desde el 2026-11-17 (primer campo de fecha: el titular).
+  fireEvent.change(dateInputs()[0]!, { target: { value: "1990-05-29" } });
   await user.click(screen.getAllByText("Plaza Xalapeña")[0]!);
   await user.click(screen.getByRole("checkbox", { name: /Acepto las políticas/, hidden: true }));
 };
@@ -93,9 +98,10 @@ describe("Registro del Magic Link", () => {
     await user.type(screen.getByPlaceholderText("Ej. Lizeth Colorado"), "Eva Torres");
     await user.type(screen.getAllByPlaceholderText("Número").at(-1)!, "2283334444");
     await user.type(screen.getAllByPlaceholderText("correo@ejemplo.com").at(-1)!, "eva@correo.mx");
+    fireEvent.change(dateInputs().at(-1)!, { target: { value: "1992-08-15" } });
 
     const submit = screen.getByRole("button", { name: /Completar Registro/ });
-    expect(submit).toBeEnabled();
+    await waitFor(() => expect(submit).toBeEnabled());
     await user.click(submit);
 
     expect(createBooking.mock.calls[0]![0]).toMatchObject({

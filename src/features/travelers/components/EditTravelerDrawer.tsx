@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm, useFormState, useWatch } from "react-hook-form";
+import { getPassengerTypeAgeHint, getTodayInMexico } from "@/shared/utils/tour-date.util";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, ShieldAlert, Calendar, CalendarOff, AlertTriangle, User, Baby } from "lucide-react";
@@ -66,6 +67,8 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
 
   const { errors } = useFormState({ control });
   const watchPassengerType = useWatch({ control, name: "passengerType" });
+  const watchBirthDate = useWatch({ control, name: "birthDate" });
+  const ageHint = getPassengerTypeAgeHint(watchPassengerType, watchBirthDate);
   const whatsappCountry = useWatch({ control, name: "whatsappCountry" });
   const emergencyContactCountry = useWatch({ control, name: "emergencyContactCountry" });
 
@@ -245,10 +248,17 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
                 Requerido para seguro
               </span>
             </div>
-            <Input type="date" {...register("birthDate")} className="appearance-none" />
+            <Input
+              type="date"
+              max={getTodayInMexico()}
+              {...register("birthDate")}
+              className="appearance-none"
+            />
             {errors.birthDate && (
               <p className="text-destructive text-xs">{errors.birthDate.message}</p>
             )}
+            {/* Aviso, no bloquea: la edad no coincide con Adulto / Niño (2026-11-17). */}
+            {ageHint && <p className="flex items-start gap-1 text-xs text-amber-700">{ageHint}</p>}
           </div>
 
           <div className="space-y-1.5">

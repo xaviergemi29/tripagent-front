@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { tourSchema, type TourInput } from "../tour.schema";
+import { buildTourFormSchema, tourSchema, type TourInput } from "../tour.schema";
+import { getTodayInMexico, PAST_DEPARTURE_ERROR } from "@/shared/utils/tour-date.util";
 
 // `tourSchema` replica las reglas de `createTourBodySchema` de la API. Si una regla cambia aquí,
 // debe cambiar también en tripagent-api/src/modules/tours/tours.schema.ts.
@@ -163,5 +164,33 @@ describe("tourSchema", () => {
       destinationType: "NATIONAL",
       transportModality: "TRANSPORT_INCLUDED",
     });
+  });
+});
+
+describe("buildTourFormSchema: la salida no es anterior a hoy (2026-11-17)", () => {
+  const shift = (days: number) => {
+    const d = new Date(`${getTodayInMexico()}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.toISOString().slice(0, 10);
+  };
+  const errorsAtDeparture = (schema: ReturnType<typeof buildTourFormSchema>, date: string) => {
+    const result = schema.safeParse(validTour({ departureDateTime: date, returnDate: null }));
+    return result.success
+      ? []
+      : result.error.issues.filter((i) => i.path[0] === "departureDateTime").map((i) => i.message);
+  };
+
+  it("crear: rechaza ayer, acepta hoy y después", () => {
+    const schema = buildTourFormSchema(null);
+    expect(errorsAtDeparture(schema, shift(-1))).toContain(PAST_DEPARTURE_ERROR);
+    expect(errorsAtDeparture(schema, shift(0))).toEqual([]);
+    expect(errorsAtDeparture(schema, shift(10))).toEqual([]);
+  });
+
+  it("editar: conserva la fecha guardada aunque ya pasó, pero no la mueve a otro día pasado", () => {
+    const saved = shift(-5);
+    const schema = buildTourFormSchema(saved);
+    expect(errorsAtDeparture(schema, saved)).toEqual([]);
+    expect(errorsAtDeparture(schema, shift(-2))).toContain(PAST_DEPARTURE_ERROR);
   });
 });

@@ -214,3 +214,38 @@ export function formatBirthdateAndAge(birthdateStr?: string | null): {
     isMinor: age < 18,
   };
 }
+
+/**
+ * Hoy en la hora de CDMX (`YYYY-MM-DD`), zona de referencia del producto (espejo de
+ * `getTodayInMexico` de la API). Sirve de `max`/`min` en los `<input type="date">` y para comparar
+ * fechas sin hora como texto.
+ */
+export const getTodayInMexico = (now: Date = new Date()): string =>
+  now.toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
+
+/** Mensajes compartidos por los formularios (mismos textos que la API). */
+export const BIRTH_DATE_REQUIRED_ERROR = "La fecha de nacimiento es obligatoria";
+export const FUTURE_BIRTH_DATE_ERROR = "La fecha de nacimiento no puede ser futura";
+export const PAST_DEPARTURE_ERROR = "La fecha de salida no puede ser anterior a hoy";
+
+/** Edad mínima de un adulto: debajo de ella se sugiere registrar como Niño (y al revés). */
+const ADULT_AGE = 18;
+
+/**
+ * Aviso (no bloquea) cuando la fecha de nacimiento no coincide con el tipo de pasajero: un
+ * "Adulto" menor de 18 años o un "Niño" de 18 o más. `null` si coinciden o falta la fecha.
+ */
+export function getPassengerTypeAgeHint(
+  passengerType: "ADULT" | "CHILD" | undefined,
+  birthDate: string | null | undefined,
+): string | null {
+  const age = formatBirthdateAndAge(birthDate)?.age;
+  if (age === null || age === undefined || !passengerType) return null;
+  if (passengerType === "ADULT" && age < ADULT_AGE) {
+    return `Por su fecha de nacimiento tiene ${age} años: ¿debería registrarse como Niño (menor)?`;
+  }
+  if (passengerType === "CHILD" && age >= ADULT_AGE) {
+    return `Por su fecha de nacimiento tiene ${age} años: ¿debería registrarse como Adulto?`;
+  }
+  return null;
+}
