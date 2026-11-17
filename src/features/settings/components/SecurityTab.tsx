@@ -41,7 +41,7 @@ function PasswordField({
         autoComplete={autoComplete}
         aria-invalid={Boolean(error)}
         disabled={disabled}
-        className="h-12 rounded-xl border-slate-200 bg-white px-4 py-3 text-sm focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-100 sm:h-10 sm:py-2"
+        className="h-12 rounded-xl border-slate-200 bg-white px-4 py-3 text-base focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-100 sm:h-10 sm:py-2 sm:text-sm"
         {...registration}
       />
       {error && <p className="mt-1 text-xs font-medium text-red-500">{error}</p>}

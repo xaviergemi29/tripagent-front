@@ -52,7 +52,7 @@ function MoneyInput({
         min="0"
         step="any"
         disabled={disabled}
-        className="rounded-xl bg-white pl-14 text-sm font-semibold text-slate-900"
+        className="rounded-xl bg-white pl-14 text-base font-semibold text-slate-900 sm:text-sm"
         value={value === 0 ? "" : (value as number | string)}
         onChange={(event) => {
           const raw = event.target.value;

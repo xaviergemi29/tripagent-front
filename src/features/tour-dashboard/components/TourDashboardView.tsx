@@ -71,6 +71,11 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
     tour?.temporalStatus === TOUR_TEMPORAL_STATUS.FINISHED ||
     tour?.temporalStatus === TOUR_TEMPORAL_STATUS.CANCELLED;
   const requiresSeats = tour?.requiresSeats ?? Boolean(tour?.vehicle);
+  // Un tour EN CURSO ya salió en su unidad: no se cambia de vehículo (petición del usuario,
+  // 2026-11-17). Se conservan los ajustes de asiento y, si aún no tiene unidad, asignarla.
+  const canChangeVehicle =
+    !isAuditMode &&
+    !(tour?.temporalStatus === TOUR_TEMPORAL_STATUS.IN_PROGRESS && Boolean(tour?.vehicle));
   const [selectedTravelerId, setSelectedTravelerId] = useState<string | null>(null);
   const [isQuickReservationOpen, setIsQuickReservationOpen] = useState(false);
   const [isCancelTourOpen, setIsCancelTourOpen] = useState(false);
@@ -257,7 +262,9 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                 unassignedPassengers={unassignedPassengers}
                 pendingSeatPassengerId={pendingSeatPassengerId}
                 onSelectPassenger={setPendingSeatPassengerId}
-                onChangeVehicleClick={isAuditMode ? undefined : () => setIsVehicleModalOpen(true)}
+                onChangeVehicleClick={
+                  canChangeVehicle ? () => setIsVehicleModalOpen(true) : undefined
+                }
                 isAuditMode={isAuditMode}
               />
             )}
@@ -331,6 +338,8 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
             unassignedEligibles={unassignedPassengers}
             allEligiblePassengers={flattenedPassengers}
             onOpenVehicleSelection={isAuditMode ? undefined : () => setIsVehicleModalOpen(true)}
+            isAuditMode={isAuditMode}
+            canChangeVehicle={canChangeVehicle}
             pendingSeatPassengerId={pendingSeatPassengerId}
             setPendingSeatPassengerId={setPendingSeatPassengerId}
           />

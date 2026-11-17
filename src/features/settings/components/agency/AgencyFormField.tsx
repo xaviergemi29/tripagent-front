@@ -58,7 +58,7 @@ export function AgencyFormField({
           id={id}
           aria-invalid={Boolean(error)}
           className={cn(
-            "h-12 rounded-xl border-slate-200 bg-white py-3 pr-4 text-sm focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-100 sm:h-10 sm:py-2",
+            "h-12 rounded-xl border-slate-200 bg-white py-3 pr-4 text-base focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-100 sm:h-10 sm:py-2 sm:text-sm",
             prefix ? "pl-[4.25rem]" : "pl-10",
             inputClassName,
           )}

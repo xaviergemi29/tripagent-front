@@ -109,7 +109,7 @@ export function PoliciesTab() {
             placeholder={PLACEHOLDER}
             disabled={isPending}
             aria-invalid={Boolean(errors.policies)}
-            className="min-h-56 resize-y text-sm leading-relaxed"
+            className="min-h-56 resize-y text-base leading-relaxed sm:text-sm"
             {...form.register("policies")}
           />
           <div className="flex items-start justify-between gap-3 text-xs">

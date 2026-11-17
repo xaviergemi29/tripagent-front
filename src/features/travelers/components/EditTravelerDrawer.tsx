@@ -334,7 +334,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
             <textarea
               {...register("medicalNotes")}
               rows={3}
-              className="w-full rounded-md border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full rounded-md border border-slate-200 p-3 text-base focus:ring-2 focus:ring-indigo-500 focus:outline-none sm:text-sm"
               placeholder="Ej. Alérgico a penicilina, intolerancia a la lactosa, asma..."
             />
             {errors.medicalNotes && (

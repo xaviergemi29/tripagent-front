@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { blurNumberInputOnWheel } from "@/lib/number-input";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import {
   X,
@@ -370,9 +371,10 @@ export function TravelerDetailDrawer({
                               <input
                                 type="number"
                                 min="0"
+                                onWheel={blurNumberInputOnWheel}
                                 value={manualPenalty}
                                 onChange={(e) => setManualPenalty(e.target.value)}
-                                className="w-full rounded border border-slate-300 py-1.5 pr-3 pl-8 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
+                                className="w-full rounded border border-slate-300 py-1.5 pr-3 pl-8 text-base focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none sm:text-sm"
                                 placeholder="0.00"
                               />
                             </div>

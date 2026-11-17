@@ -1,8 +1,9 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { blurNumberInputOnWheel } from "@/lib/number-input";
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+function Input({ className, type, onWheel, ...props }: React.ComponentProps<"input">) {
   return (
     <input
       type={type}
@@ -12,6 +13,11 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
         className,
       )}
       {...props}
+      // TripAgent: la rueda del mouse no cambia un campo numérico enfocado (montos de abonos).
+      onWheel={(event) => {
+        blurNumberInputOnWheel(event);
+        onWheel?.(event);
+      }}
       suppressHydrationWarning
     />
   );

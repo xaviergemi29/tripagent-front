@@ -63,7 +63,7 @@ export function TourGeneralSection() {
               value={field.value ?? ""}
               rows={4}
               placeholder="Ej. Visita guiada a las cascadas, comida típica incluida y tiempo libre en el pueblo."
-              className="bg-slate-50/50 text-sm"
+              className="bg-slate-50/50 text-base sm:text-sm"
             />
             {fieldState.error && (
               <p className="animate-in fade-in flex items-center gap-1 text-xs font-medium text-red-500">

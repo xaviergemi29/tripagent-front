@@ -15,6 +15,10 @@ interface MobileSeatsTabProps {
   allEligiblePassengers: FlattenedPassenger[];
   /** Sin acción = Modo Auditoría: croquis de solo consulta, sin cambiar vehículo ni asientos. */
   onOpenVehicleSelection?: () => void;
+  /** Modo Auditoría explícito; si se omite, se deduce de que no haya `onOpenVehicleSelection`. */
+  isAuditMode?: boolean;
+  /** Falso en un tour EN CURSO con unidad: oculta "Cambiar vehículo" sin bloquear los asientos. */
+  canChangeVehicle?: boolean;
   pendingSeatPassengerId: string | null;
   setPendingSeatPassengerId: (id: string | null) => void;
 }
@@ -27,6 +31,8 @@ export function MobileSeatsTab({
   unassignedEligibles,
   allEligiblePassengers,
   onOpenVehicleSelection,
+  isAuditMode,
+  canChangeVehicle = true,
   pendingSeatPassengerId,
   setPendingSeatPassengerId,
 }: MobileSeatsTabProps) {
@@ -35,7 +41,7 @@ export function MobileSeatsTab({
   // Verificación type-safe gracias al esquema VehicleOutput
   const hasVehicle = Boolean(vehicle?.layoutMap);
 
-  const isReadOnly = !onOpenVehicleSelection;
+  const isReadOnly = isAuditMode ?? !onOpenVehicleSelection;
 
   const handleIntentChangeVehicle = () => {
     if (assignedSeatsCount > 0) {
@@ -71,7 +77,9 @@ export function MobileSeatsTab({
         unassignedEligibles={unassignedEligibles}
         allEligiblePassengers={allEligiblePassengers}
         pendingSeatPassengerId={pendingSeatPassengerId}
-        onChangeVehicleClick={isReadOnly ? undefined : handleIntentChangeVehicle}
+        onChangeVehicleClick={
+          isReadOnly || !canChangeVehicle ? undefined : handleIntentChangeVehicle
+        }
         onSelectPassenger={isReadOnly ? undefined : setPendingSeatPassengerId}
       />
 

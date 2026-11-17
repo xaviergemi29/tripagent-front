@@ -29,7 +29,7 @@ export function TourInstructionsField() {
             value={field.value ?? ""}
             rows={3}
             placeholder="Ej. Llevar botas de montaña, impermeable e identificación oficial."
-            className="bg-white text-sm"
+            className="bg-white text-base sm:text-sm"
           />
           <p className="text-xs text-slate-500">
             Tu cliente las verá en su enlace de reservación y en su estado de cuenta PDF, separadas
