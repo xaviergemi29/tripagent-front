@@ -13,6 +13,7 @@ import {
   Plane,
   Check,
   XCircle,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +24,7 @@ import {
   DEFAULT_CURRENCY,
   DESTINATION_TYPE,
   PASSENGER_STATUS,
+  TOUR_TEMPORAL_STATUS,
 } from "@/shared/constants/domain.constants";
 import type { TravelerHistoryOutput } from "../schemas/traveler.schema";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
@@ -38,6 +40,28 @@ type HistoryItem = TravelerHistoryOutput["history"][number];
 export const isCancelledTrip = (trip: Pick<HistoryItem, "passengerStatus" | "bookingStatus">) =>
   trip.passengerStatus === PASSENGER_STATUS.CANCELLED ||
   trip.bookingStatus === BOOKING_STATUS.CANCELLED;
+
+/** Estado que muestra cada viaje. "Concluido" sale del `temporalStatus` de la API, que considera el
+ * regreso y la hora de CDMX (antes se comparaba la salida con `new Date()`, que corría el día). */
+export type TripDisplayStatus = "UPCOMING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+
+export const resolveTripDisplayStatus = (
+  trip: Pick<HistoryItem, "passengerStatus" | "bookingStatus" | "temporalStatus">,
+): TripDisplayStatus => {
+  if (isCancelledTrip(trip) || trip.temporalStatus === TOUR_TEMPORAL_STATUS.CANCELLED) {
+    return "CANCELLED";
+  }
+  if (trip.temporalStatus === TOUR_TEMPORAL_STATUS.FINISHED) return "COMPLETED";
+  if (trip.temporalStatus === TOUR_TEMPORAL_STATUS.IN_PROGRESS) return "IN_PROGRESS";
+  return "UPCOMING";
+};
+
+const DATE_LABEL_PREFIX: Record<TripDisplayStatus, string> = {
+  UPCOMING: "Salida",
+  IN_PROGRESS: "Salida",
+  COMPLETED: "Concluido",
+  CANCELLED: "Cancelado",
+};
 
 export const HISTORY_FILTERS = [
   { value: "ALL", label: "Todos", matches: () => true },
@@ -202,7 +226,8 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: PropsTravelerHist
 
               <div className="mt-4 space-y-3">
                 {filteredBookings.map((item) => {
-                  const isCancelled = item.isCancelled;
+                  const uiStatus = resolveTripDisplayStatus(item);
+                  const isCancelled = uiStatus === "CANCELLED";
                   const isNacional = item.destinationType === DESTINATION_TYPE.NATIONAL;
 
                   const priceFormatted = formatCurrency(item.amountPaid, {
@@ -211,19 +236,7 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: PropsTravelerHist
 
                   const localDateString = formatLocalDate(item.departureDateTime);
 
-                  let dateLabel = "";
-                  if (isCancelled) {
-                    dateLabel = `Cancelado: ${localDateString}`;
-                  } else {
-                    const isPast = new Date(item.departureDateTime) < new Date();
-                    dateLabel = isPast
-                      ? `Concluido: ${localDateString}`
-                      : `Salida: ${localDateString}`;
-                  }
-
-                  let uiStatus = "UPCOMING";
-                  if (isCancelled) uiStatus = "CANCELLED";
-                  else if (new Date(item.departureDateTime) < new Date()) uiStatus = "COMPLETED";
+                  const dateLabel = `${DATE_LABEL_PREFIX[uiStatus]}: ${localDateString}`;
 
                   return (
                     <div
@@ -260,6 +273,13 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: PropsTravelerHist
                             <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700 sm:text-[11px]">
                               <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
                               Próximo viaje
+                            </span>
+                          )}
+
+                          {uiStatus === "IN_PROGRESS" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 sm:text-[11px]">
+                              <Clock className="h-3 w-3 text-amber-600" />
+                              En curso
                             </span>
                           )}
 

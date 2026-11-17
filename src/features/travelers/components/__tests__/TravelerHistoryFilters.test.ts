@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { HISTORY_FILTERS, isCancelledTrip } from "../TravelerHistoryDrawer";
-
-// Reglas de las píldoras del historial del viajero, con las constantes de dominio (2026-11-16).
+import {
+  HISTORY_FILTERS,
+  isCancelledTrip,
+  resolveTripDisplayStatus,
+} from "../TravelerHistoryDrawer";
 
 const trip = (overrides: Record<string, unknown>) =>
   ({
@@ -28,5 +30,20 @@ describe("historial del viajero: filtros", () => {
     expect(matches("INTERNATIONAL", trip({}))).toBe(false);
     expect(matches("CANCELLED", trip({ passengerStatus: "CANCELLED" }))).toBe(true);
     expect(matches("ALL", trip({ passengerStatus: "CANCELLED" }))).toBe(true);
+  });
+});
+
+describe("historial del viajero: estado de cada viaje (temporalStatus de la API)", () => {
+  it("usa el estado de la API: un viaje que ya salió pero no regresa sigue en curso", () => {
+    expect(resolveTripDisplayStatus(trip({ temporalStatus: "PRÓXIMO" }))).toBe("UPCOMING");
+    expect(resolveTripDisplayStatus(trip({ temporalStatus: "EN CURSO" }))).toBe("IN_PROGRESS");
+    expect(resolveTripDisplayStatus(trip({ temporalStatus: "FINALIZADO" }))).toBe("COMPLETED");
+  });
+
+  it("cancelado si lo canceló la agencia o si el pasajero o la reserva están cancelados", () => {
+    expect(resolveTripDisplayStatus(trip({ temporalStatus: "CANCELADO" }))).toBe("CANCELLED");
+    expect(
+      resolveTripDisplayStatus(trip({ temporalStatus: "FINALIZADO", bookingStatus: "CANCELLED" })),
+    ).toBe("CANCELLED");
   });
 });

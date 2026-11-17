@@ -1,4 +1,17 @@
 /**
+ * @description Convierte una fecha a `Date` sin correr el día. Una fecha sin hora ("YYYY-MM-DD", como
+ * la salida de un tour o la fecha de nacimiento) se toma a medianoche **local**: `new Date("1990-05-29")`
+ * la toma en UTC, que en CDMX es el 28 a las 18:00, y la mostraba un día antes. Una fecha con hora se
+ * interpreta tal cual.
+ * @example parseDateOnly("1990-05-29").getDate() // 29 en cualquier zona horaria
+ */
+export const parseDateOnly = (dateString: string): Date => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+  if (!match) return new Date(dateString);
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+};
+
+/**
  * @description Formatea una fecha u objeto Date a YYYY-MM-DD para compatibilidad estricta con <input type="date" />.
  * @param {string | Date | undefined | null} dateInput - Fecha en formato ISO o instancia Date.
  * @returns {string} Fecha en formato "YYYY-MM-DD". Devuelve string vacío si es inválido.
@@ -139,13 +152,14 @@ export const formatShortDateTime = (dateString: string): string => {
 };
 
 /**
- * @description Devuelve la fecha de hoy en formato ISO estándar sin la porción de tiempo.
+ * @description Devuelve la fecha de hoy (zona horaria local) en formato "YYYY-MM-DD".
  * Útil para establecer valores por defecto en `<input type="date">` o prefijos de nombres de archivos.
  *
  * @returns {string} Fecha actual en formato "YYYY-MM-DD".
  */
 export const getTodayIsoString = (): string => {
-  return new Date().toISOString().split("T")[0];
+  // Fecha local, no UTC: con `toISOString()` daba la de mañana desde las 18:00 en CDMX.
+  return formatForDateInput(new Date());
 };
 
 /**
@@ -161,7 +175,7 @@ export function formatBirthdateAndAge(birthdateStr?: string | null): {
   isMinor: boolean;
 } | null {
   if (!birthdateStr) return null;
-  const birthDate = new Date(birthdateStr);
+  const birthDate = parseDateOnly(birthdateStr);
   if (isNaN(birthDate.getTime())) return null;
 
   const today = new Date();

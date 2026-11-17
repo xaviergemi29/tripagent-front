@@ -7,6 +7,7 @@ import {
   formatSpanishLongDate,
   formatTourDateTime,
   getTodayIsoString,
+  parseDateOnly,
 } from "../tour-date.util";
 
 // Las fechas del tour son `date` (YYYY-MM-DD): se formatean sin pasar por la zona horaria local,
@@ -107,5 +108,37 @@ describe("Fechas relativas a hoy", () => {
   it("formatBirthdateAndAge devuelve null con fechas vacías o inválidas", () => {
     expect(formatBirthdateAndAge(null)).toBeNull();
     expect(formatBirthdateAndAge("no es fecha")).toBeNull();
+  });
+});
+
+// Fechas sin hora en CDMX (UTC-6): `new Date("YYYY-MM-DD")` las tomaba en UTC y las corría un día.
+describe("fechas sin hora en la zona horaria de CDMX", () => {
+  beforeEach(() => vi.stubEnv("TZ", "America/Mexico_City"));
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+  });
+
+  it("parseDateOnly conserva el día; con hora interpreta el instante", () => {
+    const d = parseDateOnly("1990-05-29");
+    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([1990, 4, 29]);
+    expect(parseDateOnly("2026-11-16T12:00:00Z").toISOString()).toBe("2026-11-16T12:00:00.000Z");
+  });
+
+  it("formatBirthdateAndAge muestra el día guardado y cumple años ese día, no el anterior", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 4, 28, 20, 0)); // 28 de mayo, 20:00 en CDMX
+    const eve = formatBirthdateAndAge("2008-05-29");
+    expect(eve?.formattedDate).toMatch(/^29 may/);
+    expect(eve).toMatchObject({ age: 17, isMinor: true });
+
+    vi.setSystemTime(new Date(2026, 4, 29, 8, 0));
+    expect(formatBirthdateAndAge("2008-05-29")).toMatchObject({ age: 18, isMinor: false });
+  });
+
+  it("getTodayIsoString usa la fecha local: a las 20:00 sigue siendo hoy, no mañana (UTC)", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 16, 20, 0)); // 16 nov 20:00 CDMX = 17 nov 02:00 UTC
+    expect(getTodayIsoString()).toBe("2026-11-16");
   });
 });

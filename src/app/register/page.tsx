@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import { API_BASE_URL } from "@/lib/api-config";
 import { TourRegistrationView } from "@/features/external-registration/components/TourRegistrationView";
 import { AlertTriangle, Compass, Unlink, HelpCircle } from "lucide-react";
@@ -5,22 +6,25 @@ import { CancelledBookingView } from "@/features/external-registration/component
 import { BookingSuccessView } from "@/features/external-registration/components/BookingSuccessView";
 import { PartialPaymentView } from "@/features/external-registration/components/PartialPaymentView";
 import { PaidBookingView } from "@/features/external-registration/components/PaidBookingView";
+import type { CancelledBookingData } from "@/features/external-registration/components/CancelledBookingView";
+import {
+  describeValidationError,
+  type MagicLinkValidation,
+} from "@/features/external-registration/utils/magic-link-validation";
 
 interface PageProps {
   searchParams: Promise<{ token: string }>;
 }
 
-async function validateTokenOnServer(token: string): Promise<any> {
+async function validateTokenOnServer(token: string): Promise<MagicLinkValidation> {
   try {
     const res = await fetch(`${API_BASE_URL}/magic-tokens/${token}/validate`, {
       cache: "no-store",
     });
-    return await res.json();
+    return (await res.json()) as MagicLinkValidation;
   } catch {
-    return {
-      isValid: false,
-      error: { code: "SERVER_ERROR", message: "Error de conexión con el servidor." },
-    };
+    // Sin conexión o respuesta que no es JSON (p. ej. un 502 del proxy): igual que una falla nuestra.
+    return { isValid: false, error: { code: "SERVER_ERROR" } };
   }
 }
 
@@ -52,30 +56,31 @@ export default async function RegistroPage({ searchParams }: PageProps) {
   // 1. Manejo de Errores y No Encontrados
   // (El Magic Link no vence por decisión del PM: no existe estado de enlace expirado.)
   if (!validation.isValid) {
-    const errorCode = validation.error?.code?.toUpperCase() || "";
+    const { kind, message } = describeValidationError(validation);
 
-    // Verificamos si es un error de token no encontrado o corrupto
-    if (errorCode.includes("NOT_FOUND")) {
-      return <NotFoundLinkView />;
+    // Token inexistente o corrupto
+    if (kind === "NOT_FOUND") return <NotFoundLinkView />;
+
+    // Falla nuestra (o sin conexión): el enlace puede estar bien, se pide reintentar.
+    if (kind === "SERVER_ERROR") {
+      return <InvalidScreen title="Servicio no disponible" message={message} />;
     }
 
-    // Errores duros (Token malformado genérico, error de servidor, etc.)
-    return (
-      <InvalidScreen
-        message={
-          validation.error?.message || "El enlace ingresado no es válido o ha sido dado de baja."
-        }
-      />
-    );
+    // Otros rechazos (estado no soportado, límite de intentos, etc.)
+    return <InvalidScreen message={message} />;
   }
 
   // Marca de la agencia: la API la manda en `meta` para todos los estados (incluido CANCELLED).
-  const agencyBrand: { name: string; logoPath: string | null; phone?: string | null } | null =
-    validation.meta?.agency ?? null;
+  const agencyBrand = validation.meta?.agency ?? null;
 
   // 2. Reserva cancelada: no tiene vista de flujo, pero sí la marca de la agencia.
   if (validation.flowState === "CANCELLED") {
-    return <CancelledBookingView agency={agencyBrand} data={validation.data ?? null} />;
+    return (
+      <CancelledBookingView
+        agency={agencyBrand}
+        data={(validation.data ?? null) as CancelledBookingData | null}
+      />
+    );
   }
 
   // 3. Renderizado de Vistas Válidas
@@ -91,8 +96,10 @@ export default async function RegistroPage({ searchParams }: PageProps) {
   }
 
   // Cada vista aporta su propio cascarón (PublicBookingLayout: fondo, encabezado y pie comunes).
+  // El `data` de cada `flowState` es el contrato de su vista (cada una tipa sus props).
+  const View = CurrentView as ComponentType<Record<string, unknown>>;
   return (
-    <CurrentView
+    <View
       {...validation.data}
       token={token}
       agencyLogoPath={agencyBrand?.logoPath ?? null}

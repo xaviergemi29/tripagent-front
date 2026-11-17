@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { parseDateOnly } from "@/shared/utils/tour-date.util";
 import { useUpdateTraveler } from "../hooks/useTravelers";
 import { editTravelerSchema, type EditTravelerFormInput } from "../schemas/traveler.schema";
 import type { TravelerInput, TravelerOutput } from "../schemas/traveler.schema";
@@ -27,7 +28,7 @@ interface EditTravelerDrawerProps {
 export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDrawerProps) {
   const { mutateAsync: updateTraveler, isPending } = useUpdateTraveler();
 
-  const { register, handleSubmit, setValue, control } = useForm<EditTravelerFormInput>({
+  const { register, handleSubmit, setValue, control, reset } = useForm<EditTravelerFormInput>({
     resolver: zodResolver(editTravelerSchema),
     defaultValues: { passengerType: "ADULT" },
     values: traveler
@@ -46,6 +47,11 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
 
   const { errors } = useFormState({ control });
   const watchPassengerType = useWatch({ control, name: "passengerType" });
+
+  const handleClose = (): void => {
+    reset();
+    onClose();
+  };
 
   const onSubmit = async (formData: EditTravelerFormInput) => {
     if (!traveler?.id) return;
@@ -67,7 +73,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
       travelerId: traveler.id,
       travelerData: payload as TravelerInput,
     });
-    onClose();
+    handleClose();
   };
 
   if (!isOpen || !traveler) return null;
@@ -82,7 +88,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
   return (
     <div
       className="animate-in fade-in fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-sm duration-200"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="animate-in slide-in-from-right flex h-full w-full max-w-md flex-col bg-white shadow-2xl duration-300"
@@ -115,7 +121,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
                         Próximo viaje: {traveler.nextTourName} •{" "}
                         {traveler.nextTourDate
                           ? new Intl.DateTimeFormat("es-MX", { dateStyle: "short" }).format(
-                              new Date(traveler.nextTourDate),
+                              parseDateOnly(traveler.nextTourDate),
                             )
                           : ""}
                       </span>
@@ -129,7 +135,12 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
                 </div>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="-mt-2 -mr-2 h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClose}
+              className="-mt-2 -mr-2 h-8 w-8"
+            >
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -284,7 +295,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={handleClose}
             className="w-full text-slate-700 sm:w-auto"
           >
             Cancelar

@@ -62,6 +62,23 @@ describe("EditTravelerDrawer", () => {
     expect(screen.queryByDisplayValue(/sin guardar/)).not.toBeInTheDocument();
   });
 
+  it("cancelar descarta lo no guardado: reabrir al mismo viajero muestra sus datos", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const { rerender } = render(
+      <EditTravelerDrawer traveler={traveler} isOpen onClose={onClose} />,
+    );
+    await user.type(await screen.findByDisplayValue("Ana Torres"), " (sin guardar)");
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(onClose).toHaveBeenCalledOnce();
+
+    rerender(<EditTravelerDrawer traveler={traveler} isOpen={false} onClose={onClose} />);
+    rerender(<EditTravelerDrawer traveler={traveler} isOpen onClose={onClose} />);
+
+    expect(await screen.findByDisplayValue("Ana Torres")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue(/sin guardar/)).not.toBeInTheDocument();
+  });
+
   it("menor: cambia las etiquetas y oculta el correo", async () => {
     const user = userEvent.setup();
     render(<EditTravelerDrawer traveler={traveler} isOpen onClose={vi.fn()} />);

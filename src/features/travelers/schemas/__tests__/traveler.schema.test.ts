@@ -94,6 +94,7 @@ describe("travelerHistoryItemSchema (historial y LTV)", () => {
       currency: "USD",
       tourTitle: "Disney Orlando",
       departureDateTime: "2026-12-20",
+      temporalStatus: "PRÓXIMO",
     };
     expect(travelerHistoryItemSchema.safeParse(item).success).toBe(true);
     expect(
