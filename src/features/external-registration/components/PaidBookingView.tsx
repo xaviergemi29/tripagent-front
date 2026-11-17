@@ -43,7 +43,8 @@ export function PaidBookingView({
   const titularName = travelers.find((p) => p.isTitular)?.name;
   const phoneDigits = toPhoneDigits(agency.phone);
   const whatsappUrl = phoneDigits
-    ? buildWhatsAppUrl(phoneDigits, {
+    ? // El número tal como está guardado (E.164 con su "+", o 10 dígitos de un registro anterior).
+      buildWhatsAppUrl(agency.phone, {
         message: `¡Hola, ${agency.name}! ${
           titularName ? `Soy ${titularName}, tengo` : "Tengo"
         } mi pase de abordaje para el viaje "${tourInfo.title}" y me gustaría hacerles una consulta.`,

@@ -13,6 +13,8 @@ import { useUpdateTraveler } from "../hooks/useTravelers";
 import { editTravelerSchema, type EditTravelerFormInput } from "../schemas/traveler.schema";
 import type { TravelerInput, TravelerOutput } from "../schemas/traveler.schema";
 import { PASSENGER_TYPE } from "@/shared/constants/domain.constants";
+import { PhoneField } from "@/components/shared/PhoneField";
+import { getPhoneCountryLabel, parseStoredPhone, toE164 } from "@/shared/utils/phone.util";
 
 interface ExtendedTraveler extends TravelerOutput {
   nextTourName?: string | null;
@@ -28,26 +30,43 @@ interface EditTravelerDrawerProps {
 
 export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDrawerProps) {
   const { mutateAsync: updateTraveler, isPending } = useUpdateTraveler();
+  // Teléfonos guardados (E.164 o 10 dígitos anteriores) → país + número nacional. Un registro sin
+  // país tiene la lada inferida (México): se pide confirmarla al guardar.
+  const storedWhatsapp = parseStoredPhone(traveler?.whatsappPhone, traveler?.whatsappCountry);
+  const storedEmergency = parseStoredPhone(
+    traveler?.emergencyContactPhone,
+    traveler?.emergencyContactCountry,
+    storedWhatsapp.country,
+  );
 
-  const { register, handleSubmit, setValue, control, reset } = useForm<EditTravelerFormInput>({
-    resolver: zodResolver(editTravelerSchema),
-    defaultValues: { passengerType: PASSENGER_TYPE.ADULT },
-    values: traveler
-      ? {
-          passengerType: PASSENGER_TYPE.ADULT,
-          whatsappPhone: traveler.whatsappPhone || "",
-          email: traveler.email || "",
-          fullName: traveler.fullName,
-          emergencyContactName: traveler.emergencyContactName,
-          emergencyContactPhone: traveler.emergencyContactPhone || "",
-          medicalNotes: traveler.medicalNotes || "",
-          birthDate: traveler.birthDate || "",
-        }
-      : undefined,
-  });
+  const { register, handleSubmit, setValue, trigger, control, reset } =
+    useForm<EditTravelerFormInput>({
+      resolver: zodResolver(editTravelerSchema),
+      defaultValues: {
+        passengerType: PASSENGER_TYPE.ADULT,
+        whatsappCountry: storedWhatsapp.country,
+        emergencyContactCountry: storedEmergency.country,
+      },
+      values: traveler
+        ? {
+            passengerType: PASSENGER_TYPE.ADULT,
+            whatsappPhone: storedWhatsapp.nationalNumber,
+            whatsappCountry: storedWhatsapp.country,
+            email: traveler.email || "",
+            fullName: traveler.fullName,
+            emergencyContactName: traveler.emergencyContactName,
+            emergencyContactPhone: storedEmergency.nationalNumber,
+            emergencyContactCountry: storedEmergency.country,
+            medicalNotes: traveler.medicalNotes || "",
+            birthDate: traveler.birthDate || "",
+          }
+        : undefined,
+    });
 
   const { errors } = useFormState({ control });
   const watchPassengerType = useWatch({ control, name: "passengerType" });
+  const whatsappCountry = useWatch({ control, name: "whatsappCountry" });
+  const emergencyContactCountry = useWatch({ control, name: "emergencyContactCountry" });
 
   const handleClose = (): void => {
     reset();
@@ -59,13 +78,19 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
 
     // 1. Payload campo por campo (strings vacíos a undefined); `passengerType` es solo del
     //    formulario y no se envía.
+    //    Los teléfonos viajan en E.164 con su país (así se confirma la lada de un registro anterior).
+    const whatsappPhone = toE164(formData.whatsappPhone, formData.whatsappCountry) ?? undefined;
     const payload: Partial<TravelerInput> = {
       fullName: formData.fullName,
       birthDate: formData.birthDate,
-      whatsappPhone: formData.whatsappPhone || undefined,
+      whatsappPhone,
+      ...(whatsappPhone && { whatsappCountry: formData.whatsappCountry }),
       email: formData.email || undefined,
       emergencyContactName: formData.emergencyContactName,
-      emergencyContactPhone: formData.emergencyContactPhone,
+      emergencyContactPhone:
+        toE164(formData.emergencyContactPhone, formData.emergencyContactCountry) ??
+        formData.emergencyContactPhone,
+      emergencyContactCountry: formData.emergencyContactCountry,
       medicalNotes: formData.medicalNotes || undefined,
     };
 
@@ -232,12 +257,23 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
                 ? "*"
                 : "(Opcional si tiene celular en ruta)"}
             </label>
-            <Input
-              {...register("whatsappPhone")}
+            <PhoneField
+              registration={register("whatsappPhone")}
+              country={whatsappCountry}
+              onCountryChange={(country) => {
+                setValue("whatsappCountry", country, { shouldDirty: true });
+                void trigger("whatsappPhone");
+              }}
               placeholder="Ej. 2281422143"
-              type="tel"
-              inputMode="numeric"
+              aria-label="WhatsApp"
+              invalid={Boolean(errors.whatsappPhone)}
             />
+            {traveler.whatsappPhone && !storedWhatsapp.confirmed && (
+              <p className="text-xs text-amber-700">
+                Lada sin confirmar: se asumió {getPhoneCountryLabel(storedWhatsapp.country)}. Revisa
+                el país y guarda para confirmarla.
+              </p>
+            )}
             {errors.whatsappPhone && (
               <p className="text-destructive text-xs">{errors.whatsappPhone.message}</p>
             )}
@@ -271,11 +307,16 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
               <Label className="text-xs font-semibold text-slate-700">
                 Teléfono de Emergencia *
               </Label>
-              <Input
-                {...register("emergencyContactPhone")}
-                type="tel"
-                inputMode="numeric"
-                placeholder="10 dígitos"
+              <PhoneField
+                registration={register("emergencyContactPhone")}
+                country={emergencyContactCountry}
+                onCountryChange={(country) => {
+                  setValue("emergencyContactCountry", country, { shouldDirty: true });
+                  void trigger("emergencyContactPhone");
+                }}
+                placeholder="Teléfono"
+                aria-label="Teléfono de Emergencia"
+                invalid={Boolean(errors.emergencyContactPhone)}
               />
               {errors.emergencyContactPhone && (
                 <p className="text-destructive text-xs">{errors.emergencyContactPhone.message}</p>

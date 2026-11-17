@@ -4,6 +4,7 @@ import { useTourManifest } from "@/features/tour-dashboard/hooks/useTourManifest
 import { formatLocalDate, formatPickupTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { useEffect, use } from "react";
+import { formatPhoneForDisplay } from "@/shared/utils/phone.util";
 
 interface PageProps {
   params: Promise<{
@@ -92,7 +93,8 @@ export default function ManifestPrintView({ params }: PageProps) {
                       </span>
                       {p.emergencyContact && (
                         <span className="mt-1 text-[10px] font-semibold tracking-wider text-slate-600 uppercase">
-                          Emergencia: {p.emergencyContact.name} - {p.emergencyContact.phone}
+                          Emergencia: {p.emergencyContact.name} -{" "}
+                          {formatPhoneForDisplay(p.emergencyContact.phone)}
                         </span>
                       )}
                     </div>

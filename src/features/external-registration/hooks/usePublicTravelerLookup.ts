@@ -6,8 +6,9 @@ import { PUBLIC_TRAVELER_LOOKUP_KEYS } from "@/shared/api/query-keys";
 export function usePublicTravelerLookup(magicToken: string) {
   const queryClient = useQueryClient();
 
+  /** `phone` en E.164 (axios codifica el "+" como %2B en la query). */
   const lookupTraveler = async (phone: string): Promise<TravelerOutput | null> => {
-    if (!phone || phone.length !== 10) return null;
+    if (!phone) return null;
 
     try {
       const result = await queryClient.fetchQuery({

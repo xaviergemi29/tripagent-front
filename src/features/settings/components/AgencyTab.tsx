@@ -9,6 +9,7 @@ import { AgencyInput, updateAgencyFormSchema } from "../schemas/agency.schema";
 import { AgencyBankDetailsForm } from "./agency/AgencyBankDetailsForm";
 import { AgencyPublicProfileForm } from "./agency/AgencyPublicProfileForm";
 import { SaveSettingsButton } from "./agency/SaveSettingsButton";
+import { parseStoredPhone, toE164 } from "@/shared/utils/phone.util";
 
 function AgencyTabSkeleton() {
   return (
@@ -40,10 +41,14 @@ function AgencyTabSkeleton() {
 export function AgencyTab() {
   const { data: agencyData, isLoading: isFetching, isError } = useAgency();
   const { mutateAsync: updateAgency, isPending: isUpdating } = useUpdateAgency();
+  // El WhatsApp guardado (E.164 o 10 dígitos anteriores) se edita como país + número nacional.
+  const storedPhone = parseStoredPhone(agencyData?.phone, agencyData?.phoneCountry);
   const form = useForm<AgencyInput>({
     resolver: zodResolver(updateAgencyFormSchema),
     mode: "onChange",
-    values: agencyData,
+    values: agencyData
+      ? { ...agencyData, phone: storedPhone.nationalNumber, phoneCountry: storedPhone.country }
+      : undefined,
     resetOptions: { keepDirtyValues: true },
   });
   // `useFormState` (no `form.formState`) y antes de los `return` tempranos: con el React Compiler,
@@ -53,7 +58,11 @@ export function AgencyTab() {
   // El schema ya quitó espacios y guiones de la CLABE y la tarjeta (`stripAccountSeparators`).
   const onSubmit = async (formData: AgencyInput): Promise<void> => {
     try {
-      await updateAgency(formData);
+      // La API recibe el WhatsApp en E.164 con su país.
+      await updateAgency({
+        ...formData,
+        phone: toE164(formData.phone, formData.phoneCountry) ?? formData.phone,
+      });
       // Lo guardado deja de contar como cambio pendiente: con `keepDirtyValues`, la recarga de
       // `values` conservaría los campos "sucios" y "Guardar" seguiría habilitado tras guardar.
       form.reset(form.getValues());

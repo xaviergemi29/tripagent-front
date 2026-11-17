@@ -19,9 +19,10 @@ describe("toPhoneDigits", () => {
 });
 
 describe("formatPhoneForDisplay", () => {
-  it("muestra los últimos 10 dígitos agrupados 3-3-4 (sin lada de país)", () => {
+  it("muestra México en formato nacional 3-3-4 y otros países con su lada", () => {
     expect(formatPhoneForDisplay("+522288492011")).toBe("228 849 2011");
     expect(formatPhoneForDisplay("2288492011")).toBe("228 849 2011");
+    expect(formatPhoneForDisplay("+34612345678")).toBe("+34 612 34 56 78");
   });
 
   it("con menos de 10 dígitos devuelve el valor recortado", () => {
@@ -46,6 +47,8 @@ describe("buildWhatsAppUrl", () => {
     expect(buildWhatsAppUrl("2281234567")).toBe("https://wa.me/522281234567");
     expect(buildWhatsAppUrl("522281234567")).toBe("https://wa.me/522281234567");
     expect(buildWhatsAppUrl("+1 415 555 0100")).toBe("https://wa.me/14155550100");
+    // Un E.164 de EE. UU. (10 dígitos nacionales) ya no recibe la lada 52 (2026-11-16).
+    expect(buildWhatsAppUrl("+12125551234")).toBe("https://wa.me/12125551234");
   });
 });
 

@@ -72,6 +72,22 @@ describe("Login", () => {
 });
 
 describe("Pre-reserva del folleto", () => {
+  it("arranca con el país del teléfono de la agencia", () => {
+    render(
+      <PreBookingDialog
+        tourId="t1"
+        tourTitle="Huasteca"
+        availableSeats={10}
+        open
+        onOpenChange={vi.fn()}
+        defaultPhoneCountry="CO"
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: /País del teléfono: Colombia \(\+57\)/ }),
+    ).toBeTruthy();
+  });
+
   it("marca los campos vacíos y envía lo capturado", async () => {
     const user = userEvent.setup();
     render(
@@ -88,11 +104,13 @@ describe("Pre-reserva del folleto", () => {
     expect(preBook).not.toHaveBeenCalled();
 
     await user.type(screen.getByPlaceholderText("Ej. Mariana Ruiz"), "Mariana Ruiz");
-    await user.type(screen.getByPlaceholderText("10 dígitos"), "2281234567");
+    await user.type(screen.getByPlaceholderText("Tu número"), "2281234567");
     await user.click(screen.getByRole("button", { name: /Enviar solicitud/ }));
+    // El WhatsApp viaja completo (E.164) con su país; sin otro dato, el país inicial es México.
     expect(preBook.mock.calls[0]![0]).toEqual({
       fullName: "Mariana Ruiz",
-      whatsapp: "2281234567",
+      whatsapp: "+522281234567",
+      whatsappCountry: "MX",
       numberPassengers: 1,
       tourId: "t1",
     });

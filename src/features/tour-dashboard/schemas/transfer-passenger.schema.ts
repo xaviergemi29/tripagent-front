@@ -1,13 +1,12 @@
 import { z } from "zod";
 import { PASSENGER_ROLE } from "@/shared/constants/domain.constants";
 import { passengerRoleSchema } from "./tour-dashboard.schema";
-
-const PHONE_REGEX = /^\d{10}$/;
+import { phoneCountrySchema, refinePhone } from "@/shared/schemas/phone.schema";
 
 /**
  * Formulario de "Transferir lugar" (titular o acompañante).
  * Replica `transferPassengerBodySchema` de la API:
- * - Adulto: WhatsApp (10 dígitos) y correo obligatorios.
+ * - Adulto: WhatsApp (número + país, se envía en E.164) y correo obligatorios.
  * - Menor: WhatsApp opcional y sin correo. El titular nunca puede ser menor.
  */
 export const transferPassengerSchema = z
@@ -16,11 +15,13 @@ export const transferPassengerSchema = z
     isMinor: z.boolean(),
     fullName: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres").max(255),
     whatsapp: z.string().trim(),
+    whatsappCountry: phoneCountrySchema,
     email: z.string().trim(),
     inheritTitularBoardingPoint: z.boolean(),
     medicalNotes: z.string().trim(),
     emergencyContactName: z.string().trim(),
     emergencyContactPhone: z.string().trim(),
+    emergencyContactCountry: phoneCountrySchema,
   })
   .superRefine((data, ctx) => {
     if (data.role === PASSENGER_ROLE.TITULAR && data.isMinor) {
@@ -30,17 +31,17 @@ export const transferPassengerSchema = z
         message: "El titular debe ser un adulto (es el responsable financiero)",
       });
     }
-    if (data.whatsapp && !PHONE_REGEX.test(data.whatsapp)) {
-      ctx.addIssue({ code: "custom", path: ["whatsapp"], message: "Deben ser 10 dígitos" });
-    }
+    refinePhone(
+      ctx,
+      data.whatsapp,
+      data.whatsappCountry,
+      ["whatsapp"],
+      data.isMinor ? undefined : "El WhatsApp es obligatorio para adultos",
+    );
+    refinePhone(ctx, data.emergencyContactPhone, data.emergencyContactCountry, [
+      "emergencyContactPhone",
+    ]);
     if (!data.isMinor) {
-      if (!data.whatsapp) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["whatsapp"],
-          message: "El WhatsApp es obligatorio para adultos",
-        });
-      }
       if (!z.email().safeParse(data.email).success) {
         ctx.addIssue({
           code: "custom",
@@ -49,13 +50,6 @@ export const transferPassengerSchema = z
         });
       }
     }
-    if (data.emergencyContactPhone && !PHONE_REGEX.test(data.emergencyContactPhone)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["emergencyContactPhone"],
-        message: "Deben ser 10 dígitos",
-      });
-    }
   });
 
 /** Cuerpo de `PATCH /bookings/:bookingId/transfer` (los campos vacíos no se envían). */
@@ -63,13 +57,16 @@ export const transferPassengerInputSchema = z.object({
   passengerId: z.uuid(),
   role: passengerRoleSchema,
   fullName: z.string(),
+  /** E.164. */
   whatsapp: z.string().optional(),
+  whatsappCountry: z.string().optional(),
   email: z.string().optional(),
   isMinor: z.boolean(),
   inheritTitularBoardingPoint: z.boolean(),
   medicalNotes: z.string().optional(),
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
+  emergencyContactCountry: z.string().optional(),
 });
 
 /** Respuesta (ya desenvuelta por el interceptor): la reserva actualizada. */

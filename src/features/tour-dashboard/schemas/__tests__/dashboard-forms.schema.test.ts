@@ -18,11 +18,13 @@ describe("transferPassengerSchema", () => {
     isMinor: false,
     fullName: "Carlos Pérez",
     whatsapp: "2281234567",
+    whatsappCountry: "MX",
     email: "carlos@correo.mx",
     inheritTitularBoardingPoint: true,
     medicalNotes: "",
     emergencyContactName: "",
     emergencyContactPhone: "",
+    emergencyContactCountry: "MX",
   };
 
   it("acepta un adulto con WhatsApp y correo", () => {
@@ -51,13 +53,24 @@ describe("transferPassengerSchema", () => {
     expect(pathsOf(result)).toContain("isMinor");
   });
 
-  it("los teléfonos capturados deben tener 10 dígitos", () => {
+  it("los teléfonos capturados deben ser válidos para el país elegido", () => {
     expect(pathsOf(transferPassengerSchema.safeParse({ ...adult, whatsapp: "228123" }))).toContain(
       "whatsapp",
     );
     expect(
       pathsOf(transferPassengerSchema.safeParse({ ...adult, emergencyContactPhone: "12345" })),
     ).toContain("emergencyContactPhone");
+    // Un número de EE. UU. es válido con su país y no con México (+52).
+    expect(
+      transferPassengerSchema.safeParse({
+        ...adult,
+        whatsapp: "2125551234",
+        whatsappCountry: "US",
+      }).success,
+    ).toBe(true);
+    expect(
+      pathsOf(transferPassengerSchema.safeParse({ ...adult, whatsapp: "+12125551234" })),
+    ).toContain("whatsapp");
   });
 
   it("recorta espacios antes de validar", () => {
@@ -112,6 +125,7 @@ describe("quickBookingSchema (apartado rápido)", () => {
   const valid = {
     fullName: "Ana Torres",
     whatsapp: "2281234567",
+    whatsappCountry: "MX" as const,
     email: "ana@correo.mx",
     numberPassengers: 2,
   };
@@ -120,7 +134,7 @@ describe("quickBookingSchema (apartado rápido)", () => {
     expect(quickBookingSchema.safeParse(valid).success).toBe(true);
   });
 
-  it("exige al menos 1 lugar, WhatsApp de 10 dígitos y correo válido", () => {
+  it("exige al menos 1 lugar, un WhatsApp válido para su país y correo válido", () => {
     expect(pathsOf(quickBookingSchema.safeParse({ ...valid, numberPassengers: 0 }))).toContain(
       "numberPassengers",
     );
@@ -128,5 +142,12 @@ describe("quickBookingSchema (apartado rápido)", () => {
       "whatsapp",
     );
     expect(pathsOf(quickBookingSchema.safeParse({ ...valid, email: "ana" }))).toContain("email");
+    expect(
+      quickBookingSchema.safeParse({ ...valid, whatsapp: "612345678", whatsappCountry: "ES" })
+        .success,
+    ).toBe(true);
+    expect(pathsOf(quickBookingSchema.safeParse({ ...valid, whatsappCountry: "XX" }))).toContain(
+      "whatsappCountry",
+    );
   });
 });

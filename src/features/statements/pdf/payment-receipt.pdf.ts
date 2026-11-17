@@ -530,7 +530,8 @@ export function createPaymentReceiptDocument(
           : p.pickupPointName || "Por coordinar",
         // El asiento se dibuja como insignia en didDrawCell.
         "",
-        toPhoneDigits(phone).length >= 10 ? phone : "Sin teléfono",
+        // Internacionales (E.164) pueden tener menos de 10 dígitos nacionales: basta con 8 en total.
+        toPhoneDigits(phone).length >= 8 ? phone : "Sin teléfono",
       ];
     }),
     theme: "plain",

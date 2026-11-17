@@ -8,21 +8,24 @@ import {
   PASSENGER_TYPE,
   PASSENGER_TYPES,
 } from "@/shared/constants/domain.constants";
+import { phoneCountrySchema, refinePhone } from "@/shared/schemas/phone.schema";
+
+/** Teléfono guardado: E.164 ("+522281234567") o los 10 dígitos de un registro anterior. */
+const storedPhoneSchema = z
+  .string()
+  .trim()
+  .regex(/^\+?\d{8,15}$/, "Teléfono inválido");
 
 export const travelerSchema = z.object({
   id: z.uuid().optional(),
   fullName: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres"),
-  whatsappPhone: z
-    .string()
-    .trim()
-    .regex(/^\d{10}$/, "Debe ser un teléfono a 10 dígitos")
-    .optional(),
+  whatsappPhone: storedPhoneSchema.optional(),
+  /** País del WhatsApp (ISO alfa-2); `null` = lada inferida, sin confirmar. */
+  whatsappCountry: z.string().nullable().optional(),
   email: z.email("Correo electrónico inválido").trim(),
   emergencyContactName: z.string().trim().min(3, "Nombre de emergencia requerido"),
-  emergencyContactPhone: z
-    .string()
-    .trim()
-    .regex(/^\d{10}$/, "Teléfono de emergencia a 10 dígitos"),
+  emergencyContactPhone: storedPhoneSchema,
+  emergencyContactCountry: z.string().nullable().optional(),
 
   medicalNotes: z.string().trim().optional(),
   customFields: z.record(z.string(), z.unknown()).default({}),
@@ -81,42 +84,37 @@ export const editTravelerSchema = z
     passengerType: z.enum(PASSENGER_TYPES),
     fullName: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
     birthDate: z.string().min(1, "La fecha de nacimiento es obligatoria para el seguro carretero"),
+    // Número nacional + país (PhoneField); se envían en E.164 con `toE164`.
     whatsappPhone: z.string().optional(),
+    whatsappCountry: phoneCountrySchema,
     email: z.string().optional(),
     emergencyContactName: z.string().min(3, "El nombre de contacto de emergencia es obligatorio"),
-    emergencyContactPhone: z
-      .string()
-      .regex(/^\d{10}$/, "El teléfono de emergencia debe contener 10 dígitos numéricos"),
+    emergencyContactPhone: z.string(),
+    emergencyContactCountry: phoneCountrySchema,
     medicalNotes: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.passengerType === PASSENGER_TYPE.ADULT) {
-      if (!data.whatsappPhone || !/^\d{10}$/.test(data.whatsappPhone.trim())) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["whatsappPhone"],
-          message: "El WhatsApp es obligatorio y debe tener 10 dígitos para adultos",
-        });
-      }
-      if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["email"],
-          message: "El correo electrónico es obligatorio y debe ser válido",
-        });
-      }
-    } else {
-      if (
-        data.whatsappPhone &&
-        data.whatsappPhone.trim() !== "" &&
-        !/^\d{10}$/.test(data.whatsappPhone.trim())
-      ) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["whatsappPhone"],
-          message: "Si ingresas teléfono para el menor, debe contener 10 dígitos",
-        });
-      }
+    const isAdult = data.passengerType === PASSENGER_TYPE.ADULT;
+    refinePhone(
+      ctx,
+      data.whatsappPhone,
+      data.whatsappCountry,
+      ["whatsappPhone"],
+      isAdult ? "El WhatsApp es obligatorio para adultos" : undefined,
+    );
+    refinePhone(
+      ctx,
+      data.emergencyContactPhone,
+      data.emergencyContactCountry,
+      ["emergencyContactPhone"],
+      "El teléfono de emergencia es obligatorio",
+    );
+    if (isAdult && (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()))) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["email"],
+        message: "El correo electrónico es obligatorio y debe ser válido",
+      });
     }
   });
 

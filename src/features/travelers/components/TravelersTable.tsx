@@ -30,6 +30,7 @@ import type { TravelerOutput } from "../schemas/traveler.schema";
 import { formatBirthdateAndAge } from "@/shared/utils/tour-date.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { type PassengerType } from "@/shared/constants/domain.constants";
+import { formatPhoneForDisplay } from "@/shared/utils/phone.util";
 
 export interface TravelerTableRow extends TravelerOutput {
   tripCount?: number;
@@ -139,7 +140,7 @@ export function TravelersTable({
                     <div className="flex flex-col space-y-1.5 text-xs">
                       <span className="flex items-center font-medium text-slate-700">
                         <Phone className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
-                        {traveler.whatsappPhone || (
+                        {formatPhoneForDisplay(traveler.whatsappPhone) || (
                           <span className="text-slate-400 italic">Sin teléfono</span>
                         )}
                       </span>
@@ -162,7 +163,7 @@ export function TravelersTable({
                       </span>
                       <span className="flex items-center text-xs font-semibold text-slate-500">
                         <ShieldAlert className="mr-1.5 h-3.5 w-3.5 shrink-0 text-red-500" />
-                        {traveler.emergencyContactPhone}
+                        {formatPhoneForDisplay(traveler.emergencyContactPhone)}
                       </span>
                     </div>
                   </TableCell>

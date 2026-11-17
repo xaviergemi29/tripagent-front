@@ -10,6 +10,7 @@ import { formatShortDateTime } from "@/shared/utils/tour-date.util";
 import { PAYMENT_METHOD_DICT } from "@/shared/utils/config/status-dictionaries.config";
 import { RegisterPaymentModal } from "@/features/tour-dashboard/components/finance/RegisterPaymentModal";
 import { REFUND_STATUS } from "@/shared/constants/domain.constants";
+import { formatPhoneForDisplay } from "@/shared/utils/phone.util";
 
 interface RefundDrawerProps {
   tourId: string;
@@ -63,7 +64,7 @@ export function RefundDrawer({
               <div>
                 <h2 className="text-lg font-bold text-slate-900">{refund.fullName}</h2>
                 <p className="text-xs font-semibold text-slate-500 uppercase">
-                  Reserva cancelada · {refund.whatsapp}
+                  Reserva cancelada · {formatPhoneForDisplay(refund.whatsapp)}
                 </p>
               </div>
             </div>

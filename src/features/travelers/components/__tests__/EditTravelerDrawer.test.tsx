@@ -43,6 +43,11 @@ describe("EditTravelerDrawer", () => {
       travelerData: expect.objectContaining({
         fullName: "Ana María Torres",
         medicalNotes: "Ninguna",
+        // El número guardado en 10 dígitos se envía en E.164 y confirma su país.
+        whatsappPhone: "+522281234567",
+        whatsappCountry: "MX",
+        emergencyContactPhone: "+522281112222",
+        emergencyContactCountry: "MX",
       }),
     });
   });

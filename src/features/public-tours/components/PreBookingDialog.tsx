@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent } from "react";
+import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, CheckCircle2, Loader2, Minus, Plus } from "lucide-react";
@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createPreBookingFormSchema, type PreBookingFormInput } from "../pre-booking.schema";
 import { usePreBooking } from "../hooks/usePreBooking";
+import { PhoneField } from "@/components/shared/PhoneField";
+import { DEFAULT_PHONE_COUNTRY, toE164, type PhoneCountry } from "@/shared/utils/phone.util";
 
 interface PreBookingDialogProps {
   tourId: string;
@@ -23,9 +25,9 @@ interface PreBookingDialogProps {
   availableSeats: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** País inicial del WhatsApp: el del teléfono de la agencia (México si no tiene). */
+  defaultPhoneCountry?: PhoneCountry;
 }
-
-const EMPTY_FORM: PreBookingFormInput = { fullName: "", whatsapp: "", numberPassengers: 1 };
 
 export function PreBookingDialog({
   tourId,
@@ -33,7 +35,14 @@ export function PreBookingDialog({
   availableSeats,
   open,
   onOpenChange,
+  defaultPhoneCountry = DEFAULT_PHONE_COUNTRY,
 }: PreBookingDialogProps) {
+  const emptyForm: PreBookingFormInput = {
+    fullName: "",
+    whatsapp: "",
+    whatsappCountry: defaultPhoneCountry,
+    numberPassengers: 1,
+  };
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { mutate, isPending, error, reset: resetMutation } = usePreBooking();
 
@@ -41,43 +50,38 @@ export function PreBookingDialog({
     register,
     handleSubmit,
     setValue,
+    trigger,
     control,
     reset,
     formState: { errors },
   } = useForm<PreBookingFormInput>({
     resolver: zodResolver(createPreBookingFormSchema(availableSeats)),
     mode: "onChange",
-    defaultValues: EMPTY_FORM,
+    defaultValues: emptyForm,
   });
 
   const numberPassengers = useWatch({ control, name: "numberPassengers" });
+  const whatsappCountry = useWatch({ control, name: "whatsappCountry" });
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       // Al cerrar se limpia todo para que una nueva apertura empiece de cero.
       setIsSubmitted(false);
       resetMutation();
-      reset(EMPTY_FORM);
+      reset(emptyForm);
     }
     onOpenChange(nextOpen);
   };
 
   const onSubmit = (values: PreBookingFormInput) => {
-    mutate({ ...values, tourId }, { onSuccess: () => setIsSubmitted(true) });
+    // La API recibe el número completo en E.164 con su país.
+    const whatsapp = toE164(values.whatsapp, values.whatsappCountry) ?? values.whatsapp;
+    mutate({ ...values, whatsapp, tourId }, { onSuccess: () => setIsSubmitted(true) });
   };
 
   const changeSeats = (delta: number) => {
     const next = Math.min(Math.max(1, (Number(numberPassengers) || 1) + delta), availableSeats);
     setValue("numberPassengers", next, { shouldValidate: true });
-  };
-
-  const { onChange: rhfWhatsappChange, ...whatsappField } = register("whatsapp");
-  const handleWhatsappChange = (e: ChangeEvent<HTMLInputElement>) => {
-    // Acepta "+52 228 123 4567" o "52…" y deja solo los 10 dígitos nacionales.
-    let digits = e.target.value.replace(/\D/g, "");
-    if (digits.length === 12 && digits.startsWith("52")) digits = digits.slice(2);
-    e.target.value = digits.slice(0, 10);
-    rhfWhatsappChange(e);
   };
 
   return (
@@ -139,17 +143,18 @@ export function PreBookingDialog({
                 >
                   WhatsApp
                 </Label>
-                <Input
+                <PhoneField
                   id="pre-booking-whatsapp"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel-national"
-                  placeholder="10 dígitos"
+                  registration={register("whatsapp")}
+                  country={whatsappCountry}
+                  onCountryChange={(country) => {
+                    setValue("whatsappCountry", country, { shouldDirty: true });
+                    void trigger("whatsapp");
+                  }}
+                  placeholder="Tu número"
                   disabled={isPending}
-                  aria-invalid={!!errors.whatsapp}
-                  className="h-12 rounded-xl text-base"
-                  onChange={handleWhatsappChange}
-                  {...whatsappField}
+                  invalid={!!errors.whatsapp}
+                  inputClassName="h-12 rounded-xl text-base"
                 />
                 {errors.whatsapp && <FieldError message={errors.whatsapp.message} />}
               </div>

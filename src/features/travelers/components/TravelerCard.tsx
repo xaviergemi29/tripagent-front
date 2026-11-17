@@ -14,6 +14,7 @@ import { getInitials, getAvatarColor } from "@/shared/utils/travelers-helpers";
 import { formatBirthdateAndAge } from "@/shared/utils/tour-date.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import type { TravelerTableRow } from "./TravelersTable"; // Reutilizamos el tipo extendido
+import { buildTelUrl, formatPhoneForDisplay } from "@/shared/utils/phone.util";
 
 interface TravelerCardProps {
   traveler: TravelerTableRow;
@@ -87,13 +88,15 @@ export function TravelerCard({ traveler, onEdit, onDelete, onViewHistory }: Trav
       {/* B) Bloque de Contacto y Emergencia */}
       <div className="my-3 space-y-2 rounded-xl border border-slate-100 bg-slate-50/80 p-3 text-xs text-slate-700">
         <a
-          href={traveler.whatsappPhone ? `tel:${traveler.whatsappPhone}` : "#"}
+          href={buildTelUrl(traveler.whatsappPhone) ?? "#"}
           className={`flex items-center gap-2 transition-colors ${
             traveler.whatsappPhone ? "hover:text-emerald-700" : "pointer-events-none"
           }`}
         >
           <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-          <span className="font-medium">{traveler.whatsappPhone || "Sin teléfono"}</span>
+          <span className="font-medium">
+            {formatPhoneForDisplay(traveler.whatsappPhone) || "Sin teléfono"}
+          </span>
         </a>
 
         {!isMinor && traveler.email && (
@@ -109,7 +112,8 @@ export function TravelerCard({ traveler, onEdit, onDelete, onViewHistory }: Trav
         <div className="flex items-center gap-1.5 border-t border-slate-200/60 pt-1 font-medium text-rose-800">
           <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-rose-500" />
           <span className="truncate">
-            {traveler.emergencyContactName} • {traveler.emergencyContactPhone}
+            {traveler.emergencyContactName} •{" "}
+            {formatPhoneForDisplay(traveler.emergencyContactPhone)}
           </span>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { isSamePhone, parseStoredPhone } from "@/shared/utils/phone.util";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   TravelerHistoryOutput,
@@ -50,11 +51,15 @@ export function useTravelers(search?: string) {
 export function useTravelerLookup() {
   const queryClient = useQueryClient();
 
-  // Función imperativa optimizada con caché de TanStack Query
-  const lookupTraveler = async (term: string): Promise<TravelerOutput | null> => {
-    if (!term || term.trim().length < 3) return null;
-
-    const cleanTerm = term.trim();
+  /**
+   * Busca al viajero por su WhatsApp (`phone` en E.164). La búsqueda de `/travelers` es parcial, así
+   * que se pide por el número nacional (coincide con el E.164 y con los 10 dígitos de registros
+   * anteriores) y solo cuenta el viajero cuyo número es **el mismo** (antes se tomaba el primer
+   * resultado, que podía ser otro viajero con esos dígitos en el correo).
+   */
+  const lookupTraveler = async (phone: string): Promise<TravelerOutput | null> => {
+    const cleanTerm = parseStoredPhone(phone).nationalNumber;
+    if (cleanTerm.length < 3) return null;
 
     try {
       // queryClient.fetchQuery reutiliza la caché si ya existe la búsqueda,
@@ -69,13 +74,7 @@ export function useTravelerLookup() {
         staleTime: 1000 * 60 * 5,
       });
 
-      // La búsqueda de /travelers es parcial (nombre, correo y teléfono): solo cuenta el viajero cuyo
-      // WhatsApp es exactamente el escrito (antes se tomaba el primer resultado, que podía ser otro
-      // viajero con esos dígitos en el correo).
-      const digits = cleanTerm.replace(/\D/g, "");
-      return (
-        results.find((traveler) => traveler.whatsappPhone?.replace(/\D/g, "") === digits) ?? null
-      );
+      return results.find((traveler) => isSamePhone(traveler.whatsappPhone, phone)) ?? null;
     } catch (error) {
       console.error("Error buscando viajero existente:", error);
       return null;

@@ -14,6 +14,7 @@ import {
 } from "./traveler-row-cells";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { hasRegisteredPayments } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
+import { formatPhoneForDisplay } from "@/shared/utils/phone.util";
 
 interface TitularRowProps {
   titular: TitularRowOutput;
@@ -108,7 +109,9 @@ export function TitularRow({
           <span className="text-xs font-medium text-slate-400">Por definir</span>
         )}
       </td>
-      <td className="px-6 py-3.5 font-mono text-xs text-slate-600">{titular.whatsapp}</td>
+      <td className="px-6 py-3.5 font-mono text-xs text-slate-600">
+        {formatPhoneForDisplay(titular.whatsapp)}
+      </td>
       <td className="px-6 py-3.5">
         <RegistrationStatusBadge status={titular.formStatus} />
       </td>

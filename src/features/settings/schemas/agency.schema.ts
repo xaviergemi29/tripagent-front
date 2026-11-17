@@ -1,5 +1,6 @@
 import z from "zod";
 import { POLICIES_MAX_LENGTH, SUBSCRIPTION_STATUSES } from "@/shared/constants/domain.constants";
+import { phoneCountrySchema, refinePhone } from "@/shared/schemas/phone.schema";
 
 export const subscriptionStatusSchema = z.enum(SUBSCRIPTION_STATUSES);
 const emptyStringToUndefined = z.literal("").transform(() => undefined);
@@ -13,10 +14,9 @@ const agencyFormFields = {
     .trim()
     .min(3, "La agencia debe tener al menos 3 caracteres")
     .max(255, "Máximo 255 caracteres"),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^(\+)?\d{10,}$/, "El teléfono debe contener solo números (mínimo 10 dígitos)"),
+  // WhatsApp oficial: en el formulario, número nacional + país (PhoneField; se envía en E.164).
+  // En la respuesta, el E.164 guardado (o los 10 dígitos de un registro anterior).
+  phone: z.string().trim(),
   bankName: z
     .string()
     .trim()
@@ -67,6 +67,8 @@ export const agencyOutputSchema = z.object({
   updatedAt: z.string(),
   deletedAt: z.string().nullable(),
   ...agencyFormFields,
+  /** País del teléfono (ISO alfa-2); `null` = lada inferida, sin confirmar. */
+  phoneCountry: z.string().nullable().optional(),
 });
 
 /** Formulario de "Políticas": texto libre; vacío → `null` (sin políticas). */
@@ -77,7 +79,17 @@ export const agencyPoliciesFormSchema = z.object({
     .transform((value) => value.trim() || null),
 });
 
-export const updateAgencyFormSchema = z.object(agencyFormFields);
+export const updateAgencyFormSchema = z
+  .object({ ...agencyFormFields, phoneCountry: phoneCountrySchema })
+  .superRefine((data, ctx) =>
+    refinePhone(
+      ctx,
+      data.phone,
+      data.phoneCountry,
+      ["phone"],
+      "El WhatsApp oficial es obligatorio",
+    ),
+  );
 
 export type AgencyOutput = z.infer<typeof agencyOutputSchema>;
 export type AgencyPoliciesFormInput = z.input<typeof agencyPoliciesFormSchema>;

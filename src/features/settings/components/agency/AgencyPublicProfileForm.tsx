@@ -1,16 +1,19 @@
 "use client";
 
-import { Building2, Mail, MapPin, Phone, Store } from "lucide-react";
-import { useFormContext, useFormState } from "react-hook-form";
+import { Building2, Mail, MapPin, Store } from "lucide-react";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
+import { Label } from "@/components/ui/label";
+import { PhoneField } from "@/components/shared/PhoneField";
 import type { AgencyInput } from "../../schemas/agency.schema";
 import { AgencyFormField } from "./AgencyFormField";
 import { AgencySettingsCard } from "./AgencySettingsCard";
 
 /** Tarjeta "Perfil Público": dirección, nombre comercial, correo y WhatsApp de la agencia. */
 export function AgencyPublicProfileForm({ disabled }: { disabled: boolean }) {
-  const { register, control } = useFormContext<AgencyInput>();
+  const { register, control, setValue, trigger } = useFormContext<AgencyInput>();
   // `useFormState` (no `formState` del contexto): compatible con el React Compiler.
   const { errors } = useFormState({ control });
+  const phoneCountry = useWatch({ control, name: "phoneCountry" });
 
   return (
     <AgencySettingsCard
@@ -49,20 +52,29 @@ export function AgencyPublicProfileForm({ disabled }: { disabled: boolean }) {
         error={errors.email?.message}
         disabled={disabled}
       />
-      {/* "+52" es solo visual: se guardan los 10 dígitos que se capturan (mismo contrato). */}
-      <AgencyFormField
-        id="phone"
-        type="tel"
-        inputMode="numeric"
-        maxLength={10}
-        label="WhatsApp Oficial (10 dígitos)"
-        icon={Phone}
-        prefix="+52"
-        placeholder="Ej. 2281234567"
-        registration={register("phone")}
-        error={errors.phone?.message}
-        disabled={disabled}
-      />
+      {/* País + número (2026-11-16): antes solo 10 dígitos con un "+52" visual fijo. */}
+      <div>
+        <Label
+          htmlFor="phone"
+          className="mb-1.5 block text-xs font-semibold text-slate-700 sm:text-sm"
+        >
+          WhatsApp Oficial
+        </Label>
+        <PhoneField
+          id="phone"
+          registration={register("phone")}
+          country={phoneCountry}
+          onCountryChange={(country) => {
+            setValue("phoneCountry", country, { shouldDirty: true });
+            void trigger("phone");
+          }}
+          placeholder="Ej. 2281234567"
+          invalid={Boolean(errors.phone)}
+          disabled={disabled}
+          inputClassName="h-12 rounded-xl border-slate-200 bg-white px-4 text-sm focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-100 sm:h-10"
+        />
+        {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone.message}</p>}
+      </div>
     </AgencySettingsCard>
   );
 }

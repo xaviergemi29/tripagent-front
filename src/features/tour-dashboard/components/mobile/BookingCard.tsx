@@ -30,6 +30,7 @@ import {
   TransferMenu,
 } from "@/features/tour-dashboard/components/passengers/traveler-row-cells";
 import { hasRegisteredPayments } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
+import { buildTelUrl, formatPhoneForDisplay } from "@/shared/utils/phone.util";
 
 interface BookingCardProps {
   titular: TitularRowOutput;
@@ -200,11 +201,11 @@ export function BookingCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-slate-600">
             <Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-            <span className="font-mono">{titular.whatsapp}</span>
+            <span className="font-mono">{formatPhoneForDisplay(titular.whatsapp)}</span>
           </div>
           <div className="flex gap-2">
             <a
-              href={`tel:${titular.whatsapp}`}
+              href={buildTelUrl(titular.whatsapp)}
               className="rounded-lg bg-slate-100 p-1.5 text-slate-600 hover:bg-slate-200"
             >
               📞

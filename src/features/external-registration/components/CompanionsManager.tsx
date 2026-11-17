@@ -13,6 +13,8 @@ import { PassengerTypeSwitch, type PassengerCategory } from "./PassengerTypeSwit
 import { PickupPointSelector } from "./PickupPointSelector";
 import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 import { PASSENGER_TYPE } from "@/shared/constants/domain.constants";
+import { PhoneField } from "@/components/shared/PhoneField";
+import { DEFAULT_PHONE_COUNTRY, toE164, type PhoneCountry } from "@/shared/utils/phone.util";
 
 interface CompanionsManagerProps {
   boardingPoints: { id: string; location: string; time: string }[];
@@ -28,6 +30,7 @@ export function CompanionsManager({
     register,
     setValue,
     getValues,
+    trigger,
     formState: { errors },
   } = useFormContext<BookingInput>();
 
@@ -40,6 +43,11 @@ export function CompanionsManager({
   const mainBoardingPoint = useWatch({ control, name: "mainClient.boardingPoint" });
   const mainEmergencyName = useWatch({ control, name: "mainClient.emergencyContactName" });
   const mainEmergencyPhone = useWatch({ control, name: "mainClient.emergencyContactPhone" });
+  // Países iniciales del acompañante: los del titular (los grupos suelen compartir lada).
+  const mainWhatsappCountry =
+    useWatch({ control, name: "mainClient.whatsappCountry" }) ?? DEFAULT_PHONE_COUNTRY;
+  const mainEmergencyCountry =
+    useWatch({ control, name: "mainClient.emergencyContactCountry" }) ?? mainWhatsappCountry;
 
   const { fields, append, remove } = useFieldArray({ control, name: "companions" });
   const watchedCompanions = useWatch({ control, name: "companions" }) || [];
@@ -48,10 +56,10 @@ export function CompanionsManager({
   const canAddMore = maxAllowedCompanions === undefined || fields.length < maxAllowedCompanions;
 
   const handleCompanionPhoneBlur = async (index: number, phoneValue: string): Promise<void> => {
-    const cleanPhone = phoneValue.trim();
-    if (!cleanPhone || cleanPhone.length !== 10 || lockedCompanions[index]) return;
+    const phone = toE164(phoneValue, getValues(`companions.${index}.whatsappCountry`));
+    if (!phone || lockedCompanions[index]) return;
 
-    const traveler = await lookupTraveler(cleanPhone);
+    const traveler = await lookupTraveler(phone);
     if (traveler) {
       setValue(`companions.${index}.fullName`, traveler.fullName, { shouldValidate: true });
       setValue(`companions.${index}.medicalNotes`, traveler.medicalNotes || "", {
@@ -67,6 +75,21 @@ export function CompanionsManager({
     }
   };
 
+  /** Cambia el país de un teléfono del acompañante y revalida su número. */
+  const setCompanionCountry = (
+    index: number,
+    field: "whatsapp" | "emergency",
+    country: PhoneCountry,
+  ): void => {
+    if (field === "whatsapp") {
+      setValue(`companions.${index}.whatsappCountry`, country, { shouldDirty: true });
+      void trigger(`companions.${index}.whatsappPhone`);
+    } else {
+      setValue(`companions.${index}.emergencyContactCountry`, country, { shouldDirty: true });
+      void trigger(`companions.${index}.emergencyContactPhone`);
+    }
+  };
+
   const handleAddCompanion = (): void => {
     const defaultBp = mainBoardingPoint || "";
     const defaultEmName = mainEmergencyName || "";
@@ -76,10 +99,12 @@ export function CompanionsManager({
     append({
       fullName: "",
       whatsappPhone: "",
+      whatsappCountry: mainWhatsappCountry,
       email: "",
       birthDate: "",
       emergencyContactName: defaultEmName,
       emergencyContactPhone: defaultEmPhone,
+      emergencyContactCountry: mainEmergencyCountry,
       medicalNotes: "",
       passengerType: PASSENGER_TYPE.ADULT,
       boardingPoint: defaultBp,
@@ -134,10 +159,12 @@ export function CompanionsManager({
                 append({
                   fullName: "",
                   whatsappPhone: "",
+                  whatsappCountry: mainWhatsappCountry,
                   email: "",
                   birthDate: "",
                   emergencyContactName: mainEmergencyName || "",
                   emergencyContactPhone: mainEmergencyPhone || "",
+                  emergencyContactCountry: mainEmergencyCountry,
                   medicalNotes: "",
                   passengerType: PASSENGER_TYPE.ADULT,
                   boardingPoint: mainBoardingPoint || "",
@@ -243,14 +270,16 @@ export function CompanionsManager({
                         <span className="font-normal text-slate-400">(Opcional)</span>
                       )}
                     </Label>
-                    <Input
-                      {...register(`companions.${index}.whatsappPhone`)}
-                      type="tel"
-                      inputMode="numeric"
-                      placeholder="10 dígitos"
+                    <PhoneField
+                      registration={register(`companions.${index}.whatsappPhone`)}
+                      country={currentCompanion.whatsappCountry ?? mainWhatsappCountry}
+                      onCountryChange={(country) => setCompanionCountry(index, "whatsapp", country)}
+                      placeholder="Número"
+                      aria-label={`WhatsApp del acompañante ${index + 1}`}
+                      invalid={Boolean(errors.companions?.[index]?.whatsappPhone)}
                       disabled={isLocked}
-                      className="h-11 bg-white text-base sm:text-sm"
-                      onBlur={(e) => handleCompanionPhoneBlur(index, e.target.value)}
+                      inputClassName="h-11 bg-white text-base sm:text-sm"
+                      onBlur={(value) => handleCompanionPhoneBlur(index, value)}
                     />
                     {errors.companions?.[index]?.whatsappPhone && (
                       <p className="text-xs text-red-500">
@@ -353,6 +382,10 @@ export function CompanionsManager({
                             { shouldValidate: true },
                           );
                           setValue(
+                            `companions.${index}.emergencyContactCountry`,
+                            mainEmergencyCountry,
+                          );
+                          setValue(
                             `companions.${index}.emergencyContactPhone`,
                             mainEmergencyPhone || "",
                             { shouldValidate: true },
@@ -379,12 +412,16 @@ export function CompanionsManager({
                         )}
                       </div>
                       <div className="space-y-1">
-                        <Input
-                          {...register(`companions.${index}.emergencyContactPhone`)}
-                          type="tel"
-                          inputMode="numeric"
-                          placeholder="Teléfono 10 dígitos"
-                          className="h-11 bg-white text-base sm:text-sm"
+                        <PhoneField
+                          registration={register(`companions.${index}.emergencyContactPhone`)}
+                          country={currentCompanion.emergencyContactCountry ?? mainEmergencyCountry}
+                          onCountryChange={(country) =>
+                            setCompanionCountry(index, "emergency", country)
+                          }
+                          placeholder="Teléfono"
+                          aria-label={`Teléfono de emergencia del acompañante ${index + 1}`}
+                          invalid={Boolean(errors.companions?.[index]?.emergencyContactPhone)}
+                          inputClassName="h-11 bg-white text-base sm:text-sm"
                         />
                         {errors.companions?.[index]?.emergencyContactPhone && (
                           <p className="text-xs text-red-500">

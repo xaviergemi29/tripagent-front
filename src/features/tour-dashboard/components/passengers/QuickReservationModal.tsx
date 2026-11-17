@@ -1,7 +1,7 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Copy, Check, Loader2 } from "lucide-react";
 
@@ -26,6 +26,9 @@ import { useQuickReservation } from "@/features/tour-dashboard/hooks/useBookingA
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import { buildMagicLinkUrl, buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { PhoneField } from "@/components/shared/PhoneField";
+import { useAgency } from "@/features/settings/hooks/useAgency";
+import { getStoredPhoneCountry, toE164 } from "@/shared/utils/phone.util";
 
 interface Props {
   tourId: string;
@@ -39,13 +42,18 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
   const [isTravelerFound, setIsTravelerFound] = useState(false);
   const { mutate, isPending } = useQuickReservation();
   const { lookupTraveler } = useTravelerLookup();
+  // País inicial del WhatsApp: el del teléfono de la agencia (México si no tiene).
+  const { data: agency } = useAgency();
+  const defaultCountry = getStoredPhoneCountry(agency?.phone, agency?.phoneCountry);
 
   const {
     register,
     handleSubmit,
     setValue,
     getValues,
+    trigger,
     reset,
+    control,
     formState: { errors, isValid },
   } = useForm<QuickBookingFormInput>({
     resolver: zodResolver(quickBookingSchema),
@@ -53,21 +61,34 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
     defaultValues: {
       fullName: "",
       whatsapp: "",
+      whatsappCountry: defaultCountry,
       email: "",
       numberPassengers: 1,
     },
   });
+  const whatsappCountry = useWatch({ control, name: "whatsappCountry" });
 
   const handleClose = (): void => {
     setMagicLink(null);
     setIsLookingUp(false);
     setIsTravelerFound(false);
-    reset();
+    reset({
+      fullName: "",
+      whatsapp: "",
+      whatsappCountry: defaultCountry,
+      email: "",
+      numberPassengers: 1,
+    });
     onClose();
   };
 
   const onSubmit = (formData: QuickBookingFormInput): void => {
-    const payload = { ...formData, tourId };
+    // La API recibe el número completo en E.164 con su país.
+    const payload = {
+      ...formData,
+      whatsapp: toE164(formData.whatsapp, formData.whatsappCountry) ?? formData.whatsapp,
+      tourId,
+    };
     mutate(payload, {
       onSuccess: (response) => {
         setMagicLink(buildMagicLinkUrl(response.token));
@@ -94,25 +115,18 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
   const handleOpenWhatsApp = (): void => {
     if (!magicLink) return;
 
-    const { fullName, whatsapp } = getValues();
+    const { fullName, whatsapp, whatsappCountry: country } = getValues();
     const message = `¡Hola ${fullName}! Apartamos tus lugares para el tour. Completa tu registro y datos aquí: ${magicLink}`;
-    const waUrl = buildWhatsAppUrl(whatsapp, { message });
+    const waUrl = buildWhatsAppUrl(toE164(whatsapp, country) ?? whatsapp, { message });
 
     window.open(waUrl, "_blank", "noopener,noreferrer");
     handleClose();
   };
 
-  const {
-    onBlur: rhfWhatsappBlur,
-    onChange: rhfWhatsappChange,
-    ...whatsappRest
-  } = register("whatsapp");
-
-  const handleWhatsappBlur = async (e: React.FocusEvent<HTMLInputElement>): Promise<void> => {
-    rhfWhatsappBlur(e);
-    const phone = e.target.value.trim();
-
-    if (!phone || phone.length < 10) return;
+  /** Al salir del campo busca al viajero por su número completo (E.164). */
+  const handleWhatsappBlur = async (value: string): Promise<void> => {
+    const phone = toE164(value, getValues("whatsappCountry"));
+    if (!phone) return;
 
     setIsLookingUp(true);
     const traveler = await lookupTraveler(phone);
@@ -130,15 +144,9 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
     }
   };
 
-  const handleWhatsappChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    let value = e.target.value.replace(/\s+/g, "");
-    if (value.startsWith("+52")) {
-      value = value.slice(3);
-    } else if (value.startsWith("52") && value.length === 12) {
-      value = value.slice(2);
-    }
-    e.target.value = value;
-    rhfWhatsappChange(e);
+  const handleCountryChange = (country: QuickBookingFormInput["whatsappCountry"]): void => {
+    setValue("whatsappCountry", country, { shouldDirty: true });
+    void trigger("whatsapp");
   };
 
   const handleResetTraveler = (): void => {
@@ -198,11 +206,14 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
                     Cambiar número
                   </button>
                 )}
-                <Input
-                  {...whatsappRest}
+                <PhoneField
+                  registration={register("whatsapp")}
+                  country={whatsappCountry}
+                  onCountryChange={handleCountryChange}
                   onBlur={handleWhatsappBlur}
-                  onChange={handleWhatsappChange}
                   placeholder="2281234567"
+                  aria-label="WhatsApp de Contacto"
+                  invalid={Boolean(errors.whatsapp)}
                   disabled={isPending || isTravelerFound}
                 />
                 {errors.whatsapp && (

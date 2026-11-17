@@ -22,6 +22,7 @@ import {
   buildWhatsAppUrl,
   toPhoneDigits,
 } from "@/shared/utils/share-links.util";
+import { getStoredPhoneCountry } from "@/shared/utils/phone.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { API_BASE_URL } from "@/lib/api-config";
 
@@ -299,6 +300,7 @@ export default async function PublicTourLanding({ params }: PublicTourLanding) {
         availableSeats={tour.availability.availableSeats}
         isBookable={isBookable}
         unavailableLabel={unavailableLabel}
+        defaultPhoneCountry={getStoredPhoneCountry(tour.agency.phone)}
       />
     </PublicBookingLayout>
   );

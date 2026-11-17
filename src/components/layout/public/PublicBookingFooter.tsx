@@ -26,7 +26,8 @@ export function PublicBookingFooter({
 }: PublicBookingFooterProps) {
   const phoneDigits = toPhoneDigits(agencyWhatsApp);
   const whatsappUrl = phoneDigits
-    ? buildWhatsAppUrl(phoneDigits, { message: whatsappMessage }) // agrega la lada 52
+    ? // Número guardado (E.164, o 10 dígitos anteriores → lada 52); solo dígitos perdería el "+".
+      buildWhatsAppUrl(agencyWhatsApp, { message: whatsappMessage })
     : null;
 
   return (

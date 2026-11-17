@@ -5,7 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Edit2 } from "lucide-react";
 import { useState } from "react";
 
-import { bookingFormSchema, type BookingInput } from "../schemas/booking.schema";
+import {
+  bookingFormSchema,
+  toPublicRegisterInput,
+  type BookingInput,
+} from "../schemas/booking.schema";
 import { CompanionsManager } from "./CompanionsManager";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +25,13 @@ import { PoliciesConsentModal } from "./PoliciesConsentModal";
 import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 import { useRouter } from "next/navigation";
 import type { Currency } from "@/shared/constants/domain.constants";
+import { PhoneField } from "@/components/shared/PhoneField";
+import {
+  getStoredPhoneCountry,
+  parseStoredPhone,
+  toE164,
+  type PhoneCountry,
+} from "@/shared/utils/phone.util";
 
 interface TourRegistrationViewProps {
   token: string;
@@ -46,9 +57,12 @@ interface TourRegistrationViewProps {
   prefillData?: {
     fullName?: string;
     whatsappPhone?: string;
+    /** País del WhatsApp guardado (`null` = lada sin confirmar). */
+    whatsappCountry?: string | null;
     email?: string;
     emergencyContactName?: string;
     emergencyContactPhone?: string;
+    emergencyContactCountry?: string | null;
     medicalNotes?: string;
     birthDate?: string;
     boardingPoint?: string;
@@ -74,6 +88,18 @@ export function TourRegistrationView({
   );
   const router = useRouter();
   const { lookupTraveler } = usePublicTravelerLookup(token);
+  // País inicial: el del teléfono de la agencia (México si no tiene); el de emergencia sigue al del
+  // titular. Los teléfonos precargados (E.164 o 10 dígitos anteriores) se separan en país + número.
+  const prefillWhatsapp = parseStoredPhone(
+    prefillData?.whatsappPhone,
+    prefillData?.whatsappCountry,
+    getStoredPhoneCountry(agencyPhone),
+  );
+  const prefillEmergency = parseStoredPhone(
+    prefillData?.emergencyContactPhone,
+    prefillData?.emergencyContactCountry,
+    prefillWhatsapp.country,
+  );
 
   const methods = useForm<BookingInput>({
     resolver: zodResolver(bookingFormSchema),
@@ -82,10 +108,12 @@ export function TourRegistrationView({
       token,
       mainClient: {
         fullName: prefillData?.fullName || "",
-        whatsappPhone: prefillData?.whatsappPhone || "",
+        whatsappPhone: prefillWhatsapp.nationalNumber,
+        whatsappCountry: prefillWhatsapp.country,
         email: prefillData?.email || "",
         emergencyContactName: prefillData?.emergencyContactName || "",
-        emergencyContactPhone: prefillData?.emergencyContactPhone || "",
+        emergencyContactPhone: prefillEmergency.nationalNumber,
+        emergencyContactCountry: prefillEmergency.country,
         medicalNotes: prefillData?.medicalNotes || "",
         birthDate: prefillData?.birthDate || "",
         boardingPoint: prefillData?.boardingPoint || "",
@@ -98,12 +126,12 @@ export function TourRegistrationView({
   });
 
   const handlePhoneBlur = async (phoneValue: string): Promise<void> => {
-    const cleanPhone = phoneValue.replace(/\D/g, "").trim();
-    if (cleanPhone.length !== 10 || isMainClientFound) return;
+    const phone = toE164(phoneValue, methods.getValues("mainClient.whatsappCountry"));
+    if (!phone || isMainClientFound) return;
 
     setIsLookingUp(true);
     try {
-      const traveler = await lookupTraveler(cleanPhone);
+      const traveler = await lookupTraveler(phone);
       if (traveler) {
         methods.setValue("mainClient.fullName", traveler.fullName, { shouldValidate: true });
         methods.setValue("mainClient.email", traveler.email || "", { shouldValidate: true });
@@ -135,11 +163,30 @@ export function TourRegistrationView({
 
   const onSubmit = async (formData: BookingInput): Promise<void> => {
     try {
-      await createBooking(formData);
+      // Los teléfonos viajan en E.164 con su país.
+      await createBooking(toPublicRegisterInput(formData));
       router.refresh();
     } catch (error) {
       console.error("Error procesando registro:", error);
     }
+  };
+
+  const whatsappCountry = useWatch({
+    control: methods.control,
+    name: "mainClient.whatsappCountry",
+  });
+  const emergencyCountry = useWatch({
+    control: methods.control,
+    name: "mainClient.emergencyContactCountry",
+  });
+
+  /** Cambia el país del WhatsApp; si el teléfono de emergencia sigue vacío, toma el mismo país. */
+  const handleWhatsappCountryChange = (country: PhoneCountry): void => {
+    methods.setValue("mainClient.whatsappCountry", country, { shouldDirty: true });
+    if (!methods.getValues("mainClient.emergencyContactPhone")) {
+      methods.setValue("mainClient.emergencyContactCountry", country, { shouldDirty: true });
+    }
+    void methods.trigger("mainClient.whatsappPhone");
   };
 
   const watchedCompanions = useWatch({ control: methods.control, name: "companions" }) || [];
@@ -220,15 +267,16 @@ export function TourRegistrationView({
             )}
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-slate-700">Teléfono de WhatsApp *</Label>
-              <Input
-                {...methods.register("mainClient.whatsappPhone", {
-                  onBlur: (e) => handlePhoneBlur(e.target.value),
-                })}
-                type="tel"
-                inputMode="numeric"
+              <PhoneField
+                registration={methods.register("mainClient.whatsappPhone")}
+                country={whatsappCountry}
+                onCountryChange={handleWhatsappCountryChange}
+                onBlur={handlePhoneBlur}
                 placeholder="Ej. 2281234567"
+                aria-label="Teléfono de WhatsApp"
+                invalid={Boolean(methods.formState.errors.mainClient?.whatsappPhone)}
                 disabled={isMainClientFound}
-                className={`h-11 text-base transition-colors sm:text-sm ${
+                inputClassName={`h-11 text-base transition-colors sm:text-sm ${
                   isMainClientFound
                     ? "cursor-not-allowed border-slate-200 bg-slate-100/80 font-semibold text-slate-700"
                     : "border-slate-300 bg-white text-slate-900 focus:border-indigo-600"
@@ -338,12 +386,19 @@ export function TourRegistrationView({
                 <Label className="text-xs font-semibold text-slate-700">
                   Teléfono de Emergencia *
                 </Label>
-                <Input
-                  {...methods.register("mainClient.emergencyContactPhone")}
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="Teléfono 10 dígitos"
-                  className="h-11 text-base sm:text-sm"
+                <PhoneField
+                  registration={methods.register("mainClient.emergencyContactPhone")}
+                  country={emergencyCountry}
+                  onCountryChange={(country) => {
+                    methods.setValue("mainClient.emergencyContactCountry", country, {
+                      shouldDirty: true,
+                    });
+                    void methods.trigger("mainClient.emergencyContactPhone");
+                  }}
+                  placeholder="Teléfono"
+                  aria-label="Teléfono de Emergencia"
+                  invalid={Boolean(methods.formState.errors.mainClient?.emergencyContactPhone)}
+                  inputClassName="h-11 text-base sm:text-sm"
                 />
                 {methods.formState.errors.mainClient?.emergencyContactPhone && (
                   <p className="text-xs text-red-500">

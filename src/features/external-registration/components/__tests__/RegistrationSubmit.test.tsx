@@ -38,7 +38,7 @@ const fillTitular = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.type(screen.getByPlaceholderText("Nombre y Apellidos"), "Ana Torres");
   await user.type(screen.getAllByPlaceholderText("correo@ejemplo.com")[0]!, "ana@correo.mx");
   await user.type(screen.getAllByPlaceholderText("Nombre del familiar")[0]!, "Luis Torres");
-  await user.type(screen.getAllByPlaceholderText("Teléfono 10 dígitos")[0]!, "2281112222");
+  await user.type(screen.getAllByPlaceholderText("Teléfono")[0]!, "2281112222");
   await user.click(screen.getAllByText("Plaza Xalapeña")[0]!);
   await user.click(screen.getByRole("checkbox", { name: /Acepto las políticas/, hidden: true }));
 };
@@ -59,7 +59,10 @@ describe("Registro del Magic Link", () => {
     expect(createBooking.mock.calls[0]![0]).toMatchObject({
       mainClient: {
         fullName: "Ana Torres",
-        whatsappPhone: "2281234567",
+        // Teléfonos en E.164 con su país.
+        whatsappPhone: "+522281234567",
+        whatsappCountry: "MX",
+        emergencyContactPhone: "+522281112222",
         boardingPoint: "Plaza Xalapeña (06:00)",
       },
       privacyNoticeAccepted: true,
@@ -71,7 +74,7 @@ describe("Registro del Magic Link", () => {
     renderView(1);
     await fillTitular(user);
 
-    const emergency = screen.getAllByPlaceholderText("Teléfono 10 dígitos")[0]!;
+    const emergency = screen.getAllByPlaceholderText("Teléfono")[0]!;
     await user.clear(emergency);
     await user.type(emergency, "2281234567");
 
@@ -88,7 +91,7 @@ describe("Registro del Magic Link", () => {
     await user.click(screen.getByText("Viajo acompañado"));
 
     await user.type(screen.getByPlaceholderText("Ej. Lizeth Colorado"), "Eva Torres");
-    await user.type(screen.getAllByPlaceholderText("10 dígitos").at(-1)!, "2283334444");
+    await user.type(screen.getAllByPlaceholderText("Número").at(-1)!, "2283334444");
     await user.type(screen.getAllByPlaceholderText("correo@ejemplo.com").at(-1)!, "eva@correo.mx");
 
     const submit = screen.getByRole("button", { name: /Completar Registro/ });
@@ -98,7 +101,7 @@ describe("Registro del Magic Link", () => {
     expect(createBooking.mock.calls[0]![0]).toMatchObject({
       hasCompanions: true,
       companions: [
-        expect.objectContaining({ fullName: "Eva Torres", whatsappPhone: "2283334444" }),
+        expect.objectContaining({ fullName: "Eva Torres", whatsappPhone: "+522283334444" }),
       ],
     });
   });

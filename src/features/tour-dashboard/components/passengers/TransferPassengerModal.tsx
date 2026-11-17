@@ -16,6 +16,8 @@ import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { toast } from "sonner";
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import { buildMagicLinkUrl, buildWhatsAppUrl } from "@/shared/utils/share-links.util";
+import { PhoneField } from "@/components/shared/PhoneField";
+import { getStoredPhoneCountry, isSamePhone, toE164 } from "@/shared/utils/phone.util";
 
 import { useTransferPassenger } from "@/features/tour-dashboard/hooks/useTourDashboard";
 import {
@@ -53,12 +55,15 @@ export function TransferPassengerModal({
   const [isMedicalOpen, setIsMedicalOpen] = useState(false);
   const [newMagicLink, setNewMagicLink] = useState<{ url: string; whatsapp: string } | null>(null);
   const { mutate, isPending } = useTransferPassenger();
+  // País inicial: el del WhatsApp actual del lugar (México si no tiene).
+  const defaultCountry = getStoredPhoneCountry(currentWhatsapp);
 
   const {
     register,
     control,
     handleSubmit,
     setValue,
+    trigger,
     formState: { errors, isValid },
   } = useForm<TransferPassengerFormInput>({
     resolver: zodResolver(transferPassengerSchema),
@@ -68,17 +73,23 @@ export function TransferPassengerModal({
       isMinor: false,
       fullName: "",
       whatsapp: "",
+      whatsappCountry: defaultCountry,
       email: "",
       inheritTitularBoardingPoint: !isTitular,
       medicalNotes: "",
       emergencyContactName: "",
       emergencyContactPhone: "",
+      emergencyContactCountry: defaultCountry,
     },
   });
 
   const isMinor = useWatch({ control, name: "isMinor" });
   const whatsapp = useWatch({ control, name: "whatsapp" });
-  const keepsSameWhatsapp = isTitular && !!currentWhatsapp && whatsapp === currentWhatsapp;
+  const whatsappCountry = useWatch({ control, name: "whatsappCountry" });
+  const emergencyContactCountry = useWatch({ control, name: "emergencyContactCountry" });
+  // Mismo número completo (el guardado puede seguir en 10 dígitos y el capturado es E.164).
+  const keepsSameWhatsapp =
+    isTitular && isSamePhone(toE164(whatsapp, whatsappCountry), currentWhatsapp);
 
   const handleClose = (nextOpen: boolean) => {
     if (!nextOpen) setNewMagicLink(null);
@@ -86,6 +97,10 @@ export function TransferPassengerModal({
   };
 
   const onSubmit = (values: TransferPassengerFormInput) => {
+    // Teléfonos en E.164 con su país; un campo vacío no se envía.
+    const newWhatsapp = toE164(values.whatsapp, values.whatsappCountry) ?? undefined;
+    const emergencyPhone =
+      toE164(values.emergencyContactPhone, values.emergencyContactCountry) ?? undefined;
     mutate(
       {
         bookingId,
@@ -93,13 +108,15 @@ export function TransferPassengerModal({
           passengerId,
           role,
           fullName: values.fullName,
-          whatsapp: EMPTY_TO_UNDEFINED(values.whatsapp),
+          whatsapp: newWhatsapp,
+          whatsappCountry: newWhatsapp ? values.whatsappCountry : undefined,
           email: values.isMinor ? undefined : EMPTY_TO_UNDEFINED(values.email),
           isMinor: values.isMinor,
           inheritTitularBoardingPoint: !isTitular && values.inheritTitularBoardingPoint,
           medicalNotes: EMPTY_TO_UNDEFINED(values.medicalNotes),
           emergencyContactName: EMPTY_TO_UNDEFINED(values.emergencyContactName),
-          emergencyContactPhone: EMPTY_TO_UNDEFINED(values.emergencyContactPhone),
+          emergencyContactPhone: emergencyPhone,
+          emergencyContactCountry: emergencyPhone ? values.emergencyContactCountry : undefined,
         },
       },
       {
@@ -107,7 +124,7 @@ export function TransferPassengerModal({
           if (result.tokenRegenerated && result.magicToken) {
             setNewMagicLink({
               url: buildMagicLinkUrl(result.magicToken),
-              whatsapp: values.whatsapp,
+              whatsapp: newWhatsapp ?? values.whatsapp,
             });
             return;
           }
@@ -257,16 +274,16 @@ export function TransferPassengerModal({
                   >
                     WhatsApp {isMinor ? "(opcional)" : "*"}
                   </Label>
-                  <Input
+                  <PhoneField
                     id="transfer-whatsapp"
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder="2281458920"
-                    {...register("whatsapp")}
-                    onChange={(e) => {
-                      e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                      void register("whatsapp").onChange(e);
+                    registration={register("whatsapp")}
+                    country={whatsappCountry}
+                    onCountryChange={(country) => {
+                      setValue("whatsappCountry", country, { shouldDirty: true });
+                      void trigger("whatsapp");
                     }}
+                    placeholder="2281458920"
+                    invalid={Boolean(errors.whatsapp)}
                   />
                   {fieldError(errors.whatsapp?.message)}
                   {keepsSameWhatsapp && (
@@ -340,14 +357,15 @@ export function TransferPassengerModal({
                         <Label className="text-xs font-semibold text-slate-700">
                           Teléfono de emergencia
                         </Label>
-                        <Input
-                          inputMode="numeric"
-                          maxLength={10}
-                          {...register("emergencyContactPhone")}
-                          onChange={(e) => {
-                            e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                            void register("emergencyContactPhone").onChange(e);
+                        <PhoneField
+                          registration={register("emergencyContactPhone")}
+                          country={emergencyContactCountry}
+                          onCountryChange={(country) => {
+                            setValue("emergencyContactCountry", country, { shouldDirty: true });
+                            void trigger("emergencyContactPhone");
                           }}
+                          aria-label="Teléfono de emergencia"
+                          invalid={Boolean(errors.emergencyContactPhone)}
                         />
                         {fieldError(errors.emergencyContactPhone?.message)}
                       </div>

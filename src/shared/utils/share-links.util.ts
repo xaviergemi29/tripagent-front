@@ -47,7 +47,9 @@ export const buildWhatsAppUrl = (
   phone: string | null | undefined,
   { message, countryCode }: WhatsAppUrlOptions = {},
 ): string => {
-  const number = countryCode ? `${countryCode}${toPhoneDigits(phone)}` : toInternationalDigits(phone);
+  const number = countryCode
+    ? `${countryCode}${toPhoneDigits(phone)}`
+    : toInternationalDigits(phone);
   const base = `https://wa.me/${number}`;
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 };

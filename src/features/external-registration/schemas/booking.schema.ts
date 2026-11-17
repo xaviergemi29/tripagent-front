@@ -1,12 +1,26 @@
 import { z } from "zod";
 import { PASSENGER_TYPE, PASSENGER_TYPES } from "@/shared/constants/domain.constants";
+import { phoneCountrySchema, refinePhone } from "@/shared/schemas/phone.schema";
+import { toE164, type PhoneCountry } from "@/shared/utils/phone.util";
 
-const mexicanPhoneRegex = /^(\+)?\d{10}$/;
+/** `true` si ambos números (nacional + país) son el mismo teléfono completo. */
+const isSameFullPhone = (
+  a: string | undefined,
+  aCountry: PhoneCountry,
+  b: string | undefined,
+  bCountry: PhoneCountry,
+): boolean => {
+  const left = toE164(a, aCountry);
+  return left !== null && left === toE164(b, bCountry);
+};
 
+// Teléfonos internacionales (2026-11-16): cada número se captura como número nacional + país
+// (PhoneField), se valida con `refinePhone` y se envía en E.164 con `toPublicRegisterInput`.
 const basePassengerSchema = z.object({
   fullName: z.string().min(3, "El nombre completo es obligatorio").trim(),
   emergencyContactName: z.string().min(3, "Nombre de emergencia requerido").trim(),
-  emergencyContactPhone: z.string().regex(mexicanPhoneRegex, "Debe ser un número a 10 dígitos"),
+  emergencyContactPhone: z.string().trim(),
+  emergencyContactCountry: phoneCountrySchema,
   medicalNotes: z.string().trim().optional(),
   boardingPoint: z.string().min(1, "Debes seleccionar en qué punto subirás al autobús"),
   birthDate: z.union([z.iso.date("Formato YYYY-MM-DD"), z.literal("")]).optional(),
@@ -14,11 +28,33 @@ const basePassengerSchema = z.object({
 
 export const mainClientSchema = basePassengerSchema
   .extend({
-    whatsappPhone: z.string().regex(mexicanPhoneRegex, "Debe ser un WhatsApp válido a 10 dígitos"),
+    whatsappPhone: z.string().trim(),
+    whatsappCountry: phoneCountrySchema,
     email: z.email("Correo electrónico inválido").trim(),
   })
   .superRefine((data, ctx) => {
-    if (data.whatsappPhone === data.emergencyContactPhone) {
+    refinePhone(
+      ctx,
+      data.whatsappPhone,
+      data.whatsappCountry,
+      ["whatsappPhone"],
+      "Ingresa tu WhatsApp",
+    );
+    refinePhone(
+      ctx,
+      data.emergencyContactPhone,
+      data.emergencyContactCountry,
+      ["emergencyContactPhone"],
+      "Ingresa el teléfono de emergencia",
+    );
+    if (
+      isSameFullPhone(
+        data.whatsappPhone,
+        data.whatsappCountry,
+        data.emergencyContactPhone,
+        data.emergencyContactCountry,
+      )
+    ) {
       ctx.addIssue({
         code: "custom",
         message: "El contacto de emergencia debe ser un número distinto al tuyo",
@@ -29,38 +65,50 @@ export const mainClientSchema = basePassengerSchema
 
 export const companionSchema = basePassengerSchema
   .extend({
-    whatsappPhone: z
-      .string()
-      .regex(mexicanPhoneRegex, "WhatsApp inválido")
-      .optional()
-      .or(z.literal("")),
+    whatsappPhone: z.string().trim().optional(),
+    whatsappCountry: phoneCountrySchema,
     email: z.email("Correo inválido").optional().or(z.literal("")),
     passengerType: z.enum(PASSENGER_TYPES),
   })
   .superRefine((data, ctx) => {
-    if (data.passengerType === PASSENGER_TYPE.ADULT) {
-      if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Correo electrónico inválido o faltante",
-          path: ["email"],
-        });
-      }
-      if (data.whatsappPhone && data.whatsappPhone === data.emergencyContactPhone) {
-        ctx.addIssue({
-          code: "custom",
-          message: "El contacto de emergencia debe ser distinto al WhatsApp del acompañante",
-          path: ["emergencyContactPhone"],
-        });
-      }
-    } else if (data.passengerType === PASSENGER_TYPE.CHILD) {
-      if (data.whatsappPhone && data.whatsappPhone === data.emergencyContactPhone) {
-        ctx.addIssue({
-          code: "custom",
-          message: "El contacto de emergencia debe ser distinto al WhatsApp del menor",
-          path: ["emergencyContactPhone"],
-        });
-      }
+    const isAdult = data.passengerType === PASSENGER_TYPE.ADULT;
+    // Adultos: WhatsApp obligatorio (igual que la API). Menores: opcional, pero válido si se escribe.
+    refinePhone(
+      ctx,
+      data.whatsappPhone,
+      data.whatsappCountry,
+      ["whatsappPhone"],
+      isAdult ? "El WhatsApp es obligatorio para adultos" : undefined,
+    );
+    refinePhone(
+      ctx,
+      data.emergencyContactPhone,
+      data.emergencyContactCountry,
+      ["emergencyContactPhone"],
+      "Ingresa el teléfono de emergencia",
+    );
+    if (isAdult && (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Correo electrónico inválido o faltante",
+        path: ["email"],
+      });
+    }
+    if (
+      isSameFullPhone(
+        data.whatsappPhone,
+        data.whatsappCountry,
+        data.emergencyContactPhone,
+        data.emergencyContactCountry,
+      )
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: isAdult
+          ? "El contacto de emergencia debe ser distinto al WhatsApp del acompañante"
+          : "El contacto de emergencia debe ser distinto al WhatsApp del menor",
+        path: ["emergencyContactPhone"],
+      });
     }
   });
 
@@ -102,4 +150,28 @@ export const bookingOutputSchema = z.object({
 });
 
 export type BookingInput = z.input<typeof bookingFormSchema>;
+
+/**
+ * Formulario → cuerpo de `POST /bookings/public/register`: cada teléfono capturado (nacional + país)
+ * se envía en E.164. Un WhatsApp opcional vacío se queda vacío.
+ */
+export function toPublicRegisterInput(form: BookingInput): BookingInput {
+  const full = (value: string | undefined, country: PhoneCountry): string | undefined =>
+    value?.trim() ? (toE164(value, country) ?? value) : value;
+  return {
+    ...form,
+    mainClient: {
+      ...form.mainClient,
+      whatsappPhone: full(form.mainClient.whatsappPhone, form.mainClient.whatsappCountry) ?? "",
+      emergencyContactPhone:
+        full(form.mainClient.emergencyContactPhone, form.mainClient.emergencyContactCountry) ?? "",
+    },
+    companions: form.companions.map((companion) => ({
+      ...companion,
+      whatsappPhone: full(companion.whatsappPhone, companion.whatsappCountry),
+      emergencyContactPhone:
+        full(companion.emergencyContactPhone, companion.emergencyContactCountry) ?? "",
+    })),
+  };
+}
 export type BookingOutput = z.output<typeof bookingOutputSchema>;

@@ -1,15 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { bookingFormSchema, companionSchema, mainClientSchema } from "../booking.schema";
+import {
+  bookingFormSchema,
+  companionSchema,
+  mainClientSchema,
+  toPublicRegisterInput,
+} from "../booking.schema";
 
 // Formulario del Magic Link: replica `createBookingBodySchema` de la API (regla 3: WhatsApp y
-// correo obligatorios solo para adultos; teléfonos de 10 dígitos).
+// correo obligatorios solo para adultos). Teléfonos internacionales: número nacional + país.
 
 const titular = {
   fullName: "Ana Torres",
   whatsappPhone: "2281234567",
+  whatsappCountry: "MX" as const,
   email: "ana@correo.mx",
   emergencyContactName: "Luis Torres",
   emergencyContactPhone: "2281112222",
+  emergencyContactCountry: "MX" as const,
   medicalNotes: "",
   birthDate: "",
   boardingPoint: "Plaza Xalapeña (06:00)",
@@ -18,9 +25,11 @@ const titular = {
 const companion = {
   fullName: "Eva Torres",
   whatsappPhone: "",
+  whatsappCountry: "MX" as const,
   email: "",
   emergencyContactName: "Ana Torres",
   emergencyContactPhone: "2281234567",
+  emergencyContactCountry: "MX" as const,
   medicalNotes: "",
   birthDate: "",
   boardingPoint: "Plaza Xalapeña (06:00)",
@@ -41,10 +50,14 @@ describe("mainClientSchema (titular)", () => {
     expect(mainClientSchema.safeParse({ ...titular, birthDate: "1990-05-29" }).success).toBe(true);
   });
 
-  it("exige WhatsApp de 10 dígitos (acepta +), correo válido y punto de abordaje", () => {
-    expect(mainClientSchema.safeParse({ ...titular, whatsappPhone: "+2281234567" }).success).toBe(
+  it("exige un WhatsApp válido para su país (acepta el número completo con +), correo y punto", () => {
+    expect(mainClientSchema.safeParse({ ...titular, whatsappPhone: "+522281234567" }).success).toBe(
       true,
     );
+    expect(
+      mainClientSchema.safeParse({ ...titular, whatsappPhone: "6045551234", whatsappCountry: "CA" })
+        .success,
+    ).toBe(true);
     expect(
       messagesAt(
         mainClientSchema.safeParse({ ...titular, whatsappPhone: "228123" }),
@@ -64,6 +77,15 @@ describe("mainClientSchema (titular)", () => {
     expect(messagesAt(result, "emergencyContactPhone")).toContain(
       "El contacto de emergencia debe ser un número distinto al tuyo",
     );
+    // Mismos dígitos en otro país = otro número.
+    expect(
+      mainClientSchema.safeParse({
+        ...titular,
+        emergencyContactPhone: "2125551234",
+        emergencyContactCountry: "US",
+        whatsappPhone: "2125551234",
+      }).success,
+    ).toBe(true);
   });
 
   it("la fecha de nacimiento debe ser YYYY-MM-DD", () => {
@@ -74,6 +96,13 @@ describe("mainClientSchema (titular)", () => {
 describe("companionSchema (acompañante)", () => {
   it("un menor no necesita WhatsApp ni correo", () => {
     expect(companionSchema.safeParse(companion).success).toBe(true);
+  });
+
+  it("un adulto exige WhatsApp (igual que la API)", () => {
+    const adult = { ...companion, passengerType: "ADULT" as const, email: "eva@correo.mx" };
+    expect(messagesAt(companionSchema.safeParse(adult), "whatsappPhone")).toContain(
+      "El WhatsApp es obligatorio para adultos",
+    );
   });
 
   it("un adulto exige correo válido", () => {
@@ -140,5 +169,25 @@ describe("bookingFormSchema (formulario completo)", () => {
     expect(messagesAt(result, "companions.1.fullName")).toContain(
       "El nombre completo es obligatorio",
     );
+  });
+});
+
+describe("toPublicRegisterInput (cuerpo del registro)", () => {
+  it("envía cada teléfono en E.164 con su país y deja vacío el WhatsApp opcional", () => {
+    const body = toPublicRegisterInput({
+      token: "tok",
+      mainClient: { ...titular, whatsappPhone: "228 123 4567" },
+      hasCompanions: true,
+      companionMethod: "MANUAL",
+      companions: [
+        { ...companion, emergencyContactPhone: "612345678", emergencyContactCountry: "ES" },
+      ],
+      privacyNoticeAccepted: true,
+    });
+    expect(body.mainClient.whatsappPhone).toBe("+522281234567");
+    expect(body.mainClient.whatsappCountry).toBe("MX");
+    expect(body.mainClient.emergencyContactPhone).toBe("+522281112222");
+    expect(body.companions[0]?.whatsappPhone).toBe("");
+    expect(body.companions[0]?.emergencyContactPhone).toBe("+34612345678");
   });
 });

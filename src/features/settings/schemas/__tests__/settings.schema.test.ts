@@ -43,6 +43,7 @@ describe("updateAgencyFormSchema", () => {
   const valid = {
     name: "Viajes Xalapa",
     phone: "2281234567",
+    phoneCountry: "MX",
     email: "hola@viajesxalapa.mx",
     bankName: "BBVA",
     bankAccountHolder: "Viajes Xalapa SA",
@@ -94,6 +95,8 @@ describe("updateAgencyFormSchema", () => {
 
   it("valida teléfono, correo y nombre; descarta el aviso de privacidad", () => {
     expect(pathsOf({ ...valid, phone: "228-123" })).toContain("phone");
+    expect(pathsOf({ ...valid, phone: "" })).toContain("phone");
+    expect(pathsOf({ ...valid, phone: "2125551234", phoneCountry: "US" })).toEqual([]);
     expect(pathsOf({ ...valid, email: "hola@" })).toContain("email");
     expect(pathsOf({ ...valid, name: "VX" })).toContain("name");
     // El aviso de privacidad ya no se captura aquí: si llega, se descarta (no se envía a la API).

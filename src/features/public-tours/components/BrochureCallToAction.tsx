@@ -5,6 +5,7 @@ import { CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PreBookingDialog } from "./PreBookingDialog";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import type { PhoneCountry } from "@/shared/utils/phone.util";
 
 interface BrochureCallToActionProps {
   tourId: string;
@@ -14,6 +15,8 @@ interface BrochureCallToActionProps {
   isBookable: boolean;
   /** Texto del botón deshabilitado: "Agotado" (sin lugares) o "Finalizado" (el tour ya salió). */
   unavailableLabel?: string;
+  /** País inicial del WhatsApp en "Iniciar Reserva" (el del teléfono de la agencia). */
+  defaultPhoneCountry?: PhoneCountry;
 }
 
 export function BrochureCallToAction({
@@ -23,6 +26,7 @@ export function BrochureCallToAction({
   availableSeats,
   isBookable,
   unavailableLabel = "Agotado",
+  defaultPhoneCountry,
 }: BrochureCallToActionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -61,6 +65,7 @@ export function BrochureCallToAction({
         availableSeats={availableSeats}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
+        defaultPhoneCountry={defaultPhoneCountry}
       />
     </>
   );

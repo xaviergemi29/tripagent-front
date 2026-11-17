@@ -7,6 +7,7 @@ import {
   SeatCell,
   TransferMenu,
 } from "./traveler-row-cells";
+import { formatPhoneForDisplay } from "@/shared/utils/phone.util";
 
 type CompanionRowOutput = TitularRowOutput["companions"][number];
 
@@ -64,7 +65,9 @@ export function CompanionRow({
         </td>
       )}
       <td className="px-6 py-3 text-xs text-slate-400">{companion.boardingPoint || "—"}</td>
-      <td className="px-6 py-3 font-mono text-xs text-slate-500">{companion.whatsapp || "—"}</td>
+      <td className="px-6 py-3 font-mono text-xs text-slate-500">
+        {formatPhoneForDisplay(companion.whatsapp) || "—"}
+      </td>
       <td className="px-6 py-3">
         <RegistrationStatusBadge status={companion.formStatus} />
       </td>

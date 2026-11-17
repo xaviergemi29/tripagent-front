@@ -32,6 +32,7 @@ import {
   CURRENCY,
   PAYMENT_TYPE,
 } from "@/shared/constants/domain.constants";
+import { formatPhoneForDisplay } from "@/shared/utils/phone.util";
 
 interface TravelerDetailDrawerProps {
   tourId: string;
@@ -178,7 +179,9 @@ export function TravelerDetailDrawer({
               <div className="space-y-1 rounded-xl border bg-slate-50 p-4 text-sm">
                 <p className="text-slate-600">
                   WhatsApp:{" "}
-                  <span className="font-semibold text-slate-900">{traveler.whatsapp}</span>
+                  <span className="font-semibold text-slate-900">
+                    {formatPhoneForDisplay(traveler.whatsapp)}
+                  </span>
                 </p>
               </div>
             </section>

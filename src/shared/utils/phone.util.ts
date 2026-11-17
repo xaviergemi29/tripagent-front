@@ -160,11 +160,17 @@ export function normalizePhoneInput(
     return { country, value: `+${international}`.slice(0, 18) };
   }
 
+  // Lada del país seleccionado escrita sin "+" ("52 228…"): la librería la reconoce al tener el
+  // número completo; se deja solo el número nacional.
   const callingCode = getCountryCallingCode(country);
-  if (digits.startsWith(callingCode) && !parsePhoneNumberFromString(digits, country)?.isValid()) {
-    const parsed = parsePhoneNumberFromString(`+${digits}`);
-    if (parsed?.isValid() && parsed.countryCallingCode === callingCode) {
-      return { country: parsed.country ?? country, value: parsed.nationalNumber };
+  if (digits.startsWith(callingCode)) {
+    const parsed = parsePhoneNumberFromString(digits, country);
+    if (
+      parsed?.isValid() &&
+      parsed.countryCallingCode === callingCode &&
+      parsed.nationalNumber !== digits
+    ) {
+      return { country, value: parsed.nationalNumber };
     }
   }
   return { country, value: digits.slice(0, 17) };

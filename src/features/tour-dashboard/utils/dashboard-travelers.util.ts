@@ -65,9 +65,12 @@ export function hasRegisteredPayments(
   return titular.paidAmount > 0 || titular.paymentStatus !== PAYMENT_STATUS.PENDING;
 }
 
-/** WhatsApp precargado en la transferencia: la API manda "Sin teléfono" si no hay número. */
+/**
+ * WhatsApp actual del lugar para la transferencia (E.164 o los 10 dígitos de un registro anterior):
+ * la API manda "Sin teléfono" si no hay número.
+ */
 export function toTransferWhatsapp(whatsapp: string): string | null {
-  return /^\d{10}$/.test(whatsapp) ? whatsapp : null;
+  return /^\+?\d{8,15}$/.test(whatsapp) ? whatsapp : null;
 }
 
 /** Titular o acompañante por nombre (sin acentos) o WhatsApp (solo dígitos; "Sin teléfono" no cuenta). */
