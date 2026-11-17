@@ -46,4 +46,30 @@ describe("EditTravelerDrawer", () => {
       }),
     });
   });
+
+  it("al cerrar y abrir otro viajero carga sus datos, no los editados del anterior", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <EditTravelerDrawer traveler={traveler} isOpen onClose={vi.fn()} />,
+    );
+    await user.type(await screen.findByDisplayValue("Ana Torres"), " (sin guardar)");
+
+    const other = { ...(traveler as object), id: "v2", fullName: "Beto Ruiz" } as never;
+    rerender(<EditTravelerDrawer traveler={traveler} isOpen={false} onClose={vi.fn()} />);
+    rerender(<EditTravelerDrawer traveler={other} isOpen onClose={vi.fn()} />);
+
+    expect(await screen.findByDisplayValue("Beto Ruiz")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue(/sin guardar/)).not.toBeInTheDocument();
+  });
+
+  it("menor: cambia las etiquetas y oculta el correo", async () => {
+    const user = userEvent.setup();
+    render(<EditTravelerDrawer traveler={traveler} isOpen onClose={vi.fn()} />);
+    await screen.findByDisplayValue("Ana Torres");
+
+    await user.click(screen.getByRole("button", { name: /Niño/ }));
+
+    expect(screen.getByText("Nombre Completo del Menor *")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("correo@ejemplo.com")).not.toBeInTheDocument();
+  });
 });

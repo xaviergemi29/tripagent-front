@@ -17,70 +17,69 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { formatCurrency } from "@/shared/utils/currency.util";
-import { CURRENCIES, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import {
+  BOOKING_STATUS,
+  CURRENCIES,
+  DEFAULT_CURRENCY,
+  DESTINATION_TYPE,
+  PASSENGER_STATUS,
+} from "@/shared/constants/domain.constants";
+import type { TravelerHistoryOutput } from "../schemas/traveler.schema";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
 import { getInitials } from "@/shared/utils/travelers-helpers";
 
-interface Props {
+interface PropsTravelerHistoryDrawer {
   travelerId: string | null;
   onClose: () => void;
 }
 
-type FilterType = "ALL" | "NACIONAL" | "EXTRANJERO" | "CANCELLED";
+type HistoryItem = TravelerHistoryOutput["history"][number];
 
-export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
+export const isCancelledTrip = (trip: Pick<HistoryItem, "passengerStatus" | "bookingStatus">) =>
+  trip.passengerStatus === PASSENGER_STATUS.CANCELLED ||
+  trip.bookingStatus === BOOKING_STATUS.CANCELLED;
+
+export const HISTORY_FILTERS = [
+  { value: "ALL", label: "Todos", matches: () => true },
+  {
+    value: "NATIONAL",
+    label: "Nacionales",
+    matches: (trip: HistoryItem) =>
+      !isCancelledTrip(trip) && trip.destinationType === DESTINATION_TYPE.NATIONAL,
+  },
+  {
+    value: "INTERNATIONAL",
+    label: "Extranjero",
+    matches: (trip: HistoryItem) =>
+      !isCancelledTrip(trip) && trip.destinationType === DESTINATION_TYPE.INTERNATIONAL,
+  },
+  { value: "CANCELLED", label: "Cancelados", matches: isCancelledTrip },
+] as const satisfies readonly {
+  value: string;
+  label: string;
+  matches: (trip: HistoryItem) => boolean;
+}[];
+
+type HistoryFilter = (typeof HISTORY_FILTERS)[number]["value"];
+
+const matcherFor = (value: HistoryFilter) =>
+  HISTORY_FILTERS.find((f) => f.value === value)!.matches;
+
+export function TravelerHistoryDrawer({ travelerId, onClose }: PropsTravelerHistoryDrawer) {
   const { data: traveler, isLoading } = useTravelerHistory(travelerId);
 
-  // LTV en la moneda original de cada tour; sin viajes pagados se muestra $0.00 en la moneda base.
   const ltvByCurrency = traveler?.metrics?.lifetimeValueByCurrency ?? {};
   const lifetimeValueLines = CURRENCIES.flatMap((currency) => {
     const amount = ltvByCurrency[currency];
     return amount ? [[currency, amount] as const] : [];
   });
   if (lifetimeValueLines.length === 0) lifetimeValueLines.push([DEFAULT_CURRENCY, 0] as const);
-  const [activeFilter, setActiveFilter] = useState<FilterType>("ALL");
+  const [activeFilter, setActiveFilter] = useState<HistoryFilter>("ALL");
 
   const history = traveler?.history ?? [];
 
-  // Contadores y filtrado sin `useMemo`: el React Compiler ya memoriza estos cálculos. Con el
-  // memo manual, `history` (un arreglo nuevo en cada render cuando no hay datos) invalidaba las
-  // dependencias en cada render (advertencia de lint, 2026-11-16).
-  const counts = {
-    all: history.length,
-    national: history.filter(
-      (h) =>
-        h.destinationType === "NATIONAL" &&
-        h.passengerStatus !== "CANCELLED" &&
-        h.bookingStatus !== "CANCELLED",
-    ).length,
-    international: history.filter(
-      (h) =>
-        h.destinationType === "INTERNATIONAL" &&
-        h.passengerStatus !== "CANCELLED" &&
-        h.bookingStatus !== "CANCELLED",
-    ).length,
-    cancelled: history.filter(
-      (h) => h.passengerStatus === "CANCELLED" || h.bookingStatus === "CANCELLED",
-    ).length,
-  };
-
-  const filterBookings = () => {
-    if (activeFilter === "ALL") return history;
-    if (activeFilter === "CANCELLED") {
-      return history.filter(
-        (h) => h.passengerStatus === "CANCELLED" || h.bookingStatus === "CANCELLED",
-      );
-    }
-    const activeHistory = history.filter(
-      (h) => h.passengerStatus !== "CANCELLED" && h.bookingStatus !== "CANCELLED",
-    );
-    if (activeFilter === "NACIONAL")
-      return activeHistory.filter((h) => h.destinationType === "NATIONAL");
-    if (activeFilter === "EXTRANJERO")
-      return activeHistory.filter((h) => h.destinationType === "INTERNATIONAL");
-    return history;
-  };
-  const filteredBookings = filterBookings();
+  const countFor = (value: HistoryFilter): number => history.filter(matcherFor(value)).length;
+  const filteredBookings = history.filter(matcherFor(activeFilter));
 
   if (!travelerId) return null;
 
@@ -140,10 +139,10 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
                 </div>
                 <div className="flex items-center gap-1.5 border-t border-slate-200/60 pt-1 text-[11px] font-medium text-slate-600">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  <span>{counts.national} Nac.</span>
+                  <span>{countFor("NATIONAL")} Nac.</span>
                   <span className="text-slate-300">•</span>
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-indigo-500" />
-                  <span>{counts.international} Ext.</span>
+                  <span>{countFor("INTERNATIONAL")} Ext.</span>
                 </div>
               </div>
 
@@ -185,59 +184,31 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: Props) {
               </div>
 
               <div className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1 text-[11px] font-medium text-slate-600 sm:text-xs">
-                <button
-                  onClick={() => setActiveFilter("ALL")}
-                  className={`rounded-lg px-1 py-1.5 text-center transition-all ${
-                    activeFilter === "ALL"
-                      ? "bg-white font-semibold text-slate-900 shadow-sm"
-                      : "hover:text-slate-900"
-                  }`}
-                >
-                  Todos ({counts.all})
-                </button>
-                <button
-                  onClick={() => setActiveFilter("NACIONAL")}
-                  className={`rounded-lg px-1 py-1.5 text-center transition-all ${
-                    activeFilter === "NACIONAL"
-                      ? "bg-white font-semibold text-slate-900 shadow-sm"
-                      : "hover:text-slate-900"
-                  }`}
-                >
-                  Nacionales ({counts.national})
-                </button>
-                <button
-                  onClick={() => setActiveFilter("EXTRANJERO")}
-                  className={`rounded-lg px-1 py-1.5 text-center transition-all ${
-                    activeFilter === "EXTRANJERO"
-                      ? "bg-white font-semibold text-slate-900 shadow-sm"
-                      : "hover:text-slate-900"
-                  }`}
-                >
-                  Extranjero ({counts.international})
-                </button>
-                <button
-                  onClick={() => setActiveFilter("CANCELLED")}
-                  className={`rounded-lg px-1 py-1.5 text-center transition-all ${
-                    activeFilter === "CANCELLED"
-                      ? "bg-white font-semibold text-slate-900 shadow-sm"
-                      : "hover:text-slate-900"
-                  }`}
-                >
-                  Cancelados ({counts.cancelled})
-                </button>
+                {HISTORY_FILTERS.map((filter) => (
+                  <button
+                    key={filter.value}
+                    type="button"
+                    onClick={() => setActiveFilter(filter.value)}
+                    className={`rounded-lg px-1 py-1.5 text-center transition-all ${
+                      activeFilter === filter.value
+                        ? "bg-white font-semibold text-slate-900 shadow-sm"
+                        : "hover:text-slate-900"
+                    }`}
+                  >
+                    {filter.label} ({countFor(filter.value)})
+                  </button>
+                ))}
               </div>
 
               <div className="mt-4 space-y-3">
                 {filteredBookings.map((item) => {
                   const isCancelled = item.isCancelled;
-                  const isNacional = item.destinationType === "NATIONAL";
+                  const isNacional = item.destinationType === DESTINATION_TYPE.NATIONAL;
 
-                  // 🚀 USO DE UTILIDAD: formatCurrency
                   const priceFormatted = formatCurrency(item.amountPaid, {
                     currency: item.currency || DEFAULT_CURRENCY,
                   });
 
-                  // 🚀 USO DE UTILIDAD: formatLocalDate (evita el desfase de zona horaria)
                   const localDateString = formatLocalDate(item.departureDateTime);
 
                   let dateLabel = "";

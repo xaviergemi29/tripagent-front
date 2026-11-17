@@ -2,12 +2,12 @@ import { z } from "zod";
 import {
   CURRENCIES,
   DEFAULT_CURRENCY,
+  DESTINATION_TYPE,
+  DESTINATION_TYPES,
   TOUR_TEMPORAL_STATUSES,
 } from "@/shared/constants/domain.constants";
 
 export const TOUR_MODALITIES = ["TRANSPORT_INCLUDED", "INDEPENDENT_ACCESS"] as const;
-// Espejo de DESTINATION_TYPE en la API. Lo usa el CRM (viajes nacionales / internacionales).
-export const DESTINATION_TYPES = ["NATIONAL", "INTERNATIONAL"] as const;
 
 const baseTourSchema = z.object({
   id: z.uuid().optional(),
@@ -90,7 +90,7 @@ const baseTourSchema = z.object({
     )
     .min(1, "Debes agregar al menos un punto de abordaje"),
   brochureUrl: z.string().nullable().optional(),
-  destinationType: z.enum(DESTINATION_TYPES).default("NATIONAL"),
+  destinationType: z.enum(DESTINATION_TYPES).default(DESTINATION_TYPE.NATIONAL),
 });
 
 export const tourSchema = baseTourSchema.superRefine((data, ctx) => {

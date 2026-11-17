@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFormState, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, ShieldAlert, Calendar, CalendarOff, AlertTriangle, User, Baby } from "lucide-react";
 
@@ -19,43 +18,34 @@ interface ExtendedTraveler extends TravelerOutput {
   totalTrips?: number;
 }
 
-interface Props {
+interface EditTravelerDrawerProps {
   traveler: ExtendedTraveler | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function EditTravelerDrawer({ traveler, isOpen, onClose }: Props) {
+export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDrawerProps) {
   const { mutateAsync: updateTraveler, isPending } = useUpdateTraveler();
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<EditTravelerFormInput>({
+  const { register, handleSubmit, setValue, control } = useForm<EditTravelerFormInput>({
     resolver: zodResolver(editTravelerSchema),
     defaultValues: { passengerType: "ADULT" },
+    values: traveler
+      ? {
+          passengerType: "ADULT",
+          whatsappPhone: traveler.whatsappPhone || "",
+          email: traveler.email || "",
+          fullName: traveler.fullName,
+          emergencyContactName: traveler.emergencyContactName,
+          emergencyContactPhone: traveler.emergencyContactPhone || "",
+          medicalNotes: traveler.medicalNotes || "",
+          birthDate: traveler.birthDate || "",
+        }
+      : undefined,
   });
 
-  const watchPassengerType = watch("passengerType");
-
-  useEffect(() => {
-    if (traveler) {
-      reset({
-        passengerType: "ADULT",
-        whatsappPhone: traveler.whatsappPhone || "",
-        email: traveler.email || "",
-        fullName: traveler.fullName,
-        emergencyContactName: traveler.emergencyContactName,
-        emergencyContactPhone: traveler.emergencyContactPhone || "",
-        medicalNotes: traveler.medicalNotes || "",
-        birthDate: traveler.birthDate || "",
-      });
-    }
-  }, [traveler]);
+  const { errors } = useFormState({ control });
+  const watchPassengerType = useWatch({ control, name: "passengerType" });
 
   const onSubmit = async (formData: EditTravelerFormInput) => {
     if (!traveler?.id) return;

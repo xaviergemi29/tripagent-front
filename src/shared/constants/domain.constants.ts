@@ -29,6 +29,42 @@ export type PaymentType = (typeof PAYMENT_TYPES)[number];
 export const PASSENGER_STATUSES = ["ACTIVE", "CANCELLED"] as const;
 export type PassengerStatus = (typeof PASSENGER_STATUSES)[number];
 
+/** Acceso por nombre: `status === PASSENGER_STATUS.CANCELLED`. */
+export const PASSENGER_STATUS = {
+  ACTIVE: "ACTIVE",
+  CANCELLED: "CANCELLED",
+} as const satisfies Record<string, PassengerStatus>;
+
+// Estado de una reserva (enum `booking_status` de la API, `tripagent-api/src/db/schema.ts`).
+export const BOOKING_STATUSES = [
+  "AWAITING_REGISTRATION",
+  "PENDING",
+  "CONFIRMED",
+  "CANCELLED",
+  "NO_SHOW",
+] as const;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+/** Acceso por nombre: `status === BOOKING_STATUS.CANCELLED`. */
+export const BOOKING_STATUS = {
+  AWAITING_REGISTRATION: "AWAITING_REGISTRATION",
+  PENDING: "PENDING",
+  CONFIRMED: "CONFIRMED",
+  CANCELLED: "CANCELLED",
+  NO_SHOW: "NO_SHOW",
+} as const satisfies Record<string, BookingStatus>;
+
+// Tipo de destino del tour (`tours.destinationType`). Lo usan tours (formulario, filtros) y
+// viajeros (historial); antes vivía en `features/tours/schemas/tour.schema.ts`.
+export const DESTINATION_TYPES = ["NATIONAL", "INTERNATIONAL"] as const;
+export type DestinationType = (typeof DESTINATION_TYPES)[number];
+
+/** Acceso por nombre: `type === DESTINATION_TYPE.INTERNATIONAL`. */
+export const DESTINATION_TYPE = {
+  NATIONAL: "NATIONAL",
+  INTERNATIONAL: "INTERNATIONAL",
+} as const satisfies Record<string, DestinationType>;
+
 // Rol de un pasajero dentro de su reserva. No es un enum de BD (allí es el booleano
 // `booking_passengers.isTitular`): es parte del contrato de la API (Centro de Control y
 // transferencia). Espejo de `tripagent-api/src/shared/constants/domain.constants.ts`.

@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { CURRENCIES } from "@/shared/constants/domain.constants";
+import {
+  BOOKING_STATUSES,
+  CURRENCIES,
+  DESTINATION_TYPES,
+  PASSENGER_STATUSES,
+} from "@/shared/constants/domain.constants";
 
 export const travelerSchema = z.object({
   id: z.uuid().optional(),
@@ -41,14 +46,14 @@ export const travelerHistoryItemSchema = z.object({
   isCancelled: z.boolean(),
   id: z.uuid(""),
   isTitular: z.boolean(),
-  passengerStatus: z.enum(["CANCELLED", "ACTIVE"]),
-  bookingStatus: z.enum(["PENDING", "CONFIRMED", "CANCELLED", "NO_SHOW"]),
+  passengerStatus: z.enum(PASSENGER_STATUSES),
+  bookingStatus: z.enum(BOOKING_STATUSES),
   amountPaid: z.number(),
   /** Moneda del tour de esa reserva. */
   currency: z.enum(CURRENCIES).optional(),
   tourTitle: z.string(),
   departureDateTime: z.string(),
-  destinationType: z.enum(["NATIONAL", "INTERNATIONAL"]).optional(),
+  destinationType: z.enum(DESTINATION_TYPES).optional(),
 });
 
 export const travelerHistoryOutputSchema = z.object({
