@@ -6,7 +6,7 @@ import type {
 } from "../schemas/traveler.schema";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
-import { TRAVELER_KEYS } from "@/shared/api/query-keys";
+import { TOUR_DASHBOARD_KEYS, TRAVELER_KEYS } from "@/shared/api/query-keys";
 import { fetchAllPages } from "@/shared/api/fetch-all-pages";
 
 // ============================================================================
@@ -99,6 +99,7 @@ export function useUpdateTraveler() {
     onSuccess: (data) => {
       queryClient.setQueryData(TRAVELER_KEYS.detail(data.id!), data);
       queryClient.invalidateQueries({ queryKey: TRAVELER_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
       toast.success("Viajero actualizado exitosamente");
     },
     onError: (error: ApiError) => {

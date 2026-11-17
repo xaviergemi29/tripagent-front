@@ -6,7 +6,8 @@ import type {
   QuickBookingInput,
   QuickBookingOutput,
 } from "../schemas/quick-booking.schema";
-import { BOOKING_KEYS, TOUR_DASHBOARD_KEYS } from "@/shared/api/query-keys";
+import { BOOKING_KEYS } from "@/shared/api/query-keys";
+import { invalidateBookingChange } from "@/shared/api/invalidate-booking-change";
 
 /**
  * Acciones del operador sobre reservas desde el Centro de Control: apartado rápido y cancelación
@@ -38,7 +39,7 @@ export function useQuickReservation() {
   return useMutation({
     mutationFn: createQuickBookingApi,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(variables.tourId) });
+      invalidateBookingChange(queryClient, variables.tourId);
     },
     onError: (error: ApiError) => {
       toast.error("Error al apartar lugares", {
@@ -55,7 +56,7 @@ export const useCancelFullBooking = () => {
     onSuccess: () => {
       toast.success("Reserva cancelada por completo");
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
+      invalidateBookingChange(queryClient);
     },
     onError: (error: ApiError) => toast.error("Error", { description: error.message }),
   });

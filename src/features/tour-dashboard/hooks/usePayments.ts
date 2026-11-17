@@ -7,7 +7,7 @@ import {
   VoidPaymentInput,
   VoidPaymentOutput,
 } from "../schemas/payment.schema";
-import { TOUR_DASHBOARD_KEYS } from "@/shared/api/query-keys";
+import { invalidateBookingChange } from "@/shared/api/invalidate-booking-change";
 
 const createPaymentApi = ({ bookingId, payload: data }: PaymentInput): Promise<PaymentOutput> => {
   return apiClient.post<PaymentOutput, never>(`/payments/${bookingId}/payments`, data);
@@ -26,7 +26,7 @@ export const useCreatePayment = (tourId: string) => {
   return useMutation({
     mutationFn: createPaymentApi,
     onSuccess: (_data, { payload }) => {
-      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(tourId) });
+      invalidateBookingChange(queryClient, tourId);
       toast.success(
         payload.type === "REFUND"
           ? "Reembolso registrado correctamente"
@@ -52,7 +52,7 @@ export const useVoidPayment = (tourId: string) => {
   return useMutation({
     mutationFn: voidPaymentApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(tourId) });
+      invalidateBookingChange(queryClient, tourId);
       toast.success("Abono anulado exitosamente");
     },
     onError: (error: ApiError) => {

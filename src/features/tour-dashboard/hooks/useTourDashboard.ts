@@ -11,12 +11,8 @@ import type {
   TransferPassengerInput,
   TransferPassengerOutput,
 } from "../schemas/transfer-passenger.schema";
-import {
-  TOUR_DASHBOARD_KEYS,
-  TOUR_KEYS,
-  TOUR_SEAT_KEYS,
-  VEHICLE_KEYS,
-} from "@/shared/api/query-keys";
+import { TOUR_DASHBOARD_KEYS, TOUR_SEAT_KEYS, VEHICLE_KEYS } from "@/shared/api/query-keys";
+import { invalidateBookingChange } from "@/shared/api/invalidate-booking-change";
 
 /** Se envía una unidad de la agencia (`vehicleId`) o una plantilla del catálogo (`templateId`). */
 export type AssignVehicleInput =
@@ -125,9 +121,8 @@ export function useAddPassengerToBooking() {
   return useMutation({
     mutationFn: ({ bookingId, tourId }: { bookingId: string; tourId: string }) =>
       apiClient.post(`/bookings/${bookingId}/add-passenger`, { tourId }),
-    onSuccess: () => {
-      // Invalidar para actualizar métricas financieras y tamaño de grupo
-      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
+    onSuccess: (_data, { tourId }) => {
+      invalidateBookingChange(queryClient, tourId);
       toast.success("Acompañante agregado", {
         description: "El saldo pendiente ha sido ajustado.",
       });
@@ -147,7 +142,7 @@ export function useRemovePendingSlot() {
     mutationFn: ({ bookingId }: { bookingId: string }) =>
       apiClient.delete(`/bookings/${bookingId}/pending-slots`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
+      invalidateBookingChange(queryClient);
       toast.success("Cupo liberado", {
         description: "El lugar ha regresado al inventario y el saldo se ajustó.",
       });
@@ -171,7 +166,7 @@ export function useTransferPassenger() {
     mutationFn: ({ bookingId, data }: { bookingId: string; data: TransferPassengerInput }) =>
       apiClient.patch<never, TransferPassengerOutput>(`/bookings/${bookingId}/transfer`, data),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(result.tourId) });
+      invalidateBookingChange(queryClient, result.tourId);
       toast.success(
         result.transferredPassenger.role === PASSENGER_ROLE.TITULAR
           ? "Titularidad transferida"
@@ -202,7 +197,7 @@ export function useQuickRemovePassenger() {
         penaltyAmount: 0, // Simplificado para UX rápida, si necesitas penalty, abre el Drawer en su lugar.
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
+      invalidateBookingChange(queryClient);
       toast.success("Pasajero dado de baja", {
         description: "El asiento ha sido liberado.",
       });
@@ -240,7 +235,7 @@ const cancelTourApi = ({ tourId, ...body }: CancelTourInput): Promise<CancelTour
 
 /**
  * Cancela el tour: todas las reservas pasan a canceladas sin penalización y lo abonado queda como
- * saldo a reembolsar. Invalida el Centro de Control, el croquis y el listado de tours.
+ * saldo a reembolsar. Invalida el Centro de Control, el croquis, el listado de tours y Viajeros.
  */
 export function useCancelTour() {
   const queryClient = useQueryClient();
@@ -248,9 +243,7 @@ export function useCancelTour() {
   return useMutation<CancelTourOutput, ApiError, CancelTourInput>({
     mutationFn: cancelTourApi,
     onSuccess: (result, { tourId }) => {
-      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.detail(tourId) });
-      queryClient.invalidateQueries({ queryKey: TOUR_SEAT_KEYS.byTour(tourId) });
-      queryClient.invalidateQueries({ queryKey: TOUR_KEYS.all });
+      invalidateBookingChange(queryClient, tourId);
       toast.success("Tour cancelado", {
         description:
           result.refundableTotal > 0
