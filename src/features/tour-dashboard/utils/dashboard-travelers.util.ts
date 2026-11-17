@@ -4,6 +4,7 @@ import type {
   TitularRowOutput,
 } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import { FORM_STATUS, PAYMENT_STATUS } from "@/shared/constants/domain.constants";
+import { matchesSearch } from "@/shared/utils/search.util";
 
 /**
  * Lógica de presentación del Centro de Control sobre la lista de grupos que entrega la API
@@ -69,11 +70,10 @@ export function toTransferWhatsapp(whatsapp: string): string | null {
   return /^\d{10}$/.test(whatsapp) ? whatsapp : null;
 }
 
-const matchesSearch = (titular: TitularRowOutput, searchQuery: string): boolean => {
-  const query = searchQuery.toLowerCase().trim();
-  if (!query) return true;
+/** Titular o acompañante por nombre (sin acentos) o WhatsApp (solo dígitos; "Sin teléfono" no cuenta). */
+const groupMatchesSearch = (titular: TitularRowOutput, searchQuery: string): boolean => {
   const matches = (person: { fullName: string; whatsapp: string }) =>
-    person.fullName.toLowerCase().includes(query) || person.whatsapp.includes(query);
+    matchesSearch(searchQuery, { texts: [person.fullName], phones: [person.whatsapp] });
   return matches(titular) || (titular.companions?.some(matches) ?? false);
 };
 
@@ -100,7 +100,7 @@ export function filterDashboardTravelers(
   if (!travelers) return [];
   return travelers.filter(
     (titular) =>
-      matchesSearch(titular, searchQuery) &&
+      groupMatchesSearch(titular, searchQuery) &&
       (paymentFilter === "ALL" || resolveGroupPaymentStatus(titular) === paymentFilter) &&
       (formFilter === "ALL" || groupRegistrationStatus(titular) === formFilter) &&
       (seatFilter === "ALL" || matchesSeat(titular, seatFilter)),

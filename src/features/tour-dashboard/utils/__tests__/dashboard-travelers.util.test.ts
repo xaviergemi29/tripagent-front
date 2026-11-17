@@ -92,6 +92,11 @@ describe("filterDashboardTravelers", () => {
     expect(filter({ searchQuery: "ANA" })).toEqual(["Ana Torres"]);
   });
 
+  it("busca sin acentos y con el WhatsApp escrito con espacios", () => {
+    expect(filter({ searchQuery: "ruíz" })).toEqual(["Beto Ruiz"]);
+    expect(filter({ searchQuery: "228 999 8888" })).toEqual(["Ana Torres"]);
+  });
+
   it("filtra por estado de pago del grupo", () => {
     expect(filter({ paymentFilter: "PAID" })).toEqual(["Ana Torres"]);
     expect(filter({ paymentFilter: "PARTIAL" })).toEqual(["Beto Ruiz"]);

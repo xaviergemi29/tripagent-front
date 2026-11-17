@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { matchesSearch } from "@/shared/utils/search.util";
 import type { TourOutput } from "../schemas/tour.schema";
 import {
   TOUR_TEMPORAL_STATUS,
@@ -20,8 +21,7 @@ export function useTourFilters(tours: TourOutput[]) {
 
     return tours.filter((tour) => {
       // 1. Filtro por Búsqueda (Texto)
-      const matchSearch =
-        !searchTerm.trim() || tour.title.toLowerCase().includes(searchTerm.toLowerCase().trim());
+      const matchSearch = matchesSearch(searchTerm, { texts: [tour.title] }); // sin acentos
 
       // 2. Filtro por Estado Temporal
       let matchStatus = true;

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { matchesSearch } from "@/shared/utils/search.util";
 import type { TravelerTableRow } from "../components/TravelersTable"; // Ajusta la ruta a tu tabla
 import type { TravelerFilterType } from "../components/TravelersFilters"; // Ajusta la ruta
 
@@ -8,13 +9,11 @@ export function useTravelersFilter(travelers: TravelerTableRow[] = []) {
 
   const filteredTravelers = useMemo(() => {
     return travelers.filter((traveler) => {
-      // 1. Filtro de búsqueda por texto (Nombre, Teléfono o Email)
-      const query = searchQuery.toLowerCase().trim();
-      const matchesSearch =
-        !query ||
-        traveler.fullName.toLowerCase().includes(query) ||
-        (traveler.whatsappPhone && traveler.whatsappPhone.includes(query)) ||
-        (traveler.email && traveler.email.toLowerCase().includes(query));
+      // 1. Filtro de búsqueda por texto (nombre o correo, sin acentos) o teléfono (solo dígitos)
+      const matchesQuery = matchesSearch(searchQuery, {
+        texts: [traveler.fullName, traveler.email],
+        phones: [traveler.whatsappPhone],
+      });
 
       // 2. Filtro categórico (Todos, Nacional, Internacional)
       let matchesFilter = true;
@@ -25,7 +24,7 @@ export function useTravelersFilter(travelers: TravelerTableRow[] = []) {
       }
 
       // Combinación aditiva (AND)
-      return matchesSearch && matchesFilter;
+      return matchesQuery && matchesFilter;
     });
   }, [travelers, searchQuery, activeFilter]);
 

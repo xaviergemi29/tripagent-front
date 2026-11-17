@@ -41,6 +41,12 @@ describe("useTourFilters", () => {
     expect(titles(result.current.filteredTours)).toEqual(["Huasteca Potosina"]);
   });
 
+  it("busca sin distinguir acentos", () => {
+    const { result } = renderHook(() => useTourFilters(TOURS));
+    act(() => result.current.setSearchTerm("zacatlan"));
+    expect(titles(result.current.filteredTours)).toEqual(["Zacatlán de las Manzanas"]);
+  });
+
   it("filtra por estado temporal; sin estado cuenta como próximo", () => {
     const { result } = renderHook(() => useTourFilters(TOURS));
 

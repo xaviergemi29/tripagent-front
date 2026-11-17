@@ -50,6 +50,16 @@ describe("useTravelersFilter", () => {
     expect(names(result.current.filteredTravelers)).toEqual(["Luis Pérez"]);
   });
 
+  it("sin distinguir acentos y con el teléfono escrito con espacios o guiones", () => {
+    const { result } = renderHook(() => useTravelersFilter(TRAVELERS));
+    act(() => result.current.setSearchQuery("perez"));
+    expect(names(result.current.filteredTravelers)).toEqual(["Luis Pérez"]);
+    act(() => result.current.setSearchQuery("228 123 4567"));
+    expect(names(result.current.filteredTravelers)).toEqual(["Ana Torres"]);
+    act(() => result.current.setSearchQuery("228-999"));
+    expect(names(result.current.filteredTravelers)).toEqual(["Eva Ruiz"]);
+  });
+
   it("tolera viajeros sin WhatsApp ni correo (menores)", () => {
     const { result } = renderHook(() => useTravelersFilter(TRAVELERS));
     act(() => result.current.setSearchQuery("menor"));
