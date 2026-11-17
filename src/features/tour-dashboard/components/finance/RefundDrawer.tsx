@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { RotateCcw, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RefundRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
@@ -46,15 +47,12 @@ export function RefundDrawer({
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-40 flex justify-end bg-slate-900/20 backdrop-blur-sm"
-        onClick={onClose}
-      >
-        <div
-          role="dialog"
-          aria-label={`Reembolso de ${refund.fullName}`}
-          className="animate-in slide-in-from-right flex h-full w-full max-w-md flex-col bg-white shadow-2xl duration-300"
-          onClick={(e) => e.stopPropagation()}
+      <Sheet open onOpenChange={(open) => !open && onClose()}>
+        <SheetContent
+          side="right"
+          showCloseButton={false}
+          aria-describedby={undefined}
+          className="gap-0 bg-white p-0 shadow-2xl data-[side=right]:w-full data-[side=right]:sm:max-w-md"
         >
           <div className="flex shrink-0 items-center justify-between border-b p-6">
             <div className="flex items-center gap-3">
@@ -62,7 +60,9 @@ export function RefundDrawer({
                 <User className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-slate-900">{refund.fullName}</h2>
+                <SheetTitle className="text-lg font-bold text-slate-900">
+                  {refund.fullName}
+                </SheetTitle>
                 <p className="text-xs font-semibold text-slate-500 uppercase">
                   Reserva cancelada · {formatPhoneForDisplay(refund.whatsapp)}
                 </p>
@@ -131,8 +131,8 @@ export function RefundDrawer({
               ))}
             </section>
           </div>
-        </div>
-      </div>
+        </SheetContent>
+      </Sheet>
 
       <RegisterPaymentModal
         isOpen={isRefundModalOpen}

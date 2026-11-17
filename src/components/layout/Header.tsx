@@ -108,6 +108,7 @@ export function Header() {
                     </div>
                   </div>
                   <Button
+                    aria-label="Cerrar sesión"
                     variant="ghost"
                     size="icon"
                     onClick={() => logout()}

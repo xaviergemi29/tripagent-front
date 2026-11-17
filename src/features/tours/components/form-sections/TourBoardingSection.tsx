@@ -105,6 +105,7 @@ export function TourBoardingSection() {
 
               {!isHiking && fields.length > 1 && (
                 <Button
+                  aria-label="Quitar punto de abordaje"
                   type="button"
                   variant="ghost"
                   size="icon"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useTravelerHistory } from "../hooks/useTravelers";
 import {
   Loader2,
@@ -117,20 +118,25 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: PropsTravelerHist
   if (!travelerId) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="animate-in slide-in-from-right flex h-full w-full max-w-lg flex-col bg-white shadow-2xl duration-300"
-        onClick={(e) => e.stopPropagation()}
+    <Sheet open onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        side="right"
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="gap-0 bg-white p-0 shadow-2xl data-[side=right]:w-full data-[side=right]:sm:max-w-lg"
       >
         <div className="flex shrink-0 items-center justify-between border-b bg-slate-50/50 p-6">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Perfil del Viajero</h2>
+            <SheetTitle className="text-lg font-bold text-slate-900">Perfil del Viajero</SheetTitle>
             <p className="text-xs font-medium text-slate-500">Historial y valor acumulado</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+          <Button
+            aria-label="Cerrar"
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-full"
+          >
             <X className="h-5 w-5 text-slate-500" />
           </Button>
         </div>
@@ -339,7 +345,7 @@ export function TravelerHistoryDrawer({ travelerId, onClose }: PropsTravelerHist
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

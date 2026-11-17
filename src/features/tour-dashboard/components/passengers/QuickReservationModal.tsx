@@ -168,6 +168,7 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
             Apartar Lugares (Rápido)
           </AlertDialogTitle>
           <Button
+            aria-label="Cerrar"
             type="button"
             variant="ghost"
             size="icon"

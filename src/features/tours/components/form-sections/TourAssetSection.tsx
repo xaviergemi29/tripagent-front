@@ -128,6 +128,7 @@ export function TourAssetSection({
               </div>
 
               <Button
+                aria-label="Quitar folleto"
                 type="button"
                 variant="ghost"
                 size="icon"

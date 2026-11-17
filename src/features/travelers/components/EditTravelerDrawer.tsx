@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm, useFormState, useWatch } from "react-hook-form";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, ShieldAlert, Calendar, CalendarOff, AlertTriangle, User, Baby } from "lucide-react";
 
@@ -118,13 +119,12 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
     .toUpperCase();
 
   return (
-    <div
-      className="animate-in fade-in fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-sm duration-200"
-      onClick={handleClose}
-    >
-      <div
-        className="animate-in slide-in-from-right flex h-full w-full max-w-md flex-col bg-white shadow-2xl duration-300"
-        onClick={(e) => e.stopPropagation()}
+    <Sheet open onOpenChange={(open) => !open && handleClose()}>
+      <SheetContent
+        side="right"
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="gap-0 bg-white p-0 shadow-2xl data-[side=right]:w-full data-[side=right]:sm:max-w-md"
       >
         {/* Header del Drawer */}
         <div className="flex flex-col gap-4 border-b bg-slate-50 p-6">
@@ -135,9 +135,9 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base leading-none font-bold text-slate-900">
+                  <SheetTitle className="text-base leading-none font-bold text-slate-900">
                     {traveler.fullName}
-                  </h2>
+                  </SheetTitle>
                   {traveler.totalTrips && traveler.totalTrips > 0 && (
                     <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
                       Frecuente ({traveler.totalTrips})
@@ -168,6 +168,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
               </div>
             </div>
             <Button
+              aria-label="Cerrar"
               variant="ghost"
               size="icon"
               onClick={handleClose}
@@ -360,7 +361,7 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
             {isPending ? "Guardando..." : "Guardar Cambios"}
           </Button>
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

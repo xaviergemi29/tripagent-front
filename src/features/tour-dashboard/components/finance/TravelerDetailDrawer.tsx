@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import {
   X,
   User,
@@ -124,13 +125,12 @@ export function TravelerDetailDrawer({
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-40 flex justify-end bg-slate-900/20 backdrop-blur-sm"
-        onClick={onClose}
-      >
-        <div
-          className="animate-in slide-in-from-right flex h-full w-full max-w-md flex-col bg-white shadow-2xl duration-300"
-          onClick={(e) => e.stopPropagation()}
+      <Sheet open onOpenChange={(open) => !open && onClose()}>
+        <SheetContent
+          side="right"
+          showCloseButton={false}
+          aria-describedby={undefined}
+          className="gap-0 bg-white p-0 shadow-2xl data-[side=right]:w-full data-[side=right]:sm:max-w-md"
         >
           {/* 1. CABECERA */}
           <div className="flex shrink-0 items-center justify-between border-b p-6">
@@ -140,7 +140,9 @@ export function TravelerDetailDrawer({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-slate-900">{traveler.fullName}</h2>
+                  <SheetTitle className="text-lg font-bold text-slate-900">
+                    {traveler.fullName}
+                  </SheetTitle>
                   {!isAuditMode ? (
                     <Button
                       variant="ghost"
@@ -164,7 +166,7 @@ export function TravelerDetailDrawer({
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button aria-label="Cerrar" variant="ghost" size="icon" onClick={onClose}>
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -285,6 +287,7 @@ export function TravelerDetailDrawer({
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
+                                  aria-label="Anular abono"
                                   variant="ghost"
                                   size="icon"
                                   className="h-9 w-9 rounded-lg border border-slate-200/80 bg-white text-slate-400 shadow-xs transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
@@ -400,8 +403,8 @@ export function TravelerDetailDrawer({
               </div>
             )}
           </div>
-        </div>
-      </div>
+        </SheetContent>
+      </Sheet>
 
       {isTitular && traveler && (
         <RegisterPaymentModal
