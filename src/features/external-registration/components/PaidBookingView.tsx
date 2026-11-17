@@ -44,8 +44,6 @@ export function PaidBookingView({
   const phoneDigits = toPhoneDigits(agency.phone);
   const whatsappUrl = phoneDigits
     ? buildWhatsAppUrl(phoneDigits, {
-        // Los teléfonos de agencia se capturan a 10 dígitos; wa.me requiere la lada de país.
-        countryCode: phoneDigits.length === 10 ? "52" : "",
         message: `¡Hola, ${agency.name}! ${
           titularName ? `Soy ${titularName}, tengo` : "Tengo"
         } mi pase de abordaje para el viaje "${tourInfo.title}" y me gustaría hacerles una consulta.`,

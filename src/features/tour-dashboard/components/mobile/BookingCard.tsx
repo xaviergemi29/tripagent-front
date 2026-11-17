@@ -210,7 +210,7 @@ export function BookingCard({
               📞
             </a>
             <a
-              href={buildWhatsAppUrl(titular.whatsapp, { countryCode: "52" })}
+              href={buildWhatsAppUrl(titular.whatsapp)}
               target="_blank"
               rel="noreferrer"
               className="rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 hover:bg-emerald-100"

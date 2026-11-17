@@ -35,7 +35,7 @@ function buildWhatsAppAdvisorUrl({
   if (!toPhoneDigits(agencyPhone)) return null;
 
   const message = `¡Hola! Vi el folleto digital de *${tourName}* (${departureDate}) y tengo algunas dudas antes de reservar.`;
-  return buildWhatsAppUrl(agencyPhone, { countryCode: "52", message });
+  return buildWhatsAppUrl(agencyPhone, { message });
 }
 
 async function getPublicTour(tourId: string): Promise<PublicTourOutput | null> {

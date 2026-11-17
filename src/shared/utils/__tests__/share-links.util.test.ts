@@ -33,7 +33,7 @@ describe("formatPhoneForDisplay", () => {
 describe("buildWhatsAppUrl", () => {
   it("limpia el teléfono y codifica el mensaje", () => {
     expect(buildWhatsAppUrl("228 123 4567", { message: "Hola, ¿cómo estás? & más" })).toBe(
-      "https://wa.me/2281234567?text=Hola%2C%20%C2%BFc%C3%B3mo%20est%C3%A1s%3F%20%26%20m%C3%A1s",
+      "https://wa.me/522281234567?text=Hola%2C%20%C2%BFc%C3%B3mo%20est%C3%A1s%3F%20%26%20m%C3%A1s",
     );
   });
 
@@ -41,7 +41,11 @@ describe("buildWhatsAppUrl", () => {
     expect(buildWhatsAppUrl("2281234567", { countryCode: "52" })).toBe(
       "https://wa.me/522281234567",
     );
-    expect(buildWhatsAppUrl("2281234567")).toBe("https://wa.me/2281234567");
+    // Por defecto: 10 dígitos llevan la lada de México (sin ella wa.me lo lee como +228, Togo);
+    // un número ya internacional no se duplica.
+    expect(buildWhatsAppUrl("2281234567")).toBe("https://wa.me/522281234567");
+    expect(buildWhatsAppUrl("522281234567")).toBe("https://wa.me/522281234567");
+    expect(buildWhatsAppUrl("+1 415 555 0100")).toBe("https://wa.me/14155550100");
   });
 });
 

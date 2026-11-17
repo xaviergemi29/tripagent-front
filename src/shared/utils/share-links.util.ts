@@ -9,10 +9,16 @@ import { API_BASE_URL } from "@/lib/api-config";
  */
 export const toPhoneDigits = (phone?: string | null): string => (phone || "").replace(/\D/g, "");
 
+/** Lada de México: se antepone a los teléfonos de 10 dígitos en los enlaces `wa.me`. */
+const MEXICO_COUNTRY_CODE = "52";
+
 interface WhatsAppUrlOptions {
   /** Texto prellenado del chat. Se codifica con `encodeURIComponent`. */
   message?: string;
-  /** Prefijo de país que se antepone a los dígitos (ej. "52"). Por defecto no se agrega. */
+  /**
+   * Prefijo de país que se antepone a los dígitos. Si se omite, se agrega "52" a un número de 10
+   * dígitos (México); uno más largo se considera ya internacional y se deja igual.
+   */
   countryCode?: string;
 }
 
@@ -35,15 +41,20 @@ export const formatPhoneForDisplay = (phone?: string | null): string => {
  * @param {string | null | undefined} phone - Teléfono del destinatario (se limpia a dígitos).
  * @param {WhatsAppUrlOptions} [options] - Mensaje prellenado y prefijo de país opcionales.
  * @returns {string} URL `https://wa.me/...`.
+ * Los teléfonos se capturan a 10 dígitos y `wa.me` exige la lada del país: sin ella,
+ * `wa.me/2281234567` se lee como +228 (Togo). Por eso un número de 10 dígitos lleva "52" por
+ * defecto (2026-11-16; antes cada pantalla debía pasarlo y cuatro botones no lo hacían).
  * @example
- * buildWhatsAppUrl("228 123 4567", { countryCode: "52", message: "Hola" })
- * // "https://wa.me/522281234567?text=Hola"
+ * buildWhatsAppUrl("228 123 4567", { message: "Hola" }) // "https://wa.me/522281234567?text=Hola"
+ * buildWhatsAppUrl("522281234567") // "https://wa.me/522281234567"
  */
 export const buildWhatsAppUrl = (
   phone: string | null | undefined,
-  { message, countryCode = "" }: WhatsAppUrlOptions = {},
+  { message, countryCode }: WhatsAppUrlOptions = {},
 ): string => {
-  const base = `https://wa.me/${countryCode}${toPhoneDigits(phone)}`;
+  const digits = toPhoneDigits(phone);
+  const prefix = countryCode ?? (digits.length === 10 ? MEXICO_COUNTRY_CODE : "");
+  const base = `https://wa.me/${prefix}${digits}`;
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 };
 

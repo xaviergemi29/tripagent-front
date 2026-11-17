@@ -26,11 +26,7 @@ export function PublicBookingFooter({
 }: PublicBookingFooterProps) {
   const phoneDigits = toPhoneDigits(agencyWhatsApp);
   const whatsappUrl = phoneDigits
-    ? buildWhatsAppUrl(phoneDigits, {
-        // Los teléfonos de agencia se capturan a 10 dígitos; wa.me requiere la lada de país.
-        countryCode: phoneDigits.length === 10 ? "52" : "",
-        message: whatsappMessage,
-      })
+    ? buildWhatsAppUrl(phoneDigits, { message: whatsappMessage }) // agrega la lada 52
     : null;
 
   return (
