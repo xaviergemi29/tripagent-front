@@ -27,6 +27,7 @@ import { UnpaidHoldAge } from "@/features/tour-dashboard/components/passengers/U
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import {
   copyMagicLink,
+  ROW_ACTION_TONE,
   TransferMenu,
 } from "@/features/tour-dashboard/components/passengers/traveler-row-cells";
 import { hasRegisteredPayments } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
@@ -273,7 +274,7 @@ export function BookingCard({
                           onRemovePassengerClick(comp.bookingId, comp.id, comp.fullName)
                         }
                         aria-label={`Dar de baja a ${comp.fullName}`}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${ROW_ACTION_TONE.remove}`}
                       >
                         <UserMinus className="h-4 w-4" />
                       </button>
@@ -358,7 +359,7 @@ export function BookingCard({
               onClick={() => onDownloadReceiptClick?.(titular)}
               aria-label="Descargar Comprobante PDF"
               data-tour={TOUR_TARGET.DASHBOARD_ACTION_RECEIPT}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${ROW_ACTION_TONE.receipt}`}
             >
               <FileText className="h-4 w-4" />
             </button>
@@ -369,7 +370,7 @@ export function BookingCard({
               onClick={(event) => void copyMagicLink(event, titular.magicToken)}
               aria-label="Copiar Magic Link"
               data-tour={TOUR_TARGET.DASHBOARD_ACTION_MAGIC_LINK}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-slate-500 transition-colors hover:border-indigo-100 hover:bg-indigo-50 hover:text-indigo-600"
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${ROW_ACTION_TONE.magicLink}`}
             >
               <Link2 className="h-4 w-4" />
             </button>
@@ -379,7 +380,7 @@ export function BookingCard({
             onClick={() => onRowClick?.(titular.id)}
             aria-label="Registrar abonos y pagos"
             data-tour={TOUR_TARGET.DASHBOARD_ACTION_PAYMENTS}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
+            className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${ROW_ACTION_TONE.payments}`}
           >
             <WalletCards className="h-4 w-4" />
           </button>

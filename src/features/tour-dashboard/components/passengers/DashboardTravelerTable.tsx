@@ -97,11 +97,11 @@ export function DashboardTravelerTable({
               <tr>
                 <th className="w-10 px-4 py-4"></th>
                 <th className="px-6 py-4">Viajero / Grupo</th>
-                {requiresSeats && <th className="px-6 py-4">Seat</th>}
+                {requiresSeats && <th className="px-6 py-4">Asiento</th>}
                 <th className="px-6 py-4">Abordaje</th>
                 <th className="px-6 py-4">Contacto</th>
                 <th className="px-6 py-4">Registro</th>
-                <th className="px-6 py-4">Estado Financiero</th>
+                <th className="px-6 py-4 whitespace-nowrap">Estado Financiero</th>
                 <th className="px-6 py-4 text-right">Acciones</th>
               </tr>
             </thead>

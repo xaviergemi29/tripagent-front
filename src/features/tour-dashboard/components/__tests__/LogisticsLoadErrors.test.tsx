@@ -19,6 +19,7 @@ const failed = () => ({
 let seatsQuery: Record<string, unknown> = {};
 
 vi.mock("@/features/tour-dashboard/hooks/useTourSeats", () => ({
+  useIsSavingSeat: () => false,
   useTourSeats: () => seatsQuery,
   useUpdateSeat: () => ({ mutate: vi.fn() }),
 }));

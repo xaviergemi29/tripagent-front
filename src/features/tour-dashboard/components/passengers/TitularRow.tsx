@@ -8,6 +8,7 @@ import {
   copyMagicLink,
   FinancialStatusBadge,
   RegistrationStatusBadge,
+  ROW_ACTION_TONE,
   RowActionButton,
   SeatCell,
   TransferMenu,
@@ -109,7 +110,7 @@ export function TitularRow({
           <span className="text-xs font-medium text-slate-400">Por definir</span>
         )}
       </td>
-      <td className="px-6 py-3.5 font-mono text-xs text-slate-600">
+      <td className="px-6 py-3.5 font-mono text-xs whitespace-nowrap text-slate-600">
         {formatPhoneForDisplay(titular.whatsapp)}
       </td>
       <td className="px-6 py-3.5">
@@ -123,7 +124,7 @@ export function TitularRow({
             balance={titular.balance}
           />
           {titular.balance > 0 ? (
-            <span className="text-[11px] font-bold text-slate-500">
+            <span className="text-[11px] font-bold whitespace-nowrap text-slate-500">
               Debe:{" "}
               {formatCurrency(titular.balance, { currency: tourCurrency || DEFAULT_CURRENCY })}
             </span>
@@ -144,7 +145,7 @@ export function TitularRow({
                 tooltip="Descargar Comprobante PDF"
                 ariaLabel="Descargar Comprobante PDF"
                 guideTarget={TOUR_TARGET.DASHBOARD_ACTION_RECEIPT}
-                className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-600 shadow-xs transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                className={`h-9 w-9 rounded-lg border transition-colors ${ROW_ACTION_TONE.receipt}`}
                 onClick={(event) => {
                   event.stopPropagation();
                   onDownloadReceiptClick(titular);
@@ -159,7 +160,7 @@ export function TitularRow({
                 tooltip="Copiar Magic Link del viajero"
                 ariaLabel="Copiar Magic Link"
                 guideTarget={TOUR_TARGET.DASHBOARD_ACTION_MAGIC_LINK}
-                className="h-9 w-9 rounded-lg border border-transparent text-slate-500 transition-colors hover:border-indigo-100 hover:bg-indigo-50 hover:text-indigo-600"
+                className={`h-9 w-9 rounded-lg border transition-colors ${ROW_ACTION_TONE.magicLink}`}
                 onClick={(event) => copyMagicLink(event, titular.magicToken)}
               >
                 <Link2 className="h-4 w-4" />
@@ -170,7 +171,7 @@ export function TitularRow({
               tooltip="Registrar abonos y pagos"
               ariaLabel="Registrar abonos y pagos"
               guideTarget={TOUR_TARGET.DASHBOARD_ACTION_PAYMENTS}
-              className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-600 shadow-xs transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
+              className={`h-9 w-9 rounded-lg border transition-colors ${ROW_ACTION_TONE.payments}`}
               onClick={(event) => {
                 event.stopPropagation();
                 onRowClick(titular.id);

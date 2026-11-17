@@ -92,6 +92,21 @@ describe("TravelerGroup: fila del titular", () => {
     expect(screen.getByText("Plaza Xalapeña")).toBeInTheDocument();
   });
 
+  it("el teléfono, el estado de pago, el saldo y el botón del Magic Link se ven completos y con borde", () => {
+    renderGroup();
+    // Sin cortes de línea ("ABONO / PARCIAL", "$3,000.00 / USD") en columnas angostas.
+    expect(screen.getByText("Abono Parcial")).toHaveClass("whitespace-nowrap");
+    expect(screen.getByText("Debe: $3,000.00 MXN")).toHaveClass("whitespace-nowrap");
+    expect(screen.getByText("228 123 4567")).toHaveClass("whitespace-nowrap");
+    // Cada acción con su color (antes el Magic Link no tenía borde y las demás eran grises).
+    expect(screen.getByRole("button", { name: "Copiar Magic Link" })).toHaveClass(
+      "border-indigo-200",
+    );
+    expect(screen.getByRole("button", { name: "Registrar abonos y pagos" })).toHaveClass(
+      "border-emerald-200",
+    );
+  });
+
   it("con derecho a asiento y sin asiento: '[ Asignar Asiento ]' llama con el id del titular", async () => {
     const user = userEvent.setup();
     const h = renderGroup();

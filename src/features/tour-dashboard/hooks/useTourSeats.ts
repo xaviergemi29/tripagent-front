@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient, type ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
 import { TOUR_DASHBOARD_KEYS, TOUR_SEAT_KEYS } from "@/shared/api/query-keys";
@@ -10,6 +10,8 @@ export interface UpdateSeatInput {
   seatLabel: string;
   status: SeatStatus;
   passengerId?: string | null;
+  /** Solo para la actualización optimista (el asiento muestra el nombre real); no se envía. */
+  passengerName?: string;
 }
 
 export interface SeatInfo {
@@ -19,16 +21,26 @@ export interface SeatInfo {
     id: string;
     fullName: string;
   } | null;
+  /** Solo en la caché: asiento pintado de forma optimista que la API aún no confirma. */
+  isPending?: boolean;
 }
+
+/** Clave de la mutación de asientos, para saber si hay un guardado en curso (`useIsSavingSeat`). */
+const seatMutationKey = (tourId: string) => [...TOUR_SEAT_KEYS.byTour(tourId), "update"] as const;
+
+/** `true` mientras se guarda algún asiento del tour (asignar, mover, liberar o bloquear). */
+export const useIsSavingSeat = (tourId: string): boolean =>
+  useIsMutating({ mutationKey: seatMutationKey(tourId) }) > 0;
 
 const fetchSeatsTourApi = async (tourId: string): Promise<SeatInfo[]> => {
   return apiClient.get<never, SeatInfo[]>(`/seats/${tourId}/seats`);
 };
 
-export const useTourSeats = (tourId: string) => {
+export const useTourSeats = (tourId: string, options: { enabled?: boolean } = {}) => {
   return useQuery({
     queryKey: TOUR_SEAT_KEYS.byTour(tourId),
     queryFn: () => fetchSeatsTourApi(tourId),
+    enabled: options.enabled ?? true,
     staleTime: 1000 * 15, // Frescura de 15 segundos para evitar parpadeos, pero mantenerlo reactivo
   });
 };
@@ -37,8 +49,10 @@ export const useUpdateSeat = (tourId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: UpdateSeatInput) =>
-      apiClient.patch(`/seats/${tourId}/seats/${payload.seatLabel}`, payload),
+    mutationKey: seatMutationKey(tourId),
+    // `passengerName` solo sirve a la actualización optimista: no se envía a la API.
+    mutationFn: ({ seatLabel, status, passengerId }: UpdateSeatInput) =>
+      apiClient.patch(`/seats/${tourId}/seats/${seatLabel}`, { seatLabel, status, passengerId }),
     onMutate: async (newSeat) => {
       // 1. Cancelar queries en vuelo para que no sobrescriban nuestra actualización optimista
       await queryClient.cancelQueries({ queryKey: TOUR_SEAT_KEYS.byTour(tourId) });
@@ -61,9 +75,9 @@ export const useUpdateSeat = (tourId: string) => {
             seatLabel: newSeat.seatLabel,
             status: newSeat.status,
             passenger: newSeat.passengerId
-              ? // En un caso real podrías buscar el nombre en tu lista global, aquí mockeamos para la UI inmediata
-                { id: newSeat.passengerId, fullName: "Asignando..." }
+              ? { id: newSeat.passengerId, fullName: newSeat.passengerName ?? "Asignando..." }
               : null,
+            isPending: true,
           });
         }
         return filtered;

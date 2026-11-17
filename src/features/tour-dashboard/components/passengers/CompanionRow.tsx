@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import type { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import {
   RegistrationStatusBadge,
+  ROW_ACTION_TONE,
   RowActionButton,
   SeatCell,
   TransferMenu,
@@ -65,7 +66,7 @@ export function CompanionRow({
         </td>
       )}
       <td className="px-6 py-3 text-xs text-slate-400">{companion.boardingPoint || "—"}</td>
-      <td className="px-6 py-3 font-mono text-xs text-slate-500">
+      <td className="px-6 py-3 font-mono text-xs whitespace-nowrap text-slate-500">
         {formatPhoneForDisplay(companion.whatsapp) || "—"}
       </td>
       <td className="px-6 py-3">
@@ -79,7 +80,7 @@ export function CompanionRow({
               <RowActionButton
                 tooltip="Dar de baja pasajero"
                 title="Dar de baja pasajero"
-                className="h-9 w-9 rounded-lg border border-slate-200/80 text-slate-400 shadow-xs transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                className={`h-9 w-9 rounded-lg border transition-colors ${ROW_ACTION_TONE.remove}`}
                 onClick={(event) => {
                   event.stopPropagation();
                   onRemoveClick();

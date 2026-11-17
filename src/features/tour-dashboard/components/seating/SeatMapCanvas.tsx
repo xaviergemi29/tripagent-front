@@ -77,6 +77,7 @@ function SeatCornerLabel({ label }: { label: string }) {
 export function SeatMapCanvas({
   tourId,
   layoutMap,
+  activePassengers,
   selectedPassengerId = null,
   onSelectedPassengerChange,
   staffCapacity = 0,
@@ -131,8 +132,9 @@ export function SeatMapCanvas({
     }
     // El asiento se pinta al instante (actualización optimista de `useUpdateSeat`), pero el aviso
     // de éxito espera a que la API lo confirme; si lo rechaza, el hook revierte y avisa el error.
+    const passengerName = activePassengers.find((p) => p.id === selectedPassengerId)?.fullName;
     updateSeat(
-      { seatLabel, status: "ASSIGNED", passengerId: selectedPassengerId },
+      { seatLabel, status: "ASSIGNED", passengerId: selectedPassengerId, passengerName },
       { onSuccess: () => toast.success(`✅ Asiento ${seatLabel} asignado.`) },
     );
     setSelectedPassengerId(null);
@@ -219,6 +221,30 @@ export function SeatMapCanvas({
           ) : (
             <span className="text-xs font-bold sm:text-sm">{seatLabel}</span>
           )}
+        </div>
+      );
+    }
+
+    // Guardándose (actualización optimista sin confirmar): ya se ve ocupado o bloqueado, con un
+    // indicador de carga y sin menú, hasta que la API responda (si lo rechaza, vuelve a como estaba).
+    if (info?.isPending) {
+      const pendingName = isAssigned ? info.passenger?.fullName : undefined;
+      return (
+        <div
+          role="status"
+          aria-busy="true"
+          aria-label={`Asiento ${seatLabel}: guardando${pendingName ? ` a ${pendingName}` : ""}…`}
+          title={`Asiento ${seatLabel} · Guardando…`}
+          className={cn(
+            SEAT_BASE,
+            "cursor-wait active:scale-100",
+            isAssigned
+              ? "border-indigo-400 bg-indigo-400/90 text-white"
+              : "border-red-200 bg-red-50/70 text-red-300",
+          )}
+        >
+          <SeatCornerLabel label={seatLabel} />
+          <Loader2 className="mt-1 h-4 w-4 animate-spin sm:h-5 sm:w-5" />
         </div>
       );
     }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PASSENGER_ROLE } from "@/shared/constants/domain.constants";
 import type { TitularRowOutput } from "../../schemas/tour-dashboard.schema";
 import {
+  applyLiveSeats,
   EMPTY_DASHBOARD_FILTERS,
   filterDashboardTravelers,
   findDashboardTraveler,
@@ -144,5 +145,28 @@ describe("findDashboardTraveler", () => {
     expect(findDashboardTraveler(ALL, BETO.companions[0]!.id)?.fullName).toBe("Carla Ruiz");
     expect(findDashboardTraveler(ALL, "no-existe")).toBeNull();
     expect(findDashboardTraveler(ALL, null)).toBeNull();
+  });
+});
+
+describe("applyLiveSeats", () => {
+  const passengers = [
+    { id: "a", seatNumber: null },
+    { id: "b", seatNumber: "4" },
+  ];
+
+  it("toma el asiento de la caché del croquis (asignado al instante o recién liberado)", () => {
+    const seats = [
+      { seatLabel: "7", status: "ASSIGNED" as const, passenger: { id: "a", fullName: "Ana" } },
+      { seatLabel: "9", status: "BLOCKED" as const, passenger: null },
+    ];
+    expect(applyLiveSeats(passengers, seats)).toEqual([
+      { id: "a", seatNumber: "7" },
+      // "b" ya no aparece en los asientos: se liberó y vuelve a "Faltan por acomodar".
+      { id: "b", seatNumber: null },
+    ]);
+  });
+
+  it("sin asientos cargados respeta el dato del dashboard", () => {
+    expect(applyLiveSeats(passengers, undefined)).toBe(passengers);
   });
 });

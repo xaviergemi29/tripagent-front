@@ -11,12 +11,14 @@ import { CancelledTourBanner } from "@/features/tour-dashboard/components/header
 import { RefundsPanel } from "@/features/tour-dashboard/components/finance/RefundsPanel";
 import { TourDashboardHeader } from "@/features/tour-dashboard/components/header/TourDashboardHeader";
 import { useTourDashboardByTourId } from "../hooks/useTourDashboard";
+import { useTourSeats } from "../hooks/useTourSeats";
 import { QuickReservationModal } from "@/features/tour-dashboard/components/passengers/QuickReservationModal";
 import { DashboardTravelerTable } from "@/features/tour-dashboard/components/passengers/DashboardTravelerTable";
 import { useAgency } from "@/features/settings/hooks/useAgency";
 import { useAgencyBranding } from "@/features/settings/hooks/useAgencyBranding";
 import { useDashboardFilters } from "../hooks/useDashboardFilters";
 import {
+  applyLiveSeats,
   filterDashboardTravelers,
   findDashboardTraveler,
   getSeatEligiblePassengers,
@@ -108,7 +110,13 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   };
 
   // Cálculos de presentación (utils/dashboard-travelers.util): los mismos en escritorio y celular.
-  const flattenedPassengers = getSeatEligiblePassengers(tour?.travelers);
+  // Asientos en vivo (misma caché que el croquis, que se actualiza al instante al asignar o liberar):
+  // "Faltan por acomodar" ya no espera la respuesta de la API ni la recarga del dashboard.
+  const { data: liveSeats } = useTourSeats(tourId, { enabled: Boolean(tour?.vehicle) });
+  const flattenedPassengers = applyLiveSeats(
+    getSeatEligiblePassengers(tour?.travelers),
+    tour?.vehicle ? liveSeats : undefined,
+  );
   const unassignedPassengers = flattenedPassengers.filter((p) => !p.seatNumber);
   const foundTraveler = findDashboardTraveler(tour?.travelers, selectedTravelerId);
   const filteredTravelers = filterDashboardTravelers(tour?.travelers, filters);

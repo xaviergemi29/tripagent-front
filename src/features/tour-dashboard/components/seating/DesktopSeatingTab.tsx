@@ -2,6 +2,7 @@ import type {
   FlattenedPassenger,
   VehicleOutput,
 } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
+import { useIsSavingSeat } from "@/features/tour-dashboard/hooks/useTourSeats";
 import { SeatMapCanvas } from "./SeatMapCanvas";
 import { UnassignedSeatsPanel } from "./UnassignedSeatsPanel";
 import { VehicleStatusBanner } from "./VehicleStatusBanner";
@@ -32,6 +33,7 @@ export function DesktopSeatingTab({
   onChangeVehicleClick,
   isAuditMode,
 }: DesktopSeatingTabProps) {
+  const isSavingSeat = useIsSavingSeat(tourId);
   return (
     <div className="animate-in fade-in flex flex-col gap-4 duration-300 lg:flex-row">
       <div className="flex flex-1 flex-col gap-4">
@@ -58,6 +60,7 @@ export function DesktopSeatingTab({
             unassignedPassengers={unassignedPassengers}
             onSelectPassenger={onSelectPassenger}
             selectedPassengerId={pendingSeatPassengerId}
+            isSaving={isSavingSeat}
           />
         </div>
       )}

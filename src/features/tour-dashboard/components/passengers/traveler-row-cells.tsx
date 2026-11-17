@@ -52,7 +52,7 @@ export function FinancialStatusBadge({
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-wide uppercase ${config.style}`}
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap uppercase ${config.style}`}
     >
       {config.label}
     </span>
@@ -134,6 +134,25 @@ export function SeatCell({
     </span>
   );
 }
+
+/**
+ * Colores de los botones de acciones de la fila (escritorio y celular). Cada acción tiene su tono
+ * en reposo (borde, fondo, ícono y sombra) y uno más intenso al pasar el cursor:
+ * - receipt (Comprobante PDF): azul cielo, un documento.
+ * - magicLink (Copiar Magic Link): índigo, el color de la marca para compartir.
+ * - payments (Registrar abonos): esmeralda, dinero.
+ * - remove (Dar de baja): rojo suave; es destructiva, así que en reposo no compite con las demás.
+ */
+export const ROW_ACTION_TONE = {
+  receipt:
+    "border-sky-200 bg-sky-50/60 text-sky-700 shadow-xs shadow-sky-100 hover:border-sky-300 hover:bg-sky-100 hover:text-sky-800",
+  magicLink:
+    "border-indigo-200 bg-indigo-50/60 text-indigo-600 shadow-xs shadow-indigo-100 hover:border-indigo-300 hover:bg-indigo-100 hover:text-indigo-700",
+  payments:
+    "border-emerald-200 bg-emerald-50/60 text-emerald-700 shadow-xs shadow-emerald-100 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800",
+  remove:
+    "border-red-100 bg-white text-red-400 shadow-xs shadow-red-50 hover:border-red-200 hover:bg-red-50 hover:text-red-600",
+} as const;
 
 /** Botón de icono con tooltip de las columnas de acciones (requiere un `TooltipProvider` arriba). */
 export function RowActionButton({

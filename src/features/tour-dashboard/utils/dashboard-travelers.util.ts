@@ -1,3 +1,4 @@
+import type { SeatInfo } from "@/features/tour-dashboard/hooks/useTourSeats";
 import type {
   CompanionOutput,
   FlattenedPassenger,
@@ -139,6 +140,29 @@ export function getSeatEligiblePassengers(
       })),
     ];
   });
+}
+
+/**
+ * Asiento de cada pasajero según la caché de asientos (`useTourSeats`), que el croquis actualiza al
+ * instante (actualización optimista). El dashboard solo se entera tras la respuesta de la API y su
+ * propia recarga: hasta entonces "Faltan por acomodar" seguía mostrando al pasajero ya acomodado
+ * (o no mostraba al recién liberado). Sin asientos cargados, se respeta el dato del dashboard.
+ */
+export function applyLiveSeats<T extends { id: string; seatNumber?: string | null }>(
+  passengers: T[],
+  seats: ReadonlyArray<Pick<SeatInfo, "seatLabel" | "status" | "passenger">> | undefined,
+): T[] {
+  if (!seats) return passengers;
+  const seatByPassenger = new Map<string, string>();
+  for (const seat of seats) {
+    if (seat.status === "ASSIGNED" && seat.passenger) {
+      seatByPassenger.set(seat.passenger.id, seat.seatLabel);
+    }
+  }
+  return passengers.map((passenger) => ({
+    ...passenger,
+    seatNumber: seatByPassenger.get(passenger.id) ?? null,
+  }));
 }
 
 /** Titular o acompañante con ese id (para el drawer de detalle), o null. */

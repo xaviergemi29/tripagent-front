@@ -11,6 +11,7 @@ import type { TitularRowOutput, VehicleOutput } from "../../schemas/tour-dashboa
 
 const updateSeat = vi.fn();
 vi.mock("@/features/tour-dashboard/hooks/useTourSeats", () => ({
+  useIsSavingSeat: () => false,
   useTourSeats: () => ({
     data: [
       {

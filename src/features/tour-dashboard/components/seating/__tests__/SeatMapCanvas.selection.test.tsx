@@ -11,6 +11,7 @@ import { SeatMapCanvas } from "../SeatMapCanvas";
 type MutateOptions = { onSuccess?: () => void };
 const updateSeat = vi.fn<(vars: unknown, options?: MutateOptions) => void>();
 vi.mock("@/features/tour-dashboard/hooks/useTourSeats", () => ({
+  useIsSavingSeat: () => false,
   useTourSeats: () => ({ data: [] }),
   useUpdateSeat: () => ({ mutate: updateSeat }),
 }));

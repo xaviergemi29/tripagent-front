@@ -1,4 +1,5 @@
-import { Bus, RefreshCw, Info } from "lucide-react";
+import { Bus, RefreshCw, Info, Loader2 } from "lucide-react";
+import { useIsSavingSeat } from "@/features/tour-dashboard/hooks/useTourSeats";
 import { SeatMapCanvas } from "@/features/tour-dashboard/components/seating/SeatMapCanvas";
 import { getInitials } from "@/shared/utils/travelers-helpers";
 import type { FlattenedPassenger, VehicleOutput } from "../../schemas/tour-dashboard.schema";
@@ -29,6 +30,7 @@ export function VehicleAssignedView({
   onSelectPassenger,
 }: VehicleAssignedViewProps) {
   const { passenger: capacity, staff: staffSeats } = vehicle.capacity;
+  const isSavingSeat = useIsSavingSeat(tourId);
 
   return (
     <div className="animate-in fade-in flex flex-col gap-4 duration-300">
@@ -44,6 +46,15 @@ export function VehicleAssignedView({
               {assignedSeatsCount} ocupados de {capacity}
               {staffSeats > 0 ? ` · ${staffSeats} staff` : ""}
             </span>
+            {isSavingSeat && (
+              <span
+                role="status"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600"
+              >
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                Guardando…
+              </span>
+            )}
           </div>
         </div>
         {onChangeVehicleClick && (

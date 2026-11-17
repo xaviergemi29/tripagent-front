@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info, X, CheckCircle2 } from "lucide-react";
+import { Info, X, CheckCircle2, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getInitials } from "@/shared/utils/travelers-helpers";
@@ -12,12 +12,15 @@ interface UnassignedSeatsPanelProps {
   unassignedPassengers: UnassignedPassenger[];
   onSelectPassenger: (id: string) => void;
   selectedPassengerId: string | null;
+  /** Hay un asiento guardándose: la lista ya refleja el cambio, la API aún no lo confirma. */
+  isSaving?: boolean;
 }
 
 export function UnassignedSeatsPanel({
   unassignedPassengers,
   onSelectPassenger,
   selectedPassengerId,
+  isSaving = false,
 }: UnassignedSeatsPanelProps) {
   const [showHelpTooltip, setShowHelpTooltip] = useState(true);
 
@@ -25,7 +28,18 @@ export function UnassignedSeatsPanel({
     <div className="flex h-[600px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 p-4">
-        <h3 className="text-sm font-semibold text-slate-800">Faltan por acomodar</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-slate-800">Faltan por acomodar</h3>
+          {isSaving && (
+            <span
+              role="status"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600"
+            >
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+              Guardando…
+            </span>
+          )}
+        </div>
         <Badge variant="outline" className="border-amber-200 bg-amber-100 text-xs text-amber-800">
           {unassignedPassengers.length}
         </Badge>

@@ -6,6 +6,7 @@ import { VehicleStatusBanner } from "../seating/VehicleStatusBanner";
 // Un tour EN CURSO no cambia de vehículo, pero sus asientos se siguen ajustando (2026-11-17).
 
 vi.mock("@/features/tour-dashboard/hooks/useTourSeats", () => ({
+  useIsSavingSeat: () => false,
   useTourSeats: () => ({ data: [], isError: false, isFetching: false, refetch: vi.fn() }),
   useUpdateSeat: () => ({ mutate: vi.fn() }),
 }));
