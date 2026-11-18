@@ -3,8 +3,9 @@ import type { TourOutput } from "../schemas/tour.schema";
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { formatSpanishLongDate } from "@/shared/utils/tour-date.util";
-import { DEFAULT_CURRENCY, TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
+import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 import { buildBrochureUrl } from "@/shared/utils/share-links.util";
+import { isTourReadOnly } from "./tour-read-only.util";
 
 /**
  * Copia al portapapeles el mensaje para compartir el folleto de un tour por WhatsApp (fecha,
@@ -12,8 +13,7 @@ import { buildBrochureUrl } from "@/shared/utils/share-links.util";
  * pero es lógica del catálogo de tours.
  */
 export const canShareBrochure = (tour: Pick<TourOutput, "temporalStatus">): boolean =>
-  tour.temporalStatus !== TOUR_TEMPORAL_STATUS.CANCELLED &&
-  tour.temporalStatus !== TOUR_TEMPORAL_STATUS.FINISHED;
+  !isTourReadOnly(tour);
 
 export const handleShareLink = async (tour: TourOutput): Promise<void> => {
   const publicUrl = buildBrochureUrl(tour.id);

@@ -3,9 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { TourForm } from "@/features/tours/components/TourForm";
 import { useTourById } from "@/features/tours/hooks/useTours";
+import { isTourReadOnly } from "@/features/tours/utils/tour-read-only.util";
+import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { isNotFoundError } from "@/lib/api-error";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Lock } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -31,6 +33,33 @@ export default function EditTourPage() {
       );
     }
     return <div className="text-destructive p-10 text-center">Tour no encontrado.</div>;
+  }
+
+  // Modo Auditoría (OBS-004): un tour finalizado o cancelado no se edita (la API responde 409).
+  if (isTourReadOnly(tour)) {
+    const isCancelled = tour.temporalStatus === TOUR_TEMPORAL_STATUS.CANCELLED;
+    return (
+      <div className="mx-auto max-w-xl p-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+          <Lock className="mx-auto h-8 w-8 text-slate-400" aria-hidden="true" />
+          <h2 className="mt-3 text-lg font-semibold text-slate-900">
+            {isCancelled ? "Este tour fue cancelado" : "Este tour ya finalizó"}
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Está en modo de solo consulta y ya no se puede editar. Puedes revisar sus reservas y
+            pagos en el Centro de Control.
+          </p>
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+            <Button asChild>
+              <Link href={`/tours/${tour.id}`}>Ir al Centro de Control</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/tours">Volver a Lista de Tours</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

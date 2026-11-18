@@ -21,6 +21,7 @@ import { formatCurrency } from "@/shared/utils/currency.util";
 import { formatSpanishLongDate } from "@/shared/utils/tour-date.util";
 import type { TourOutput } from "../../schemas/tour.schema";
 import { canShareBrochure, handleShareLink } from "@/features/tours/utils/share-tour.util";
+import { isTourReadOnly } from "@/features/tours/utils/tour-read-only.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { TourTemporalStatusBadge } from "../TourTemporalStatusBadge";
 import { DEFAULT_CURRENCY, DESTINATION_TYPE, CURRENCY } from "@/shared/constants/domain.constants";
@@ -66,12 +67,17 @@ export function TourMobileCardList({ tours, onDeleteRequest }: TourMobileCardLis
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/tours/${tour.id}/edit`}>
-                      <Pencil className="mr-2 h-4 w-4" /> Editar Tour
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  {/* Modo Auditoría: un tour finalizado o cancelado no se edita. */}
+                  {!isTourReadOnly(tour) && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/tours/${tour.id}/edit`}>
+                          <Pencil className="mr-2 h-4 w-4" /> Editar Tour
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive focus:bg-red-50"
                     onClick={() => onDeleteRequest(tour.id!)}

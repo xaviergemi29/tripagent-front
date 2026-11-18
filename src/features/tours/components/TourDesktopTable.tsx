@@ -33,6 +33,7 @@ import type { TourOutput } from "../schemas/tour.schema";
 import { formatTourDateTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { canShareBrochure, handleShareLink } from "@/features/tours/utils/share-tour.util";
+import { isTourReadOnly } from "@/features/tours/utils/tour-read-only.util";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { TourTemporalStatusBadge } from "./TourTemporalStatusBadge";
 import { DEFAULT_CURRENCY, DESTINATION_TYPE, CURRENCY } from "@/shared/constants/domain.constants";
@@ -219,12 +220,17 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
                         <DropdownMenuLabel className="text-xs tracking-wider text-slate-500 uppercase">
                           Gestión
                         </DropdownMenuLabel>
-                        <DropdownMenuItem asChild className="cursor-pointer">
-                          <Link href={`/tours/${tour.id}/edit`}>
-                            <Edit className="mr-2 h-4 w-4 text-slate-500" /> Editar Tour
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
+                        {/* Modo Auditoría: un tour finalizado o cancelado no se edita. */}
+                        {!isTourReadOnly(tour) && (
+                          <>
+                            <DropdownMenuItem asChild className="cursor-pointer">
+                              <Link href={`/tours/${tour.id}/edit`}>
+                                <Edit className="mr-2 h-4 w-4 text-slate-500" /> Editar Tour
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                          </>
+                        )}
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive cursor-pointer focus:bg-red-50"
                           onSelect={(e) => {

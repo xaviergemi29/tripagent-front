@@ -285,6 +285,7 @@ src/
   - `TravelerGroup` y `BookingCard` (`isAuditMode`), que muestran "Sin asiento" en lugar de "[ Asignar Asiento ]".
 
   EN CURSO **no** activa el modo. `temporalStatusSchema` del dashboard = `z.enum(TOUR_TEMPORAL_STATUSES)`. Prueba: `AuditMode.test.tsx`.
+  - **Editar el tour** (OBS-004, 2026-11-17): `isTourReadOnly` (`features/tours/utils/tour-read-only.util.ts`, FINALIZADO o CANCELADO) es la única regla; la usan `canShareBrochure`, el menú de `TourDesktopTable` y `TourMobileCardList` (sin "Editar Tour") y `/tours/[id]/edit`, que muestra el aviso "Este tour ya finalizó" / "Este tour fue cancelado" con "Ir al Centro de Control" en lugar de `TourForm` (lee `temporalStatus` de `GET /tours/:id`). La API responde 409 a cualquier cambio de un tour cerrado. Prueba: `TourEditReadOnly.test.tsx`.
   - **EN CURSO sin cambio de vehículo** (2026-11-17): `TourDashboardView` calcula `canChangeVehicle` (falso en Modo Auditoría o en EN CURSO con unidad). En escritorio no pasa `onChangeVehicleClick`; en celular `MobileSeatsTab` recibe `isAuditMode` y `canChangeVehicle` por separado, porque antes deducía el solo lectura de que faltara `onOpenVehicleSelection` y quitar la acción habría bloqueado también los asientos. La API responde 409 igual. Prueba: `VehicleChangeLock.test.tsx`.
 
 - **Cancelación del tour y reembolsos** (regla 18 de `../CLAUDE.md`):
