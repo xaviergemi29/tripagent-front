@@ -108,9 +108,14 @@ export default async function PublicTourLanding({ params }: PublicTourLanding) {
     tourName: tour.title,
     departureDate: formattedDepartureDate,
   });
-  const { isBookable, hasDeparted } = tour.availability;
+  const { isBookable, hasDeparted, acceptsOnlineBookings } = tour.availability;
   // Decisión del PM: un tour que ya salió se ve "Finalizado" (no "Agotado") y no acepta reservas.
-  const unavailableLabel = hasDeparted ? "Finalizado" : "Agotado";
+  // Agencia en Modo Solo Lectura (2026-11-18): "Reservas en pausa"; el WhatsApp sigue disponible.
+  const unavailableLabel = hasDeparted
+    ? "Finalizado"
+    : acceptsOnlineBookings === false
+      ? "Reservas en pausa"
+      : "Agotado";
 
   // Hora más temprana sin reordenar la lista "Puntos de Abordaje", que conserva el orden capturado
   // por el operador (misma regla que el listado de /tours).

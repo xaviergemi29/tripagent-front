@@ -69,6 +69,23 @@ describe("Login", () => {
     await user.click(submit);
     expect(login.mock.calls[0]![0]).toEqual({ email: "ana@agencia.mx", password: "secreta1" });
   });
+
+  it("muestra el error de la API dentro del formulario y lo quita al corregir", async () => {
+    // Antes `authError` nunca se asignaba: el aviso rojo no aparecía, solo el toast.
+    login.mockImplementationOnce(
+      (_data: unknown, options: { onError: (e: { status: number; message: string }) => void }) =>
+        options.onError({ status: 401, message: "Credenciales inválidas" }),
+    );
+    const user = userEvent.setup();
+    render(<LoginPage />);
+    await user.type(screen.getByPlaceholderText("admin@agencia.com"), "ana@agencia.mx");
+    await user.type(screen.getByPlaceholderText("••••••••••••"), "incorrecta");
+    await user.click(screen.getByRole("button", { name: /Iniciar Sesión/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Credenciales inválidas");
+    await user.type(screen.getByPlaceholderText("••••••••••••"), "1");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
 });
 
 describe("Pre-reserva del folleto", () => {

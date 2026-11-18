@@ -14,6 +14,7 @@ const baseSubscription = (): SubscriptionOutput => ({
   trialDaysConsumed: 24,
   trialDaysRemaining: 6,
   trialExpired: false,
+  isReadOnly: false,
   // 28 de noviembre, 17:59 en CDMX.
   trialEndsAt: "2026-11-28T23:59:59.000Z",
   priceMxn: 499,

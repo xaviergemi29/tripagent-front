@@ -10,6 +10,7 @@ import { TourFilters } from "./TourFilters";
 import { TourMobileCardList } from "./mobile/TourMobileCardList";
 import { TourDesktopTable } from "./TourDesktopTable";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
+import { useSubscriptionAccess } from "@/features/settings/hooks/useSubscriptionAccess";
 
 interface TourListTableProps {
   tours: TourOutput[];
@@ -17,6 +18,8 @@ interface TourListTableProps {
 }
 
 export function TourListTable({ tours, isLoading = false }: TourListTableProps) {
+  // Modo Solo Lectura por suscripción: sin Editar ni Eliminar (2026-11-18).
+  const { canWrite } = useSubscriptionAccess();
   const { mutate: deleteTour } = useDeleteTour();
   const [tourToDelete, setTourToDelete] = useState<string | null>(null);
 
@@ -46,10 +49,18 @@ export function TourListTable({ tours, isLoading = false }: TourListTableProps) 
         ) : (
           <>
             <div className="hidden md:block" data-tour={TOUR_TARGET.TOURS_LIST}>
-              <TourDesktopTable tours={filters.filteredTours} onDeleteRequest={setTourToDelete} />
+              <TourDesktopTable
+                tours={filters.filteredTours}
+                onDeleteRequest={setTourToDelete}
+                canManage={canWrite}
+              />
             </div>
             <div className="block md:hidden" data-tour={TOUR_TARGET.TOURS_LIST}>
-              <TourMobileCardList tours={filters.filteredTours} onDeleteRequest={setTourToDelete} />
+              <TourMobileCardList
+                tours={filters.filteredTours}
+                onDeleteRequest={setTourToDelete}
+                canManage={canWrite}
+              />
             </div>
           </>
         )}

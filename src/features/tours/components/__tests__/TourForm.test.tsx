@@ -120,6 +120,18 @@ describe("TourForm — creación", () => {
     expect(submitButton()).toBeDisabled();
   });
 
+  it("recién abierto no marca el precio en rojo; el error aparece al tocarlo", async () => {
+    render(<TourForm />);
+    // Antes la validación cruzada precio ⇄ anticipo corría al montar y mostraba el error de inmediato.
+    await waitFor(() => expect(submitButton()).toBeDisabled());
+    expect(screen.queryByText("El precio debe ser mayor a 0")).not.toBeInTheDocument();
+
+    const price = screen.getByLabelText(/Precio Total por Pasajero/);
+    fireEvent.change(price, { target: { value: "100" } });
+    fireEvent.change(price, { target: { value: "" } });
+    expect(await screen.findByText("El precio debe ser mayor a 0")).toBeInTheDocument();
+  });
+
   it("los campos numéricos no pegan lo escrito a un 0 y aceptan un anticipo de 0.5", () => {
     render(<TourForm />);
     const staff = screen.getByLabelText(/Lugares bloqueados para staff/) as HTMLInputElement;

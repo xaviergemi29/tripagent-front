@@ -21,9 +21,17 @@ interface TravelerCardProps {
   onEdit: (traveler: TravelerTableRow) => void;
   onDelete: (id: string) => void;
   onViewHistory: (id: string) => void;
+  /** Falso en Modo Solo Lectura por suscripción: Editar y Eliminar se deshabilitan (2026-11-18). */
+  canManage?: boolean;
 }
 
-export function TravelerCard({ traveler, onEdit, onDelete, onViewHistory }: TravelerCardProps) {
+export function TravelerCard({
+  traveler,
+  onEdit,
+  onDelete,
+  onViewHistory,
+  canManage = true,
+}: TravelerCardProps) {
   const birthInfo = formatBirthdateAndAge(traveler.birthDate);
   const isMinor = birthInfo?.isMinor;
 
@@ -147,6 +155,7 @@ export function TravelerCard({ traveler, onEdit, onDelete, onViewHistory }: Trav
         <Button
           variant="outline"
           onClick={() => onEdit(traveler)}
+          disabled={!canManage}
           data-tour={TOUR_TARGET.TRAVELERS_ACTION_EDIT}
           className="h-10 flex-1 rounded-xl border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50"
         >
@@ -156,6 +165,7 @@ export function TravelerCard({ traveler, onEdit, onDelete, onViewHistory }: Trav
         <Button
           variant="outline"
           onClick={() => onDelete(traveler.id!)}
+          disabled={!canManage}
           className="h-10 w-10 shrink-0 rounded-xl border-rose-200 bg-rose-50/50 p-0 text-rose-600 hover:bg-rose-100"
           aria-label="Eliminar viajero"
           data-tour={TOUR_TARGET.TRAVELERS_ACTION_DELETE}

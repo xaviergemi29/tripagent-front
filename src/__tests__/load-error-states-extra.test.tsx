@@ -11,6 +11,18 @@ import EditTourPage from "@/app/(dashboard)/tours/[id]/edit/page";
 import ManifestPrintView from "@/app/pdf-tour/[id]/page";
 import { PoliciesTab } from "@/features/settings/components/PoliciesTab";
 
+// Cuenta operativa: estas pruebas no cubren el Modo Solo Lectura por suscripción
+// (ver SubscriptionReadOnly.test.tsx).
+vi.mock("@/features/settings/hooks/useSubscriptionAccess", () => ({
+  SUBSCRIPTION_SETTINGS_HREF: "/settings?tab=subscription",
+  useSubscriptionAccess: () => ({
+    isReadOnly: false,
+    isLoading: false,
+    canWrite: true,
+    subscription: undefined,
+  }),
+}));
+
 // Pantallas con la consulta fallida (2026-11-16): aviso + Volver a intentar, nunca un dato falso.
 
 const generatePdf = vi.fn();

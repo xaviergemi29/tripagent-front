@@ -280,8 +280,7 @@ export function QuickReservationModal({ tourId, isOpen, onClose }: Props) {
             <div className="space-y-1">
               <h4 className="text-lg font-bold text-slate-900">¡Lugares bloqueados! 🚌</h4>
               <p className="text-sm text-slate-500">
-                Envía el enlace al titular por WhatsApp o cópialo manualmente. El enlace caducará en
-                24 horas.
+                Envía el enlace al titular por WhatsApp o cópialo manualmente.
               </p>
             </div>
 

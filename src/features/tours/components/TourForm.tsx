@@ -113,8 +113,14 @@ export function TourForm({ tour }: TourFormProps) {
     if (acceptsBankTransfer) form.trigger("acceptsBankTransfer");
   }, [agencyHasClabe, acceptsBankTransfer, form]);
 
+  // Validación cruzada precio ⇄ anticipo: solo revalida los campos que la persona ya tocó, para no
+  // mostrar "El precio debe ser mayor a 0" en un formulario recién abierto.
   useEffect(() => {
-    form.trigger(["depositPerPerson", "price"]);
+    const touchedFields = (["depositPerPerson", "price"] as const).filter((name) => {
+      const { isDirty, isTouched } = form.getFieldState(name);
+      return isDirty || isTouched;
+    });
+    if (touchedFields.length > 0) form.trigger(touchedFields);
   }, [price, depositPerPerson, form]);
 
   useEffect(() => {

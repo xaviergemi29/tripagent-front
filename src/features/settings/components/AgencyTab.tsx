@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Info } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAgency, useUpdateAgency } from "../hooks/useAgency";
+import { useSubscriptionAccess } from "../hooks/useSubscriptionAccess";
 import { AgencyInput, updateAgencyFormSchema } from "../schemas/agency.schema";
 import { AgencyBankDetailsForm } from "./agency/AgencyBankDetailsForm";
 import { AgencyPublicProfileForm } from "./agency/AgencyPublicProfileForm";
@@ -40,6 +41,8 @@ function AgencyTabSkeleton() {
  * son los mismos de siempre.
  */
 export function AgencyTab() {
+  const { canWrite } = useSubscriptionAccess();
+  const isReadOnly = !canWrite;
   const {
     data: agencyData,
     isLoading: isFetching,
@@ -93,7 +96,8 @@ export function AgencyTab() {
 
   if (isFetching && !agencyData) return <AgencyTabSkeleton />;
 
-  const isFormLocked = isFetching || isUpdating;
+  // Modo Solo Lectura por suscripción (2026-11-18): campos y Guardar deshabilitados.
+  const isFormLocked = isFetching || isUpdating || isReadOnly;
 
   return (
     <FormProvider {...form}>

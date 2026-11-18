@@ -13,6 +13,11 @@ export const subscriptionOutputSchema = z.object({
   trialDaysRemaining: z.number(),
   /** Verdadero desde el instante de vencimiento (el estado en BD sigue en "trialing"). */
   trialExpired: z.boolean(),
+  /**
+   * Modo Solo Lectura (2026-11-18): prueba vencida, pago pendiente o plan cancelado. La API rechaza
+   * toda mutación de negocio con 402; el front oculta o deshabilita esas acciones sin recalcular.
+   */
+  isReadOnly: z.boolean(),
   /** ISO. Si la agencia no tenía fecha guardada, la API usa el alta + 30 días. */
   trialEndsAt: z.string(),
   priceMxn: z.number(),

@@ -6,6 +6,18 @@ import { TourMobileCardList } from "../mobile/TourMobileCardList";
 import EditTourPage from "@/app/(dashboard)/tours/[id]/edit/page";
 import type { TourOutput } from "../../schemas/tour.schema";
 
+// Cuenta operativa: estas pruebas no cubren el Modo Solo Lectura por suscripción
+// (ver SubscriptionReadOnly.test.tsx).
+vi.mock("@/features/settings/hooks/useSubscriptionAccess", () => ({
+  SUBSCRIPTION_SETTINGS_HREF: "/settings?tab=subscription",
+  useSubscriptionAccess: () => ({
+    isReadOnly: false,
+    isLoading: false,
+    canWrite: true,
+    subscription: undefined,
+  }),
+}));
+
 /**
  * Modo Auditoría (OBS-004): un tour FINALIZADO o CANCELADO no se edita. El listado oculta "Editar
  * Tour" y la página de edición muestra un aviso en lugar del formulario (la API responde 409).

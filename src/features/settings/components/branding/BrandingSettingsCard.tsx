@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAgency } from "../../hooks/useAgency";
+import { useSubscriptionAccess } from "../../hooks/useSubscriptionAccess";
 import {
   useAgencyBranding,
   useRemoveAgencyLogo,
@@ -104,6 +105,9 @@ export function BrandingSettingsCard() {
   const { mutate: updateBranding, isPending: isSaving } = useUpdateBranding();
   const { mutate: uploadLogo, isPending: isUploading } = useUploadAgencyLogo();
   const { mutate: removeLogo, isPending: isRemoving } = useRemoveAgencyLogo();
+  // Modo Solo Lectura por suscripción (2026-11-18): logo, colores y Guardar deshabilitados.
+  const { canWrite } = useSubscriptionAccess();
+  const isReadOnly = !canWrite;
 
   const form = useForm<BrandingFormInput, unknown, BrandingInput>({
     resolver: zodResolver(brandingFormSchema),
@@ -182,6 +186,7 @@ export function BrandingSettingsCard() {
                 isRemoving={isRemoving}
                 onSelectFile={(file) => uploadLogo(file)}
                 onRemove={() => removeLogo()}
+                disabled={isReadOnly}
               />
             </div>
 
@@ -209,7 +214,7 @@ export function BrandingSettingsCard() {
                   onChange={field.onChange}
                   onBlur={field.onBlur}
                   error={errors.primaryColor?.message}
-                  disabled={isSaving}
+                  disabled={isSaving || isReadOnly}
                 />
               )}
             />
@@ -225,7 +230,7 @@ export function BrandingSettingsCard() {
                   onChange={field.onChange}
                   onBlur={field.onBlur}
                   error={errors.secondaryColor?.message}
-                  disabled={isSaving}
+                  disabled={isSaving || isReadOnly}
                 />
               )}
             />
@@ -244,7 +249,7 @@ export function BrandingSettingsCard() {
                   fallbackColor={effectiveSecondary}
                   emptyHint="Sin acento propio: el PDF usa el color secundario."
                   error={errors.accentColor?.message}
-                  disabled={isSaving}
+                  disabled={isSaving || isReadOnly}
                 />
               )}
             />
@@ -254,7 +259,7 @@ export function BrandingSettingsCard() {
         <CardFooter className="justify-end border-t bg-slate-50/50 px-6 py-4">
           <Button
             type="submit"
-            disabled={!isDirty || !isValid || isSaving}
+            disabled={!isDirty || !isValid || isSaving || isReadOnly}
             className="w-full bg-indigo-600 hover:bg-indigo-700 sm:w-auto"
           >
             {isSaving ? (

@@ -5,6 +5,18 @@ import ToursPage from "../(dashboard)/tours/page";
 import TravelersPage from "../(dashboard)/travelers/page";
 import { TravelerHistoryDrawer } from "@/features/travelers/components/TravelerHistoryDrawer";
 
+// Cuenta operativa: estas pruebas no cubren el Modo Solo Lectura por suscripción
+// (ver SubscriptionReadOnly.test.tsx).
+vi.mock("@/features/settings/hooks/useSubscriptionAccess", () => ({
+  SUBSCRIPTION_SETTINGS_HREF: "/settings?tab=subscription",
+  useSubscriptionAccess: () => ({
+    isReadOnly: false,
+    isLoading: false,
+    canWrite: true,
+    subscription: undefined,
+  }),
+}));
+
 // Si la API falla, las pantallas dicen que no se pudo cargar (con "Volver a intentar"), no que no hay
 // datos: antes mostraban "No tienes tours programados" / "Aún no hay viajeros" (2026-11-16).
 

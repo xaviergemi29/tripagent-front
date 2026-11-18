@@ -3,6 +3,18 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { AgencyTab } from "../AgencyTab";
 
+// Cuenta operativa: estas pruebas no cubren el Modo Solo Lectura por suscripción
+// (ver SubscriptionReadOnly.test.tsx).
+vi.mock("@/features/settings/hooks/useSubscriptionAccess", () => ({
+  SUBSCRIPTION_SETTINGS_HREF: "/settings?tab=subscription",
+  useSubscriptionAccess: () => ({
+    isReadOnly: false,
+    isLoading: false,
+    canWrite: true,
+    subscription: undefined,
+  }),
+}));
+
 const updateAgency = vi.fn(async () => ({}));
 const agency = {
   id: "a1",

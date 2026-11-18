@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { TourForm } from "@/features/tours/components/TourForm";
+import { WritableAccountGuard } from "@/features/settings/components/subscription/WritableAccountGuard";
 import { useTourById } from "@/features/tours/hooks/useTours";
 import { isTourReadOnly } from "@/features/tours/utils/tour-read-only.util";
 import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
@@ -11,7 +12,16 @@ import { ChevronLeft, Lock } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
+/** Modo Solo Lectura por suscripción: Editar tour redirige a Suscripción (2026-11-18). */
 export default function EditTourPage() {
+  return (
+    <WritableAccountGuard>
+      <EditTourContent />
+    </WritableAccountGuard>
+  );
+}
+
+function EditTourContent() {
   const params = useParams<{ id: string }>();
   const { data: tour, isLoading, isError, error, refetch, isFetching } = useTourById(params.id);
 

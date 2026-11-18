@@ -29,9 +29,15 @@ import { DEFAULT_CURRENCY, DESTINATION_TYPE, CURRENCY } from "@/shared/constants
 interface TourMobileCardListProps {
   tours: TourOutput[];
   onDeleteRequest: (id: string) => void;
+  /** Falso en Modo Solo Lectura por suscripción: sin el menú Editar / Eliminar. */
+  canManage?: boolean;
 }
 
-export function TourMobileCardList({ tours, onDeleteRequest }: TourMobileCardListProps) {
+export function TourMobileCardList({
+  tours,
+  onDeleteRequest,
+  canManage = true,
+}: TourMobileCardListProps) {
   return (
     <div className="flex flex-col gap-4">
       {tours.map((tour) => {
@@ -54,38 +60,40 @@ export function TourMobileCardList({ tours, onDeleteRequest }: TourMobileCardLis
               </div>
 
               {/* DropdownMenu Contextual */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Opciones del tour"
-                    data-tour={TOUR_TARGET.TOURS_ACTION_MORE}
-                    className="h-8 w-8 shrink-0 text-slate-500"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {/* Modo Auditoría: un tour finalizado o cancelado no se edita. */}
-                  {!isTourReadOnly(tour) && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/tours/${tour.id}/edit`}>
-                          <Pencil className="mr-2 h-4 w-4" /> Editar Tour
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive focus:bg-red-50"
-                    onClick={() => onDeleteRequest(tour.id!)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar Salida
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {canManage && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Opciones del tour"
+                      data-tour={TOUR_TARGET.TOURS_ACTION_MORE}
+                      className="h-8 w-8 shrink-0 text-slate-500"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {/* Modo Auditoría: un tour finalizado o cancelado no se edita. */}
+                    {!isTourReadOnly(tour) && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/tours/${tour.id}/edit`}>
+                            <Pencil className="mr-2 h-4 w-4" /> Editar Tour
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive focus:bg-red-50"
+                      onClick={() => onDeleteRequest(tour.id!)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Eliminar Salida
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
 
             {/* Estado del tour (igual que en escritorio) y destino */}

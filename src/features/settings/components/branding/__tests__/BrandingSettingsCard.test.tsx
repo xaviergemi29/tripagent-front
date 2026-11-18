@@ -3,6 +3,18 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BrandingSettingsCard } from "../BrandingSettingsCard";
 
+// Cuenta operativa: estas pruebas no cubren el Modo Solo Lectura por suscripción
+// (ver SubscriptionReadOnly.test.tsx).
+vi.mock("@/features/settings/hooks/useSubscriptionAccess", () => ({
+  SUBSCRIPTION_SETTINGS_HREF: "/settings?tab=subscription",
+  useSubscriptionAccess: () => ({
+    isReadOnly: false,
+    isLoading: false,
+    canWrite: true,
+    subscription: undefined,
+  }),
+}));
+
 // --- Dobles de prueba -------------------------------------------------------------------------
 const updateBranding = vi.fn();
 const uploadLogo = vi.fn();

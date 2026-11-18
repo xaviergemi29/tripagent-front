@@ -41,9 +41,15 @@ import { DEFAULT_CURRENCY, DESTINATION_TYPE, CURRENCY } from "@/shared/constants
 interface TourDesktopTableProps {
   tours: TourOutput[];
   onDeleteRequest: (id: string) => void;
+  /** Falso en Modo Solo Lectura por suscripción: sin el menú Editar / Eliminar. */
+  canManage?: boolean;
 }
 
-export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTableProps) {
+export function TourDesktopTable({
+  tours,
+  onDeleteRequest,
+  canManage = true,
+}: TourDesktopTableProps) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <Table>
@@ -191,57 +197,59 @@ export function TourDesktopTable({ tours, onDeleteRequest }: TourDesktopTablePro
                     )}
 
                     {/* Dropdown Menu (Más opciones) */}
-                    <DropdownMenu>
-                      <TooltipProvider delayDuration={150}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Opciones del tour"
-                                data-tour={TOUR_TARGET.TOURS_ACTION_MORE}
-                                className="h-8 w-8 rounded-lg border border-slate-200/80 bg-white shadow-xs transition-colors hover:border-slate-300 hover:bg-slate-100"
-                              >
-                                <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                          </TooltipTrigger>
-                          <TooltipContent
-                            side="top"
-                            className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
-                          >
-                            Opciones del tour
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                    {canManage && (
+                      <DropdownMenu>
+                        <TooltipProvider delayDuration={150}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Opciones del tour"
+                                  data-tour={TOUR_TARGET.TOURS_ACTION_MORE}
+                                  className="h-8 w-8 rounded-lg border border-slate-200/80 bg-white shadow-xs transition-colors hover:border-slate-300 hover:bg-slate-100"
+                                >
+                                  <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="top"
+                              className="bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white"
+                            >
+                              Opciones del tour
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
 
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel className="text-xs tracking-wider text-slate-500 uppercase">
-                          Gestión
-                        </DropdownMenuLabel>
-                        {/* Modo Auditoría: un tour finalizado o cancelado no se edita. */}
-                        {!isTourReadOnly(tour) && (
-                          <>
-                            <DropdownMenuItem asChild className="cursor-pointer">
-                              <Link href={`/tours/${tour.id}/edit`}>
-                                <Edit className="mr-2 h-4 w-4 text-slate-500" /> Editar Tour
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                          </>
-                        )}
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive cursor-pointer focus:bg-red-50"
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            onDeleteRequest(tour.id!);
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Eliminar Tour
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel className="text-xs tracking-wider text-slate-500 uppercase">
+                            Gestión
+                          </DropdownMenuLabel>
+                          {/* Modo Auditoría: un tour finalizado o cancelado no se edita. */}
+                          {!isTourReadOnly(tour) && (
+                            <>
+                              <DropdownMenuItem asChild className="cursor-pointer">
+                                <Link href={`/tours/${tour.id}/edit`}>
+                                  <Edit className="mr-2 h-4 w-4 text-slate-500" /> Editar Tour
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                            </>
+                          )}
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive cursor-pointer focus:bg-red-50"
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              onDeleteRequest(tour.id!);
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar Tour
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

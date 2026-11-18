@@ -44,6 +44,8 @@ interface TravelersTableProps {
   onEdit?: (traveler: TravelerOutput) => void;
   onDelete?: (travelerId: string) => void;
   onViewHistory?: (travelerId: string) => void;
+  /** Falso en Modo Solo Lectura por suscripción: Editar y Eliminar se deshabilitan (2026-11-18). */
+  canManage?: boolean;
 }
 
 export function TravelersTable({
@@ -53,6 +55,7 @@ export function TravelersTable({
   onEdit,
   onDelete,
   onViewHistory,
+  canManage = true,
 }: TravelersTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -222,6 +225,7 @@ export function TravelersTable({
                               size="icon"
                               className="h-9 w-9 rounded-lg border border-slate-200/80 bg-white text-slate-500 shadow-xs transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
                               onClick={() => onEdit?.(traveler)}
+                              disabled={!canManage}
                               aria-label="Editar viajero"
                               data-tour={TOUR_TARGET.TRAVELERS_ACTION_EDIT}
                             >
@@ -268,6 +272,7 @@ export function TravelersTable({
                               onClick={() => {
                                 if (traveler.id) setDeletingId(traveler.id);
                               }}
+                              disabled={!canManage}
                               aria-label="Eliminar viajero"
                               data-tour={TOUR_TARGET.TRAVELERS_ACTION_DELETE}
                             >

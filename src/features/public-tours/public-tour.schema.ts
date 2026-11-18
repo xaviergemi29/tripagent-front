@@ -33,6 +33,9 @@ export const publicTourOutputSchema = z.object({
     isBookable: z.boolean(),
     // El tour ya salió (EN CURSO o FINALIZADO): reservas cerradas, el folleto dice "Finalizado".
     hasDeparted: z.boolean(),
+    // Falso si la agencia está en Modo Solo Lectura por su suscripción (2026-11-18): el folleto se
+    // ve, pero no recibe pre-reservas. Opcional por compatibilidad con una API anterior.
+    acceptsOnlineBookings: z.boolean().optional(),
   }),
 });
 

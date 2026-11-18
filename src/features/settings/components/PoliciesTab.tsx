@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { POLICIES_MAX_LENGTH } from "@/shared/constants/domain.constants";
 import { useAgency, useUpdateAgencyPolicies } from "../hooks/useAgency";
+import { useSubscriptionAccess } from "../hooks/useSubscriptionAccess";
 import {
   agencyPoliciesFormSchema,
   type AgencyPoliciesFormInput,
@@ -47,6 +48,9 @@ export function PoliciesTab() {
     isFetching: isRefetchingLoad,
   } = useAgency();
   const { mutate: savePolicies, isPending } = useUpdateAgencyPolicies();
+  // Modo Solo Lectura por suscripción (2026-11-18): texto y Guardar deshabilitados.
+  const { canWrite } = useSubscriptionAccess();
+  const isReadOnly = !canWrite;
 
   const form = useForm<AgencyPoliciesFormInput, unknown, AgencyPoliciesInput>({
     resolver: zodResolver(agencyPoliciesFormSchema),
@@ -107,7 +111,7 @@ export function PoliciesTab() {
             id="agency-policies"
             rows={12}
             placeholder={PLACEHOLDER}
-            disabled={isPending}
+            disabled={isPending || isReadOnly}
             aria-invalid={Boolean(errors.policies)}
             className="min-h-56 resize-y text-base leading-relaxed sm:text-sm"
             {...form.register("policies")}
@@ -132,7 +136,7 @@ export function PoliciesTab() {
         <CardFooter className="justify-end border-t bg-slate-50/50 px-6 py-4">
           <Button
             type="submit"
-            disabled={!isDirty || !isValid || isPending}
+            disabled={!isDirty || !isValid || isPending || isReadOnly}
             className="w-full bg-indigo-600 hover:bg-indigo-700 sm:w-auto"
           >
             {isPending ? (

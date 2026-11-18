@@ -50,6 +50,11 @@ const PAUSED: LockItem[] = [
     description:
       "El mapa de asientos queda en modo consulta (no podrás asignar ni reubicar pasajeros).",
   },
+  {
+    title: "Cambios en tu agencia y viajeros",
+    description:
+      "Los datos de la agencia, políticas, identidad visual y el directorio de viajeros quedan en consulta.",
+  },
 ];
 
 function LockColumn({
@@ -131,6 +136,11 @@ export function TrialLockInfo() {
           variant="paused"
         />
       </div>
+      {/* Bloqueo total por impago (feedback del PM, 2026-11-18): lo aplica TripAgent a mano. */}
+      <p className="mt-5 text-xs leading-relaxed text-slate-500">
+        Si el pago sigue pendiente 15 días después del vencimiento, TripAgent suspende el acceso al
+        panel. Los enlaces de tus viajeros y tus folletos siguen funcionando.
+      </p>
     </section>
   );
 }

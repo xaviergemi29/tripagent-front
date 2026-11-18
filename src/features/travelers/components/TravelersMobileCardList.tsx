@@ -13,6 +13,8 @@ interface TravelersMobileCardListProps {
   onEdit: (traveler: TravelerTableRow) => void;
   onDelete: (id: string) => void;
   onViewHistory: (id: string) => void;
+  /** Falso en Modo Solo Lectura por suscripción: Editar y Eliminar se deshabilitan (2026-11-18). */
+  canManage?: boolean;
 }
 
 export function TravelersMobileCardList({
@@ -22,6 +24,7 @@ export function TravelersMobileCardList({
   onEdit,
   onDelete,
   onViewHistory,
+  canManage = true,
 }: TravelersMobileCardListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -72,6 +75,7 @@ export function TravelersMobileCardList({
             onEdit={onEdit}
             onDelete={(id) => setDeletingId(id)}
             onViewHistory={onViewHistory}
+            canManage={canManage}
           />
         ))}
       </div>

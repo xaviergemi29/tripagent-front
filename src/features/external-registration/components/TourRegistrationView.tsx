@@ -88,6 +88,15 @@ export function TourRegistrationView({
   const [isMainClientFound, setIsMainClientFound] = useState(
     !!(prefillData?.whatsappPhone && prefillData?.fullName),
   );
+  // Solo se bloquean los datos que llegaron guardados (prellenado o búsqueda por WhatsApp). Con el
+  // valor actual del formulario, una fecha recién escrita (aunque fuera inválida) quedaba bloqueada
+  // y un correo vacío quedaba deshabilitado: el registro nunca se podía completar.
+  const [savedFields, setSavedFields] = useState({
+    email: Boolean(prefillData?.email),
+    birthDate: Boolean(prefillData?.birthDate),
+  });
+  const isEmailLocked = isMainClientFound && savedFields.email;
+  const isBirthDateLocked = isMainClientFound && savedFields.birthDate;
   const router = useRouter();
   const { lookupTraveler } = usePublicTravelerLookup(token);
   // País inicial: el del teléfono de la agencia (México si no tiene); el de emergencia sigue al del
@@ -142,6 +151,7 @@ export function TourRegistrationView({
         methods.setValue("mainClient.birthDate", traveler.birthDate || "", {
           shouldValidate: true,
         });
+        setSavedFields({ email: Boolean(traveler.email), birthDate: Boolean(traveler.birthDate) });
         setIsMainClientFound(true);
       }
     } catch (error) {
@@ -331,9 +341,9 @@ export function TourRegistrationView({
                   {...methods.register("mainClient.email")}
                   type="email"
                   placeholder="correo@ejemplo.com"
-                  disabled={isMainClientFound}
+                  disabled={isEmailLocked}
                   className={`h-11 text-base transition-colors sm:text-sm ${
-                    isMainClientFound
+                    isEmailLocked
                       ? "cursor-not-allowed border-slate-200 bg-slate-100/80 font-semibold text-slate-700"
                       : "bg-white"
                   }`}
@@ -357,9 +367,9 @@ export function TourRegistrationView({
                   {...methods.register("mainClient.birthDate")}
                   type="date"
                   max={getTodayInMexico()}
-                  disabled={isMainClientFound && methods.getValues("mainClient.birthDate") != ""}
+                  disabled={isBirthDateLocked}
                   className={`w-max-full h-11 appearance-none text-base transition-colors sm:text-sm ${
-                    isMainClientFound
+                    isBirthDateLocked
                       ? "cursor-not-allowed border-slate-200 bg-slate-100/80 font-semibold text-slate-700"
                       : "bg-white"
                   }`}

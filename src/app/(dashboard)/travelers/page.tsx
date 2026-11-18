@@ -8,6 +8,7 @@ import { TravelerHistoryDrawer } from "@/features/travelers/components/TravelerH
 import { TravelersTable, TravelerTableRow } from "@/features/travelers/components/TravelersTable";
 import { TravelersFilters } from "@/features/travelers/components/TravelersFilters";
 import { useTravelersFilter } from "@/features/travelers/hooks/useTravelersFilter";
+import { useSubscriptionAccess } from "@/features/settings/hooks/useSubscriptionAccess";
 import { ArrowRight, Users } from "lucide-react";
 import { TravelersMobileCardList } from "@/features/travelers/components/TravelersMobileCardList";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,8 @@ import { useGuidedTour } from "@/features/onboarding/hooks/useGuidedTour";
 export default function TravelersPage() {
   const router = useRouter();
   const { data, isLoading, isError, refetch, isFetching } = useTravelers();
+  // Modo Solo Lectura por suscripción (2026-11-18): el directorio y el historial siguen abiertos.
+  const { canWrite } = useSubscriptionAccess();
   const travelers = data ?? [];
   // Falló sin datos: no es "Aún no hay viajeros registrados".
   const loadFailed = isError && !data;
@@ -52,7 +55,7 @@ export default function TravelersPage() {
   });
 
   return (
-    <main className="container mx-auto space-y-6 px-4 py-8">
+    <div className="container mx-auto space-y-6 px-4 py-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
@@ -110,6 +113,7 @@ export default function TravelersPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onViewHistory={handleViewHistory}
+              canManage={canWrite}
             />
           </div>
 
@@ -121,6 +125,7 @@ export default function TravelersPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onViewHistory={handleViewHistory}
+              canManage={canWrite}
             />
           </div>
         </div>
@@ -136,6 +141,6 @@ export default function TravelersPage() {
         travelerId={historyTravelerId}
         onClose={() => setHistoryTravelerId(null)}
       />
-    </main>
+    </div>
   );
 }

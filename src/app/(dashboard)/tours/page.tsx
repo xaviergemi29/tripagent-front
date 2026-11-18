@@ -11,11 +11,14 @@ import { useTours } from "@/features/tours/hooks/useTours";
 import { GuidedTourButton } from "@/features/onboarding/components/GuidedTourButton";
 import { TOUR_TARGET, TOURS_GUIDED_TOUR } from "@/features/onboarding/constants/guided-tours";
 import { useGuidedTour } from "@/features/onboarding/hooks/useGuidedTour";
+import { useSubscriptionAccess } from "@/features/settings/hooks/useSubscriptionAccess";
 
 export default function ToursPage() {
   const router = useRouter();
   const { data, isLoading, isError, refetch, isFetching } = useTours();
   const tours = data ?? [];
+  // Modo Solo Lectura por suscripción (2026-11-18): sin "Crear Nuevo Tour"; el banner explica por qué.
+  const { canWrite } = useSubscriptionAccess();
   // Falló sin datos: no es "No tienes tours" (antes el operador lo veía así y podía duplicarlos).
   const loadFailed = isError && !data;
 
@@ -26,7 +29,7 @@ export default function ToursPage() {
   });
 
   return (
-    <main className="container mx-auto space-y-6 px-4 py-8">
+    <div className="container mx-auto space-y-6 px-4 py-8">
       {/* 1. Cabecera Principal + Botón de Acción Superior */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -41,14 +44,16 @@ export default function ToursPage() {
 
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
           <GuidedTourButton onClick={() => void startGuide()} />
-          <Button
-            onClick={() => router.push("/tours/new")}
-            data-tour={TOUR_TARGET.TOURS_CREATE}
-            className="h-10 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-          >
-            <Plus className="mr-2 h-4 w-4 stroke-[2.5]" />
-            <span>Crear Nuevo Tour</span>
-          </Button>
+          {canWrite && (
+            <Button
+              onClick={() => router.push("/tours/new")}
+              data-tour={TOUR_TARGET.TOURS_CREATE}
+              className="h-10 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            >
+              <Plus className="mr-2 h-4 w-4 stroke-[2.5]" />
+              <span>Crear Nuevo Tour</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -71,17 +76,19 @@ export default function ToursPage() {
           <p className="mx-auto mb-6 max-w-md text-sm leading-relaxed text-slate-500">
             Crea tu primera salida para comenzar a gestionar fechas, cupos y reservaciones.
           </p>
-          <Button
-            onClick={() => router.push("/tours/new")}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
-          >
-            <Plus className="h-4 w-4 stroke-[2.5]" />
-            <span>Crear Nuevo Tour</span>
-          </Button>
+          {canWrite && (
+            <Button
+              onClick={() => router.push("/tours/new")}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+            >
+              <Plus className="h-4 w-4 stroke-[2.5]" />
+              <span>Crear Nuevo Tour</span>
+            </Button>
+          )}
         </div>
       ) : (
         <TourListTable tours={tours} isLoading={isLoading} />
       )}
-    </main>
+    </div>
   );
 }

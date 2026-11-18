@@ -257,6 +257,7 @@ export function SeatMapCanvas({
               <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
                   <button
+                    aria-label={`Asiento ${seatLabel}, ${info.passenger.fullName}`}
                     className={cn(
                       SEAT_BASE,
                       "border-indigo-600 bg-indigo-500 text-white shadow-md",
@@ -342,6 +343,7 @@ export function SeatMapCanvas({
         <button
           onClick={() => handleEmptySeatClick(seatLabel)}
           title="Disponible"
+          aria-label={`Asiento ${seatLabel} libre`}
           className={cn(
             SEAT_BASE,
             "cursor-pointer border-dashed border-indigo-400 bg-indigo-50/50 text-slate-400 hover:border-indigo-500",
@@ -358,6 +360,7 @@ export function SeatMapCanvas({
         <DropdownMenuTrigger asChild>
           <button
             title="Disponible"
+            aria-label={`Asiento ${seatLabel} libre`}
             className={cn(
               SEAT_BASE,
               "cursor-pointer border-slate-300 bg-white text-slate-400 hover:border-indigo-400",

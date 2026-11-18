@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { useLogin } from "@/features/auth/hooks/useAuth";
+import type { ApiError } from "@/lib/api-client";
 import { loginSchema, type LoginInput } from "@/features/auth/schemas/login.schema";
 
 export default function LoginPage() {
@@ -50,8 +51,10 @@ export default function LoginPage() {
   const onSubmit = (data: LoginInput): void => {
     setAuthError(null);
 
-    // Inyectamos los callbacks directamente en la llamada a la mutación para controlar la UI local
-    login(data);
+    // El hook ya muestra el toast; aquí se pinta además el aviso dentro del formulario.
+    login(data, {
+      onError: (error: ApiError) => setAuthError(error.message || "No se pudo iniciar sesión"),
+    });
   };
 
   return (
@@ -73,11 +76,7 @@ export default function LoginPage() {
         {/* Formulario RHF */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           {authError && (
-            <div
-              role="alert"
-              aria-live="polite"
-              className="animate-in fade-in-50 zoom-in-95 duration-200"
-            >
+            <div className="animate-in fade-in-50 zoom-in-95 duration-200">
               <Alert
                 variant="destructive"
                 className="flex items-start gap-2.5 rounded-xl border-red-200 bg-red-50/90 p-3 text-red-800 shadow-xs"

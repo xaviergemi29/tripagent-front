@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { TourForm } from "@/features/tours/components/TourForm";
+import { WritableAccountGuard } from "@/features/settings/components/subscription/WritableAccountGuard";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -35,7 +36,10 @@ export default function NewTourPage() {
             </p>
           </div>
 
-          <TourForm />
+          {/* Modo Solo Lectura por suscripción: redirige a Suscripción (2026-11-18). */}
+          <WritableAccountGuard>
+            <TourForm />
+          </WritableAccountGuard>
         </div>
       </div>
     </>

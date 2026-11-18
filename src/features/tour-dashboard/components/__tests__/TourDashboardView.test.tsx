@@ -7,6 +7,18 @@ import { PASSENGER_ROLE, TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.
 import type { TourDashboardOutput } from "../../schemas/tour-dashboard.schema";
 import { TourDashboardView } from "../TourDashboardView";
 
+// Cuenta operativa salvo en el caso del Modo Solo Lectura por suscripción (2026-11-18).
+let subscriptionReadOnly = false;
+vi.mock("@/features/settings/hooks/useSubscriptionAccess", () => ({
+  SUBSCRIPTION_SETTINGS_HREF: "/settings?tab=subscription",
+  useSubscriptionAccess: () => ({
+    isReadOnly: subscriptionReadOnly,
+    isLoading: false,
+    canWrite: !subscriptionReadOnly,
+    subscription: undefined,
+  }),
+}));
+
 // Contenedor del Centro de Control: compone escritorio y celular con un solo estado (pestaña y
 // filtros). Los datos del tour y de la agencia se simulan en sus hooks; la red queda bloqueada.
 
@@ -98,6 +110,7 @@ const renderView = () => {
 };
 
 beforeEach(() => {
+  subscriptionReadOnly = false;
   dashboardQuery.mockReset();
   dashboardQuery.mockReturnValue({ data: dashboard(), isLoading: false, isError: false });
 });
@@ -155,6 +168,14 @@ describe("TourDashboardView", () => {
     renderView();
     expect(screen.getAllByRole("button", { name: /Nueva Reserva/ }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: /Cancelar tour/ }).length).toBeGreaterThan(0);
+  });
+
+  it("cuenta en Modo Solo Lectura por suscripción: un tour próximo se consulta sin acciones", () => {
+    subscriptionReadOnly = true;
+    renderView();
+    expect(screen.queryByRole("button", { name: /Nueva Reserva/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Cancelar tour/ })).not.toBeInTheDocument();
+    expect(screen.getAllByText("Ana Torres").length).toBeGreaterThan(0);
   });
 
   it("filtro «Canceladas»: reservas canceladas por el cliente en solo lectura; el drawer solo permite anular", async () => {

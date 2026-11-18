@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { SubscriptionReadOnlyBanner } from "@/features/settings/components/subscription/SubscriptionReadOnlyBanner";
 // Estilos base de las guías interactivas (driver.js); el tema TripAgent está en globals.css.
 import "driver.js/dist/driver.css";
 
@@ -12,6 +13,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* 2. Contenedor Derecho (Header + Contenido Desplazable) */}
       <div className="flex h-full flex-1 flex-col overflow-hidden">
         <Header />
+        {/* Modo Solo Lectura por suscripción: banner fijo, fuera del área que hace scroll. */}
+        <SubscriptionReadOnlyBanner />
 
         {/* Área de Contenido Dinámico */}
         <main className="flex-1 overflow-y-auto bg-slate-50">{children}</main>

@@ -77,4 +77,12 @@ describe("SeatMapCanvas: selección y avisos", () => {
     updateSeat.mock.calls[0][1]?.onSuccess?.();
     expect(toastSuccess).toHaveBeenCalledWith("✅ Asiento 1 asignado.");
   });
+
+  it("los asientos libres se anuncian con su número, con o sin pasajero seleccionado", async () => {
+    render(<Harness />);
+    expect(screen.getByRole("button", { name: "Asiento 1 libre" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Seleccionar Ana" }));
+    expect(screen.getByRole("button", { name: "Asiento 2 libre" })).toBeInTheDocument();
+  });
 });

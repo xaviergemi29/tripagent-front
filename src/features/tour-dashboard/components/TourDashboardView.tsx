@@ -9,6 +9,7 @@ import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
 import { CancelTourDialog } from "@/features/tour-dashboard/components/header/CancelTourDialog";
 import { CancelledTourBanner } from "@/features/tour-dashboard/components/header/CancelledTourBanner";
 import { RefundsPanel } from "@/features/tour-dashboard/components/finance/RefundsPanel";
+import { useSubscriptionAccess } from "@/features/settings/hooks/useSubscriptionAccess";
 import { TourDashboardHeader } from "@/features/tour-dashboard/components/header/TourDashboardHeader";
 import { useTourDashboardByTourId } from "../hooks/useTourDashboard";
 import { useTourSeats } from "../hooks/useTourSeats";
@@ -70,7 +71,12 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
 
   // Modo Auditoría (solo lectura): tour FINALIZADO o CANCELADO (pausado). Un tour EN CURSO sigue
   // operable: abonos de último minuto y ajustes de asiento antes de salir (decisión del PM, 2026-11-14).
+  // También con la cuenta en Modo Solo Lectura por suscripción (prueba vencida o pago pendiente,
+  // 2026-11-18): se consulta todo (pasajeros, croquis, manifiesto, PDF), sin ninguna mutación.
+  const { canWrite } = useSubscriptionAccess();
+  const isSubscriptionReadOnly = !canWrite;
   const isAuditMode =
+    isSubscriptionReadOnly ||
     tour?.temporalStatus === TOUR_TEMPORAL_STATUS.FINISHED ||
     tour?.temporalStatus === TOUR_TEMPORAL_STATUS.CANCELLED;
   const requiresSeats = tour?.requiresSeats ?? Boolean(tour?.vehicle);
@@ -170,7 +176,8 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   const openCancelTour = isAuditMode ? undefined : () => setIsCancelTourOpen(true);
   // Reembolsos: se registran salvo en un tour FINALIZADO (excepción del Modo Auditoría para los
   // tours cancelados).
-  const canRegisterRefunds = tour.temporalStatus !== TOUR_TEMPORAL_STATUS.FINISHED;
+  const canRegisterRefunds =
+    !isSubscriptionReadOnly && tour.temporalStatus !== TOUR_TEMPORAL_STATUS.FINISHED;
   // Estado de cuenta PDF del operador: mismos datos en escritorio y celular.
   // Sin los datos de la agencia (cargando o consulta fallida) no se genera el PDF: saldría sin
   // nombre ni CLABE. `retryStatementAgency` vuelve a pedirlos al intentar descargar.
@@ -199,7 +206,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   );
 
   return (
-    <main className="flex h-full min-h-screen flex-col bg-slate-50">
+    <div className="flex h-full min-h-screen flex-col bg-slate-50">
       {/* VISTA DESKTOP */}
       <div className="hidden h-full w-full flex-col md:flex">
         <TourDashboardHeader
@@ -400,6 +407,6 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
         open={isCancelTourOpen}
         onOpenChange={setIsCancelTourOpen}
       />
-    </main>
+    </div>
   );
 }
