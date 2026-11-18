@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SeatWithoutDepositBadge } from "@/features/tour-dashboard/components/passengers/SeatWithoutDepositBadge";
 import type { FormStatus } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
+import type { BookingPaymentStatus } from "@/shared/constants/domain.constants";
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import {
   FORM_STATUS_DICT,
@@ -42,7 +43,7 @@ export function FinancialStatusBadge({
   paidAmount,
   balance,
 }: {
-  status: string;
+  status: BookingPaymentStatus;
   paidAmount: number;
   balance: number;
 }) {

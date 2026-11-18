@@ -24,6 +24,8 @@ vi.mock("@/features/onboarding/hooks/useGuidedTour", () => ({
   useGuidedTour: () => ({ start: vi.fn() }),
 }));
 vi.mock("@/features/tours/hooks/useTours", () => ({ useTours: () => query }));
+// Banner de agencia sin CLABE en /tours (OBS-038): sin datos de la agencia no se dibuja.
+vi.mock("@/features/settings/hooks/useAgency", () => ({ useAgency: () => ({ data: undefined }) }));
 vi.mock("@/features/travelers/hooks/useTravelers", () => ({
   useTravelers: () => query,
   useDeleteTraveler: () => ({ mutate: vi.fn() }),

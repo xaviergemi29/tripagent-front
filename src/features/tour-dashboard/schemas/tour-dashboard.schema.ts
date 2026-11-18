@@ -10,6 +10,7 @@ import {
   PASSENGER_ROLE,
   PASSENGER_ROLES,
   PAYMENT_METHODS,
+  PAYMENT_STATUSES,
   FORM_STATUSES,
   REFUND_STATUSES,
   TOUR_CANCELLATION_REASONS,
@@ -19,7 +20,9 @@ import {
 
 export const currencySchema = z.enum(CURRENCIES);
 export const formStatusSchema = z.enum(FORM_STATUSES);
-export const paymentStatusSchema = z.enum(["PAID", "ADVANCE", "PENDING_VALIDATION", "PENDING"]);
+// Estado de pago de la reserva: los mismos cuatro valores del enum `payment_status` de la API
+// (OBS-017, 2026-11-17; antes declaraba `ADVANCE` y `PENDING_VALIDATION`, que la API nunca envía).
+export const paymentStatusSchema = z.enum(PAYMENT_STATUSES);
 export const passengerRoleSchema = z.enum(PASSENGER_ROLES);
 // Los mismos cuatro estados que el catálogo (regla 9; decisión del PM, 2026-11-14). Antes este
 // schema esperaba "ACTIVO", que la API nunca envía.

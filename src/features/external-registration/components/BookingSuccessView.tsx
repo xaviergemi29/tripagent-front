@@ -64,6 +64,8 @@ export function BookingSuccessView({
           hasAdvancePayment={hasAdvancePayment}
           amountDueToday={amountDueToday}
           remainingBalance={remainingBalance}
+          agencyPhone={agencyPhone}
+          tourTitle={tourInfo.title}
         />
 
         <SendReceiptCard agencyPhone={agencyPhone} whatsappText={whatsappText} />

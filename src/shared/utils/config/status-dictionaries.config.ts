@@ -1,6 +1,7 @@
 import type { TourCancellationReason } from "@/shared/constants/domain.constants";
 import type {
   AgencyRole,
+  BookingPaymentStatus,
   FormStatus,
   PassengerRole,
   PaymentMethod,
@@ -13,7 +14,7 @@ export interface UIStateConfig {
 }
 
 // 1. Diccionario de Estados de Pago (Alineado con DB: PENDING, PARTIAL, PAID, REFUNDED)
-export const PAYMENT_STATUS_DICT: Record<string, UIStateConfig> = {
+export const PAYMENT_STATUS_DICT: Record<BookingPaymentStatus, UIStateConfig> = {
   PAID: {
     label: "Liquidado",
     style: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -29,11 +30,6 @@ export const PAYMENT_STATUS_DICT: Record<string, UIStateConfig> = {
   REFUNDED: {
     label: "Reembolsado",
     style: "bg-purple-100 text-purple-800 border-purple-200",
-  },
-  // Mantenemos este por retrocompatibilidad si Zod aún lo requiere temporalmente
-  PENDING_VALIDATION: {
-    label: "Por Validar",
-    style: "bg-orange-100 text-orange-800 border-orange-200",
   },
 };
 

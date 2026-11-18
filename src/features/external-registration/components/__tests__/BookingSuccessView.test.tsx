@@ -58,4 +58,28 @@ describe("BookingSuccessView: métodos y opciones de pago", () => {
     expect(screen.queryByText("CLABE Interbancaria")).not.toBeInTheDocument();
     expect(screen.getByText("4152 3134 1234 5678")).toBeInTheDocument();
   });
+
+  it("transferencia sin CLABE: botón para pedir los datos por WhatsApp en lugar de un bloque vacío (OBS-038)", () => {
+    renderView({ clabeNumber: null, cardNumber: null });
+
+    expect(screen.queryByText("CLABE Interbancaria")).not.toBeInTheDocument();
+    const link = screen.getByRole("link", {
+      name: "Contactar a la agencia por WhatsApp para pedir datos de transferencia",
+    });
+    expect(link.getAttribute("href")).toMatch(/^https:\/\/wa\.me\/522281234567\?text=/);
+    expect(decodeURIComponent(link.getAttribute("href") ?? "")).toContain("Cuetzalan");
+    // Ya no cae en el aviso genérico de "sin métodos de pago".
+    expect(
+      screen.queryByText(/para recibir las instrucciones y opciones de pago/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("con CLABE no muestra el botón de pedir datos", () => {
+    renderView();
+    expect(
+      screen.queryByRole("link", {
+        name: "Contactar a la agencia por WhatsApp para pedir datos de transferencia",
+      }),
+    ).not.toBeInTheDocument();
+  });
 });

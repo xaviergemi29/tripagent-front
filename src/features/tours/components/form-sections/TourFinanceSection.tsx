@@ -1,7 +1,7 @@
 "use client";
 
 import { Controller, useFormContext, useFormState, useWatch } from "react-hook-form";
-import type { ComponentProps } from "react";
+import { useState, type ComponentProps } from "react";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { AlertCircle, Info, Lock, Wallet } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label";
 import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import type { AgencyOutput } from "@/features/settings/schemas/agency.schema";
-import type { TourInput } from "../../schemas/tour.schema";
+import { TRANSFER_WITHOUT_CLABE_ERROR, type TourInput } from "../../schemas/tour.schema";
 import { CurrencySelector } from "../CurrencySelector";
 import { AgencyBankDetailsBanner } from "../AgencyBankDetailsBanner";
+import { BankAccountQuickModal } from "@/features/settings/components/BankAccountQuickModal";
 
 interface TourFinanceSectionProps {
   /** Con pagos registrados, la moneda y el precio no se editan (regla 15; la API responde 409). */
@@ -64,6 +65,8 @@ export function TourFinanceSection({
   isRetryingAgency = false,
 }: TourFinanceSectionProps) {
   const { control } = useFormContext<TourInput>();
+  // Modal "Configurar cuenta ahora" (OBS-038): guarda la CLABE sin salir del formulario del tour.
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   // `useFormState` (no `formState` del contexto): compatible con el React Compiler.
   const formState = useFormState({ control });
   // `useWatch` (no `watch`): compatible con el React Compiler.
@@ -80,6 +83,13 @@ export function TourFinanceSection({
     });
   const depositPerPerson = depositValue || 0;
   const currency = selectedCurrency || DEFAULT_CURRENCY;
+  // Misma condición que `buildTourFormSchema` (solo con los datos de la agencia ya cargados).
+  const transferWithoutClabe =
+    !!agency &&
+    !agency.clabeNumber?.trim() &&
+    !!acceptsBankTransfer &&
+    !acceptsCreditCard &&
+    !acceptsCash;
 
   return (
     <div className="space-y-5 rounded-xl border border-indigo-100 bg-indigo-50/30 p-5 sm:p-6">
@@ -185,7 +195,15 @@ export function TourFinanceSection({
 
       <div className="space-y-3 pt-2">
         <Label className="font-semibold text-slate-700">Métodos de cobro habilitados</Label>
-        {formState.errors.root?.paymentMethods && (
+        {/* Solo transferencia y la agencia sin CLABE (OBS-038): el schema deshabilita "Guardar" y aquí
+            se explica por qué en cuanto pasa (el error de raíz solo se dibuja al enviar). */}
+        {transferWithoutClabe && (
+          <p role="alert" className="flex items-center gap-1.5 text-xs font-medium text-red-500">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            {TRANSFER_WITHOUT_CLABE_ERROR}
+          </p>
+        )}
+        {formState.errors.root?.paymentMethods && !transferWithoutClabe && (
           <p className="flex items-center gap-1.5 text-xs font-medium text-red-500">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             {formState.errors.root?.paymentMethods.message as string}
@@ -237,6 +255,7 @@ export function TourFinanceSection({
               // Dato de la agencia (Configuración → Agencia), no del tour.
               cardNumber={agency?.cardNumber}
               settingsUrl="/settings?tab=agency"
+              onConfigure={() => setIsBankModalOpen(true)}
             />
           )}
 
@@ -296,6 +315,14 @@ export function TourFinanceSection({
           )}
         </div>
       )}
+      <BankAccountQuickModal
+        isOpen={isBankModalOpen}
+        onClose={() => setIsBankModalOpen(false)}
+        defaultValues={{
+          bankName: agency?.bankName ?? "",
+          bankAccountHolder: agency?.bankAccountHolder ?? "",
+        }}
+      />
     </div>
   );
 }

@@ -187,14 +187,43 @@ export const tourOutputSchema = baseTourSchema.extend({
  * (hora de CDMX). Al editar se permite conservar la fecha guardada aunque ya haya pasado
  * (`originalDepartureDate`), pero no moverla al pasado. La API aplica la misma regla.
  */
-export const buildTourFormSchema = (originalDepartureDate?: string | null) =>
+export const buildTourFormSchema = (
+  originalDepartureDate?: string | null,
+  options: {
+    /**
+     * ¿La agencia tiene CLABE? (OBS-038, decisión del PM, 2026-11-17). `undefined` mientras carga o si
+     * falló la consulta: no se aplica la regla para no bloquear por falta de datos.
+     */
+    agencyHasClabe?: boolean;
+  } = {},
+) =>
   tourSchema.superRefine((data, ctx) => {
+    // Solo transferencia y la agencia sin CLABE: los viajeros no tendrían cómo apartar. Con efectivo
+    // o tarjeta activos sí se guarda (la API solo exige un método; el Magic Link pide los datos de
+    // transferencia por WhatsApp).
+    if (
+      options.agencyHasClabe === false &&
+      data.acceptsBankTransfer &&
+      !data.acceptsCreditCard &&
+      !data.acceptsCash
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: TRANSFER_WITHOUT_CLABE_ERROR,
+        path: ["root.paymentMethods"],
+      });
+    }
+
     const departure = data.departureDateTime;
     if (!departure || departure === originalDepartureDate) return;
     if (departure < getTodayInMexico()) {
       ctx.addIssue({ code: "custom", message: PAST_DEPARTURE_ERROR, path: ["departureDateTime"] });
     }
   });
+
+/** Solo transferencia sin CLABE en la agencia (OBS-038): texto acordado con el PM. */
+export const TRANSFER_WITHOUT_CLABE_ERROR =
+  "Activa pago en efectivo o agrega tu CLABE para que tus clientes sepan cómo apartar";
 
 export type TourInput = z.input<typeof tourSchema>;
 export type TourOutput = z.infer<typeof tourOutputSchema>;

@@ -29,8 +29,7 @@ const companion = (overrides: Partial<TitularRowOutput["companions"][number]> = 
   ...overrides,
 });
 
-// `paymentStatus` con los valores reales de la API (PARTIAL), no los del schema desfasado.
-type GroupOverrides = Omit<Partial<TitularRowOutput>, "paymentStatus"> & { paymentStatus?: string };
+type GroupOverrides = Partial<TitularRowOutput>;
 const group = (overrides: GroupOverrides = {}): TitularRowOutput =>
   ({
     id: `t-${++seq}`,
@@ -76,10 +75,10 @@ describe("resolveGroupPaymentStatus", () => {
     [{ paymentStatus: "PAID", paidAmount: 0, balance: 0 }, "PAID"],
     [{ paymentStatus: "PARTIAL", paidAmount: 900, balance: 0 }, "PAID"], // dato inconsistente
     [{ paymentStatus: "PARTIAL", paidAmount: 500, balance: 500 }, "PARTIAL"],
-    [{ paymentStatus: "ADVANCE", paidAmount: 0, balance: 1000 }, "PARTIAL"], // estado antiguo
+    [{ paymentStatus: "PARTIAL", paidAmount: 0, balance: 1000 }, "PARTIAL"], // parcial sin abono neto
     [{ paymentStatus: "PENDING", paidAmount: 0, balance: 1000 }, "UNPAID"],
     [{ paymentStatus: "REFUNDED", paidAmount: 0, balance: 0 }, "UNPAID"],
-  ])("%o → %s", (input, expected) => {
+  ] as const)("%o → %s", (input, expected) => {
     expect(resolveGroupPaymentStatus(input)).toBe(expected);
   });
 });

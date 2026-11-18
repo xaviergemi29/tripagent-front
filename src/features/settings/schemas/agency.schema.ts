@@ -72,6 +72,16 @@ export const agencyOutputSchema = z.object({
 });
 
 /** Formulario de "Políticas": texto libre; vacío → `null` (sin políticas). */
+/**
+ * Modal "Configurar cuenta ahora" del formulario de tours (OBS-038, 2026-11-17): solo banco, titular
+ * y CLABE, con las mismas reglas que Configuración → Agencia. Cuerpo de `PATCH /agencies/bank-account`.
+ */
+export const bankAccountFormSchema = z.object({
+  bankName: agencyFormFields.bankName,
+  bankAccountHolder: agencyFormFields.bankAccountHolder,
+  clabeNumber: agencyFormFields.clabeNumber,
+});
+
 export const agencyPoliciesFormSchema = z.object({
   policies: z
     .string()
@@ -96,3 +106,13 @@ export type AgencyPoliciesFormInput = z.input<typeof agencyPoliciesFormSchema>;
 /** Cuerpo de `PATCH /agencies/policies`. */
 export type AgencyPoliciesInput = z.output<typeof agencyPoliciesFormSchema>;
 export type AgencyInput = z.infer<typeof updateAgencyFormSchema>;
+export type BankAccountFormInput = z.input<typeof bankAccountFormSchema>;
+/** Cuerpo de `PATCH /agencies/bank-account`. */
+export type BankAccountInput = z.output<typeof bankAccountFormSchema>;
+/** Respuesta de `PATCH /agencies/bank-account` (ya desenvuelta). */
+export interface BankAccountOutput {
+  bankName: string | null;
+  bankAccountHolder: string | null;
+  /** Siempre presente después de guardar (la API exige 18 dígitos). */
+  clabeNumber: string;
+}

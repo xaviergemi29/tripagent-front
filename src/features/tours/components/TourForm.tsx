@@ -66,8 +66,11 @@ export function TourForm({ tour }: TourFormProps) {
   const minDepartureDate =
     originalDepartureDate && originalDepartureDate < today ? originalDepartureDate : today;
 
+  // Regla de transferencia sin CLABE (OBS-038): solo cuando ya se conocen los datos de la agencia.
+  const agencyHasClabe = agencyData ? Boolean(agencyData.clabeNumber?.trim()) : undefined;
+
   const form = useForm<TourInput>({
-    resolver: zodResolver(buildTourFormSchema(originalDepartureDate)),
+    resolver: zodResolver(buildTourFormSchema(originalDepartureDate, { agencyHasClabe })),
     mode: "onChange",
     defaultValues: tour
       ? {
@@ -102,6 +105,13 @@ export function TourForm({ tour }: TourFormProps) {
     name: ["depositPerPerson", "price", "departureDateTime", "returnDate", "maxCapacity"],
   });
   const depositPerPerson = depositValue || 0;
+  const [acceptsBankTransfer] = useWatch({ control: form.control, name: ["acceptsBankTransfer"] });
+
+  // Al cargar la agencia o guardar la CLABE desde el modal, se revalida la regla de transferencia sin
+  // CLABE (sin marcar en rojo campos que la persona todavía no ha tocado).
+  useEffect(() => {
+    if (acceptsBankTransfer) form.trigger("acceptsBankTransfer");
+  }, [agencyHasClabe, acceptsBankTransfer, form]);
 
   useEffect(() => {
     form.trigger(["depositPerPerson", "price"]);

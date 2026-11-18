@@ -97,24 +97,6 @@ export function useAssignVehicleToTour() {
   });
 }
 
-export function useCreateVehicle() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (payload: { name: string; layoutMap: (string | null)[][] }) =>
-      apiClient.post("/vehicles", payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: VEHICLE_KEYS.all });
-      toast.success("Plantilla de vehículo creada");
-    },
-    onError: (error: ApiError) => {
-      toast.error("Error al crear la plantilla", {
-        description: error.message || "No se pudo crear la plantilla",
-      });
-    },
-  });
-}
-
 export function useAddPassengerToBooking() {
   const queryClient = useQueryClient();
 

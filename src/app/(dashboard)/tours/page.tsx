@@ -6,6 +6,7 @@ import { Plus, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { TourListTable } from "@/features/tours/components/TourListTable";
+import { AgencySetupBanner } from "@/features/tours/components/AgencySetupBanner";
 import { useTours } from "@/features/tours/hooks/useTours";
 import { GuidedTourButton } from "@/features/onboarding/components/GuidedTourButton";
 import { TOUR_TARGET, TOURS_GUIDED_TOUR } from "@/features/onboarding/constants/guided-tours";
@@ -50,6 +51,9 @@ export default function ToursPage() {
           </Button>
         </div>
       </div>
+
+      {/* Agencia sin CLABE (OBS-038): aviso no intrusivo, solo en el catálogo. */}
+      <AgencySetupBanner />
 
       {/* 2. Renderizado Condicional: Tabla vs Empty State Principal */}
       {loadFailed ? (

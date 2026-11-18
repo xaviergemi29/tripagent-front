@@ -52,9 +52,8 @@ export const PAYMENT_TYPE = {
 } as const satisfies Record<string, PaymentType>;
 
 /**
- * Estado de pago de una reserva (enum `payment_status` de la API). El tipo se llama
- * `BookingPaymentStatus` porque `tour-dashboard.schema.ts` exporta otro `PaymentStatus` con valores
- * desalineados (`ADVANCE`, `PENDING_VALIDATION`; deuda conocida, corregirlo requiere autorización).
+ * Estado de pago de una reserva (enum `payment_status` de la API). `paymentStatusSchema` del
+ * dashboard usa estos mismos valores (OBS-017, alineado el 2026-11-17).
  */
 export const PAYMENT_STATUSES = ["PENDING", "PARTIAL", "PAID", "REFUNDED"] as const;
 export type BookingPaymentStatus = (typeof PAYMENT_STATUSES)[number];

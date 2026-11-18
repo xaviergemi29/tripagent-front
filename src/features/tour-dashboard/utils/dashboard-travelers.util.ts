@@ -4,7 +4,11 @@ import type {
   FlattenedPassenger,
   TitularRowOutput,
 } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
-import { FORM_STATUS, PAYMENT_STATUS } from "@/shared/constants/domain.constants";
+import {
+  type BookingPaymentStatus,
+  FORM_STATUS,
+  PAYMENT_STATUS,
+} from "@/shared/constants/domain.constants";
 import { matchesSearch } from "@/shared/utils/search.util";
 
 /**
@@ -41,18 +45,15 @@ export const EMPTY_DASHBOARD_FILTERS: DashboardFilters = {
   seatFilter: "ALL",
 };
 
-/** `paymentStatus` como texto: la API envía PARTIAL/REFUNDED aunque el schema del front aún
- * declare los valores antiguos (desfase documentado en ../CLAUDE.md, sección C). */
 interface GroupPaymentInput {
-  paymentStatus: string;
+  paymentStatus: BookingPaymentStatus;
   paidAmount: number;
   balance: number;
 }
 
 /**
- * Estado de pago que se muestra para el grupo. Tolera estados antiguos del dashboard
- * (`ADVANCE`, `PENDING_VALIDATION`) y datos inconsistentes: con dinero abonado y sin saldo cuenta
- * como pagado; con cualquier abono, como parcial.
+ * Estado de pago que se muestra para el grupo. Tolera datos inconsistentes: con dinero abonado y
+ * sin saldo cuenta como pagado; con cualquier abono, como parcial. `REFUNDED` sin dinero = sin pago.
  */
 export function resolveGroupPaymentStatus({
   paymentStatus,
@@ -60,9 +61,7 @@ export function resolveGroupPaymentStatus({
   balance,
 }: GroupPaymentInput): Exclude<PaymentFilter, "ALL" | "CANCELLED"> {
   if (paymentStatus === PAYMENT_STATUS.PAID || (paidAmount > 0 && balance <= 0)) return "PAID";
-  if (paidAmount > 0 || ["ADVANCE", "PARTIAL", "PENDING_VALIDATION"].includes(paymentStatus)) {
-    return "PARTIAL";
-  }
+  if (paidAmount > 0 || paymentStatus === PAYMENT_STATUS.PARTIAL) return "PARTIAL";
   return "UNPAID";
 }
 

@@ -9,6 +9,8 @@ interface AgencyBankDetailsBannerProps {
   clabe?: string | null;
   cardNumber?: string | null;
   settingsUrl?: string;
+  /** Abre el modal "Configurar cuenta ahora" (sin salir del formulario). Sin él, enlaza a Configuración. */
+  onConfigure?: () => void;
   className?: string;
 }
 
@@ -18,11 +20,13 @@ export function AgencyBankDetailsBanner({
   clabe,
   cardNumber,
   settingsUrl = "/settings",
+  onConfigure,
   className = "",
 }: AgencyBankDetailsBannerProps) {
-  // La tarjeta es opcional (decisión del PM, 2026-11-14): no cuenta como dato bancario configurado
-  // y su recuadro solo aparece si la agencia la capturó.
-  const hasBankData = Boolean(bankName || accountHolder || clabe);
+  // Lo que el viajero necesita para transferir es la CLABE (OBS-038, 2026-11-17): sin ella se muestra
+  // la alerta aunque haya banco o titular. La tarjeta es opcional (decisión del PM, 2026-11-14): no
+  // cuenta como cuenta configurada y su recuadro solo aparece si la agencia la capturó.
+  const hasBankData = Boolean(clabe?.trim());
   const card = cardNumber?.trim() || null;
 
   return (
@@ -93,19 +97,33 @@ export function AgencyBankDetailsBanner({
           )}
         </div>
       ) : (
-        <div className="flex items-center justify-between rounded-lg border border-amber-200/60 bg-amber-50 p-3.5 text-xs text-amber-800">
-          <div className="flex items-center gap-2.5">
-            <Info className="h-4 w-4 shrink-0 text-amber-600" />
+        <div
+          role="status"
+          className="flex flex-col gap-3 rounded-lg border border-amber-200/60 bg-amber-50 p-3.5 text-xs text-amber-800 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-2.5">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <span className="font-medium">
-              Aún no has configurado las cuentas bancarias oficiales de tu agencia.
+              Aún no has configurado tu cuenta bancaria. Tus viajeros no verán a dónde transferir
+              hasta que la agregues.
             </span>
           </div>
-          <Link
-            href={settingsUrl}
-            className="ml-3 shrink-0 font-bold text-amber-900 underline hover:text-amber-950"
-          >
-            Configurar ahora
-          </Link>
+          {onConfigure ? (
+            <button
+              type="button"
+              onClick={onConfigure}
+              className="shrink-0 rounded-md bg-amber-100 px-3 py-1.5 font-bold text-amber-900 transition-colors hover:bg-amber-200"
+            >
+              Configurar cuenta ahora
+            </button>
+          ) : (
+            <Link
+              href={settingsUrl}
+              className="shrink-0 font-bold text-amber-900 underline hover:text-amber-950"
+            >
+              Configurar cuenta ahora
+            </Link>
+          )}
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  PAYMENT_STATUSES,
   PASSENGER_ROLES,
   PAYMENT_METHODS,
   TOUR_CANCELLATION_REASONS,
@@ -30,7 +31,7 @@ describe("Diccionarios de etiquetas", () => {
   });
 
   it("los estados de pago reales de la API tienen etiqueta y estilo", () => {
-    for (const status of ["PENDING", "PARTIAL", "PAID", "REFUNDED"]) {
+    for (const status of PAYMENT_STATUSES) {
       expect(PAYMENT_STATUS_DICT[status]).toEqual({
         label: expect.any(String),
         style: expect.stringMatching(/bg-/),

@@ -23,15 +23,18 @@ vi.mock("../../hooks/useTours", () => ({
   extractTourId: (response: { id?: string } | undefined) => response?.id,
 }));
 
+const AGENCY_WITH_CLABE = {
+  bankName: "BBVA",
+  bankAccountHolder: "Bruji Tours SA",
+  clabeNumber: "012180001234567891",
+  cardNumber: "4152313412345678",
+};
+// Mutable por prueba: con o sin CLABE (OBS-038).
+let agencyData: Record<string, unknown> = AGENCY_WITH_CLABE;
+const saveBankAccount = vi.fn();
 vi.mock("@/features/settings/hooks/useAgency", () => ({
-  useAgency: () => ({
-    data: {
-      bankName: "BBVA",
-      bankAccountHolder: "Bruji Tours SA",
-      clabeNumber: "012180001234567891",
-      cardNumber: "4152313412345678",
-    },
-  }),
+  useAgency: () => ({ data: agencyData }),
+  useUpdateAgencyBankAccount: () => ({ mutate: saveBankAccount, isPending: false }),
 }));
 
 const toastWarning = vi.fn();
@@ -91,6 +94,7 @@ async function fillValidTour(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  agencyData = AGENCY_WITH_CLABE;
   vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3001/api");
 });
 
@@ -276,5 +280,75 @@ describe("TourForm — edición", () => {
       await screen.findByText("Completa o corrige los campos marcados para poder guardar."),
     ).toBeInTheDocument();
     expect(submitButton("Guardar Cambios")).toBeDisabled();
+  });
+});
+
+// OBS-038 (decisión del PM, 2026-11-17): la CLABE se pide cuando el operador activa la
+// transferencia, sin sacarlo del formulario; solo transferencia sin CLABE no se puede guardar.
+describe("TourForm — transferencia sin CLABE en la agencia", () => {
+  const AGENCY_WITHOUT_CLABE = { bankName: null, bankAccountHolder: null, clabeNumber: null };
+
+  it("avisa debajo de Transferencia y abre el modal sin perder lo capturado", async () => {
+    agencyData = AGENCY_WITHOUT_CLABE;
+    const user = userEvent.setup();
+    render(<TourForm />);
+
+    await user.type(screen.getByLabelText("Nombre del Tour"), "Cascadas de Cuetzalan");
+    await user.click(screen.getByRole("checkbox", { name: "Transferencia" }));
+    expect(
+      screen.getByText(
+        /Aún no has configurado tu cuenta bancaria\. Tus viajeros no verán a dónde transferir/,
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Configurar cuenta ahora" }));
+    expect(await screen.findByText("Cuenta para transferencias")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Banco"), "BBVA");
+    await user.type(screen.getByLabelText("CLABE interbancaria *"), "012 180 001234567891");
+    await user.click(screen.getByRole("button", { name: "Guardar cuenta" }));
+
+    await waitFor(() => expect(saveBankAccount).toHaveBeenCalledTimes(1));
+    expect(saveBankAccount.mock.calls[0]?.[0]).toMatchObject({
+      bankName: "BBVA",
+      clabeNumber: "012180001234567891",
+    });
+    expect(createTour).not.toHaveBeenCalled(); // el modal no envía el formulario del tour
+    expect(screen.getByLabelText("Nombre del Tour")).toHaveValue("Cascadas de Cuetzalan");
+  });
+
+  it("solo transferencia y sin CLABE: no deja guardar y explica qué hacer", async () => {
+    agencyData = AGENCY_WITHOUT_CLABE;
+    const user = userEvent.setup();
+    render(<TourForm />);
+
+    await fillValidTour(user); // marca solo Transferencia
+    expect(
+      await screen.findByText(
+        "Activa pago en efectivo o agrega tu CLABE para que tus clientes sepan cómo apartar",
+      ),
+    ).toBeInTheDocument();
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it("con efectivo también activo sí se guarda aunque falte la CLABE", async () => {
+    agencyData = AGENCY_WITHOUT_CLABE;
+    createTour.mockResolvedValue({ id: TOUR_ID });
+    const user = userEvent.setup();
+    render(<TourForm />);
+
+    await fillValidTour(user);
+    await user.click(screen.getByRole("checkbox", { name: "Efectivo" }));
+    await user.type(
+      screen.getByPlaceholderText("Ej. Paga directo al abordar"),
+      "Pagar en la oficina del centro",
+    );
+
+    await waitFor(() => expect(submitButton()).toBeEnabled());
+    await user.click(submitButton());
+    await waitFor(() => expect(createTour).toHaveBeenCalledTimes(1));
+    expect(createTour.mock.calls[0]?.[0]).toMatchObject({
+      acceptsBankTransfer: true,
+      acceptsCash: true,
+    });
   });
 });

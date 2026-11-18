@@ -1,6 +1,14 @@
 "use client";
 
-import { AlertCircle, Banknote, CreditCard, ExternalLink } from "lucide-react";
+import {
+  AlertCircle,
+  Banknote,
+  Building2,
+  CreditCard,
+  ExternalLink,
+  MessageCircle,
+} from "lucide-react";
+import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import type { Currency } from "@/shared/constants/domain.constants";
 import type { BookingSuccessViewProps } from "./types";
@@ -12,6 +20,9 @@ interface PaymentOptionsCardProps {
   hasAdvancePayment: boolean;
   amountDueToday: number;
   remainingBalance: number;
+  /** WhatsApp de la agencia: pedir los datos de transferencia si aún no tiene CLABE. */
+  agencyPhone: string;
+  tourTitle: string;
 }
 
 /**
@@ -24,14 +35,20 @@ export function PaymentOptionsCard({
   hasAdvancePayment,
   amountDueToday,
   remainingBalance,
+  agencyPhone,
+  tourTitle,
 }: PaymentOptionsCardProps) {
   const clabeNumber = booking.clabeNumber?.trim() || null;
   const cardNumber = booking.cardNumber?.trim() || null;
   const showBankTransfer = booking.acceptsBankTransfer && Boolean(clabeNumber || cardNumber);
+  // El tour acepta transferencia, pero la agencia aún no captura su CLABE (OBS-038, 2026-11-17): en
+  // lugar de un bloque en blanco, el cliente pide los datos por WhatsApp.
+  const needsTransferData = booking.acceptsBankTransfer && !clabeNumber;
 
   // Solo se muestra la tarjeta de pagos si el tour acepta al menos un método con sus datos.
   const hasAnyPaymentMethod =
     showBankTransfer ||
+    needsTransferData ||
     (booking.acceptsCreditCard && booking.paymentLink) ||
     (booking.acceptsCash && booking.cashInstructions);
 
@@ -90,6 +107,31 @@ export function PaymentOptionsCard({
             clabeNumber={clabeNumber}
             cardNumber={cardNumber}
           />
+        )}
+
+        {needsTransferData && (
+          <div className="rounded-2xl border border-slate-200/90 bg-slate-50 p-4 transition-all">
+            <div className="mb-1.5 flex items-center gap-2">
+              <Building2 className="h-4 w-4 shrink-0 text-indigo-600" />
+              <h3 className="text-xs font-bold tracking-wide text-slate-800 uppercase">
+                Transferencia bancaria
+              </h3>
+            </div>
+            <p className="mb-3 text-xs leading-relaxed text-slate-500">
+              La agencia te compartirá sus datos de transferencia por WhatsApp.
+            </p>
+            <a
+              href={buildWhatsAppUrl(agencyPhone, {
+                message: `Hola, quiero pagar por transferencia mi reservación para "${tourTitle}". ¿Me compartes los datos bancarios?`,
+              })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
+            >
+              <MessageCircle className="h-4 w-4 shrink-0" />
+              <span>Contactar a la agencia por WhatsApp para pedir datos de transferencia</span>
+            </a>
+          </div>
         )}
 
         {/* OPCIÓN 2: PAGO CON TARJETA / LINK */}
