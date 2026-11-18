@@ -12,6 +12,7 @@ import {
   Square,
   Pencil,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCancelFullBooking } from "@/features/tour-dashboard/hooks/useBookingActions";
@@ -66,6 +67,7 @@ export function TravelerDetailDrawer({
   const [showCancellationConfirm, setShowCancellationConfirm] = useState(false);
   const [isFullRetention, setIsFullRetention] = useState(true);
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
+  const [openRefundModal, setOpenRefundModal] = useState(false);
   const { mutate: voidPayment, isPending: isVoiding } = useVoidPayment(tourId);
   const { mutate: cancelFullBooking, isPending: isCancelling } = useCancelFullBooking();
 
@@ -84,6 +86,13 @@ export function TravelerDetailDrawer({
   const titularPayments = isTitular && "payments" in traveler ? traveler.payments : [];
   const titularBalance = isTitular && "balance" in traveler ? traveler.balance : 0;
   const titularPaidAmount = isTitular && "paidAmount" in traveler ? traveler.paidAmount : 0;
+  // Bajas de acompañantes (FLUJO-RES-004, 2026-11-17): retenciones incluidas en el total y saldo a
+  // devolver al titular (abonado − total). Los calcula la API.
+  const titularRetained =
+    isTitular && "retainedPenaltyTotal" in traveler ? (traveler.retainedPenaltyTotal ?? 0) : 0;
+  const titularSurplus =
+    isTitular && "refundableSurplus" in traveler ? (traveler.refundableSurplus ?? 0) : 0;
+  const titularTotal = titularPaidAmount + titularBalance - titularSurplus;
 
   const voidedOriginalIds = new Set(
     titularPayments
@@ -241,10 +250,14 @@ export function TravelerDetailDrawer({
                   <div>
                     <p className="text-xs font-semibold text-slate-500">Costo Total</p>
                     <p className="text-lg font-bold text-slate-900">
-                      {formatCurrency(titularPaidAmount + titularBalance, {
-                        currency: tourCurrency,
-                      })}
+                      {formatCurrency(titularTotal, { currency: tourCurrency })}
                     </p>
+                    {titularRetained > 0 && (
+                      <p className="text-[11px] font-medium text-slate-500">
+                        Incluye {formatCurrency(titularRetained, { currency: tourCurrency })} de
+                        retención por bajas
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-semibold text-slate-500">Falta por pagar</p>
@@ -253,6 +266,34 @@ export function TravelerDetailDrawer({
                     </p>
                   </div>
                 </div>
+
+                {/* Saldo a favor del titular tras una baja: se devuelve con un reembolso (regla 18). */}
+                {titularSurplus > 0 && !isCancelledBooking && (
+                  <div
+                    role="note"
+                    className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4"
+                  >
+                    <div>
+                      <p className="text-xs font-semibold text-amber-800 uppercase">
+                        A devolver al titular
+                      </p>
+                      <p className="text-2xl font-bold text-amber-900">
+                        {formatCurrency(titularSurplus, { currency: tourCurrency })}
+                      </p>
+                      <p className="text-xs text-amber-800">
+                        Lo abonado supera el total de la reserva por la baja de un acompañante.
+                      </p>
+                    </div>
+                    {!isAuditMode && (
+                      <Button
+                        className="h-11 w-full bg-rose-600 font-bold text-white hover:bg-rose-700"
+                        onClick={() => setOpenRefundModal(true)}
+                      >
+                        <RotateCcw className="mr-2 h-4 w-4" /> Registrar devolución
+                      </Button>
+                    )}
+                  </div>
+                )}
 
                 {traveler?.balance > 0 && (
                   <Button
@@ -467,6 +508,18 @@ export function TravelerDetailDrawer({
           tourCurrency={tourCurrency}
           balance={traveler.balance}
           correctionData={correctionData}
+        />
+      )}
+
+      {isTitular && titularSurplus > 0 && (
+        <RegisterPaymentModal
+          isOpen={openRefundModal}
+          onClose={() => setOpenRefundModal(false)}
+          bookingId={traveler.bookingId}
+          tourId={tourId}
+          tourCurrency={tourCurrency}
+          balance={titularSurplus}
+          mode={PAYMENT_TYPE.REFUND}
         />
       )}
 

@@ -82,6 +82,12 @@ export const titularSchema = z.object({
   paymentStatus: paymentStatusSchema,
   paidAmount: z.number(),
   balance: z.number(),
+  /**
+   * Bajas de acompañantes (FLUJO-RES-004, 2026-11-17): retenciones acumuladas en el total y saldo a
+   * devolver al titular (abonado − total). Los calcula la API; opcionales por compatibilidad.
+   */
+  retainedPenaltyTotal: z.number().optional(),
+  refundableSurplus: z.number().optional(),
   equivalentMXN: z.number().nullable().optional(),
 
   payments: z.array(paymentRecordSchema).default([]),

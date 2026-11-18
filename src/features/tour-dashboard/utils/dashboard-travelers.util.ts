@@ -122,17 +122,40 @@ export function filterDashboardTravelers(
 }
 
 /**
- * Vista previa de la retención al dar de baja a un acompañante, para avisar ANTES de confirmar
- * (2026-11-17). La API decide y aplica la regla (`BookingPassengerService.cancelPassenger`): si lo
- * abonado supera el total sin ese lugar, el excedente se retiene, con tope del precio de un lugar.
- * Ejemplo: $2,500 abonados de $3,000, lugar de $1,000 → se retienen $500.
+ * Total vigente de la reserva a partir de lo que trae el dashboard: abonado + saldo − saldo a favor
+ * (`balance` nunca es negativo; si el grupo pagó de más, la diferencia viene en `refundableSurplus`).
  */
-export function previewCompanionDropRetention(
-  group: Pick<TitularRowOutput, "paidAmount" | "balance" | "unitPrice">,
+export function getGroupTotal(
+  group: Pick<TitularRowOutput, "paidAmount" | "balance" | "refundableSurplus">,
 ): number {
-  const totalWithoutSeat = group.paidAmount + group.balance - group.unitPrice;
-  const retained = Math.min(Math.max(0, group.paidAmount - totalWithoutSeat), group.unitPrice);
-  return Math.round(retained * 100) / 100;
+  return (
+    Math.round((group.paidAmount + group.balance - (group.refundableSurplus ?? 0)) * 100) / 100
+  );
+}
+
+const roundMoney = (value: number): number => Math.round(value * 100) / 100;
+
+/**
+ * Vista previa de la baja de un acompañante con retención para la agencia (FLUJO-RES-004 / PQ-C5,
+ * 2026-11-17). Espejo de `summarizeCompanionDrop` de la API, que es quien aplica la regla:
+ * nuevo total = total − precio del lugar + retención; lo abonado no cambia; el excedente de lo
+ * abonado sobre el nuevo total queda como saldo a devolver al titular (no se retiene en automático).
+ */
+export function summarizeCompanionDrop(input: {
+  currentTotal: number;
+  unitPrice: number;
+  penaltyAmount: number;
+  amountPaid: number;
+}) {
+  const newTotal = roundMoney(
+    Math.max(0, input.currentTotal - input.unitPrice + input.penaltyAmount),
+  );
+  return {
+    newTotal,
+    nonRetainedAmount: roundMoney(Math.max(0, input.unitPrice - input.penaltyAmount)),
+    pendingBalance: roundMoney(Math.max(0, newTotal - input.amountPaid)),
+    refundableSurplus: roundMoney(Math.max(0, input.amountPaid - newTotal)),
+  };
 }
 
 /**

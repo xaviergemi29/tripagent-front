@@ -2,7 +2,7 @@
 
 import type { TravelerGroupActions } from "@/features/tour-dashboard/hooks/useTravelerGroupActions";
 import type { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
-import { previewCompanionDropRetention } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
+import { getGroupTotal } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
 import type { Currency } from "@/shared/constants/domain.constants";
 import { AddPassengerDialog } from "./AddPassengerDialog";
 import { ReleaseSlotDialog } from "./ReleaseSlotDialog";
@@ -22,13 +22,16 @@ export function TravelerGroupDialogs({
   actions: TravelerGroupActions;
   tourCurrency?: Currency;
   freeSeatsCount?: number;
-  /** Grupos de la lista: la baja de un acompañante avisa cuánto se retendría de lo abonado. */
+  /** Grupos de la lista: la baja de un acompañante muestra el desglose con los montos del grupo. */
   travelers?: TitularRowOutput[];
 }) {
   const { titularToGrow, passengerToRemove, slotToRelease, transferTarget } = actions;
   const groupOfRemoved = passengerToRemove
     ? travelers.find((titular) => titular.bookingId === passengerToRemove.bookingId)
     : undefined;
+  const removedCompanion = groupOfRemoved?.companions.find(
+    (companion) => companion.id === passengerToRemove?.passengerId,
+  );
 
   return (
     <>
@@ -49,14 +52,22 @@ export function TravelerGroupDialogs({
         onConfirm={actions.confirmReleaseSlot}
       />
 
+      {/* `key`: cada baja empieza con la retención en $0. */}
       <RemovePassengerDialog
+        key={
+          passengerToRemove
+            ? `${passengerToRemove.bookingId}-${passengerToRemove.passengerId}`
+            : "none"
+        }
         isOpen={!!passengerToRemove}
         onClose={actions.closeRemovePassenger}
         onConfirm={actions.confirmRemovePassenger}
         passengerName={passengerToRemove?.name}
-        isSubmitting={actions.isRemoving}
+        seatLabel={removedCompanion?.seatLabel ?? null}
+        unitPrice={groupOfRemoved?.unitPrice}
+        currentTotal={groupOfRemoved ? getGroupTotal(groupOfRemoved) : undefined}
         paidAmount={groupOfRemoved?.paidAmount}
-        retainedAmount={groupOfRemoved ? previewCompanionDropRetention(groupOfRemoved) : 0}
+        isSubmitting={actions.isRemoving}
         tourCurrency={tourCurrency}
       />
 

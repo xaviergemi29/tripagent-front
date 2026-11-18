@@ -186,21 +186,45 @@ export function useTransferPassenger() {
   });
 }
 
-// Baja de un acompañante sin retención (la API acepta `penaltyAmount`, pero la interfaz no lo
-// captura). Descuenta el precio de un lugar = total ÷ lugares apartados; el titular no se da de baja
-// por aquí (409): se transfiere o se cancela la reserva completa (2026-11-17).
+/** Resumen de la baja que devuelve la API (`financialSummary`, ya desenvuelto). */
+export interface CompanionDropSummary {
+  previousTotal: number;
+  newTotal: number;
+  unitPrice: number;
+  penaltyAmount: number;
+  nonRetainedAmount: number;
+  pendingBalance: number;
+  refundableSurplus: number;
+  amountPaid: number;
+}
+
+// Baja de un acompañante con retención para la agencia (FLUJO-RES-004 / PQ-C5, 2026-11-17):
+// nuevo total = total − precio pactado del lugar + retención (0 … precio del lugar; la API valida
+// el tope → 400). El titular no se da de baja por aquí (409): se transfiere o se cancela la reserva.
 export function useQuickRemovePassenger() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ bookingId, passengerId }: { bookingId: string; passengerId: string }) =>
-      apiClient.patch(`/bookingPassengers/${bookingId}/passengers/${passengerId}/cancel`, {
-        penaltyAmount: 0,
-      }),
-    onSuccess: () => {
+    mutationFn: ({
+      bookingId,
+      passengerId,
+      penaltyAmount = 0,
+    }: {
+      bookingId: string;
+      passengerId: string;
+      penaltyAmount?: number;
+    }) =>
+      apiClient.patch<never, { financialSummary?: CompanionDropSummary }>(
+        `/bookingPassengers/${bookingId}/passengers/${passengerId}/cancel`,
+        { penaltyAmount },
+      ),
+    onSuccess: (result) => {
       invalidateBookingChange(queryClient);
       toast.success("Pasajero dado de baja", {
-        description: "El asiento ha sido liberado.",
+        description:
+          (result?.financialSummary?.refundableSurplus ?? 0) > 0
+            ? "El asiento se liberó. Quedó saldo a devolver al titular: regístralo en su estado de cuenta."
+            : "El asiento ha sido liberado.",
       });
     },
     onError: (error: ApiError) => {

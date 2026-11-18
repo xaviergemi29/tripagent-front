@@ -25,6 +25,7 @@ import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { SeatWithoutDepositBadge } from "@/features/tour-dashboard/components/passengers/SeatWithoutDepositBadge";
 import { UnpaidHoldAge } from "@/features/tour-dashboard/components/passengers/UnpaidHoldAge";
+import { RefundableSurplusBadge } from "@/features/tour-dashboard/components/passengers/RefundableSurplusBadge";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import {
   copyMagicLink,
@@ -148,6 +149,14 @@ export function BookingCard({
       {/* Revisión manual de las 48 h (regla 13): solo apartados sin ningún pago. */}
       {titular.paidAmount <= 0 && titular.balance > 0 && (
         <UnpaidHoldAge bookedAt={titular.bookedAt} />
+      )}
+      {/* Saldo a devolver al titular (baja de un acompañante con retención menor al lugar). */}
+      {(titular.refundableSurplus ?? 0) > 0 && (
+        <RefundableSurplusBadge
+          amount={titular.refundableSurplus ?? 0}
+          tourCurrency={tourCurrency}
+          className="self-start"
+        />
       )}
 
       {/* 2. Grid 2 columnas (Asiento y Registro) */}

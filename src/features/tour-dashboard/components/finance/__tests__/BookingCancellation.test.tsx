@@ -2,10 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TravelerDetailDrawer } from "../TravelerDetailDrawer";
-import { RemovePassengerDialog } from "../../passengers/RemovePassengerDialog";
 
-// Cancelación de la reserva completa desde el drawer del titular y baja de un acompañante
-// (2026-11-17). Las reglas de dinero las aplica la API (`test/financial-flows.test.ts`); aquí se
+// Cancelación de la reserva completa desde el drawer del titular (2026-11-17). La baja de un
+// acompañante se prueba en `passengers/__tests__/RemovePassengerDialog.test.tsx`. Las reglas de dinero las aplica la API (`test/financial-flows.test.ts`); aquí se
 // revisa lo que la interfaz envía y lo que le explica al operador.
 
 const cancelFullBooking = vi.fn();
@@ -101,33 +100,56 @@ describe("Cancelar la reserva completa", () => {
   });
 });
 
-describe("Dar de baja a un acompañante", () => {
-  it("explica que se descuenta un lugar sin retención (sin prometer una penalización que no existe)", () => {
-    render(
-      <RemovePassengerDialog isOpen onClose={vi.fn()} onConfirm={vi.fn()} passengerName="Eva" />,
-    );
-    const text = screen.getByText(/se le descontará el precio de un/);
-    expect(text).toHaveTextContent("lo ya abonado no cambia");
-    expect(screen.queryByText(/abre su perfil completo/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("note")).not.toBeInTheDocument();
-  });
+describe("Estado de cuenta: retenciones por bajas y saldo a devolver (FLUJO-RES-004)", () => {
+  // Tras una baja con $250 retenidos: total $2,250 con $3,000 abonados → $750 a devolver.
+  const withSurplus = {
+    id: "trav-1",
+    bookingId: "book-1",
+    role: "TITULAR",
+    fullName: "Ana Torres",
+    whatsapp: "+522281234567",
+    payments: [],
+    paidAmount: 3000,
+    balance: 0,
+    retainedPenaltyTotal: 250,
+    refundableSurplus: 750,
+    unitPrice: 1000,
+    companions: [],
+  } as never;
 
-  it("si el grupo ya abonó más que el nuevo total, avisa cuánto se retiene y que queda liquidada", () => {
-    // Decisión del usuario (2026-11-17): $2,500 abonados de $3,000 y baja de un lugar de $1,000.
+  it("muestra el total ajustado con la retención y el bloque a devolver con su botón", async () => {
+    const user = userEvent.setup();
     render(
-      <RemovePassengerDialog
+      <TravelerDetailDrawer
+        tourId="t1"
+        tourCurrency="MXN"
+        traveler={withSurplus}
         isOpen
         onClose={vi.fn()}
-        onConfirm={vi.fn()}
-        passengerName="Eva"
-        paidAmount={2500}
-        retainedAmount={500}
-        tourCurrency="MXN"
       />,
     );
-    expect(screen.getByRole("note")).toHaveTextContent(
-      "El grupo ya abonó $2,500.00 MXN. Se retendrán $500.00 MXN por la baja y la reserva queda liquidada.",
+    expect(screen.getByText("$2,250.00 MXN")).toBeInTheDocument();
+    expect(screen.getByText(/Incluye \$250\.00 MXN de/)).toBeInTheDocument();
+    const block = screen.getByRole("note");
+    expect(block).toHaveTextContent("A devolver al titular");
+    expect(block).toHaveTextContent("$750.00 MXN");
+
+    await user.click(screen.getByRole("button", { name: "Registrar devolución" }));
+    expect(await screen.findByText("Registrar Reembolso")).toBeInTheDocument();
+  });
+
+  it("en Modo Auditoría muestra el saldo, pero no ofrece registrar la devolución", () => {
+    render(
+      <TravelerDetailDrawer
+        tourId="t1"
+        tourCurrency="MXN"
+        traveler={withSurplus}
+        isOpen
+        isAuditMode
+        onClose={vi.fn()}
+      />,
     );
-    expect(screen.queryByText(/sin retención/)).not.toBeInTheDocument();
+    expect(screen.getByRole("note")).toHaveTextContent("$750.00 MXN");
+    expect(screen.queryByRole("button", { name: "Registrar devolución" })).not.toBeInTheDocument();
   });
 });

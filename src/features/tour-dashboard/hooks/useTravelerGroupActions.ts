@@ -49,10 +49,14 @@ export function useTravelerGroupActions(tourId: string) {
     );
   };
 
-  const confirmRemovePassenger = (): void => {
+  const confirmRemovePassenger = (penaltyAmount = 0): void => {
     if (!passengerToRemove) return;
     removePassenger(
-      { bookingId: passengerToRemove.bookingId, passengerId: passengerToRemove.passengerId },
+      {
+        bookingId: passengerToRemove.bookingId,
+        passengerId: passengerToRemove.passengerId,
+        penaltyAmount,
+      },
       { onSuccess: () => setPassengerToRemove(null) },
     );
   };

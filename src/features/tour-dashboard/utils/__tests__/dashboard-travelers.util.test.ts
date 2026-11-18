@@ -7,7 +7,8 @@ import {
   filterDashboardTravelers,
   findDashboardTraveler,
   getSeatEligiblePassengers,
-  previewCompanionDropRetention,
+  getGroupTotal,
+  summarizeCompanionDrop,
   resolveGroupPaymentStatus,
   selectDashboardGroups,
 } from "../dashboard-travelers.util";
@@ -202,13 +203,48 @@ describe("selectDashboardGroups (filtro «Canceladas», 2026-11-17)", () => {
   });
 });
 
-describe("previewCompanionDropRetention (aviso antes de dar de baja)", () => {
+describe("summarizeCompanionDrop (vista previa de la baja; espejo de la API)", () => {
   it.each([
-    ["$2,500 abonados de $3,000: retiene el excedente de $500", 2500, 500, 500],
-    ["$900 abonados: cabe en el nuevo total, no retiene nada", 900, 2100, 0],
-    ["liquidada ($3,000): retiene el precio completo del lugar", 3000, 0, 1000],
-    ["sin pagos: no retiene nada", 0, 3000, 0],
-  ])("%s", (_, paidAmount, balance, expected) => {
-    expect(previewCompanionDropRetention({ paidAmount, balance, unitPrice: 1000 })).toBe(expected);
+    [
+      "Escenario 1",
+      3000,
+      1000,
+      250,
+      1500,
+      { newTotal: 2250, pendingBalance: 750, refundableSurplus: 0 },
+    ],
+    [
+      "Escenario 2",
+      6000,
+      2000,
+      2000,
+      6000,
+      { newTotal: 6000, pendingBalance: 0, refundableSurplus: 0 },
+    ],
+    [
+      "Escenario 3",
+      3000,
+      1000,
+      0,
+      1000,
+      { newTotal: 2000, pendingBalance: 1000, refundableSurplus: 0 },
+    ],
+    [
+      "Escenario 4",
+      3000,
+      1000,
+      250,
+      3000,
+      { newTotal: 2250, pendingBalance: 0, refundableSurplus: 750 },
+    ],
+  ])("%s", (_, currentTotal, unitPrice, penaltyAmount, amountPaid, expected) => {
+    expect(
+      summarizeCompanionDrop({ currentTotal, unitPrice, penaltyAmount, amountPaid }),
+    ).toMatchObject(expected);
+  });
+
+  it("total del grupo = abonado + saldo − saldo a favor", () => {
+    expect(getGroupTotal({ paidAmount: 1500, balance: 1500 })).toBe(3000);
+    expect(getGroupTotal({ paidAmount: 3000, balance: 0, refundableSurplus: 750 })).toBe(2250);
   });
 });

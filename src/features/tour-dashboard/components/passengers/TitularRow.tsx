@@ -1,6 +1,7 @@
 import { ChevronDown, FileDown, Link2, User, Users, Wallet } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UnpaidHoldAge } from "@/features/tour-dashboard/components/passengers/UnpaidHoldAge";
+import { RefundableSurplusBadge } from "@/features/tour-dashboard/components/passengers/RefundableSurplusBadge";
 import type { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import {
   BOOKING_STATUS,
@@ -150,6 +151,12 @@ export function TitularRow({
             {/* Revisión manual de las 48 h (regla 13): solo apartados sin ningún pago. */}
             {titular.paidAmount <= 0 && titular.balance > 0 && (
               <UnpaidHoldAge bookedAt={titular.bookedAt} />
+            )}
+            {(titular.refundableSurplus ?? 0) > 0 && (
+              <RefundableSurplusBadge
+                amount={titular.refundableSurplus ?? 0}
+                tourCurrency={tourCurrency || DEFAULT_CURRENCY}
+              />
             )}
           </div>
         )}
