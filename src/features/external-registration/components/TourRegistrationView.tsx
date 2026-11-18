@@ -130,7 +130,6 @@ export function TourRegistrationView({
         boardingPoint: prefillData?.boardingPoint || "",
       },
       hasCompanions: false,
-      companionMethod: "MANUAL",
       companions: [],
       privacyNoticeAccepted: false,
     },

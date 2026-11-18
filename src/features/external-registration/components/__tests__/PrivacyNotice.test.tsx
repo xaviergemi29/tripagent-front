@@ -124,7 +124,6 @@ describe("Políticas y aviso de privacidad en el registro del Magic Link", () =>
         boardingPoint: "Plaza Xalapeña (06:00)",
       },
       hasCompanions: false,
-      companionMethod: "MANUAL" as const,
       companions: [],
     };
 

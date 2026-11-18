@@ -131,7 +131,6 @@ export const bookingFormSchema = z.object({
   token: z.string().min(1, "Token de seguridad faltante"),
   mainClient: mainClientSchema,
   hasCompanions: z.boolean(),
-  companionMethod: z.enum(["MANUAL", "SHARE_LINK"]),
   companions: z.array(companionSchema),
   // Casilla obligatoria "Acepto el aviso de privacidad" (decisión del PM, 2026-11-14; LFPDPPP:
   // el registro incluye notas médicas). La API exige `true` y guarda la fecha de aceptación.

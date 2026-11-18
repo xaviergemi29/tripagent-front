@@ -153,7 +153,6 @@ describe("bookingFormSchema (formulario completo)", () => {
     token: "tok",
     mainClient: titular,
     hasCompanions: true,
-    companionMethod: "MANUAL" as const,
     companions: [companion],
     privacyNoticeAccepted: true,
   };
@@ -190,7 +189,6 @@ describe("toPublicRegisterInput (cuerpo del registro)", () => {
       token: "tok",
       mainClient: { ...titular, whatsappPhone: "228 123 4567" },
       hasCompanions: true,
-      companionMethod: "MANUAL",
       companions: [
         { ...companion, emergencyContactPhone: "612345678", emergencyContactCountry: "ES" },
       ],
