@@ -41,7 +41,10 @@ import { DEFAULT_CURRENCY, DESTINATION_TYPE, CURRENCY } from "@/shared/constants
 interface TourDesktopTableProps {
   tours: TourOutput[];
   onDeleteRequest: (id: string) => void;
-  /** Falso en Modo Solo Lectura por suscripción: sin el menú Editar / Eliminar. */
+  /**
+   * Falso en Modo Solo Lectura por suscripción: sin "Compartir folleto" (el folleto no recibe
+   * pre-reservas) ni el menú Editar / Eliminar.
+   */
   canManage?: boolean;
 }
 
@@ -171,7 +174,7 @@ export function TourDesktopTable({
                       </Link>
                     </Button>
 
-                    {canShareBrochure(tour) && (
+                    {canManage && canShareBrochure(tour) && (
                       <TooltipProvider delayDuration={150}>
                         <Tooltip>
                           <TooltipTrigger asChild>

@@ -117,21 +117,32 @@ const tour = {
 } as unknown as TourOutput;
 
 describe("Catálogo de tours", () => {
-  it("sin permiso de gestión no hay menú Editar / Eliminar (escritorio y celular)", () => {
+  it("sin permiso de gestión no hay Compartir folleto ni menú Editar / Eliminar (escritorio y celular)", () => {
     const { unmount } = render(
       <TourDesktopTable tours={[tour]} onDeleteRequest={() => {}} canManage={false} />,
     );
     expect(screen.getByText("Cascadas de Cuetzalan")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Opciones del tour" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Compartir folleto digital" }),
+    ).not.toBeInTheDocument();
     unmount();
 
     render(<TourMobileCardList tours={[tour]} onDeleteRequest={() => {}} canManage={false} />);
     expect(screen.queryByRole("button", { name: "Opciones del tour" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Compartir folleto digital" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("con la cuenta operativa el menú sigue ahí", () => {
+  it("con la cuenta operativa siguen el menú y Compartir folleto (tour próximo)", () => {
+    const { unmount } = render(<TourDesktopTable tours={[tour]} onDeleteRequest={() => {}} />);
+    expect(screen.getByRole("button", { name: "Compartir folleto digital" })).toBeInTheDocument();
+    unmount();
+
     render(<TourMobileCardList tours={[tour]} onDeleteRequest={() => {}} />);
     expect(screen.getByRole("button", { name: "Opciones del tour" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Compartir folleto digital" })).toBeInTheDocument();
   });
 });
 
