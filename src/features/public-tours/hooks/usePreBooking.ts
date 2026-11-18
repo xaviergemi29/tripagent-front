@@ -9,7 +9,8 @@ const createPreBookingApi = (body: PreBookingInput): Promise<PreBookingOutput> =
 /**
  * Pre-reserva pública desde el folleto. Al terminar refresca la página (Server Component)
  * para que la ocupación mostrada incluya los lugares recién apartados.
- * Los errores (409 sin cupo, WhatsApp repetido, tour ya salido) se muestran en el modal.
+ * Los errores se muestran en el modal según su `code` (409 `CAPACITY_EXCEEDED`, `BOOKINGS_CLOSED`,
+ * `ALREADY_BOOKED`) o su estado (404: el tour ya no está publicado).
  */
 export function usePreBooking() {
   const router = useRouter();
@@ -18,8 +19,9 @@ export function usePreBooking() {
     mutationFn: createPreBookingApi,
     onSuccess: () => router.refresh(),
     onError: (error) => {
-      // Otro cliente pudo haber tomado los últimos lugares: actualizamos la disponibilidad.
-      if (error.status === 409) router.refresh();
+      // Otro cliente pudo haber tomado los últimos lugares o el tour cerró: el folleto de fondo
+      // (contador, insignia y botón) se actualiza con la disponibilidad real.
+      if (error.status === 409 || error.status === 404) router.refresh();
     },
   });
 }

@@ -8,6 +8,8 @@ export interface FastifyErrorPayload {
   error?: string;
   message?: string;
   issues?: unknown[];
+  /** 409 `CAPACITY_EXCEEDED`: lugares que sí quedan en el tour. */
+  availableSeats?: number;
 }
 
 // Interfaz pública normalizada para captura de errores en React Query / Handlers
@@ -16,6 +18,8 @@ export interface ApiError {
   message: string;
   code?: string;
   issues?: unknown[];
+  /** 409 `CAPACITY_EXCEEDED`: lugares que sí quedan en el tour. */
+  availableSeats?: number;
 }
 
 export const apiClient = axios.create({
@@ -65,6 +69,7 @@ apiClient.interceptors.response.use(
       message: rawMessage,
       code: responseData?.code,
       issues: responseData?.issues || [],
+      availableSeats: responseData?.availableSeats,
     };
 
     return Promise.reject(customError);

@@ -11,6 +11,8 @@ interface BrochureCallToActionProps {
   tourId: string;
   tourTitle: string;
   whatsappUrl: string | null;
+  /** Teléfono de la agencia: el modal arma su propio mensaje de WhatsApp si ya no hay lugares. */
+  agencyPhone: string | null;
   availableSeats: number;
   isBookable: boolean;
   /** Texto del botón deshabilitado: "Agotado" (sin lugares) o "Finalizado" (el tour ya salió). */
@@ -23,6 +25,7 @@ export function BrochureCallToAction({
   tourId,
   tourTitle,
   whatsappUrl,
+  agencyPhone,
   availableSeats,
   isBookable,
   unavailableLabel = "Agotado",
@@ -63,6 +66,7 @@ export function BrochureCallToAction({
         tourId={tourId}
         tourTitle={tourTitle}
         availableSeats={availableSeats}
+        agencyPhone={agencyPhone}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         defaultPhoneCountry={defaultPhoneCountry}

@@ -187,3 +187,18 @@ export const REFUND_STATUS = {
   PENDING: "PENDING",
   COMPLETED: "COMPLETED",
 } as const satisfies Record<string, RefundStatus>;
+
+// Código de un 409 de la API (espejo de `CONFLICT_CODES` en `tripagent-api`): la pantalla decide qué
+// mostrar con el código, nunca con el texto del mensaje (folleto "Iniciar Reserva", 2026-11-18).
+export const CONFLICT_CODES = ["CAPACITY_EXCEEDED", "BOOKINGS_CLOSED", "ALREADY_BOOKED"] as const;
+export type ConflictCode = (typeof CONFLICT_CODES)[number];
+
+/** Acceso por nombre: `error.code === CONFLICT_CODE.CAPACITY_EXCEEDED`. */
+export const CONFLICT_CODE = {
+  /** No alcanzan los lugares; el error trae `availableSeats`. */
+  CAPACITY_EXCEEDED: "CAPACITY_EXCEEDED",
+  /** El tour ya no recibe reservas en línea (ya salió o la agencia las pausó). */
+  BOOKINGS_CLOSED: "BOOKINGS_CLOSED",
+  /** El WhatsApp ya tiene una reserva activa en el tour. */
+  ALREADY_BOOKED: "ALREADY_BOOKED",
+} as const satisfies Record<string, ConflictCode>;

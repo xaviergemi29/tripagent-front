@@ -302,6 +302,7 @@ export default async function PublicTourLanding({ params }: PublicTourLanding) {
         tourId={tour.id}
         tourTitle={tour.title}
         whatsappUrl={whatsappUrl}
+        agencyPhone={tour.agency.phone}
         availableSeats={tour.availability.availableSeats}
         isBookable={isBookable}
         unavailableLabel={unavailableLabel}
