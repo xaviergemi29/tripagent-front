@@ -216,7 +216,7 @@ export function TourRegistrationView({
   return (
     // pb-40: espacio para la barra fija de "Completar Registro" (RegistrationFooter).
     <PublicBookingLayout
-      className="pb-40"
+      className="pb-32"
       headerProps={{
         agencyName,
         agencyLogoPath,
@@ -501,6 +501,10 @@ export function TourRegistrationView({
           {/* 5. Sticky Footer (Se encarga de ejecutar el submit del form) */}
           <RegistrationFooter
             totalAmount={lockedSeats * (tourInfo.priceTotalPerPassenger || 0)}
+            // Mismo cálculo que TourSummaryCard: anticipo por persona × lugares apartados.
+            depositAmount={
+              tourInfo.depositPerPassenger ? tourInfo.depositPerPassenger * lockedSeats : null
+            }
             currency={tourInfo.currency}
             travelersCount={lockedSeats}
             isSubmitting={isPending}

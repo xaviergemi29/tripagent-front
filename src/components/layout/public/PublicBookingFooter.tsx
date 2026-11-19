@@ -31,7 +31,7 @@ export function PublicBookingFooter({
     : null;
 
   return (
-    <footer className="mt-10 flex w-full flex-col items-center px-1 pb-12 text-center">
+    <footer className="mt-2 flex w-full flex-col items-center px-1 pb-2 text-center">
       {stickyActionsSlot && <div className="mx-auto mb-6 w-full max-w-md">{stickyActionsSlot}</div>}
 
       {/* Canal humano */}
