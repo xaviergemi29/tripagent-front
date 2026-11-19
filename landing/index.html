@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripAgent · Organiza tus tours grupales sin el caos de WhatsApp y Excel</title>
+
+    <!-- Tipografía Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', "sans-serif"],
+            },
+            colors: {
+              brand: {
+                50: "#eef2ff",
+                100: "#e0e7ff",
+                500: "#6366f1",
+                600: "#4f46e5",
+                700: "#4338ca",
+              },
+              whatsapp: {
+                DEFAULT: "#25D366",
+                dark: "#128C7E",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+    </style>
+  </head>
+  <body
+    class="selection:bg-brand-100 selection:text-brand-700 bg-[#fafbff] text-slate-900 antialiased"
+  >
+    <!-- ==========================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+  =========================================== -->
+    <header class="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
+      <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <!-- Logotipo TripAgent -->
+        <a href="#" class="flex items-center gap-3">
+          <div
+            class="bg-brand-600 shadow-brand-500/20 flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-md"
+          >
+            <i data-lucide="compass" class="h-6 w-6"></i>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-xl font-extrabold tracking-tight text-slate-950">TripAgent</span>
+            <span class="text-brand-600 -mt-1 text-[10px] font-semibold tracking-wider uppercase"
+              >Logística B2B</span
+            >
+          </div>
+        </a>
+
+        <!-- Enlaces de navegación escritorio -->
+        <nav class="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex">
+          <a href="#como-funciona" class="hover:text-brand-600 transition-colors">Cómo funciona</a>
+          <a href="#modulos" class="hover:text-brand-600 transition-colors">Módulos</a>
+          <a href="#comparativa" class="hover:text-brand-600 transition-colors">Comparativa</a>
+          <a href="#faqs" class="hover:text-brand-600 transition-colors">Preguntas frecuentes</a>
+        </nav>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center gap-3">
+          <a
+            href="#"
+            class="px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:text-slate-950"
+          >
+            Iniciar sesión
+          </a>
+          <a
+            href="#crear-cuenta"
+            class="bg-brand-600 hover:bg-brand-700 inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:shadow"
+          >
+            Probar 30 días gratis
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==========================================
+       HERO SECTION
+  =========================================== -->
+    <section class="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
+          <!-- Columna Izquierda: Copy & CTAs -->
+          <div class="space-y-6 text-center lg:col-span-6 lg:text-left">
+            <!-- Badge País -->
+            <div
+              class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-700"
+            >
+              <span>🇲🇽 Hecho para agencias de tours en México</span>
+            </div>
+
+            <!-- Titular Principal -->
+            <h1
+              class="text-4xl leading-[1.12] font-extrabold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl"
+            >
+              Organiza tus tours grupales
+              <span
+                class="text-brand-600 decoration-brand-200 underline decoration-wavy decoration-2"
+                >sin el caos</span
+              >
+              de WhatsApp y Excel.
+            </h1>
+
+            <!-- Subtítulo -->
+            <p class="mx-auto max-w-xl text-lg leading-relaxed font-normal text-slate-600 lg:mx-0">
+              Publica tu folleto digital, evita la sobreventa, lleva el control exacto de abonos y
+              genera tu manifiesto de abordaje en segundos. Sin apps ni contraseñas para tus
+              clientes.
+            </p>
+
+            <!-- CTAs Principales -->
+            <div
+              class="flex flex-col items-center justify-center gap-4 pt-2 sm:flex-row lg:justify-start"
+            >
+              <a
+                href="#crear-cuenta"
+                class="bg-brand-600 hover:bg-brand-700 shadow-brand-600/25 inline-flex w-full items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-base font-bold text-white shadow-lg transition-all sm:w-auto"
+              >
+                <span>Crear cuenta gratis</span>
+                <i data-lucide="arrow-right" class="h-4 w-4"></i>
+              </a>
+              <a
+                href="#demo"
+                class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-base font-semibold text-slate-700 transition-all hover:bg-slate-50 sm:w-auto"
+              >
+                <i data-lucide="play-circle" class="text-brand-600 h-5 w-5"></i>
+                <span>Ver ejemplo en vivo</span>
+              </a>
+            </div>
+
+            <!-- Micro copy de confianza -->
+            <div
+              class="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs font-semibold text-slate-500 lg:justify-start"
+            >
+              <span class="flex items-center gap-1.5"
+                ><i data-lucide="check" class="h-4 w-4 text-emerald-600"></i> 30 días de prueba
+                gratis</span
+              >
+              <span class="flex items-center gap-1.5"
+                ><i data-lucide="check" class="h-4 w-4 text-emerald-600"></i> Sin tarjeta de
+                crédito</span
+              >
+              <span class="flex items-center gap-1.5"
+                ><i data-lucide="check" class="h-4 w-4 text-emerald-600"></i> Primer tour en
+                minutos</span
+              >
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Mockup Interactivo del Magic Link / Tour -->
+          <div class="relative lg:col-span-6">
+            <div class="relative mx-auto max-w-md lg:max-w-none">
+              <!-- Glow decorativo -->
+              <div
+                class="bg-brand-200/50 pointer-events-none absolute -top-10 -right-10 h-72 w-72 rounded-full blur-3xl"
+              ></div>
+
+              <!-- Ventana de Navegador Mockup -->
+              <div
+                class="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl"
+              >
+                <!-- Barra de navegador -->
+                <div
+                  class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-3"
+                >
+                  <div class="flex items-center gap-2">
+                    <div class="h-2.5 w-2.5 rounded-full bg-red-400"></div>
+                    <div class="h-2.5 w-2.5 rounded-full bg-amber-400"></div>
+                    <div class="h-2.5 w-2.5 rounded-full bg-emerald-400"></div>
+                  </div>
+                  <div
+                    class="flex items-center gap-1.5 rounded-md border border-slate-200/60 bg-white px-3 py-1 font-mono text-[11px] text-slate-500"
+                  >
+                    <i data-lucide="lock" class="h-3 w-3 text-emerald-600"></i>
+                    <span>panel.tripagent.mx/tours/huasteca-oct</span>
+                  </div>
+                  <div class="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                    <span class="h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span>
+                    <span class="text-[11px]">Sincronizado</span>
+                  </div>
+                </div>
+
+                <!-- Contenido del Mockup -->
+                <div class="space-y-5 p-6">
+                  <!-- Encabezado del Tour -->
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="bg-brand-50 text-brand-700 border-brand-200 rounded border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase"
+                          >Activo</span
+                        >
+                        <h3 class="text-base font-bold text-slate-900">
+                          Expedición Huasteca Potosina
+                        </h3>
+                      </div>
+                      <p class="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                        <span
+                          ><i data-lucide="calendar" class="inline h-3 w-3"></i> Sáb 24
+                          Octubre</span
+                        >
+                        <span>•</span>
+                        <span
+                          ><i data-lucide="bus" class="inline h-3 w-3"></i> Sprinter 20 (19
+                          pax)</span
+                        >
+                      </p>
+                    </div>
+                    <span
+                      class="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
+                    >
+                      <i data-lucide="share-2" class="mr-1 inline h-3 w-3"></i> Folleto
+                    </span>
+                  </div>
+
+                  <!-- Métricas Rápidas -->
+                  <div class="grid grid-cols-3 gap-3">
+                    <div class="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                      <span class="block text-[11px] font-semibold text-slate-500">Ocupación</span>
+                      <span class="text-lg font-extrabold text-slate-900">16 / 19</span>
+                      <span class="mt-0.5 block text-[10px] font-bold text-emerald-600"
+                        >84% vendido</span
+                      >
+                    </div>
+                    <div class="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                      <span class="block text-[11px] font-semibold text-slate-500">Recaudado</span>
+                      <span class="text-lg font-extrabold text-slate-900">$24,500</span>
+                      <span class="mt-0.5 block text-[10px] font-medium text-slate-500"
+                        >8 anticipos</span
+                      >
+                    </div>
+                    <div class="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                      <span class="block text-[11px] font-semibold text-slate-500">Por Cobrar</span>
+                      <span class="text-lg font-extrabold text-amber-600">$13,500</span>
+                      <span class="mt-0.5 block text-[10px] font-medium text-amber-700"
+                        >1 vence hoy</span
+                      >
+                    </div>
+                  </div>
+
+                  <!-- Fila de Pasajero Simulado -->
+                  <div
+                    class="space-y-3 rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm"
+                  >
+                    <div class="flex items-center justify-between text-xs">
+                      <div class="flex items-center gap-2">
+                        <div
+                          class="bg-brand-100 text-brand-700 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
+                        >
+                          FR
+                        </div>
+                        <div>
+                          <span class="block font-bold text-slate-900">Fernando Ruiz</span>
+                          <span class="text-[10px] text-slate-500">Plaza Crystal • 06:00 AM</span>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <span
+                          class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700"
+                        >
+                          Liquidado $2,000 MXN
+                        </span>
+                        <span class="mt-0.5 block text-[10px] text-slate-500"
+                          >Asiento #12 asignado</span
+                        >
+                      </div>
+                    </div>
+
+                    <!-- Botón de acción rápida del operador -->
+                    <div
+                      class="flex items-center justify-between border-t border-slate-100 pt-1 text-xs"
+                    >
+                      <span class="text-[11px] text-slate-500">Comprobante generado:</span>
+                      <a
+                        href="#"
+                        class="text-brand-600 flex items-center gap-1 text-[11px] font-semibold hover:underline"
+                      >
+                        <i data-lucide="file-text" class="h-3 w-3"></i> Descargar recibo PDF
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+       SECCIÓN: LA CRUDA REALIDAD OPERATIVA (DOLORES)
+  =========================================== -->
+    <section class="border-y border-slate-100 bg-white py-16 md:py-24">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto mb-16 max-w-3xl space-y-3 text-center">
+          <span class="text-brand-600 text-xs font-bold tracking-widest uppercase"
+            >La cruda realidad operativa</span
+          >
+          <h2 class="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+            ¿Tu operación antes de cada salida se ve así?
+          </h2>
+          <p class="text-base text-slate-600">
+            Las agencias de viajes terrestres en México pierden hasta 28% de sus ganancias por
+            desorganización en apartados y WhatsApp.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <!-- Dolor 1 -->
+          <div
+            class="space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-6 transition-all hover:border-slate-200"
+          >
+            <div
+              class="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-lg font-bold text-red-600"
+            >
+              <i data-lucide="hourglass" class="h-6 w-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">"Apartados en el aire"</h3>
+            <p class="text-sm leading-relaxed text-slate-600">
+              Clientes que dicen <em>"apártame 4 lugares, te deposito el viernes"</em>, nunca
+              transfieren y terminas viajando con asientos vacíos que pudiste vender.
+            </p>
+          </div>
+
+          <!-- Dolor 2 -->
+          <div
+            class="space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-6 transition-all hover:border-slate-200"
+          >
+            <div
+              class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-lg font-bold text-amber-600"
+            >
+              <i data-lucide="file-spreadsheet" class="h-6 w-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Captura manual interminable</h3>
+            <p class="text-sm leading-relaxed text-slate-600">
+              Copiar y pegar a mano nombres, teléfonos de contacto, alergias y puntos de abordaje
+              desde 50 conversaciones a las 11 de la noche antes de salir.
+            </p>
+          </div>
+
+          <!-- Dolor 3 -->
+          <div
+            class="space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-6 transition-all hover:border-slate-200"
+          >
+            <div
+              class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-lg font-bold text-blue-600"
+            >
+              <i data-lucide="receipt" class="h-6 w-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Comprobantes perdidos</h3>
+            <p class="text-sm leading-relaxed text-slate-600">
+              Dudar si una familia ya cubrió el anticipo mínimo para ganarse los asientos adelante,
+              o si esa captura de transferencia ya la habías contado antes.
+            </p>
+          </div>
+
+          <!-- Dolor 4 -->
+          <div
+            class="space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-6 transition-all hover:border-slate-200"
+          >
+            <div
+              class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-lg font-bold text-emerald-600"
+            >
+              <i data-lucide="shuffle" class="h-6 w-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Cambios de último minuto</h3>
+            <p class="text-sm leading-relaxed text-slate-600">
+              Bajas de acompañantes, cambios de titular o cancelaciones el jueves en la noche que
+              descuadran por completo tu libreta de cuentas y lista de pasajeros.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+       SECCIÓN: FLUJO DE TRABAJO EN 4 PASOS
+  =========================================== -->
+    <section id="como-funciona" class="bg-[#fafbff] py-16 md:py-24">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto mb-16 max-w-3xl space-y-3 text-center">
+          <span class="text-brand-600 text-xs font-bold tracking-widest uppercase"
+            >Flujo de trabajo simple</span
+          >
+          <h2 class="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+            De publicar tu salida a abordar el autobús en 4 pasos
+          </h2>
+          <p class="text-base text-slate-600">
+            Diseñado para que tu equipo opere con calma y tus viajeros sientan la formalidad de una
+            gran touroperadora.
+          </p>
+        </div>
+
+        <div class="relative grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <!-- Paso 1 -->
+          <div class="space-y-4">
+            <div
+              class="bg-brand-600 shadow-brand-600/30 flex h-10 w-10 items-center justify-center rounded-full text-sm font-extrabold text-white shadow-md"
+            >
+              1
+            </div>
+            <h3 class="text-xl font-bold text-slate-950">Publica tu tour</h3>
+            <p class="text-sm leading-relaxed text-slate-600">
+              Define precios en MXN o USD, anticipo requerido por persona, puntos de abordaje y
+              comparte tu folleto digital interactivo en redes y estados de WhatsApp.
+            </p>
+            <a
+              href="#"
+              class="text-brand-600 flex items-center gap-1 text-xs font-bold hover:underline"
+            >
+              Folleto web móvil <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
+            </a>
+          </div>
+
+          <!-- Paso 2 -->
+          <div class="space-y-4">
+            <div
+              class="bg-brand-600 shadow-brand-600/30 flex h-10 w-10 items-center justify-center rounded-full text-sm font-extrabold text-white shadow-md"
+            >
+              2
+            </div>
+            <h3 class="text-xl font-bold text-slate-950">Aparta sin sobreventa</h3>
+            <p class="text-sm leading-relaxed text-slate-600">
+              Registra apartados en segundos desde tu panel o recibe solicitudes con temporizador de
+              vigencia para que nadie bloquee lugares sin pagar.
+            </p>
+            <a
+              href="#"
+              class="text-brand-600 flex items-center gap-1 text-xs font-bold hover:underline"
+            >
+              Control de cupo atómico <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
+            </a>
+          </div>
+
+          <!-- Paso 3 -->
+          <div class="space-y-4">
+            <div
+              class="bg-brand-600 shadow-brand-600/30 flex h-10 w-10 items-center justify-center rounded-full text-sm font-extrabold text-white shadow-md"
+            >
+              3
+            </div>
+            <h3 class="text-xl font-bold text-slate-950">Envía el Magic Link</h3>
+            <p class="text-sm leading-relaxed text-slate-600">
+              Un solo enlace personalizado por WhatsApp. El titular registra los nombres de sus
+              acompañantes, consulta tu CLABE y descarga su recibo PDF con tu logo.
+            </p>
+            <a
+              href="#"
+              class="text-brand-600 flex items-center gap-1 text-xs font-bold hover:underline"
+            >
+              Cero apps ni passwords <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
+            </a>
+          </div>
+
+          <!-- Paso 4 -->
+          <div class="space-y-4">
+            <div
+              class="bg-brand-600 shadow-brand-600/30 flex h-10 w-10 items-center justify-center rounded-full text-sm font-extrabold text-white shadow-md"
+            >
+              4
+            </div>
+            <h3 class="text-xl font-bold text-slate-950">Asigna asientos y aborda</h3>
+            <p class="text-sm leading-relaxed text-slate-600">
+              Acomoda tus pasajeros confirmados en el croquis visual de tu Sprinter o autobús e
+              imprime el manifiesto de abordaje ordenado por parada.
+            </p>
+            <a
+              href="#"
+              class="text-brand-600 flex items-center gap-1 text-xs font-bold hover:underline"
+            >
+              Manifiesto 1-clic <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+       SECCIÓN: CROQUIS INTERACTIVO SPRINTER / BUS
+  =========================================== -->
+    <section id="modulos" class="border-y border-slate-100 bg-white py-16 md:py-24">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
+          <!-- Info Izquierda -->
+          <div class="space-y-6 lg:col-span-5">
+            <div
+              class="bg-brand-50 text-brand-700 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold"
+            >
+              <i data-lucide="layout-grid" class="h-3.5 w-3.5"></i> Módulo Asientos
+            </div>
+            <h2 class="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+              Croquis interactivo de Sprinter y Autobús
+            </h2>
+            <p class="text-base leading-relaxed text-slate-600">
+              Termina con las quejas por quién va adelante. Asigna o deja que tus clientes elijan
+              sus asientos según su orden de pago del anticipo.
+            </p>
+
+            <ul class="space-y-3 text-sm text-slate-700">
+              <li class="flex items-start gap-3">
+                <i
+                  data-lucide="check-circle-2"
+                  class="mt-0.5 h-5 w-5 shrink-0 text-emerald-600"
+                ></i>
+                <span
+                  >Plantillas listas para <strong>Sprinter 20, Autobús 48 con WC</strong> y Autobús
+                  50 lugares.</span
+                >
+              </li>
+              <li class="flex items-start gap-3">
+                <i
+                  data-lucide="check-circle-2"
+                  class="mt-0.5 h-5 w-5 shrink-0 text-emerald-600"
+                ></i>
+                <span
+                  >Solo grupos con anticipo cubierto obtienen derecho de apartado de asiento.</span
+                >
+              </li>
+              <li class="flex items-start gap-3">
+                <i
+                  data-lucide="check-circle-2"
+                  class="mt-0.5 h-5 w-5 shrink-0 text-emerald-600"
+                ></i>
+                <span
+                  >Bloqueo dedicado de lugares para el coordinador de tour y chofer de relevo.</span
+                >
+              </li>
+            </ul>
+
+            <div class="pt-2">
+              <a
+                href="#demo"
+                class="text-brand-600 hover:text-brand-700 inline-flex items-center gap-2 font-bold"
+              >
+                Probar en mi agencia <i data-lucide="arrow-right" class="h-4 w-4"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Visual Derecha: Simulador de Croquis -->
+          <div class="lg:col-span-7">
+            <div class="rounded-3xl border border-slate-200/80 bg-slate-50 p-6 shadow-lg sm:p-8">
+              <div class="flex items-center justify-between border-b border-slate-200 pb-6">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold tracking-wider text-slate-500 uppercase"
+                    >Unidad en Operación:</span
+                  >
+                  <span class="text-sm font-bold text-slate-900"
+                    >Mercedes Sprinter VIP (19 pax)</span
+                  >
+                </div>
+                <div class="flex items-center gap-3 text-xs font-semibold">
+                  <span class="flex items-center gap-1.5"
+                    ><span class="inline-block h-3 w-3 rounded bg-slate-200"></span> Libre</span
+                  >
+                  <span class="flex items-center gap-1.5"
+                    ><span class="bg-brand-600 inline-block h-3 w-3 rounded"></span> Asignado</span
+                  >
+                  <span class="flex items-center gap-1.5"
+                    ><span class="inline-block h-3 w-3 rounded bg-amber-400"></span> Staff</span
+                  >
+                </div>
+              </div>
+
+              <!-- Mini Layout de la Camioneta -->
+              <div class="mx-auto max-w-sm py-8">
+                <!-- Cabina chofer -->
+                <div
+                  class="mb-6 flex items-center justify-between border-b-2 border-dashed border-slate-200 pb-3 text-xs font-bold tracking-wider text-slate-400 uppercase"
+                >
+                  <span
+                    ><i data-lucide="door-closed" class="mr-1 inline h-4 w-4"></i> Puerta
+                    Delantera</span
+                  >
+                  <span><i data-lucide="user" class="mr-1 inline h-4 w-4"></i> Chofer</span>
+                </div>
+
+                <!-- Matriz de Asientos -->
+                <div class="grid grid-cols-4 gap-3 text-center text-xs font-bold">
+                  <!-- Fila 1 -->
+                  <div class="rounded-lg border border-amber-300 bg-amber-100 p-3 text-amber-900">
+                    Staff
+                  </div>
+                  <div class="col-span-2"></div>
+                  <div class="bg-brand-600 rounded-lg p-3 text-white shadow-sm">01</div>
+
+                  <!-- Fila 2 -->
+                  <div class="bg-brand-600 rounded-lg p-3 text-white shadow-sm">02</div>
+                  <div class="bg-brand-600 rounded-lg p-3 text-white shadow-sm">03</div>
+                  <div class="col-span-1"></div>
+                  <div class="bg-brand-600 rounded-lg p-3 text-white shadow-sm">04</div>
+
+                  <!-- Fila 3 -->
+                  <div
+                    class="hover:bg-brand-50 cursor-pointer rounded-lg bg-slate-200 p-3 text-slate-700"
+                  >
+                    05
+                  </div>
+                  <div
+                    class="hover:bg-brand-50 cursor-pointer rounded-lg bg-slate-200 p-3 text-slate-700"
+                  >
+                    06
+                  </div>
+                  <div class="col-span-1"></div>
+                  <div class="bg-brand-600 rounded-lg p-3 text-white shadow-sm">07</div>
+
+                  <!-- Fila 4 -->
+                  <div class="bg-brand-600 rounded-lg p-3 text-white shadow-sm">08</div>
+                  <div
+                    class="hover:bg-brand-50 cursor-pointer rounded-lg bg-slate-200 p-3 text-slate-700"
+                  >
+                    09
+                  </div>
+                  <div class="col-span-1"></div>
+                  <div class="bg-brand-600 rounded-lg p-3 text-white shadow-sm">10</div>
+
+                  <!-- Fila 5 trasera completa -->
+                  <div class="rounded-lg bg-slate-200 p-3 text-slate-700">11</div>
+                  <div class="rounded-lg bg-slate-200 p-3 text-slate-700">12</div>
+                  <div class="rounded-lg bg-slate-200 p-3 text-slate-700">13</div>
+                  <div class="rounded-lg bg-slate-200 p-3 text-slate-700">14</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+       SECCIÓN: COMPARATIVA EXCEL vs TRIPAGENT
+  =========================================== -->
+    <section id="comparativa" class="bg-[#fafbff] py-16 md:py-24">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto mb-16 max-w-3xl space-y-3 text-center">
+          <span class="text-brand-600 text-xs font-bold tracking-widest uppercase"
+            >Comparativa clara</span
+          >
+          <h2 class="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+            Excel + WhatsApp vs. TripAgent
+          </h2>
+          <p class="text-base text-slate-600">
+            Compara cómo opera una agencia tradicional frente a una equipada con la infraestructura
+            de TripAgent.
+          </p>
+        </div>
+
+        <div
+          class="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl"
+        >
+          <div
+            class="grid grid-cols-1 divide-y divide-slate-200 md:grid-cols-2 md:divide-x md:divide-y-0"
+          >
+            <!-- Lado Izquierdo: Tradicional -->
+            <div class="space-y-6 bg-red-50/20 p-8">
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-9 w-9 items-center justify-center rounded-full bg-red-100 font-bold text-red-600"
+                >
+                  <i data-lucide="x" class="h-5 w-5"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-extrabold text-slate-900">Excel + WhatsApp</h3>
+                  <span class="text-xs text-slate-500">Método artesanal propenso a errores</span>
+                </div>
+              </div>
+
+              <div class="space-y-4 text-xs text-slate-600 sm:text-sm">
+                <div class="space-y-1 rounded-xl border border-red-100 bg-white p-3.5">
+                  <strong class="block font-bold text-slate-900">Control de cupo</strong>
+                  <p>
+                    Conteo manual en chat. Frecuente sobreventa o asientos vacíos por apartados que
+                    no pagaron.
+                  </p>
+                </div>
+                <div class="space-y-1 rounded-xl border border-red-100 bg-white p-3.5">
+                  <strong class="block font-bold text-slate-900"
+                    >Datos de emergencia y notas médicas</strong
+                  >
+                  <p>
+                    Horas capturando datos de mensajes y notas de voz perdidas en la conversación o
+                    nunca se recolectan.
+                  </p>
+                </div>
+                <div class="space-y-1 rounded-xl border border-red-100 bg-white p-3.5">
+                  <strong class="block font-bold text-slate-900">Comprobantes de abono</strong>
+                  <p>
+                    Capturas sueltas dispersas en la galería del teléfono; clientes reclamando
+                    saldos no registrados.
+                  </p>
+                </div>
+                <div class="space-y-1 rounded-xl border border-red-100 bg-white p-3.5">
+                  <strong class="block font-bold text-slate-900">Lista de abordaje</strong>
+                  <p>
+                    Armada con estrés a las 2 AM antes de la salida; sin filtro por paradas ni
+                    control de cobro en puerta.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lado Derecho: TripAgent -->
+            <div class="space-y-6 bg-emerald-50/20 p-8">
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-600"
+                >
+                  <i data-lucide="check" class="h-5 w-5"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-extrabold text-slate-900">TripAgent</h3>
+                  <span class="text-brand-600 text-xs font-bold tracking-wider uppercase"
+                    >Diseñado para tours terrestres</span
+                  >
+                </div>
+              </div>
+
+              <div class="space-y-4 text-xs text-slate-700 sm:text-sm">
+                <div
+                  class="space-y-1 rounded-xl border border-emerald-100 bg-white p-3.5 shadow-sm"
+                >
+                  <strong class="block font-bold text-slate-900">Control de cupo</strong>
+                  <p>
+                    Descuento de lugares automático y atómico en tiempo real con temporizador de
+                    vigencia.
+                  </p>
+                </div>
+                <div
+                  class="space-y-1 rounded-xl border border-emerald-100 bg-white p-3.5 shadow-sm"
+                >
+                  <strong class="block font-bold text-slate-900"
+                    >Datos de emergencia y notas médicas</strong
+                  >
+                  <p>
+                    El titular captura los datos de su grupo en su Magic Link con aviso de
+                    privacidad encriptado.
+                  </p>
+                </div>
+                <div
+                  class="space-y-1 rounded-xl border border-emerald-100 bg-white p-3.5 shadow-sm"
+                >
+                  <strong class="block font-bold text-slate-900">Comprobantes de abono</strong>
+                  <p>
+                    Estado de cuenta PDF instantáneo con el logo, colores de tu agencia y desglose
+                    exacto.
+                  </p>
+                </div>
+                <div
+                  class="space-y-1 rounded-xl border border-emerald-100 bg-white p-3.5 shadow-sm"
+                >
+                  <strong class="block font-bold text-slate-900">Lista de abordaje</strong>
+                  <p>
+                    Manifiesto imprimible y móvil ordenado por punto de abordaje con lista de cobros
+                    pendientes en mano.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+       BANNER DE PRUEBA 30 DÍAS SIN RIESGO
+  =========================================== -->
+    <section class="bg-white py-12">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div
+          class="from-brand-50 border-brand-200/70 flex flex-col items-center justify-between gap-6 rounded-3xl border bg-gradient-to-r to-indigo-50 p-8 shadow-sm sm:p-10 md:flex-row"
+        >
+          <div class="space-y-2 text-center md:text-left">
+            <div
+              class="text-brand-700 border-brand-200 inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-1 text-xs font-bold"
+            >
+              <i data-lucide="shield-check" class="h-4 w-4"></i> Sin letras chiquitas · Garantía de
+              continuidad
+            </div>
+            <h3 class="text-2xl font-extrabold text-slate-950">
+              Prueba TripAgent gratis durante 30 días
+            </h3>
+            <p class="max-w-xl text-sm text-slate-600">
+              Opera tus salidas reales con acceso total. Y si al terminar tu periodo de prueba
+              decides no activar un plan de pago, tu cuenta pasa automáticamente a
+              <strong>Modo Solo Lectura</strong>: nunca pierdes acceso para consultar tus viajes
+              pasados ni imprimir tus listas de abordaje en carretera.
+            </p>
+          </div>
+          <a
+            href="#crear-cuenta"
+            class="bg-brand-600 hover:bg-brand-700 inline-flex shrink-0 items-center justify-center rounded-xl px-6 py-3.5 text-sm font-bold text-white shadow-md transition-all"
+          >
+            Comenzar prueba gratuita <i data-lucide="arrow-right" class="ml-1.5 h-4 w-4"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+       SECCIÓN: PREGUNTAS FRECUENTES (FAQS)
+  =========================================== -->
+    <section id="faqs" class="border-t border-slate-100 bg-[#fafbff] py-16 md:py-24">
+      <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-12 space-y-3 text-center">
+          <span class="text-brand-600 text-xs font-bold tracking-widest uppercase"
+            >Respuestas directas</span
+          >
+          <h2 class="text-3xl font-extrabold tracking-tight text-slate-950">
+            Preguntas frecuentes
+          </h2>
+          <p class="text-sm text-slate-600">
+            Todo lo que necesitas saber sobre el uso operativo y financiero de TripAgent en tu
+            agencia.
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <!-- FAQ 1 -->
+          <details
+            class="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm [&_summary::-webkit-details-marker]:hidden"
+          >
+            <summary
+              class="flex items-center justify-between text-sm font-bold text-slate-900 sm:text-base"
+            >
+              <span>¿Mis clientes tienen que descargar alguna app o crear cuenta?</span>
+              <i
+                data-lucide="chevron-down"
+                class="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180"
+              ></i>
+            </summary>
+            <p class="mt-3 border-t border-slate-100 pt-3 text-sm leading-relaxed text-slate-600">
+              <strong>No, para nada.</strong> Uno de los mayores problemas del turismo grupal en
+              México es la fricción tecnológica. Tus viajeros reciben un <em>Magic Link</em> directo
+              por WhatsApp que abre en cualquier navegador de celular al instante. Ahí ven el
+              itinerario, llenan los datos de su grupo y descargan su comprobante.
+            </p>
+          </details>
+
+          <!-- FAQ 2 -->
+          <details
+            class="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm [&_summary::-webkit-details-marker]:hidden"
+          >
+            <summary
+              class="flex items-center justify-between text-sm font-bold text-slate-900 sm:text-base"
+            >
+              <span>¿TripAgent cobra comisión por cada lugar vendido o retiene mi dinero?</span>
+              <i
+                data-lucide="chevron-down"
+                class="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180"
+              ></i>
+            </summary>
+            <p class="mt-3 border-t border-slate-100 pt-3 text-sm leading-relaxed text-slate-600">
+              <strong>Cero comisiones por venta.</strong> El 100% de los depósitos, transferencias
+              SPEI y pagos en efectivo entran directamente a las cuentas bancarias de tu agencia
+              (BBVA, Banorte, Nu, etc.). TripAgent solo cobra una suscripción mensual fija por el
+              software.
+            </p>
+          </details>
+
+          <!-- FAQ 3 -->
+          <details
+            class="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm [&_summary::-webkit-details-marker]:hidden"
+          >
+            <summary
+              class="flex items-center justify-between text-sm font-bold text-slate-900 sm:text-base"
+            >
+              <span>¿Qué pasa si un cliente me paga por partes o en dólares (USD)?</span>
+              <i
+                data-lucide="chevron-down"
+                class="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180"
+              ></i>
+            </summary>
+            <p class="mt-3 border-t border-slate-100 pt-3 text-sm leading-relaxed text-slate-600">
+              El sistema está diseñado para abonos parciales. Cada vez que registras un depósito, se
+              actualiza el saldo deudor del cliente y se genera automáticamente un recibo PDF
+              foliado que puedes enviarle por WhatsApp en un toque. También soporta tours cotizados
+              en USD.
+            </p>
+          </details>
+
+          <!-- FAQ 4 -->
+          <details
+            class="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm [&_summary::-webkit-details-marker]:hidden"
+          >
+            <summary
+              class="flex items-center justify-between text-sm font-bold text-slate-900 sm:text-base"
+            >
+              <span>¿Qué ocurre si un pasajero cancela o cede su lugar a otra persona?</span>
+              <i
+                data-lucide="chevron-down"
+                class="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180"
+              ></i>
+            </summary>
+            <p class="mt-3 border-t border-slate-100 pt-3 text-sm leading-relaxed text-slate-600">
+              TripAgent incluye una calculadora de bajas y sustitución de pasajeros. Puedes aplicar
+              retención del anticipo por política de cancelación, liberar el asiento al inventario
+              público de inmediato y actualizar el saldo del titular sin descuadrar la contabilidad
+              general de la unidad.
+            </p>
+          </details>
+
+          <!-- FAQ 5 -->
+          <details
+            class="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm [&_summary::-webkit-details-marker]:hidden"
+          >
+            <summary
+              class="flex items-center justify-between text-sm font-bold text-slate-900 sm:text-base"
+            >
+              <span>¿Puedo usarlo desde mi celular mientras viajo en el tour?</span>
+              <i
+                data-lucide="chevron-down"
+                class="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180"
+              ></i>
+            </summary>
+            <p class="mt-3 border-t border-slate-100 pt-3 text-sm leading-relaxed text-slate-600">
+              Sí. Todo el Centro de Control Logístico y la lista de abordaje están completamente
+              adaptados a pantallas móviles para que los coordinadores pasen lista a pie de autobús
+              a las 6:00 AM.
+            </p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+       FOOTER CTA OSCURO DE ALTO IMPACTO
+  =========================================== -->
+    <section class="relative overflow-hidden bg-slate-950 py-20 text-white" id="crear-cuenta">
+      <div class="relative z-10 mx-auto max-w-5xl space-y-6 px-4 text-center sm:px-6 lg:px-8">
+        <span class="text-brand-400 text-xs font-bold tracking-widest uppercase"
+          >Únete a más de 120 agencias en todo México</span
+        >
+
+        <h2
+          class="mx-auto max-w-3xl text-3xl leading-tight font-extrabold tracking-tight sm:text-5xl"
+        >
+          Empieza hoy a operar tus tours con el orden que mereces.
+        </h2>
+
+        <p class="mx-auto max-w-xl text-base text-slate-400">
+          Deja de batallar con notas de voz a deshoras y listas tachadas en carpetas de papel. Crea
+          tu cuenta en 2 minutos y configura tu próxima salida grupal.
+        </p>
+
+        <div class="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
+          <a
+            href="#"
+            class="inline-flex w-full items-center justify-center rounded-xl bg-white px-8 py-4 text-base font-bold text-slate-950 shadow-lg transition-all hover:bg-slate-100 sm:w-auto"
+          >
+            Crear cuenta gratis
+          </a>
+          <a
+            href="https://wa.me/521"
+            target="_blank"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-8 py-4 text-base font-semibold text-white transition-all hover:bg-slate-700 sm:w-auto"
+          >
+            <i data-lucide="message-circle" class="text-whatsapp h-5 w-5"></i>
+            <span>Hablar con un asesor</span>
+          </a>
+        </div>
+
+        <p class="pt-2 text-xs text-slate-500">
+          Prueba completa de 30 días · Sin cobros ocultos · Asistencia humana en español
+        </p>
+      </div>
+    </section>
+
+    <!-- ==========================================
+       PIE DE PÁGINA INSTITUCIONAL
+  =========================================== -->
+    <footer class="border-t border-slate-800 bg-slate-900 py-12 text-sm text-slate-400">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-8 border-b border-slate-800 pb-10 md:grid-cols-4">
+          <!-- Columna 1: Marca -->
+          <div class="space-y-3 md:col-span-2">
+            <div class="flex items-center gap-2 text-lg font-extrabold text-white">
+              <div
+                class="bg-brand-600 flex h-7 w-7 items-center justify-center rounded-lg text-white"
+              >
+                <i data-lucide="compass" class="h-4 w-4"></i>
+              </div>
+              <span>TripAgent</span>
+            </div>
+            <p class="max-w-sm text-xs leading-relaxed text-slate-400">
+              Infraestructura tecnológica B2B para la gestión integral de tours, asignación de
+              unidades Sprinter y autobuses, boletaje digital y pagos automáticos para agencias en
+              México.
+            </p>
+            <div class="flex items-center gap-1.5 pt-1 text-[11px] font-semibold text-slate-500">
+              <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+              <span>Hecho para agencias de viajes en México</span>
+            </div>
+          </div>
+
+          <!-- Columna 2: Navegación -->
+          <div class="space-y-2">
+            <span class="mb-3 block text-xs font-bold tracking-wider text-slate-200 uppercase"
+              >Navegación</span
+            >
+            <ul class="space-y-2 text-xs">
+              <li>
+                <a href="#como-funciona" class="transition-colors hover:text-white"
+                  >Cómo funciona</a
+                >
+              </li>
+              <li><a href="#modulos" class="transition-colors hover:text-white">Módulos</a></li>
+              <li>
+                <a href="#comparativa" class="transition-colors hover:text-white">Comparativa</a>
+              </li>
+              <li>
+                <a href="#faqs" class="transition-colors hover:text-white">Preguntas frecuentes</a>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Columna 3: Legal & Soporte -->
+          <div class="space-y-2">
+            <span class="mb-3 block text-xs font-bold tracking-wider text-slate-200 uppercase"
+              >Legal y Contacto</span
+            >
+            <ul class="space-y-2 text-xs">
+              <li>
+                <a
+                  href="https://wa.me/521"
+                  class="flex items-center gap-1.5 transition-colors hover:text-white"
+                  ><i data-lucide="message-circle" class="text-whatsapp h-3.5 w-3.5"></i> Contacto
+                  por WhatsApp</a
+                >
+              </li>
+              <li>
+                <a href="#" class="transition-colors hover:text-white">Términos de servicio</a>
+              </li>
+              <li>
+                <a href="#" class="transition-colors hover:text-white">Aviso de privacidad</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Copyright -->
+        <div
+          class="flex flex-col items-center justify-between gap-4 pt-8 text-xs text-slate-500 sm:flex-row"
+        >
+          <p>© 2026 TripAgent Technologies S.A.P.I. de C.V. Todos los derechos reservados.</p>
+          <p>Potenciando el transporte turístico terrestre en México</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Inicialización de iconos Lucide -->
+    <script>
+      lucide.createIcons();
+    </script>
+  </body>
+</html>
