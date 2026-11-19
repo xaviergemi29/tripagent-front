@@ -36,7 +36,7 @@ export function RegistrationFooter({
   const hasDeposit = Boolean(depositAmount && depositAmount > 0);
 
   return (
-    <div className="- fixed inset-x-0 bottom-0 border-t border-slate-200/80 bg-white/95 px-4 pt-3 pb-2 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur-md sm:px-6">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 px-4 pt-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur-md sm:px-6">
       <div className="mx-auto flex max-w-md items-center justify-between gap-3">
         {/* Importes: el anticipo destaca; total y viajeros como contexto. */}
         <div className="flex min-w-0 flex-col">

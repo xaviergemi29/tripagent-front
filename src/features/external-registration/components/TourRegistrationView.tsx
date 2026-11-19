@@ -214,9 +214,9 @@ export function TourRegistrationView({
   }));
 
   return (
-    // pb-40: espacio para la barra fija de "Completar Registro" (RegistrationFooter).
+    // pb-28: espacio para la barra fija de "Completar Registro" (RegistrationFooter).
     <PublicBookingLayout
-      className="pb-32"
+      className="pb-28"
       headerProps={{
         agencyName,
         agencyLogoPath,
