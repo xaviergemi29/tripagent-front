@@ -50,8 +50,27 @@ const setViewport = (isDesktop: boolean) => {
   })) as unknown as typeof window.matchMedia;
 };
 
+/** Respuestas por URL: la campana también consulta la agencia y la suscripción. */
+let subscriptionReadOnly = false;
+const routeGet = (notifications: () => unknown) => {
+  get.mockImplementation((url: string) => {
+    if (url === "/notifications") return notifications();
+    if (url === "/agencies/subscription")
+      return Promise.resolve({ isReadOnly: subscriptionReadOnly, status: "active" });
+    if (url === "/agencies")
+      return Promise.resolve({
+        bankName: "BBVA",
+        bankAccountHolder: "Viajes SA",
+        clabeNumber: "012180001234567897",
+      });
+    return Promise.reject({ status: 404, message: "no" });
+  });
+};
+
+const notificationCalls = () => get.mock.calls.filter(([url]) => url === "/notifications").length;
+
 const renderCenter = (data: NotificationsOutput) => {
-  get.mockResolvedValue(data);
+  routeGet(() => Promise.resolve(data));
   patch.mockResolvedValue({});
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -66,6 +85,7 @@ const renderCenter = (data: NotificationsOutput) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  subscriptionReadOnly = false;
   setViewport(true);
 });
 afterEach(() => vi.restoreAllMocks());
@@ -213,18 +233,20 @@ describe("actualización de la campana", () => {
     try {
       renderCenter({ items: [notification()], unreadCount: 1 });
       await screen.findByText("1");
-      expect(get).toHaveBeenCalledTimes(1);
+      expect(notificationCalls()).toBe(1);
 
       vi.setSystemTime(Date.now() + 60_000);
-      get.mockResolvedValue({
-        items: [notification(), notification({ id: "n2" })],
-        unreadCount: 2,
-      });
+      routeGet(() =>
+        Promise.resolve({
+          items: [notification(), notification({ id: "n2" })],
+          unreadCount: 2,
+        }),
+      );
       focusManager.setFocused(false);
       focusManager.setFocused(true);
 
       expect(await screen.findByText("2")).toBeInTheDocument();
-      expect(get).toHaveBeenCalledTimes(2);
+      expect(notificationCalls()).toBe(2);
     } finally {
       focusManager.setFocused(undefined);
       vi.useRealTimers();
@@ -241,14 +263,14 @@ describe("actualización de la campana", () => {
       const user = userEvent.setup();
       renderCenter({ items: [notification()], unreadCount: 1 });
       const bell = await screen.findByRole("button", { name: /1 sin leer/ });
-      expect(get).toHaveBeenCalledTimes(1);
+      expect(notificationCalls()).toBe(1);
 
       let resolveFetch: (value: NotificationsOutput) => void = () => {};
-      get.mockImplementation(() => new Promise<NotificationsOutput>((r) => (resolveFetch = r)));
+      routeGet(() => new Promise<NotificationsOutput>((r) => (resolveFetch = r)));
       await user.click(bell);
 
       expect(await screen.findByRole("status")).toHaveTextContent("Cargando notificaciones");
-      expect(get).toHaveBeenCalledTimes(2);
+      expect(notificationCalls()).toBe(2);
       // El contador de la campana no desaparece durante el refetch.
       expect(
         screen.getAllByRole("button", { name: /1 sin leer/, hidden: true }).length,
@@ -265,9 +287,93 @@ describe("actualización de la campana", () => {
     const user = userEvent.setup();
     renderCenter({ items: [notification()], unreadCount: 1 });
     const bell = await screen.findByRole("button", { name: /1 sin leer/ });
-    get.mockRejectedValue({ status: 500, message: "Error interno del servidor" });
+    routeGet(() => Promise.reject({ status: 500, message: "Error interno del servidor" }));
     await user.click(bell);
     expect(await screen.findByText("Mariana Ruiz")).toBeInTheDocument();
     expect(screen.queryByText(/No pudimos cargar/)).not.toBeInTheDocument();
+  });
+});
+
+describe("Enviar acceso por WhatsApp desde la campana", () => {
+  const booking = (overrides: Partial<NonNullable<NotificationOutput["booking"]>> = {}) => ({
+    status: "AWAITING_REGISTRATION" as const,
+    whatsappPhone: "+522281234567",
+    magicToken: "tok123",
+    pendingDeposit: 1500,
+    currency: "MXN" as const,
+    ...overrides,
+  });
+  const openBell = async (items: NotificationOutput[], isDesktop = true) => {
+    setViewport(isDesktop);
+    const user = userEvent.setup();
+    renderCenter({ items, unreadCount: items.filter((i) => !i.isRead).length });
+    await user.click(await screen.findByRole("button", { name: /sin leer|no tienes avisos/ }));
+    await screen.findByText("Mariana Ruiz");
+    return user;
+  };
+  const link = () => screen.queryByRole("link", { name: "Enviar acceso por WhatsApp" });
+
+  it.each([
+    ["escritorio", true],
+    ["celular", false],
+  ])("muestra el enlace wa.me con Magic Link, anticipo y CLABE (%s)", async (_n, isDesktop) => {
+    await openBell([notification({ booking: booking() })], isDesktop);
+    const a = await screen.findByRole("link", { name: "Enviar acceso por WhatsApp" });
+    expect(a).toHaveAttribute("target", "_blank");
+    expect(a).toHaveAttribute("rel", "noopener noreferrer");
+    const href = a.getAttribute("href")!;
+    expect(href.startsWith("https://wa.me/522281234567?text=")).toBe(true);
+    const text = decodeURIComponent(href.split("text=")[1]!);
+    expect(text).toContain(`${window.location.origin}/register?token=tok123`);
+    expect(text).toContain("$1,500.00 MXN");
+    expect(text).toContain("Mariana Ruiz");
+    expect(text).toContain("Zacatlán de las manzanas");
+    await waitFor(() => expect(link()?.getAttribute("href")).toContain("CLABE"));
+  });
+
+  it("PENDING usa el mensaje de recordatorio de pago", async () => {
+    await openBell([notification({ booking: booking({ status: "PENDING" }) })]);
+    const a = await screen.findByRole("link", { name: "Enviar acceso por WhatsApp" });
+    expect(decodeURIComponent(a.getAttribute("href")!)).toContain("completar tu registro");
+  });
+
+  it("el clic marca leída, no navega ni dispara onSelect", async () => {
+    const user = await openBell([notification({ booking: booking() })]);
+    const a = await screen.findByRole("link", { name: "Enviar acceso por WhatsApp" });
+    a.addEventListener("click", (e) => e.preventDefault());
+    await user.click(a);
+    expect(patch).toHaveBeenCalledWith("/notifications/33333333-3333-4333-8333-333333333333/read");
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("si ya estaba leída no hace PATCH", async () => {
+    const user = await openBell([notification({ isRead: true, booking: booking() })]);
+    const a = await screen.findByRole("link", { name: "Enviar acceso por WhatsApp" });
+    a.addEventListener("click", (e) => e.preventDefault());
+    await user.click(a);
+    expect(patch).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["BOOKING_COMPLETED", { type: "BOOKING_COMPLETED" as const, booking: booking() }],
+    ["booking null", { booking: null }],
+    ["back-end viejo sin booking", {}],
+    ["CONFIRMED", { booking: booking({ status: "CONFIRMED" }) }],
+    ["CANCELLED", { booking: booking({ status: "CANCELLED" }) }],
+    ["sin magicToken", { booking: booking({ magicToken: null }) }],
+    ["sin WhatsApp válido", { booking: booking({ whatsappPhone: null }) }],
+  ])("sin botón: %s (y el ítem sigue navegando)", async (_n, overrides) => {
+    const user = await openBell([notification(overrides)]);
+    expect(link()).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Mariana Ruiz/ }));
+    expect(push).toHaveBeenCalled();
+  });
+
+  it("sin botón en Modo Solo Lectura", async () => {
+    subscriptionReadOnly = true;
+    await openBell([notification({ booking: booking() })]);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(link()).not.toBeInTheDocument();
   });
 });

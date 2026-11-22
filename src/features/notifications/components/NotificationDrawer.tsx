@@ -17,6 +17,8 @@ interface NotificationDrawerProps {
   isLoading: boolean;
   isError: boolean;
   onSelect: (notification: NotificationOutput) => void;
+  getWhatsAppUrl?: (notification: NotificationOutput) => string | null;
+  onWhatsAppOpen?: (notification: NotificationOutput) => void;
   onMarkAllRead: () => void;
   isMarkingAll: boolean;
 }
@@ -33,6 +35,8 @@ export function NotificationDrawer({
   isLoading,
   isError,
   onSelect,
+  getWhatsAppUrl,
+  onWhatsAppOpen,
   onMarkAllRead,
   isMarkingAll,
 }: NotificationDrawerProps) {
@@ -80,6 +84,8 @@ export function NotificationDrawer({
             <NotificationList
               items={filteredItems}
               onSelect={onSelect}
+              getWhatsAppUrl={getWhatsAppUrl}
+              onWhatsAppOpen={onWhatsAppOpen}
               isLoading={isLoading}
               isError={isError}
             />

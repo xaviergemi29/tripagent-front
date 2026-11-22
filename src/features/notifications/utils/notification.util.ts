@@ -1,3 +1,9 @@
+import { BOOKING_STATUS, NOTIFICATION_TYPE } from "@/shared/constants/domain.constants";
+import {
+  buildBookingWhatsAppUrl,
+  type BookingWhatsAppBankDetails,
+} from "@/shared/utils/booking-whatsapp.util";
+import { buildMagicLinkUrl } from "@/shared/utils/share-links.util";
 import type { NotificationFilter, NotificationOutput } from "../schemas/notification.schema";
 
 /** Iniciales del viajero para el avatar: "Mariana Ruiz" → "MR"; "Ana" → "AN". */
@@ -20,3 +26,34 @@ export const filterNotifications = (
 /** Deep-link del Centro de Control al grupo de la notificación. */
 export const buildNotificationHref = (notification: NotificationOutput): string =>
   `/tours/${notification.tourId}?bookingId=${notification.bookingId}`;
+
+/**
+ * @description Enlace `wa.me` para despachar el acceso y el cobro desde la campana. Solo para
+ * pre-reservas cuya reserva sigue sin confirmar (`AWAITING_REGISTRATION` o `PENDING`, mismo criterio
+ * que `canSendBookingWhatsApp` del Centro de Control) con Magic Link. Reutiliza el mensaje del
+ * Sprint A; el anticipo es el `pendingDeposit` que ya calcula la API.
+ * @returns La URL, o `null` si no aplica o el WhatsApp no es válido.
+ */
+export function buildNotificationWhatsAppUrl(
+  notification: NotificationOutput,
+  bankDetails?: BookingWhatsAppBankDetails,
+): string | null {
+  const { booking } = notification;
+  if (notification.type !== NOTIFICATION_TYPE.PRE_BOOKING || !booking?.magicToken) return null;
+  if (
+    booking.status !== BOOKING_STATUS.AWAITING_REGISTRATION &&
+    booking.status !== BOOKING_STATUS.PENDING
+  ) {
+    return null;
+  }
+  return buildBookingWhatsAppUrl({
+    phone: booking.whatsappPhone,
+    travelerName: notification.travelerName,
+    tourName: notification.tourTitle,
+    magicLinkUrl: buildMagicLinkUrl(booking.magicToken),
+    requiredDeposit: booking.pendingDeposit,
+    currency: booking.currency,
+    bankDetails,
+    isRegistered: booking.status === BOOKING_STATUS.PENDING,
+  });
+}

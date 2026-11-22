@@ -8,10 +8,19 @@ interface NotificationListProps {
   onSelect: (notification: NotificationOutput) => void;
   isLoading?: boolean;
   isError?: boolean;
+  getWhatsAppUrl?: (notification: NotificationOutput) => string | null;
+  onWhatsAppOpen?: (notification: NotificationOutput) => void;
 }
 
 /** Lista de tarjetas con su estado vacío (compartida por el popover y el drawer). */
-export function NotificationList({ items, onSelect, isLoading, isError }: NotificationListProps) {
+export function NotificationList({
+  items,
+  onSelect,
+  isLoading,
+  isError,
+  getWhatsAppUrl,
+  onWhatsAppOpen,
+}: NotificationListProps) {
   if (isLoading) {
     return <NotificationListSkeleton />;
   }
@@ -36,7 +45,13 @@ export function NotificationList({ items, onSelect, isLoading, isError }: Notifi
   return (
     <>
       {items.map((notification) => (
-        <NotificationItem key={notification.id} notification={notification} onSelect={onSelect} />
+        <NotificationItem
+          key={notification.id}
+          notification={notification}
+          onSelect={onSelect}
+          whatsappUrl={getWhatsAppUrl?.(notification)}
+          onWhatsAppOpen={onWhatsAppOpen}
+        />
       ))}
     </>
   );

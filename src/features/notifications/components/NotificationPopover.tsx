@@ -14,6 +14,8 @@ interface NotificationPopoverProps {
   isLoading: boolean;
   isError: boolean;
   onSelect: (notification: NotificationOutput) => void;
+  getWhatsAppUrl?: (notification: NotificationOutput) => string | null;
+  onWhatsAppOpen?: (notification: NotificationOutput) => void;
   onMarkAllRead: () => void;
   isMarkingAll: boolean;
 }
@@ -28,6 +30,8 @@ export function NotificationPopover({
   isLoading,
   isError,
   onSelect,
+  getWhatsAppUrl,
+  onWhatsAppOpen,
   onMarkAllRead,
   isMarkingAll,
 }: NotificationPopoverProps) {
@@ -63,6 +67,8 @@ export function NotificationPopover({
           <NotificationList
             items={filteredItems}
             onSelect={onSelect}
+            getWhatsAppUrl={getWhatsAppUrl}
+            onWhatsAppOpen={onWhatsAppOpen}
             isLoading={isLoading}
             isError={isError}
           />

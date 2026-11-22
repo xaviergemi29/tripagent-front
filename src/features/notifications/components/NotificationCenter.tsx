@@ -10,7 +10,9 @@ import {
 } from "../hooks/useNotifications";
 import { useIsDesktop } from "../hooks/useIsDesktop";
 import type { NotificationOutput } from "../schemas/notification.schema";
-import { buildNotificationHref } from "../utils/notification.util";
+import { useAgency } from "@/features/settings/hooks/useAgency";
+import { useSubscriptionAccess } from "@/features/settings/hooks/useSubscriptionAccess";
+import { buildNotificationHref, buildNotificationWhatsAppUrl } from "../utils/notification.util";
 import { NotificationBell } from "./NotificationBell";
 import { NotificationDrawer } from "./NotificationDrawer";
 import { NotificationPopover } from "./NotificationPopover";
@@ -30,6 +32,17 @@ export function NotificationCenter() {
   const { mutate: markAsRead } = useMarkNotificationRead();
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useMarkAllNotificationsRead();
 
+  const { canWrite } = useSubscriptionAccess();
+  // La consulta de la agencia ya está en caché por el panel; sin ella el mensaje sale sin bloque bancario.
+  const { data: agency } = useAgency();
+  const bankDetails = agency
+    ? {
+        bankName: agency.bankName,
+        bankAccountHolder: agency.bankAccountHolder,
+        clabeNumber: agency.clabeNumber,
+      }
+    : undefined;
+
   const items = data?.items ?? [];
   const unreadCount = data?.unreadCount ?? 0;
 
@@ -47,12 +60,24 @@ export function NotificationCenter() {
     router.push(buildNotificationHref(notification));
   };
 
+  // Sin escritura (Modo Solo Lectura, regla 20) no se ofrece el despacho del acceso.
+  const getWhatsAppUrl = (notification: NotificationOutput): string | null =>
+    canWrite ? buildNotificationWhatsAppUrl(notification, bankDetails) : null;
+
+  // El panel se deja abierto: el enlace se abre en otra pestaña y desmontar el <a> durante el
+  // clic puede cancelar la navegación; además permite despachar varios avisos seguidos.
+  const handleWhatsAppOpen = (notification: NotificationOutput): void => {
+    if (!notification.isRead) markAsRead(notification.id);
+  };
+
   const panelProps = {
     items,
     unreadCount,
     isLoading: isLoading || isRefreshingOnOpen,
     isError: isError && !data,
     onSelect: handleSelect,
+    getWhatsAppUrl,
+    onWhatsAppOpen: handleWhatsAppOpen,
     onMarkAllRead: () => markAllAsRead(),
     isMarkingAll,
   };
