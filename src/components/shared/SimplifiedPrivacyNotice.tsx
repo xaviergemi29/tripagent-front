@@ -16,6 +16,12 @@ interface SimplifiedPrivacyNoticeProps {
   rightsContact: string;
   /** Aviso de privacidad integral. */
   fullNoticeHref: string;
+  /**
+   * `plain` (por defecto): bloque discreto. `card`: tarjeta de confianza con escudo índigo y el
+   * aviso integral en otra pestaña (modal de pre-reserva: no pierde lo capturado). El texto legal
+   * es el mismo en ambas.
+   */
+  variant?: "plain" | "card";
   className?: string;
 }
 
@@ -33,22 +39,32 @@ export function SimplifiedPrivacyNotice({
   viaTripAgent = false,
   rightsContact,
   fullNoticeHref,
+  variant = "plain",
   className,
 }: SimplifiedPrivacyNoticeProps) {
-  const isExternal = /^https?:\/\//.test(fullNoticeHref);
+  const isCard = variant === "card";
+  const opensNewTab = isCard || /^https?:\/\//.test(fullNoticeHref);
   const address = responsibleAddress?.trim();
 
   return (
     <aside
       aria-label="Aviso de privacidad simplificado"
       className={cn(
-        "flex items-start gap-2.5 rounded-xl border border-slate-200/80 bg-white/70 p-3 text-[11px] leading-relaxed text-slate-500",
+        "flex items-start text-[11px] leading-relaxed",
+        isCard
+          ? "mt-4 gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/90 p-3.5 text-slate-600"
+          : "gap-2.5 rounded-xl border border-slate-200/80 bg-white/70 p-3 text-slate-500",
         className,
       )}
     >
-      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+      <ShieldCheck
+        className={cn("mt-0.5 h-4 w-4 shrink-0", isCard ? "text-indigo-600" : "text-slate-400")}
+        aria-hidden="true"
+      />
       <p>
-        <span className="font-semibold text-slate-600">Aviso de privacidad simplificado. </span>
+        <span className={cn("font-semibold", isCard ? "mr-1 text-slate-800" : "text-slate-600")}>
+          Aviso de privacidad simplificado.{" "}
+        </span>
         {responsibleName}
         {address ? `, con domicilio en ${address},` : ""} es responsable de {dataCollected} y los
         usa únicamente para {purpose}
@@ -57,8 +73,11 @@ export function SimplifiedPrivacyNotice({
         cancelación u oposición, {rightsContact}. Consulta el{" "}
         <a
           href={fullNoticeHref}
-          {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-          className="font-semibold text-indigo-600 underline hover:text-indigo-700"
+          {...(opensNewTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+          className={cn(
+            "font-semibold text-indigo-600 underline hover:text-indigo-700",
+            isCard && "underline-offset-2",
+          )}
         >
           Aviso de Privacidad integral
         </a>

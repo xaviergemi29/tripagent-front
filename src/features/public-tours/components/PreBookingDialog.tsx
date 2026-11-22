@@ -3,7 +3,17 @@
 import { useState, type ReactNode } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, CalendarX2, CheckCircle2, Info, Loader2, Minus, Plus } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  CalendarX2,
+  CheckCircle2,
+  Info,
+  Loader2,
+  Lock,
+  Minus,
+  Plus,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -77,7 +87,7 @@ export function PreBookingDialog({
     trigger,
     control,
     reset,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<PreBookingFormInput>({
     resolver: zodResolver(createPreBookingFormSchema(seatsLeft)),
     mode: "onChange",
@@ -95,7 +105,7 @@ export function PreBookingDialog({
   const agencyWhatsAppUrl = (message: string) =>
     toPhoneDigits(agencyPhone) ? buildWhatsAppUrl(agencyPhone, { message }) : null;
 
-  const handleOpenChange = (nextOpen: boolean) => {
+  const handleOpenChange = (nextOpen: boolean): void => {
     if (!nextOpen) {
       // Al cerrar se limpia todo para que una nueva apertura empiece de cero.
       setOutcome(null);
@@ -106,7 +116,7 @@ export function PreBookingDialog({
     onOpenChange(nextOpen);
   };
 
-  const handleConflict = (apiError: ApiError) => {
+  const handleConflict = (apiError: ApiError): void => {
     if (apiError.status === 404 || apiError.code === CONFLICT_CODE.BOOKINGS_CLOSED) {
       setOutcome("CLOSED");
       return;
@@ -124,7 +134,7 @@ export function PreBookingDialog({
     }
   };
 
-  const onSubmit = (values: PreBookingFormInput) => {
+  const onSubmit = (values: PreBookingFormInput): void => {
     // La API recibe el número completo en E.164 con su país.
     const whatsapp = toE164(values.whatsapp, values.whatsappCountry) ?? values.whatsapp;
     mutate(
@@ -133,7 +143,7 @@ export function PreBookingDialog({
     );
   };
 
-  const changeSeats = (delta: number) => {
+  const changeSeats = (delta: number): void => {
     const next = Math.min(Math.max(1, (Number(numberPassengers) || 1) + delta), seatsLeft);
     setValue("numberPassengers", next, { shouldValidate: true });
   };
@@ -219,22 +229,32 @@ export function PreBookingDialog({
 
     return (
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <DialogHeader className="gap-1 border-b border-slate-100 px-6 pt-6 pb-4 text-left">
-          <DialogTitle className="text-xl font-black text-slate-900">Iniciar Reserva</DialogTitle>
-          <DialogDescription className="text-sm text-slate-500">
-            {tourTitle} · Te contactamos por WhatsApp para confirmar.
+        {/* pr-8: los nombres largos de tour hacen salto de línea sin chocar con la ✕ de cierre. */}
+        <DialogHeader className="gap-0 border-b border-slate-100 px-6 pt-6 pr-14 pb-4 text-left">
+          <DialogTitle className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
+            Iniciar Reserva
+          </DialogTitle>
+          <DialogDescription asChild>
+            <div>
+              <p className="mt-0.5 text-sm leading-snug font-semibold break-words text-indigo-600">
+                {tourTitle}
+              </p>
+              <p className="mt-0.5 text-xs font-normal text-slate-500">
+                Te contactamos por WhatsApp para confirmar.
+              </p>
+            </div>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 px-6 py-5">
           <div className="space-y-1.5">
-            <Label htmlFor="pre-booking-name" className="text-sm font-semibold text-slate-700">
+            <Label htmlFor="pre-booking-name" className="text-sm font-medium text-slate-700">
               Nombre completo
             </Label>
             <Input
               id="pre-booking-name"
               autoComplete="name"
-              placeholder="Ej. Mariana Ruiz"
+              placeholder="Tu nombre y apellido (ej. Mariana Ruiz)"
               disabled={isPending}
               aria-invalid={!!errors.fullName}
               className="h-12 rounded-xl text-base"
@@ -244,7 +264,7 @@ export function PreBookingDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="pre-booking-whatsapp" className="text-sm font-semibold text-slate-700">
+            <Label htmlFor="pre-booking-whatsapp" className="text-sm font-medium text-slate-700">
               WhatsApp
             </Label>
             <PhoneField
@@ -256,7 +276,8 @@ export function PreBookingDialog({
                 setValue("whatsappCountry", country, { shouldDirty: true });
                 void trigger("whatsapp");
               }}
-              placeholder="Tu número"
+              // Los "10 dígitos" solo aplican a México; con otro país, un texto neutro (regla 21).
+              placeholder={whatsappCountry === "MX" ? "10 dígitos (ej. 228 123 4567)" : "Tu número"}
               disabled={isPending}
               invalid={!!errors.whatsapp || isAlreadyBooked}
               inputClassName="h-12 rounded-xl text-base"
@@ -275,7 +296,7 @@ export function PreBookingDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="pre-booking-seats" className="text-sm font-semibold text-slate-700">
+            <Label htmlFor="pre-booking-seats" className="text-sm font-medium text-slate-700">
               Cantidad de lugares
             </Label>
             <div className="flex items-center gap-3">
@@ -330,10 +351,12 @@ export function PreBookingDialog({
             ) : errors.numberPassengers ? (
               <FieldError message={errors.numberPassengers.message} />
             ) : (
-              <p className="text-xs text-slate-500">
+              <p
+                className={`text-xs font-medium ${seatsLeft === 1 ? "text-amber-600" : "text-slate-500"}`}
+              >
                 {seatsLeft === 1
-                  ? "Queda 1 lugar disponible"
-                  : `Quedan ${seatsLeft} lugares disponibles`}
+                  ? "• Queda 1 lugar disponible"
+                  : `• Quedan ${seatsLeft} lugares disponibles`}
               </p>
             )}
           </div>
@@ -350,17 +373,20 @@ export function PreBookingDialog({
         </div>
 
         <div className="border-t border-slate-100 px-6 py-4">
+          {/* Deshabilitado hasta que nombre, WhatsApp y lugares sean válidos (mismo schema Zod). */}
           <Button
             type="submit"
-            disabled={isPending}
-            className="h-12 w-full rounded-2xl bg-indigo-700 text-base font-bold hover:bg-indigo-800"
+            disabled={isPending || !isValid}
+            className="h-auto w-full rounded-2xl bg-indigo-600 px-4 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-indigo-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" /> Enviando…
               </>
             ) : (
-              "Enviar solicitud"
+              <>
+                Enviar solicitud <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </>
             )}
           </Button>
           <SimplifiedPrivacyNotice
@@ -371,7 +397,12 @@ export function PreBookingDialog({
             viaTripAgent
             rightsContact="contacta a la agencia por WhatsApp"
             fullNoticeHref="/privacidad#viajeros"
+            variant="card"
           />
+          <p className="flex items-center justify-center gap-1.5 pt-3 pb-1 text-[11px] font-medium text-slate-400">
+            <Lock className="h-3 w-3" aria-hidden="true" />
+            Enlace seguro • Con tecnología TripAgent MX
+          </p>
         </div>
       </form>
     );

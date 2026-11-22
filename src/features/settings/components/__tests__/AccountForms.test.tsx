@@ -89,6 +89,39 @@ describe("Login", () => {
 });
 
 describe("Pre-reserva del folleto", () => {
+  it("cabecera: el nombre largo del tour va en su propia línea, con la indicación de WhatsApp", () => {
+    render(
+      <PreBookingDialog
+        tourId="t1"
+        tourTitle="Zacatlán de las manzanas con cascadas"
+        availableSeats={1}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Iniciar Reserva" })).toBeInTheDocument();
+    expect(screen.getByText("Zacatlán de las manzanas con cascadas").tagName).toBe("P");
+    expect(screen.getByText("Te contactamos por WhatsApp para confirmar.")).toBeInTheDocument();
+    // Último lugar: aviso en ámbar.
+    expect(screen.getByText("• Queda 1 lugar disponible").className).toMatch(/text-amber-600/);
+    expect(screen.getByText(/Enlace seguro • Con tecnología TripAgent MX/)).toBeInTheDocument();
+  });
+
+  it("con otro país, el WhatsApp no promete '10 dígitos'", () => {
+    render(
+      <PreBookingDialog
+        tourId="t1"
+        tourTitle="Huasteca"
+        availableSeats={10}
+        open
+        onOpenChange={vi.fn()}
+        defaultPhoneCountry="US"
+      />,
+    );
+    expect(screen.getByPlaceholderText("Tu número")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/10 dígitos/)).not.toBeInTheDocument();
+  });
+
   it("muestra el aviso de privacidad simplificado con la agencia y su domicilio", () => {
     render(
       <PreBookingDialog
@@ -106,6 +139,12 @@ describe("Pre-reserva del folleto", () => {
       /Viajes Xalapa, con domicilio en Av\. Xalapa 100, Xalapa, Ver\., es responsable de tu nombre y tu WhatsApp/,
     );
     expect(notice.textContent).toMatch(/TripAgent MX/);
+    // Tarjeta de confianza; el aviso integral abre en otra pestaña para no perder lo capturado.
+    expect(notice.className).toMatch(/rounded-2xl/);
+    expect(screen.getByRole("link", { name: "Aviso de Privacidad integral" })).toHaveAttribute(
+      "target",
+      "_blank",
+    );
   });
 
   it("arranca con el país del teléfono de la agencia", () => {
@@ -135,13 +174,19 @@ describe("Pre-reserva del folleto", () => {
         onOpenChange={vi.fn()}
       />,
     );
-    await user.click(screen.getByRole("button", { name: /Enviar solicitud/ }));
-    expect(document.querySelectorAll("[aria-invalid='true']").length).toBe(2);
-    expect(preBook).not.toHaveBeenCalled();
+    // El botón queda deshabilitado mientras falten el nombre o un WhatsApp válido (2026-11-22).
+    const submit = screen.getByRole("button", { name: /Enviar solicitud/ });
+    expect(submit).toBeDisabled();
 
-    await user.type(screen.getByPlaceholderText("Ej. Mariana Ruiz"), "Mariana Ruiz");
-    await user.type(screen.getByPlaceholderText("Tu número"), "2281234567");
-    await user.click(screen.getByRole("button", { name: /Enviar solicitud/ }));
+    const name = screen.getByPlaceholderText("Tu nombre y apellido (ej. Mariana Ruiz)");
+    await user.type(name, "Mariana Ruiz");
+    const phone = screen.getByPlaceholderText("10 dígitos (ej. 228 123 4567)");
+    await user.type(phone, "228123");
+    expect(submit).toBeDisabled(); // número incompleto
+    await user.type(phone, "4567");
+    expect(submit).toBeEnabled();
+    expect(preBook).not.toHaveBeenCalled();
+    await user.click(submit);
     // El WhatsApp viaja completo (E.164) con su país; sin otro dato, el país inicial es México.
     expect(preBook.mock.calls[0]![0]).toEqual({
       fullName: "Mariana Ruiz",
