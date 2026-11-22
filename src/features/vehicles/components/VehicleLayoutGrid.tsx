@@ -12,8 +12,11 @@ interface VehicleLayoutGridProps {
   layoutMap: LayoutMap;
   /** Cómo se dibuja cada asiento (pasajero o staff). Debe ocupar toda la celda (h-full w-full). */
   renderSeat: (seat: LayoutSeat) => ReactNode;
-  /** "md": croquis interactivo; "sm": vista previa compacta (selector de vehículo). */
-  size?: "sm" | "md";
+  /**
+   * "md": croquis interactivo; "sm": vista previa compacta (selector de vehículo); "print":
+   * celdas en centímetros para la hoja carta de la lista de abordaje (50 plazas en una página).
+   */
+  size?: "sm" | "md" | "print";
   className?: string;
 }
 
@@ -75,9 +78,10 @@ export function VehicleLayoutGrid({
       <div
         className={cn(
           "grid",
-          isSmall
-            ? "gap-1 [--aisle:0.5rem] [--seat:1.75rem]"
-            : "gap-1.5 [--aisle:0.75rem] [--seat:2.75rem] sm:gap-2 sm:[--aisle:1.25rem] sm:[--seat:3.25rem] lg:[--seat:3.5rem]",
+          size === "print" && "gap-1 [--aisle:0.5cm] [--seat:1.4cm]",
+          size === "sm" && "gap-1 [--aisle:0.5rem] [--seat:1.75rem]",
+          size === "md" &&
+            "gap-1.5 [--aisle:0.75rem] [--seat:2.75rem] sm:gap-2 sm:[--aisle:1.25rem] sm:[--seat:3.25rem] lg:[--seat:3.5rem]",
         )}
         style={gridStyle}
       >

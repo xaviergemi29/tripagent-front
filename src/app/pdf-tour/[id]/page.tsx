@@ -1,6 +1,11 @@
 "use client";
 
 import { useTourManifest } from "@/features/tour-dashboard/hooks/useTourManifest";
+import { useTourDashboardByTourId } from "@/features/tour-dashboard/hooks/useTourDashboard";
+import { useTourSeats } from "@/features/tour-dashboard/hooks/useTourSeats";
+import { ManifestSeatMap } from "@/features/tour-dashboard/components/manifest/ManifestSeatMap";
+import { ManifestSeatTable } from "@/features/tour-dashboard/components/manifest/ManifestSeatTable";
+import { buildBoardingSheet } from "@/features/tour-dashboard/utils/boarding-sheet.util";
 import { formatLocalDate, formatPickupTime } from "@/shared/utils/tour-date.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
@@ -15,27 +20,46 @@ interface PageProps {
 
 export default function ManifestPrintView({ params }: PageProps) {
   const { id } = use(params);
-  const { data: manifest, isLoading, isError, refetch, isFetching } = useTourManifest(id);
+  const manifestQuery = useTourManifest(id);
+  const dashboardQuery = useTourDashboardByTourId(id);
+  const vehicle = dashboardQuery.data?.vehicle ?? null;
+  // El croquis necesita los asientos asignados y bloqueados; sin vehículo no se piden.
+  const seatsQuery = useTourSeats(id, { enabled: Boolean(vehicle) });
+
+  const manifest = manifestQuery.data;
+  const seats = seatsQuery.data;
+  const queries = [manifestQuery, dashboardQuery, ...(vehicle ? [seatsQuery] : [])];
+  const isLoading = queries.some((query) => query.isLoading);
+  const isError = queries.some((query) => query.isError && !query.data);
+  const isReady = Boolean(manifest && dashboardQuery.data && (!vehicle || seats));
 
   useEffect(() => {
-    if (!isLoading && manifest) {
+    if (isReady) {
       const timer = setTimeout(() => window.print(), 500);
       return () => clearTimeout(timer);
     }
-  }, [isLoading, manifest]);
+  }, [isReady]);
 
   if (isLoading) return <div className="p-8 font-sans text-slate-500">Generando manifiesto...</div>;
-  if (isError || !manifest)
+  if (isError || !manifest || !isReady)
     return (
       <div className="mx-auto max-w-2xl p-4 font-sans sm:p-8">
         <QueryErrorState
           resourceArticle="el"
           resourceName="manifiesto"
-          onRetry={() => void refetch()}
-          isRetrying={isFetching}
+          onRetry={() => {
+            for (const query of queries) if (query.isError) void query.refetch();
+          }}
+          isRetrying={queries.some((query) => query.isFetching)}
         />
       </div>
     );
+
+  const sheet = buildBoardingSheet({
+    manifest,
+    layoutMap: vehicle?.layoutMap ?? null,
+    seats: seats ?? [],
+  });
 
   const formattedDate = formatLocalDate(manifest.departureDateTime);
 
@@ -48,7 +72,7 @@ export default function ManifestPrintView({ params }: PageProps) {
           @page { margin: 0.5cm; }
           body { -webkit-print-color-adjust: exact; }
           .no-print { display: none; }
-          .page-break { page-break-before: always; }
+          .sheet-break { break-after: page; page-break-after: always; }
         }
       `,
         }}
@@ -60,6 +84,21 @@ export default function ManifestPrintView({ params }: PageProps) {
           Fecha de Salida: <span className="capitalize">{formattedDate}</span>
         </p>
       </div>
+
+      {vehicle ? (
+        <div className="sheet-break">
+          <ManifestSeatMap layoutMap={vehicle.layoutMap} sheet={sheet} />
+        </div>
+      ) : (
+        <p
+          role="note"
+          className="mb-6 rounded border border-amber-400 bg-amber-50 p-3 text-sm font-medium text-amber-900"
+        >
+          Este tour no tiene vehículo asignado: no hay croquis ni lista por asiento.
+        </p>
+      )}
+
+      {vehicle && <ManifestSeatTable sheet={sheet} />}
 
       {/* Clave con el índice: el schema da "sin-id" a un punto sin id y dos así se repetirían. */}
       {manifest.boardingPoints.map((point, index) => (

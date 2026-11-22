@@ -46,6 +46,10 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock("@/features/tours/hooks/useTours", () => ({ useTourById: () => query }));
+vi.mock("@/features/tour-dashboard/hooks/useTourDashboard", () => ({
+  useTourDashboardByTourId: () => query,
+}));
+vi.mock("@/features/tour-dashboard/hooks/useTourSeats", () => ({ useTourSeats: () => query }));
 vi.mock("@/features/tour-dashboard/hooks/useTourManifest", () => ({
   useTourManifest: () => query,
 }));
