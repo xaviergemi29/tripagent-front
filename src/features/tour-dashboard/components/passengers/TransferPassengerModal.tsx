@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { toast } from "sonner";
 import { copyToClipboard } from "@/shared/utils/clipboard";
@@ -52,7 +51,7 @@ export function TransferPassengerModal({
   currentWhatsapp,
 }: TransferPassengerModalProps) {
   const isTitular = role === PASSENGER_ROLE.TITULAR;
-  const [isMedicalOpen, setIsMedicalOpen] = useState(false);
+  const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
   const [newMagicLink, setNewMagicLink] = useState<{ url: string; whatsapp: string } | null>(null);
   const { mutate, isPending } = useTransferPassenger();
   // País inicial: el del WhatsApp actual del lugar (México si no tiene).
@@ -76,7 +75,6 @@ export function TransferPassengerModal({
       whatsappCountry: defaultCountry,
       email: "",
       inheritTitularBoardingPoint: !isTitular,
-      medicalNotes: "",
       emergencyContactName: "",
       emergencyContactPhone: "",
       emergencyContactCountry: defaultCountry,
@@ -113,7 +111,6 @@ export function TransferPassengerModal({
           email: values.isMinor ? undefined : EMPTY_TO_UNDEFINED(values.email),
           isMinor: values.isMinor,
           inheritTitularBoardingPoint: !isTitular && values.inheritTitularBoardingPoint,
-          medicalNotes: EMPTY_TO_UNDEFINED(values.medicalNotes),
           emergencyContactName: EMPTY_TO_UNDEFINED(values.emergencyContactName),
           emergencyContactPhone: emergencyPhone,
           emergencyContactCountry: emergencyPhone ? values.emergencyContactCountry : undefined,
@@ -328,24 +325,21 @@ export function TransferPassengerModal({
                 />
               )}
 
-              {/* Acordeón opcional: datos médicos y de emergencia */}
+              {/* Acordeón opcional: contacto de emergencia (sin notas médicas desde el 2026-11-22) */}
               <div className="rounded-xl border border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setIsMedicalOpen((prev) => !prev)}
-                  aria-expanded={isMedicalOpen}
+                  onClick={() => setIsEmergencyOpen((prev) => !prev)}
+                  aria-expanded={isEmergencyOpen}
                   className="flex w-full items-center justify-between px-3.5 py-3 text-sm font-semibold text-slate-700"
                 >
-                  Datos médicos y de emergencia (opcional)
+                  Contacto de emergencia (opcional)
                   <ChevronDown
-                    className={`h-4 w-4 text-slate-400 transition-transform ${isMedicalOpen ? "rotate-180" : ""}`}
+                    className={`h-4 w-4 text-slate-400 transition-transform ${isEmergencyOpen ? "rotate-180" : ""}`}
                   />
                 </button>
-                {isMedicalOpen && (
+                {isEmergencyOpen && (
                   <div className="space-y-3 border-t border-slate-100 p-3.5">
-                    <p className="text-[11px] text-slate-500">
-                      Las notas médicas de {currentName} no se transfieren.
-                    </p>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5">
                         <Label
@@ -379,15 +373,6 @@ export function TransferPassengerModal({
                         />
                         {fieldError(errors.emergencyContactPhone?.message)}
                       </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="transfer-medicalnotes"
-                        className="text-xs font-semibold text-slate-700"
-                      >
-                        Notas médicas
-                      </Label>
-                      <Textarea id="transfer-medicalnotes" rows={2} {...register("medicalNotes")} />
                     </div>
                   </div>
                 )}

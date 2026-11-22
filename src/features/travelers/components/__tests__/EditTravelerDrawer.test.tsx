@@ -18,7 +18,6 @@ const traveler = {
   email: "ana@correo.mx",
   emergencyContactName: "Luis Torres",
   emergencyContactPhone: "2281112222",
-  medicalNotes: "Asma",
   birthDate: "1990-05-29",
 } as never;
 
@@ -33,16 +32,14 @@ describe("EditTravelerDrawer", () => {
     const name = await screen.findByDisplayValue("Ana Torres");
     await user.clear(name);
     await user.type(name, "Ana María Torres");
-    const notes = screen.getByPlaceholderText(/penicilina/);
-    await user.clear(notes);
-    await user.type(notes, "Ninguna");
+    // Sin campo de notas médicas (LFPDPPP, 2026-11-22).
+    expect(screen.queryByPlaceholderText(/penicilina/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Guardar Cambios/ }));
 
     expect(update).toHaveBeenCalledWith({
       travelerId: "v1",
       travelerData: expect.objectContaining({
         fullName: "Ana María Torres",
-        medicalNotes: "Ninguna",
         // El número guardado en 10 dígitos se envía en E.164 y confirma su país.
         whatsappPhone: "+522281234567",
         whatsappCountry: "MX",

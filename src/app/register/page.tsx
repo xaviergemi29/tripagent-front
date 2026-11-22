@@ -111,6 +111,7 @@ export default async function RegistroPage({ searchParams }: PageProps) {
       token={token}
       agencyLogoPath={agencyBrand?.logoPath ?? null}
       agencyPhone={agencyBrand?.phone ?? null}
+      agencyAddress={agencyBrand?.address ?? null}
     />
   );
 }

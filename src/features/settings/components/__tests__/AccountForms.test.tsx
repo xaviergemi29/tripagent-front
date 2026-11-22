@@ -89,6 +89,25 @@ describe("Login", () => {
 });
 
 describe("Pre-reserva del folleto", () => {
+  it("muestra el aviso de privacidad simplificado con la agencia y su domicilio", () => {
+    render(
+      <PreBookingDialog
+        tourId="t1"
+        tourTitle="Huasteca"
+        availableSeats={10}
+        agencyName="Viajes Xalapa"
+        agencyAddress="Av. Xalapa 100, Xalapa, Ver."
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
+    const notice = screen.getByRole("complementary", { name: "Aviso de privacidad simplificado" });
+    expect(notice.textContent).toMatch(
+      /Viajes Xalapa, con domicilio en Av\. Xalapa 100, Xalapa, Ver\., es responsable de tu nombre y tu WhatsApp/,
+    );
+    expect(notice.textContent).toMatch(/TripAgent MX/);
+  });
+
   it("arranca con el país del teléfono de la agencia", () => {
     render(
       <PreBookingDialog

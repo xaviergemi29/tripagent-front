@@ -1,18 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Trash2,
-  Phone,
-  Mail,
-  ShieldAlert,
-  Activity,
-  UserX,
-  Pencil,
-  Cake,
-  CheckCircle2,
-  AlertTriangle,
-} from "lucide-react";
+import { Trash2, Phone, Mail, ShieldAlert, Activity, UserX, Pencil, Cake } from "lucide-react";
 
 import {
   Table,
@@ -95,7 +84,6 @@ export function TravelersTable({
               <TableHead>Contacto</TableHead>
               <TableHead>Emergencia</TableHead>
               <TableHead>Historial</TableHead>
-              <TableHead className="w-[220px]">Notas Médicas</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -201,20 +189,6 @@ export function TravelersTable({
                     </div>
                   </TableCell>
 
-                  <TableCell>
-                    {traveler.medicalNotes?.trim() ? (
-                      <div className="inline-flex max-w-[180px] items-center gap-1.5 rounded-lg border border-rose-200/80 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800">
-                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
-                        <span className="truncate">{traveler.medicalNotes}</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                        <span>Sin observaciones</span>
-                      </div>
-                    )}
-                  </TableCell>
-
                   <TableCell className="text-right">
                     <TooltipProvider delayDuration={150}>
                       <div className="flex items-center justify-end gap-1.5">
@@ -300,7 +274,7 @@ export function TravelersTable({
         isOpen={!!deletingId}
         onOpenChange={(open) => !open && setDeletingId(null)}
         title="Eliminar registro de viajero"
-        description="¿Estás seguro que deseas remover a este pasajero? Esta acción no se puede deshacer."
+        description="Se borrarán sus datos personales (nombre, teléfonos, correo, contacto de emergencia y fecha de nacimiento). Sus reservas y pagos se conservan como «Pasajero Eliminado» para que tu caja siga cuadrando. Esta acción no se puede deshacer."
         onConfirm={handleConfirmDelete}
         confirmText="Sí, eliminar"
         isDestructive={true}

@@ -222,7 +222,7 @@ export const TRAVELERS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.TRAVELERS_LIST,
       title: "Ficha del viajero",
       description:
-        "Consulta su contacto, contacto de emergencia, los tipos de viaje que ha hecho y sus notas médicas.",
+        "Consulta su contacto, contacto de emergencia y los tipos de viaje que ha hecho.",
       side: "top",
       align: "start",
     },
@@ -230,7 +230,7 @@ export const TRAVELERS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.TRAVELERS_ACTION_EDIT,
       title: "Editar viajero",
       description:
-        "Corrige su nombre, WhatsApp, correo, fecha de nacimiento, contacto de emergencia o notas médicas.",
+        "Corrige su nombre, WhatsApp, correo, fecha de nacimiento o contacto de emergencia.",
       side: "left",
       align: "center",
     },

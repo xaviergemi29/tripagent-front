@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { TourRegistrationView } from "../TourRegistrationView";
 import { bookingFormSchema } from "../../schemas/booking.schema";
 
-// Casilla obligatoria de políticas y aviso de privacidad (regla 19; LFPDPPP: el registro incluye
-// notas médicas). El enlace abre el modal con las políticas de la agencia; "Aceptar y continuar"
-// marca la casilla y cerrar el modal no la cambia.
+// Casilla obligatoria combinada (regla 19; 2026-11-22): declaración de mayoría de edad y de
+// autorización de los acompañantes + políticas y aviso de privacidad. El enlace abre el modal con las
+// políticas de la agencia; "Aceptar y continuar" marca la casilla y cerrar el modal no la cambia.
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("../../hooks/useBookings", () => ({
@@ -36,7 +36,7 @@ const renderView = ({
 // `hidden: true`: con el modal abierto, Radix marca el resto de la página con aria-hidden.
 const checkbox = () =>
   screen.getByRole("checkbox", {
-    name: "Acepto las políticas de viaje y el aviso de privacidad",
+    name: "Declaro ser mayor de edad, contar con la autorización de mis acompañantes y acepto las políticas de viaje y el aviso de privacidad",
     hidden: true,
   });
 const policiesLink = () =>
@@ -119,7 +119,6 @@ describe("Políticas y aviso de privacidad en el registro del Magic Link", () =>
         email: "ana@correo.mx",
         emergencyContactName: "Luis Torres",
         emergencyContactPhone: "2281112222",
-        medicalNotes: "",
         birthDate: "",
         boardingPoint: "Plaza Xalapeña (06:00)",
       },
@@ -130,7 +129,7 @@ describe("Políticas y aviso de privacidad en el registro del Magic Link", () =>
     const rejected = bookingFormSchema.safeParse({ ...base, privacyNoticeAccepted: false });
     expect(rejected.success).toBe(false);
     expect(JSON.stringify(rejected.error?.issues)).toContain(
-      "Es necesario aceptar las políticas y el aviso de privacidad",
+      "Para completar tu registro marca la casilla de declaración y aceptación del aviso de privacidad.",
     );
     expect(
       bookingFormSchema

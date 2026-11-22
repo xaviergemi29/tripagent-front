@@ -20,7 +20,7 @@ const KEPT: LockItem[] = [
   {
     title: "Tu base de datos de viajeros",
     description:
-      "Todos los contactos, teléfonos, datos de emergencia y notas médicas de tus clientes siguen intactos.",
+      "Todos los contactos, teléfonos y datos de emergencia de tus clientes siguen intactos.",
   },
   {
     title: "Enlaces de viajeros activos",

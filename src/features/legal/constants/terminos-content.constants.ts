@@ -54,7 +54,7 @@ export const TERMINOS_PRUEBA = {
 
 export const TERMINOS_PROPIEDAD = {
   title: "3. Propiedad y Confidencialidad de Datos (LFPDPPP)",
-  body: "Con respaldo legal en la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP), la agencia es la titular y Responsable del Tratamiento; TripAgent funge como Encargado Tecnológico.",
+  body: "Con respaldo legal en la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP), publicada en el Diario Oficial de la Federación el 20 de marzo de 2025, la agencia es la titular y Responsable del Tratamiento; TripAgent funge como Encargado Tecnológico: trata los datos solo por instrucciones de la agencia, no los usa para fines propios, guarda confidencialidad y los devuelve o suprime cuando la agencia deja el servicio. TripAgent no solicita datos de salud de los viajeros.",
   cards: [
     {
       title: "No-comercialización",

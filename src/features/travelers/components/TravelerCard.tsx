@@ -1,14 +1,4 @@
-import {
-  Phone,
-  Mail,
-  ShieldAlert,
-  Activity,
-  Pencil,
-  Trash2,
-  Cake,
-  CheckCircle2,
-  AlertTriangle,
-} from "lucide-react";
+import { Phone, Mail, ShieldAlert, Activity, Pencil, Trash2, Cake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getInitials, getAvatarColor } from "@/shared/utils/travelers-helpers";
 import { formatBirthdateAndAge } from "@/shared/utils/tour-date.util";
@@ -34,9 +24,6 @@ export function TravelerCard({
 }: TravelerCardProps) {
   const birthInfo = formatBirthdateAndAge(traveler.birthDate);
   const isMinor = birthInfo?.isMinor;
-
-  const hasMedicalNotes =
-    traveler.medicalNotes?.trim() && !traveler.medicalNotes.toLowerCase().includes("sin");
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -124,21 +111,6 @@ export function TravelerCard({
             {formatPhoneForDisplay(traveler.emergencyContactPhone)}
           </span>
         </div>
-      </div>
-
-      {/* C) Semáforo de Notas Médicas */}
-      <div className="mb-4">
-        {hasMedicalNotes ? (
-          <div className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
-            <span>{traveler.medicalNotes}</span>
-          </div>
-        ) : (
-          <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700">
-            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-            <span>Sin observaciones</span>
-          </div>
-        )}
       </div>
 
       {/* D) Botonera de Acciones Inferiores (Ergonomía Táctil: >= 40px height) */}

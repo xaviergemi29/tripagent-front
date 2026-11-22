@@ -45,7 +45,9 @@ const fillTitular = async (user: ReturnType<typeof userEvent.setup>) => {
     target: { value: "1990-05-29" },
   });
   await user.click(screen.getAllByText("Plaza Xalapeña")[0]!);
-  await user.click(screen.getByRole("checkbox", { name: /Acepto las políticas/, hidden: true }));
+  await user.click(
+    screen.getByRole("checkbox", { name: /Declaro ser mayor de edad/, hidden: true }),
+  );
 };
 
 beforeEach(() => {

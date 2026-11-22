@@ -26,7 +26,6 @@ const basePassengerSchema = z.object({
   emergencyContactName: z.string().min(3, "Nombre de emergencia requerido").trim(),
   emergencyContactPhone: z.string().trim(),
   emergencyContactCountry: phoneCountrySchema,
-  medicalNotes: z.string().trim().optional(),
   boardingPoint: z.string().min(1, "Debes seleccionar en qué punto subirás al autobús"),
   // Obligatoria (seguro carretero, igual que "Editar viajero") y no futura; hasta el 2026-11-17 se
   // aceptaba vacía aunque el campo del acompañante dijera "*". Misma regla en la API.
@@ -132,13 +131,14 @@ export const bookingFormSchema = z.object({
   mainClient: mainClientSchema,
   hasCompanions: z.boolean(),
   companions: z.array(companionSchema),
-  // Casilla obligatoria "Acepto el aviso de privacidad" (decisión del PM, 2026-11-14; LFPDPPP:
-  // el registro incluye notas médicas). La API exige `true` y guarda la fecha de aceptación.
+  // Casilla obligatoria combinada (LFPDPPP; PM, 2026-11-14 y 2026-11-22): declaración de mayoría de
+  // edad y de autorización de los acompañantes (o patria potestad/tutela de los menores) + políticas
+  // y aviso de privacidad. La API exige `true` y guarda la fecha de aceptación.
   privacyNoticeAccepted: z
     .boolean()
     .refine(
       (accepted) => accepted,
-      "Es necesario aceptar las políticas y el aviso de privacidad para completar tu registro.",
+      "Para completar tu registro marca la casilla de declaración y aceptación del aviso de privacidad.",
     ),
 });
 

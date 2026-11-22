@@ -12,7 +12,6 @@ import { useEffect, useState } from "react";
 
 import { PassengerTypeSwitch, type PassengerCategory } from "./PassengerTypeSwitch";
 import { PickupPointSelector } from "./PickupPointSelector";
-import { SavedMedicalNotesHint } from "./SavedMedicalNotesHint";
 import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 import { PASSENGER_TYPE } from "@/shared/constants/domain.constants";
 import { PhoneField } from "@/components/shared/PhoneField";
@@ -42,14 +41,11 @@ interface FoundCompanion {
 interface CompanionsManagerProps {
   boardingPoints: { id: string; location: string; time: string }[];
   maxAllowedCompanions?: number;
-  /** Para el aviso de notas médicas guardadas ("contacta a <agencia>"). */
-  agencyName?: string;
 }
 
 export function CompanionsManager({
   boardingPoints,
   maxAllowedCompanions,
-  agencyName,
 }: CompanionsManagerProps) {
   const {
     control,
@@ -157,8 +153,6 @@ export function CompanionsManager({
       );
       setValue(`companions.${index}.fullName`, traveler.fullName, { shouldValidate: true });
       setValue(`companions.${index}.email`, email, { shouldValidate: true });
-      // Las notas médicas no se tocan: la búsqueda pública no las devuelve (LFPDPPP) y antes se
-      // escribía "" sobre lo que el acompañante ya hubiera capturado. Ver SavedMedicalNotesHint.
       setValue(`companions.${index}.birthDate`, birthDate, { shouldValidate: true });
       setFoundCompanions((prev) => ({
         ...prev,
@@ -205,7 +199,6 @@ export function CompanionsManager({
       emergencyContactName: defaultEmName,
       emergencyContactPhone: defaultEmPhone,
       emergencyContactCountry: mainEmergencyCountry,
-      medicalNotes: "",
       passengerType: PASSENGER_TYPE.ADULT,
       boardingPoint: defaultBp,
     });
@@ -262,7 +255,6 @@ export function CompanionsManager({
                   emergencyContactName: mainEmergencyName || "",
                   emergencyContactPhone: mainEmergencyPhone || "",
                   emergencyContactCountry: mainEmergencyCountry,
-                  medicalNotes: "",
                   passengerType: PASSENGER_TYPE.ADULT,
                   boardingPoint: mainBoardingPoint || "",
                 });
@@ -577,29 +569,6 @@ export function CompanionsManager({
                         )}
                       </div>
                     </div>
-                  )}
-                </div>
-
-                {/* Notas Médicas */}
-                <div className="space-y-1">
-                  <Label
-                    htmlFor={`companion-${index}-medicalnotes`}
-                    className="text-xs font-semibold text-slate-600"
-                  >
-                    Notas Médicas (Opcional)
-                  </Label>
-                  <Input
-                    id={`companion-${index}-medicalnotes`}
-                    {...register(`companions.${index}.medicalNotes`)}
-                    placeholder="Ej. Alergias, mareos..."
-                    aria-describedby={isLocked ? `companion-${index}-medicalnotes-hint` : undefined}
-                    className="h-11 bg-white text-base sm:text-sm"
-                  />
-                  {isLocked && (
-                    <SavedMedicalNotesHint
-                      id={`companion-${index}-medicalnotes-hint`}
-                      agencyName={agencyName}
-                    />
                   )}
                 </div>
               </div>

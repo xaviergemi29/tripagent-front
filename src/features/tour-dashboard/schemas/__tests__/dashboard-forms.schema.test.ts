@@ -21,7 +21,6 @@ describe("transferPassengerSchema", () => {
     whatsappCountry: "MX",
     email: "carlos@correo.mx",
     inheritTitularBoardingPoint: true,
-    medicalNotes: "",
     emergencyContactName: "",
     emergencyContactPhone: "",
     emergencyContactCountry: "MX",

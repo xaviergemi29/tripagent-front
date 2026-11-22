@@ -14,9 +14,10 @@ export interface PoliciesCheckboxProps {
 const CHECKBOX_ID = "policies-consent-checkbox";
 
 /**
- * Casilla obligatoria del registro: aceptación de las políticas y del aviso de privacidad
- * (`privacyNoticeAccepted`, regla 19). El texto conserva la autorización expresa para tratar las
- * notas médicas del grupo (datos sensibles, LFPDPPP).
+ * Casilla obligatoria del registro (`privacyNoticeAccepted`, regla 19). Desde el 2026-11-22 combina
+ * la declaración de mayoría de edad y de autorización de los acompañantes (o patria potestad o
+ * tutela de los menores) con la aceptación de las políticas y el aviso de privacidad. Ya no menciona
+ * notas médicas: el registro no recaba datos de salud.
  */
 export function PoliciesCheckbox({
   checked,
@@ -34,7 +35,7 @@ export function PoliciesCheckbox({
           checked={checked}
           disabled={disabled}
           onCheckedChange={(value) => onChange(value === true)}
-          aria-label="Acepto las políticas de viaje y el aviso de privacidad"
+          aria-label="Declaro ser mayor de edad, contar con la autorización de mis acompañantes y acepto las políticas de viaje y el aviso de privacidad"
           aria-invalid={errorMessage ? true : undefined}
           className="mt-0.5"
         />
@@ -42,7 +43,8 @@ export function PoliciesCheckbox({
           htmlFor={CHECKBOX_ID}
           className="cursor-pointer text-xs leading-snug text-slate-700 select-none sm:text-sm"
         >
-          Al registrarme, acepto las{" "}
+          Declaro ser mayor de edad y contar con la autorización de mis acompañantes (o ejercer la
+          patria potestad o tutela de los menores) para registrar sus datos, y acepto las{" "}
           <button
             type="button"
             onClick={(event) => {
@@ -55,8 +57,7 @@ export function PoliciesCheckbox({
           >
             Políticas de Viaje y Aviso de Privacidad
           </button>{" "}
-          de {agencyName} y autorizo el uso de los datos de mi grupo, incluidas las notas médicas,
-          para la organización de este viaje. *
+          de {agencyName} para la organización de este viaje. *
         </label>
       </div>
       {errorMessage && <p className="px-1 text-xs font-medium text-red-600">{errorMessage}</p>}

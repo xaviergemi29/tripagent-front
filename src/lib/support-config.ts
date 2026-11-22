@@ -16,3 +16,11 @@ export const buildSupportWhatsAppUrl = (message: string): string | null => {
   const digits = toInternationalDigits(SUPPORT_WHATSAPP);
   return digits ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}` : null;
 };
+
+/**
+ * Responsable del tratamiento de los datos de las cuentas de agencia (aviso de privacidad de
+ * TripAgent, LFPDPPP art. 15 fr. I; PM, 2026-11-22). Pendiente: la razón social o el nombre legal
+ * del titular (sección G de ../CLAUDE.md).
+ */
+export const TRIPAGENT_LEGAL_NAME = "TripAgent MX";
+export const TRIPAGENT_ADDRESS = "Xalapa, Veracruz, México";

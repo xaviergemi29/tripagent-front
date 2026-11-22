@@ -28,7 +28,6 @@ export const travelerSchema = z.object({
   emergencyContactPhone: storedPhoneSchema,
   emergencyContactCountry: z.string().nullable().optional(),
 
-  medicalNotes: z.string().trim().optional(),
   customFields: z.record(z.string(), z.unknown()).default({}),
   createdAt: z.iso.datetime().optional(),
   birthDate: z.union([z.iso.date("Formato YYYY-MM-DD"), z.literal("")]),
@@ -75,7 +74,6 @@ export const travelerHistoryOutputSchema = z.object({
   whatsappPhone: z.string(),
   emergencyContactName: z.string(),
   emergencyContactPhone: z.string(),
-  medicalNotes: z.string(),
   birthDate: z.string(),
   customFields: z.record(z.string(), z.unknown()).nullable(),
 });
@@ -95,7 +93,6 @@ export const editTravelerSchema = z
     emergencyContactName: z.string().min(3, "El nombre de contacto de emergencia es obligatorio"),
     emergencyContactPhone: z.string(),
     emergencyContactCountry: phoneCountrySchema,
-    medicalNotes: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     const isAdult = data.passengerType === PASSENGER_TYPE.ADULT;

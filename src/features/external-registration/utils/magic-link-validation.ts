@@ -1,7 +1,15 @@
 export interface MagicLinkValidation {
   isValid?: boolean;
   flowState?: string;
-  meta?: { agency?: { name: string; logoPath: string | null; phone?: string | null } | null };
+  meta?: {
+    agency?: {
+      name: string;
+      logoPath: string | null;
+      phone?: string | null;
+      /** Domicilio (aviso de privacidad simplificado del registro). */
+      address?: string | null;
+    } | null;
+  };
   data?: Record<string, unknown> | null;
   error?: { code?: string; message?: string } | string;
 }

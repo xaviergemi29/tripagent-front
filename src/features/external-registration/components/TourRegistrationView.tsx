@@ -27,7 +27,7 @@ import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 import { useRouter } from "next/navigation";
 import type { Currency } from "@/shared/constants/domain.constants";
 import { PhoneField } from "@/components/shared/PhoneField";
-import { SavedMedicalNotesHint } from "./SavedMedicalNotesHint";
+import { SimplifiedPrivacyNotice } from "@/components/shared/SimplifiedPrivacyNotice";
 import {
   getStoredPhoneCountry,
   parseStoredPhone,
@@ -50,6 +50,8 @@ interface TourRegistrationViewProps {
   agencyName: string;
   /** Enlace al aviso de privacidad de la agencia (null si no lo ha capturado). */
   agencyPrivacyNoticeUrl?: string | null;
+  /** Domicilio de la agencia (`meta.agency.address`), para el aviso de privacidad simplificado. */
+  agencyAddress?: string | null;
   /** Políticas generales de la agencia (texto plano; null si no las ha capturado). */
   agencyPolicies?: string | null;
   /** Logotipo de la agencia (`meta.agency.logoPath` del Magic Link). */
@@ -65,7 +67,6 @@ interface TourRegistrationViewProps {
     emergencyContactName?: string;
     emergencyContactPhone?: string;
     emergencyContactCountry?: string | null;
-    medicalNotes?: string;
     birthDate?: string;
     boardingPoint?: string;
   } | null;
@@ -77,6 +78,7 @@ export function TourRegistrationView({
   tourInfo,
   agencyName,
   agencyPrivacyNoticeUrl,
+  agencyAddress = null,
   agencyPolicies,
   agencyLogoPath,
   agencyPhone,
@@ -125,7 +127,6 @@ export function TourRegistrationView({
         emergencyContactName: prefillData?.emergencyContactName || "",
         emergencyContactPhone: prefillEmergency.nationalNumber,
         emergencyContactCountry: prefillEmergency.country,
-        medicalNotes: prefillData?.medicalNotes || "",
         birthDate: prefillData?.birthDate || "",
         boardingPoint: prefillData?.boardingPoint || "",
       },
@@ -145,8 +146,7 @@ export function TourRegistrationView({
       if (traveler) {
         methods.setValue("mainClient.fullName", traveler.fullName, { shouldValidate: true });
         methods.setValue("mainClient.email", traveler.email || "", { shouldValidate: true });
-        // La búsqueda pública no devuelve notas médicas ni contactos de emergencia (datos sensibles):
-        // el viajero los captura en el formulario.
+        // La búsqueda pública no devuelve contactos de emergencia: el viajero los captura aquí.
         methods.setValue("mainClient.birthDate", traveler.birthDate || "", {
           shouldValidate: true,
         });
@@ -350,7 +350,7 @@ export function TourRegistrationView({
               </div>
             </div>
 
-            {/* Fecha de Nacimiento y Notas Médicas del Titular */}
+            {/* Fecha de Nacimiento del Titular (sin notas médicas desde el 2026-11-22: LFPDPPP) */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label
@@ -377,32 +377,6 @@ export function TourRegistrationView({
                   <p className="text-xs text-red-500">
                     {methods.formState.errors.mainClient.birthDate.message}
                   </p>
-                )}
-              </div>
-
-              <div className="space-y-1">
-                <Label
-                  htmlFor="titular-mainclient-medicalnotes"
-                  className="text-xs font-semibold text-slate-700"
-                >
-                  Notas Médicas (Opcional)
-                </Label>
-                <Input
-                  id="titular-mainclient-medicalnotes"
-                  {...methods.register("mainClient.medicalNotes")}
-                  placeholder="Ej. Alergias, condiciones especiales..."
-                  // Sigue editable con el viajero encontrado (antes se veía gris como si estuviera
-                  // bloqueado): las notas no llegan de la búsqueda y aquí se pueden completar.
-                  aria-describedby={
-                    isMainClientFound ? "titular-mainclient-medicalnotes-hint" : undefined
-                  }
-                  className="h-11 bg-white text-base sm:text-sm"
-                />
-                {isMainClientFound && (
-                  <SavedMedicalNotesHint
-                    id="titular-mainclient-medicalnotes-hint"
-                    agencyName={agencyName}
-                  />
                 )}
               </div>
             </div>
@@ -476,7 +450,6 @@ export function TourRegistrationView({
           <CompanionsManager
             boardingPoints={boardingPoints}
             maxAllowedCompanions={maxAllowedCompanions}
-            agencyName={agencyName}
           />
 
           {/* Políticas y aviso de privacidad (LFPDPPP): casilla obligatoria (regla 19). El modal
@@ -496,6 +469,17 @@ export function TourRegistrationView({
                 errorMessage={fieldState.error?.message}
               />
             )}
+          />
+
+          {/* Aviso de privacidad simplificado (LFPDPPP arts. 15-16): la agencia es la responsable. */}
+          <SimplifiedPrivacyNotice
+            responsibleName={agencyName}
+            responsibleAddress={agencyAddress}
+            dataCollected="los datos de tu grupo (nombre, WhatsApp, correo, fecha de nacimiento, contacto de emergencia y punto de abordaje)"
+            purpose="la gestión logística de este viaje"
+            viaTripAgent
+            rightsContact={`contacta a ${agencyName}`}
+            fullNoticeHref={agencyPrivacyNoticeUrl || "/privacidad#viajeros"}
           />
 
           {/* 5. Sticky Footer (Se encarga de ejecutar el submit del form) */}

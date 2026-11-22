@@ -11,7 +11,6 @@ const passenger = (id: string, fullName: string) => ({
   isTitular: true,
   seatLabel: null,
   boardingPoint: "Por asignar",
-  medicalNotes: "",
   emergencyContact: null,
   balance: 0,
   groupSize: 1,

@@ -10,7 +10,6 @@ const passenger = (over: Record<string, unknown> = {}) => ({
   isTitular: true,
   seatLabel: "7",
   boardingPoint: "Plaza Américas",
-  medicalNotes: "Asma",
   emergencyContact: { name: "Luis", phone: "2281112222" },
   balance: 1500,
   groupSize: 2,
@@ -42,7 +41,6 @@ describe("tourManifestOutputSchema", () => {
               time: undefined,
               passengers: [
                 passenger({
-                  medicalNotes: null,
                   emergencyContact: { name: "Luis", phone: null },
                   boardingPoint: 12,
                   groupSize: 0,
@@ -62,7 +60,6 @@ describe("tourManifestOutputSchema", () => {
     });
     expect(point.passengers[0]).toMatchObject({
       fullName: "Ana Torres",
-      medicalNotes: "",
       emergencyContact: null,
       boardingPoint: "Por asignar",
       groupSize: 1,

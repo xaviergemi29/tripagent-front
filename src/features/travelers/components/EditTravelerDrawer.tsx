@@ -4,7 +4,7 @@ import { useForm, useFormState, useWatch } from "react-hook-form";
 import { getPassengerTypeAgeHint, getTodayInMexico } from "@/shared/utils/tour-date.util";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X, ShieldAlert, Calendar, CalendarOff, AlertTriangle, User, Baby } from "lucide-react";
+import { X, Calendar, CalendarOff, User, Baby } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,7 +59,6 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
             emergencyContactName: traveler.emergencyContactName,
             emergencyContactPhone: storedEmergency.nationalNumber,
             emergencyContactCountry: storedEmergency.country,
-            medicalNotes: traveler.medicalNotes || "",
             birthDate: traveler.birthDate || "",
           }
         : undefined,
@@ -95,7 +94,6 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
         toE164(formData.emergencyContactPhone, formData.emergencyContactCountry) ??
         formData.emergencyContactPhone,
       emergencyContactCountry: formData.emergencyContactCountry,
-      medicalNotes: formData.medicalNotes || undefined,
     };
 
     // 2. Ejecutamos la mutación con el key correcto: 'travelerData'. Si la API rechaza (p. ej. 409
@@ -184,16 +182,6 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
 
         {/* Formulario scrolleable */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 space-y-5 overflow-y-auto p-6">
-          {traveler.medicalNotes && (
-            <div className="flex items-start gap-2.5 rounded-lg border border-amber-200/80 bg-amber-50/70 p-3">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-              <div className="text-xs leading-relaxed text-amber-900">
-                <span className="font-semibold text-amber-950">Nota médica registrada: </span>
-                {traveler.medicalNotes}
-              </div>
-            </div>
-          )}
-
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700">Categoría de Viajero *</label>
             <div className="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
@@ -363,27 +351,6 @@ export function EditTravelerDrawer({ traveler, isOpen, onClose }: EditTravelerDr
                 <p className="text-destructive text-xs">{errors.emergencyContactPhone.message}</p>
               )}
             </div>
-          </div>
-
-          <hr className="my-2 border-slate-100" />
-
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="edit-traveler-medicalnotes"
-              className="flex items-center gap-1 text-xs font-semibold text-slate-700"
-            >
-              <ShieldAlert className="h-3.5 w-3.5 text-slate-400" /> Notas Médicas / Alergias
-            </Label>
-            <textarea
-              id="edit-traveler-medicalnotes"
-              {...register("medicalNotes")}
-              rows={3}
-              className="w-full rounded-md border border-slate-200 p-3 text-base focus:ring-2 focus:ring-indigo-500 focus:outline-none sm:text-sm"
-              placeholder="Ej. Alérgico a penicilina, intolerancia a la lactosa, asma..."
-            />
-            {errors.medicalNotes && (
-              <p className="text-destructive text-xs">{errors.medicalNotes.message}</p>
-            )}
           </div>
         </form>
 

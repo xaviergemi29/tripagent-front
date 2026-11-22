@@ -29,7 +29,6 @@ const traveler = {
   email: "ana@correo.mx",
   emergencyContactName: "Luis Torres",
   emergencyContactPhone: "+522281112222",
-  medicalNotes: "",
   birthDate: "1990-05-29",
 } as never;
 

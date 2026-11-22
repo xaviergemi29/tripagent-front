@@ -84,7 +84,7 @@ export function TravelersMobileCardList({
         isOpen={!!deletingId}
         onOpenChange={(open) => !open && setDeletingId(null)}
         title="Eliminar registro de viajero"
-        description="¿Estás seguro que deseas remover a este pasajero? Esta acción no se puede deshacer."
+        description="Se borrarán sus datos personales (nombre, teléfonos, correo, contacto de emergencia y fecha de nacimiento). Sus reservas y pagos se conservan como «Pasajero Eliminado» para que tu caja siga cuadrando. Esta acción no se puede deshacer."
         onConfirm={handleConfirmDelete}
         confirmText="Sí, eliminar"
         isDestructive={true}

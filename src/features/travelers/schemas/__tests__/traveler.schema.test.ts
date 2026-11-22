@@ -18,7 +18,6 @@ describe("editTravelerSchema (drawer de edición del viajero)", () => {
     emergencyContactName: "Luis Torres",
     emergencyContactPhone: "2281112222",
     emergencyContactCountry: "MX" as const,
-    medicalNotes: "",
   };
 
   it("acepta un adulto completo", () => {

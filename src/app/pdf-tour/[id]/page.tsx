@@ -74,7 +74,6 @@ export default function ManifestPrintView({ params }: PageProps) {
                 <th className="w-8 border border-slate-400 p-3 text-center">✔️</th>
                 <th className="w-12 border border-slate-400 p-3 text-center">Asiento</th>
                 <th className="border border-slate-400 p-3 text-left">Pasajero</th>
-                <th className="w-1/4 border border-slate-400 p-3 text-left">Notas Médicas</th>
                 <th className="w-32 border border-slate-400 p-3 text-center">Cobro en Puerta</th>
                 <th className="w-24 border border-slate-400 p-3 text-center">Firma</th>
               </tr>
@@ -104,9 +103,6 @@ export default function ManifestPrintView({ params }: PageProps) {
                         </span>
                       )}
                     </div>
-                  </td>
-                  <td className="border border-slate-400 p-3 align-middle text-xs font-bold text-red-600 uppercase">
-                    {p.medicalNotes}
                   </td>
                   <td className="border border-slate-400 p-3 text-center align-middle">
                     {/* 🚀 Reglas Financieras Visuales Claras */}

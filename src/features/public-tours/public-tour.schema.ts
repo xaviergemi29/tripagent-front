@@ -24,6 +24,8 @@ export const publicTourOutputSchema = z.object({
     phone: z.string().nullable(),
     /** Ruta del logotipo (`/uploads/logos/…`) o null. */
     logoPath: z.string().nullable().optional(),
+    /** Domicilio de la agencia (aviso de privacidad simplificado de la pre-reserva). */
+    address: z.string().nullable().optional(),
   }),
   // Ocupación en vivo calculada por la API (misma regla que el Centro de Control).
   availability: z.object({

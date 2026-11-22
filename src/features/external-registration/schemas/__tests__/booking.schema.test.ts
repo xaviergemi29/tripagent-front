@@ -17,7 +17,6 @@ const titular = {
   emergencyContactName: "Luis Torres",
   emergencyContactPhone: "2281112222",
   emergencyContactCountry: "MX" as const,
-  medicalNotes: "",
   birthDate: "1990-05-29",
   boardingPoint: "Plaza Xalapeña (06:00)",
 };
@@ -30,7 +29,6 @@ const companion = {
   emergencyContactName: "Ana Torres",
   emergencyContactPhone: "2281234567",
   emergencyContactCountry: "MX" as const,
-  medicalNotes: "",
   birthDate: "2015-03-10",
   boardingPoint: "Plaza Xalapeña (06:00)",
   passengerType: "CHILD" as const,
@@ -168,7 +166,7 @@ describe("bookingFormSchema (formulario completo)", () => {
         "privacyNoticeAccepted",
       ),
     ).toContain(
-      "Es necesario aceptar las políticas y el aviso de privacidad para completar tu registro.",
+      "Para completar tu registro marca la casilla de declaración y aceptación del aviso de privacidad.",
     );
   });
 

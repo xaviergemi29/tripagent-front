@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, AtSign, Building2, Eye, EyeOff, Loader2, User } from "lucide-react";
 
 import { PhoneField } from "@/components/shared/PhoneField";
+import { SimplifiedPrivacyNotice } from "@/components/shared/SimplifiedPrivacyNotice";
+import { SUPPORT_EMAIL, TRIPAGENT_ADDRESS, TRIPAGENT_LEGAL_NAME } from "@/lib/support-config";
 import { cn } from "@/lib/utils";
 import type { ApiError } from "@/lib/api-client";
 import { DEFAULT_PHONE_COUNTRY, toE164 } from "@/shared/utils/phone.util";
@@ -271,6 +273,16 @@ export function RegisterAgencyForm({ plan }: RegisterAgencyFormProps) {
           </Link>
           .
         </p>
+
+        {/* Aviso de privacidad simplificado (LFPDPPP arts. 15-16): TripAgent es el responsable. */}
+        <SimplifiedPrivacyNotice
+          responsibleName={TRIPAGENT_LEGAL_NAME}
+          responsibleAddress={TRIPAGENT_ADDRESS}
+          dataCollected="tu nombre, el nombre de tu agencia, tu WhatsApp y tu correo"
+          purpose="crear y administrar la cuenta de tu agencia, darte soporte y gestionar tu suscripción"
+          rightsContact={`escribe a ${SUPPORT_EMAIL}`}
+          fullNoticeHref="/privacidad"
+        />
       </form>
     </section>
   );

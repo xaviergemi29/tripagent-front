@@ -118,6 +118,10 @@ describe("Registro de agencia (/registro)", () => {
       "href",
       "/privacidad",
     );
+    // Aviso de privacidad simplificado (LFPDPPP arts. 15-16): TripAgent es el responsable.
+    const notice = screen.getByRole("complementary", { name: "Aviso de privacidad simplificado" });
+    expect(notice).toHaveTextContent("TripAgent MX, con domicilio en Xalapa, Veracruz, México");
+    expect(notice).toHaveTextContent("No pedimos datos de salud");
     // Sin NEXT_PUBLIC_SUPPORT_WHATSAPP no se ofrece un WhatsApp falso.
     expect(screen.queryByText("Asistencia técnica en WhatsApp")).not.toBeInTheDocument();
   });

@@ -15,12 +15,6 @@ export const manifestPassengerSchema = z.object({
     .catch(null)
     .transform((val) => val || "Por asignar"),
 
-  medicalNotes: z
-    .string()
-    .nullable()
-    .optional()
-    .catch("")
-    .transform((val) => val ?? ""),
   emergencyContact: z
     .object({
       name: z.string(),

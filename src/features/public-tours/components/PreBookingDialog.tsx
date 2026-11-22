@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { createPreBookingFormSchema, type PreBookingFormInput } from "../pre-booking.schema";
 import { usePreBooking } from "../hooks/usePreBooking";
 import { PhoneField } from "@/components/shared/PhoneField";
+import { SimplifiedPrivacyNotice } from "@/components/shared/SimplifiedPrivacyNotice";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { DEFAULT_PHONE_COUNTRY, toE164, type PhoneCountry } from "@/shared/utils/phone.util";
 import { buildWhatsAppUrl, toPhoneDigits } from "@/shared/utils/share-links.util";
@@ -29,6 +30,9 @@ interface PreBookingDialogProps {
   availableSeats: number;
   /** Teléfono de la agencia para el WhatsApp de los avisos (sin teléfono no se ofrece el botón). */
   agencyPhone?: string | null;
+  /** Agencia responsable de los datos (aviso de privacidad simplificado, LFPDPPP arts. 15-16). */
+  agencyName?: string;
+  agencyAddress?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** País inicial del WhatsApp: el del teléfono de la agencia (México si no tiene). */
@@ -47,6 +51,8 @@ export function PreBookingDialog({
   tourTitle,
   availableSeats,
   agencyPhone = null,
+  agencyName = "La agencia",
+  agencyAddress = null,
   open,
   onOpenChange,
   defaultPhoneCountry = DEFAULT_PHONE_COUNTRY,
@@ -357,6 +363,15 @@ export function PreBookingDialog({
               "Enviar solicitud"
             )}
           </Button>
+          <SimplifiedPrivacyNotice
+            responsibleName={agencyName}
+            responsibleAddress={agencyAddress}
+            dataCollected="tu nombre y tu WhatsApp"
+            purpose="dar seguimiento a tu solicitud de reserva y la gestión logística de este viaje"
+            viaTripAgent
+            rightsContact="contacta a la agencia por WhatsApp"
+            fullNoticeHref="/privacidad#viajeros"
+          />
         </div>
       </form>
     );

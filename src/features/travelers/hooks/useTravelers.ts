@@ -148,11 +148,14 @@ export function useDeleteTraveler() {
       });
     },
     onSuccess: () => {
-      // Texto genérico: la API hace un borrado lógico (`deletedAt`), no uno permanente.
+      // La API borra sus datos personales y conserva reservas y pagos como "Pasajero Eliminado"
+      // (derecho de cancelación ARCO, 2026-11-22). Un viaje próximo o en curso responde 409.
       toast.success("Se ha eliminado el viajero");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: TRAVELER_KEYS.all });
+      // El nombre anonimizado también aparece en el Centro de Control de tours anteriores.
+      queryClient.invalidateQueries({ queryKey: TOUR_DASHBOARD_KEYS.all });
     },
   });
 }
