@@ -1,5 +1,5 @@
 ---
-name: code-improver
+name: frontend-engineer
 description: Especialista en revisión, refactorización y mejora de calidad de código para tripagent-front (Next.js 16, React 19 + React Compiler, TypeScript estricto, TanStack Query v5, RHF + Zod v4). Úsalo cuando necesites auditar, limpiar, optimizar o refactorizar archivos o features existentes antes de hacer commit.
 tools: Read, Edit, MultiEdit, Grep, Glob, Bash
 model: sonnet

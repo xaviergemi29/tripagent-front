@@ -41,7 +41,7 @@ Variable de entorno: `NEXT_PUBLIC_API_URL` en `.env.local`. Incluye `/api`; el v
 
 `NEXT_PUBLIC_SUPPORT_WHATSAPP` (opcional, 2026-11-22): WhatsApp de soporte de TripAgent (lada + número) para /registro, /terminos, /privacidad y /contacto; se lee solo en `src/lib/support-config.ts` (en E.164; 10 dígitos sin "+" se toman como México con `toInternationalDigits`). Ya está en `.env.local`; en producción hay que definirla también. Sin la variable esos botones no se dibujan (nunca un número falso).
 
-**Subagente `code-improver`** (`.claude/agents/code-improver.md`, 2026-11-22): revisión y refactorización antes de un commit (React Compiler, Next 16, query keys, Zod, utilidades y arquitectura de este archivo); termina con `npm run lint` y `npm run test:run`. Si cambian esas reglas aquí, actualiza también el agente.
+**Subagente `frontend-engineer`** (`.claude/agents/frontend-engineer.md`, 2026-11-22): revisión y refactorización antes de un commit (React Compiler, Next 16, query keys, Zod, utilidades y arquitectura de este archivo); termina con `npm run lint` y `npm run test:run`. Si cambian esas reglas aquí, actualiza también el agente.
 
 ## Estructura
 
