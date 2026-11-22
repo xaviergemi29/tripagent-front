@@ -71,3 +71,8 @@ export const VEHICLE_KEYS = {
 export const VEHICLE_TEMPLATE_KEYS = {
   all: ["vehicle-templates"] as const,
 };
+
+/** `GET /notifications` (campana del panel; polling cada 45 s). Compartido por la agencia. */
+export const NOTIFICATION_KEYS = {
+  all: ["notifications"] as const,
+};

@@ -34,6 +34,8 @@ interface TitularRowProps {
   onAssignSeatClick: (passengerId: string) => void;
   onTransferClick: () => void;
   onDownloadReceiptClick?: (titular: TitularRowOutput) => void;
+  /** Grupo al que llevó una notificación (`?bookingId=`): se resalta unos segundos. */
+  isHighlighted?: boolean;
 }
 
 /** Fila principal del grupo: titular, asiento, abordaje, registro, pagos y acciones. */
@@ -49,12 +51,19 @@ export function TitularRow({
   onAssignSeatClick,
   onTransferClick,
   onDownloadReceiptClick,
+  isHighlighted = false,
 }: TitularRowProps) {
   const isGroup = titular.groupSize > 1;
   const hasPaid = hasRegisteredPayments(titular);
 
   return (
-    <tr className="cursor-pointer transition-colors hover:bg-slate-50/50" onClick={onToggle}>
+    <tr
+      data-booking-id={titular.bookingId}
+      className={`cursor-pointer transition-colors duration-700 ${
+        isHighlighted ? "bg-indigo-50/80" : "hover:bg-slate-50/50"
+      }`}
+      onClick={onToggle}
+    >
       <td
         className="px-4 py-3.5"
         onClick={(event) => {

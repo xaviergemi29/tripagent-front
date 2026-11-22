@@ -249,3 +249,27 @@ export function getPassengerTypeAgeHint(
   }
   return null;
 }
+
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+
+/**
+ * Tiempo transcurrido desde un instante ISO, en español de México (notificaciones in-app,
+ * 2026-11-22): "Justo ahora", "Hace 5 min", "Hace 3 h", "Ayer", "Hace 4 días", "Hace 1 semana",
+ * "Hace 3 semanas". Es una diferencia de duración (no de días calendario), así que no depende de
+ * la zona horaria. Un instante futuro (reloj adelantado del servidor) cuenta como "Justo ahora".
+ */
+export function formatRelativeTime(isoDate: string, now: Date = new Date()): string {
+  const elapsed = now.getTime() - new Date(isoDate).getTime();
+  if (!Number.isFinite(elapsed) || elapsed < MINUTE_MS) return "Justo ahora";
+  if (elapsed < HOUR_MS) return `Hace ${Math.floor(elapsed / MINUTE_MS)} min`;
+  if (elapsed < DAY_MS) return `Hace ${Math.floor(elapsed / HOUR_MS)} h`;
+
+  const days = Math.floor(elapsed / DAY_MS);
+  if (days === 1) return "Ayer";
+  if (days < 7) return `Hace ${days} días`;
+
+  const weeks = Math.floor(days / 7);
+  return weeks === 1 ? "Hace 1 semana" : `Hace ${weeks} semanas`;
+}

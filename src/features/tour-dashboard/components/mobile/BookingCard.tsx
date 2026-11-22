@@ -67,6 +67,8 @@ interface BookingCardProps {
   isRemovingGhost?: boolean;
   /** Lugares libres del tour: sin lugares, "Agregar lugar" se deshabilita. */
   freeSeatsCount?: number;
+  /** Grupo al que llevó una notificación (`?bookingId=`): se resalta unos segundos. */
+  isHighlighted?: boolean;
 }
 
 export function BookingCard({
@@ -84,6 +86,7 @@ export function BookingCard({
   isAdding = false,
   isRemovingGhost = false,
   freeSeatsCount,
+  isHighlighted = false,
 }: BookingCardProps) {
   const canEditGroup = !isAuditMode;
   const canAddSlot =
@@ -97,7 +100,12 @@ export function BookingCard({
   const missingCount = Math.max(0, titular.groupSize - registeredCount);
 
   return (
-    <div className="space-y-3.5 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm">
+    <div
+      data-booking-id={titular.bookingId}
+      className={`space-y-3.5 rounded-2xl border bg-white p-4 shadow-sm transition-shadow duration-700 ${
+        isHighlighted ? "border-indigo-300 ring-2 ring-indigo-400/60" : "border-slate-200/90"
+      }`}
+    >
       {/* 1. Cabecera */}
       {/* `min-w-0 flex-1`: el nombre ocupa el espacio libre y hace salto de línea en lugar de
           empujar el estado de pago fuera de la tarjeta. */}

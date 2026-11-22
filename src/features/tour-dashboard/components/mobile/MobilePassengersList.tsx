@@ -23,6 +23,8 @@ interface MobilePassengersListProps {
   statementContext: OperatorStatementDownloadContext;
   onAssignSeatClick: (passengerId: string) => void;
   onRowClick: (id: string) => void;
+  /** Reserva a la que llevó una notificación (`?bookingId=`): su tarjeta se resalta. */
+  highlightedBookingId?: string | null;
 }
 
 /**
@@ -40,6 +42,7 @@ export function MobilePassengersList({
   statementContext,
   onAssignSeatClick,
   onRowClick,
+  highlightedBookingId = null,
 }: MobilePassengersListProps) {
   const groupActions = useTravelerGroupActions(tourId);
 
@@ -58,6 +61,7 @@ export function MobilePassengersList({
             onDownloadReceiptClick={(t) => void downloadOperatorStatement(t, statementContext)}
             onTransferPassengerClick={groupActions.openTransfer}
             onRemovePassengerClick={groupActions.openRemovePassenger}
+            isHighlighted={titular.bookingId === highlightedBookingId}
             onRemoveGhostSlotClick={(bookingId) =>
               groupActions.openReleaseSlot(bookingId, titular.fullName)
             }

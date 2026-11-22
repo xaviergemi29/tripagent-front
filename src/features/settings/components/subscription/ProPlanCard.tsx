@@ -19,8 +19,8 @@ interface ProPlanCardProps {
 }
 
 /**
- * Separa el importe de su divisa para el bloque de precio ("$499.00" grande, "MXN/mes" chico)
- * sin dejar de usar el formato oficial de `formatCurrency` ("$499.00 MXN").
+ * Separa el importe de su divisa para el bloque de precio ("$999.00" grande, "MXN/mes" chico)
+ * sin dejar de usar el formato oficial de `formatCurrency` ("$999.00 MXN").
  */
 const splitCurrency = (formatted: string): { amount: string; code: string } => {
   const lastSpace = formatted.lastIndexOf(" ");

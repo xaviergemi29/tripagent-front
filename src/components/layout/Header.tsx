@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useLogout } from "@/features/auth/hooks/useAuth";
+import { NotificationCenter } from "@/features/notifications/components/NotificationCenter";
 import { NAVIGATION_ITEMS, SYSTEM_ITEMS } from "@/shared/utils/config/navigation";
 
 export function Header() {
@@ -127,6 +128,9 @@ export function Header() {
           Centro de Control Logístico
         </h2>
       </div>
+
+      {/* Campana de notificaciones (escritorio y celular): avisos de acciones de los viajeros. */}
+      <NotificationCenter />
     </header>
   );
 }

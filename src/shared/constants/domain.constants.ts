@@ -202,3 +202,24 @@ export const CONFLICT_CODE = {
   /** El WhatsApp ya tiene una reserva activa en el tour. */
   ALREADY_BOOKED: "ALREADY_BOOKED",
 } as const satisfies Record<string, ConflictCode>;
+
+// Tipo de notificación in-app (2026-11-22). Espejo de `NOTIFICATION_TYPES` en `tripagent-api`.
+// Solo las generan acciones públicas del viajero: pre-reserva del folleto y registro del Magic Link.
+export const NOTIFICATION_TYPES = ["PRE_BOOKING", "BOOKING_COMPLETED"] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+/** Acceso por nombre: `notification.type === NOTIFICATION_TYPE.PRE_BOOKING`. */
+export const NOTIFICATION_TYPE = {
+  PRE_BOOKING: "PRE_BOOKING",
+  BOOKING_COMPLETED: "BOOKING_COMPLETED",
+} as const satisfies Record<NotificationType, NotificationType>;
+
+/**
+ * Plan único del MVP: precio mensual en MXN y días de prueba. Espejo de `SUBSCRIPTION_PLAN` de la
+ * API (`shared/utils/subscription.util.ts`). Lo usan las páginas públicas (/registro, /terminos),
+ * que no pueden leer `GET /agencies/subscription`; el panel usa el `priceMxn` que envía la API.
+ */
+export const SUBSCRIPTION_PLAN = {
+  priceMxn: 999,
+  trialDaysTotal: 30,
+} as const;

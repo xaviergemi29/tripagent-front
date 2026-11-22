@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DEFAULT_DASHBOARD_TAB,
   type DashboardTab,
@@ -49,9 +49,23 @@ import { useGuidedTour } from "@/features/onboarding/hooks/useGuidedTour";
 
 interface TourDashboardViewProps {
   tourId: string;
+  /**
+   * Reserva a la que llevó una notificación (`/tours/[id]?bookingId=`, 2026-11-22): abre la
+   * pestaña de pasajeros sin filtros, hace scroll hasta el grupo y lo resalta unos segundos.
+   */
+  focusBookingId?: string | null;
 }
 
-export function TourDashboardView({ tourId }: TourDashboardViewProps) {
+/** Tiempo que el grupo de la notificación queda resaltado. */
+const FOCUS_HIGHLIGHT_MS = 4000;
+
+/** Elemento visible (escritorio o celular; el otro está oculto con `hidden`) de una reserva. */
+const findVisibleBookingElement = (bookingId: string): HTMLElement | undefined =>
+  Array.from(document.querySelectorAll<HTMLElement>(`[data-booking-id="${bookingId}"]`)).find(
+    (element) => element.getClientRects().length > 0,
+  );
+
+export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboardViewProps) {
   const {
     data: tour,
     isLoading,
@@ -92,6 +106,32 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
   // Pestaña única para escritorio y móvil (ver constants/dashboard-tabs.ts).
   const [activeTab, setActiveTab] = useState<DashboardTab>(DEFAULT_DASHBOARD_TAB);
   const [pendingSeatPassengerId, setPendingSeatPassengerId] = useState<string | null>(null);
+
+  // Enlace profundo desde una notificación: cada `bookingId` nuevo lleva a la lista de pasajeros
+  // sin filtros (un filtro podría ocultar el grupo). Se ajusta durante el render (patrón de React
+  // para derivar estado de una prop), no en un efecto.
+  const [appliedFocusId, setAppliedFocusId] = useState<string | null>(null);
+  if (focusBookingId && focusBookingId !== appliedFocusId) {
+    setAppliedFocusId(focusBookingId);
+    setActiveTab("passengers");
+    clearFilters();
+  }
+  const [dismissedFocusId, setDismissedFocusId] = useState<string | null>(null);
+  const highlightedBookingId =
+    focusBookingId && focusBookingId !== dismissedFocusId ? focusBookingId : null;
+  const hasTour = Boolean(tour);
+  useEffect(() => {
+    if (!highlightedBookingId || !hasTour) return;
+    findVisibleBookingElement(highlightedBookingId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+    const timer = window.setTimeout(
+      () => setDismissedFocusId(highlightedBookingId),
+      FOCUS_HIGHLIGHT_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [highlightedBookingId, hasTour]);
   // Guía interactiva: se abre sola la primera vez, cuando el tour ya cargó. Los pasos cuyo
   // elemento no está en pantalla (p. ej. "Nueva Reserva" en Modo Auditoría) se omiten.
   const { start: startGuide } = useGuidedTour(TOUR_DASHBOARD_GUIDED_TOUR, {
@@ -272,6 +312,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                     onAssignSeatClick={handleAssignSeatIntent}
                     onClearFilters={clearFilters}
                     requiresSeats={requiresSeats}
+                    highlightedBookingId={highlightedBookingId}
                   />
                 </div>
               </div>
@@ -350,6 +391,7 @@ export function TourDashboardView({ tourId }: TourDashboardViewProps) {
                 statementContext={statementContext}
                 onAssignSeatClick={handleAssignSeatIntent}
                 onRowClick={(id) => setSelectedTravelerId(id)}
+                highlightedBookingId={highlightedBookingId}
               />
             </div>
           </div>

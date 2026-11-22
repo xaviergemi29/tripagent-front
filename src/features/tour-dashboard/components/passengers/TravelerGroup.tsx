@@ -31,6 +31,8 @@ interface TravelerGroupProps {
     whatsapp: string,
   ) => void;
   onDownloadReceiptClick?: (titular: TitularRowOutput) => void;
+  /** Grupo al que llevó una notificación (`?bookingId=`): se resalta unos segundos. */
+  isHighlighted?: boolean;
 }
 
 /**
@@ -53,6 +55,7 @@ export function TravelerGroup({
   onRemovePassengerClick,
   onTransferPassengerClick,
   onDownloadReceiptClick,
+  isHighlighted = false,
 }: TravelerGroupProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -72,6 +75,7 @@ export function TravelerGroup({
         onRowClick={onRowClick}
         onAssignSeatClick={onAssignSeatClick}
         onDownloadReceiptClick={onDownloadReceiptClick}
+        isHighlighted={isHighlighted}
         onTransferClick={() =>
           onTransferPassengerClick?.(
             titular.bookingId,

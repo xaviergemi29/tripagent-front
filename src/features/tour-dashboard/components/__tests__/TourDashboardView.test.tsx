@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PASSENGER_ROLE, TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
@@ -101,12 +101,14 @@ const dashboard = (overrides: Partial<TourDashboardOutput> = {}) =>
     ...overrides,
   }) as TourDashboardOutput;
 
-const renderView = () => {
+const renderView = (focusBookingId: string | null = null) => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
-  return render(<TourDashboardView tourId={TOUR_ID} />, { wrapper });
+  return render(<TourDashboardView tourId={TOUR_ID} focusBookingId={focusBookingId} />, {
+    wrapper,
+  });
 };
 
 beforeEach(() => {
@@ -116,6 +118,30 @@ beforeEach(() => {
 });
 
 describe("TourDashboardView", () => {
+  it("?bookingId= (notificación): resalta el grupo en escritorio y celular, y luego se apaga", () => {
+    vi.useFakeTimers();
+    try {
+      const betoBookingId = "22222222-2222-4222-8222-22222222222b";
+      renderView(betoBookingId);
+
+      const highlighted = document.querySelectorAll(`[data-booking-id="${betoBookingId}"]`);
+      expect(highlighted).toHaveLength(2); // fila de escritorio + tarjeta del celular
+      const [row, card] = Array.from(highlighted);
+      expect(row!.className).toMatch(/bg-indigo-50/);
+      expect(card!.className).toMatch(/ring-indigo-400/);
+      const anaRow = document.querySelector(
+        '[data-booking-id="11111111-1111-4111-8111-11111111111b"]',
+      );
+      expect(anaRow!.className).not.toMatch(/bg-indigo-50/);
+
+      act(() => vi.advanceTimersByTime(4000));
+      expect(row!.className).not.toMatch(/bg-indigo-50/);
+      expect(card!.className).not.toMatch(/ring-indigo-400/);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("mientras carga no muestra el tour", () => {
     dashboardQuery.mockReturnValue({ data: undefined, isLoading: true, isError: false });
     renderView();

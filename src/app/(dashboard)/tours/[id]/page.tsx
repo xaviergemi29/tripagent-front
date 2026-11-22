@@ -11,12 +11,19 @@ interface PageProps {
   params: Promise<{
     id: string;
   }>;
+  /** `?bookingId=` llega desde una notificación in-app: resalta ese grupo. */
+  searchParams: Promise<{ bookingId?: string | string[] }>;
 }
 
-export default async function TourDashboardPage({ params }: PageProps) {
-  const { id } = await params;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+export default async function TourDashboardPage({ params, searchParams }: PageProps) {
+  const { id } = await params;
+  const { bookingId } = await searchParams;
+  const focusBookingId =
+    typeof bookingId === "string" && UUID_PATTERN.test(bookingId) ? bookingId : null;
+
+  const isUUID = UUID_PATTERN.test(id);
 
   if (!id || !isUUID) {
     notFound();
@@ -40,7 +47,7 @@ export default async function TourDashboardPage({ params }: PageProps) {
         </div>
       </div>
 
-      <TourDashboardView tourId={id} />
+      <TourDashboardView tourId={id} focusBookingId={focusBookingId} />
     </div>
   );
 }

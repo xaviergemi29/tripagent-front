@@ -14,12 +14,12 @@ describe("loginSchema", () => {
     });
   });
 
-  it("hallazgo: `z.email().trim()` valida antes de recortar, así que un correo con espacios se rechaza", () => {
-    // En Zod 4 el formato se valida primero; `.trim()` no ayuda a quien pega el correo con un
-    // espacio. Si se decide aceptarlo, el schema debe ser `z.string().trim().pipe(z.email())`.
-    expect(
-      pathsOf(loginSchema.safeParse({ email: " ana@agencia.mx ", password: "secreta" })),
-    ).toEqual(["email"]);
+  it("recorta espacios y pasa a minúsculas ANTES de validar (corregido el 2026-11-22)", () => {
+    // Antes `z.email().trim()` validaba primero y rechazaba a quien pegaba el correo con un espacio.
+    expect(loginSchema.parse({ email: " Ana@Agencia.MX ", password: "secreta" })).toEqual({
+      email: "ana@agencia.mx",
+      password: "secreta",
+    });
   });
 
   it("rechaza correo inválido y contraseña corta (misma regla que la API)", () => {

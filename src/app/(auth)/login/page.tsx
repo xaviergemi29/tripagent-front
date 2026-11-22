@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -189,6 +190,16 @@ export default function LoginPage() {
         <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 pt-4 text-xs font-medium text-emerald-700">
           <ShieldCheck className="h-4 w-4 text-emerald-600" /> Acceso seguro para tu agencia
         </div>
+
+        <p className="text-center text-sm text-slate-500">
+          ¿Aún no tienes cuenta?{" "}
+          <Link
+            href="/registro?plan=todo-incluido"
+            className="font-bold text-indigo-600 hover:text-indigo-700 hover:underline"
+          >
+            Regístrate aquí
+          </Link>
+        </p>
       </div>
 
       <p className="mt-6 text-center text-xs text-slate-400">

@@ -28,7 +28,7 @@ const readOnly = (status: SubscriptionOutput["status"] = "trialing") => ({
   status,
   trialExpired: true,
   isReadOnly: true,
-  priceMxn: 499,
+  priceMxn: 999,
 });
 
 beforeEach(() => {
@@ -44,7 +44,7 @@ describe("Banner superior del Modo Solo Lectura", () => {
 
     expect(screen.getByText(/Tu prueba gratuita terminó/)).toBeInTheDocument();
     expect(screen.getByText(/modo solo lectura/)).toBeInTheDocument();
-    const cta = screen.getByRole("link", { name: "Activar plan por $499.00 MXN/mes" });
+    const cta = screen.getByRole("link", { name: "Activar plan por $999.00 MXN/mes" });
     expect(cta).toHaveAttribute("href", "/settings?tab=subscription");
   });
 
@@ -59,7 +59,7 @@ describe("Banner superior del Modo Solo Lectura", () => {
   });
 
   it("con la cuenta operativa (o mientras carga) no se dibuja", () => {
-    subscription = { status: "trialing", trialExpired: false, isReadOnly: false, priceMxn: 499 };
+    subscription = { status: "trialing", trialExpired: false, isReadOnly: false, priceMxn: 999 };
     const { container, rerender } = render(<SubscriptionReadOnlyBanner />);
     expect(container).toBeEmptyDOMElement();
 
@@ -91,7 +91,7 @@ describe("Nuevo tour y Editar tour (WritableAccountGuard)", () => {
     expect(screen.queryByText("Formulario")).not.toBeInTheDocument();
 
     isLoading = false;
-    subscription = { status: "active", trialExpired: false, isReadOnly: false, priceMxn: 499 };
+    subscription = { status: "active", trialExpired: false, isReadOnly: false, priceMxn: 999 };
     rerender(
       <WritableAccountGuard>
         <p>Formulario</p>

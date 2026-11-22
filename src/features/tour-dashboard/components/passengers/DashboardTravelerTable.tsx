@@ -45,6 +45,8 @@ interface DashboardTravelerTableProps {
   onRowClick: (id: string) => void;
   onAssignSeatClick: (passengerId: string) => void;
   onClearFilters?: () => void;
+  /** Reserva a la que llevó una notificación (`?bookingId=`): su grupo se resalta. */
+  highlightedBookingId?: string | null;
 }
 
 export function DashboardTravelerTable({
@@ -68,6 +70,7 @@ export function DashboardTravelerTable({
   onRowClick,
   onAssignSeatClick,
   onClearFilters,
+  highlightedBookingId = null,
 }: DashboardTravelerTableProps) {
   // Agregar lugar, dar de baja, liberar y transferir: compartido con el celular.
   const groupActions = useTravelerGroupActions(tourId);
@@ -126,6 +129,7 @@ export function DashboardTravelerTable({
                   freeSeatsCount={freeSeatsCount}
                   onTransferPassengerClick={groupActions.openTransfer}
                   onDownloadReceiptClick={handleDownloadReceipt}
+                  isHighlighted={titular.bookingId === highlightedBookingId}
                 />
               ))}
 

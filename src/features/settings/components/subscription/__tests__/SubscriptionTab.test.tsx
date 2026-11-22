@@ -17,7 +17,7 @@ const baseSubscription = (): SubscriptionOutput => ({
   isReadOnly: false,
   // 28 de noviembre, 17:59 en CDMX.
   trialEndsAt: "2026-11-28T23:59:59.000Z",
-  priceMxn: 499,
+  priceMxn: 999,
   metrics: { activeToursCount: 12, registeredTravelersCount: 184 },
   speiDetails: {
     bank: "BBVA Bancomer",
@@ -70,7 +70,7 @@ describe("Configuración → Suscripción", () => {
     expect(screen.getByText("12")).toBeInTheDocument();
     expect(screen.getByText("184")).toBeInTheDocument();
     // Precio: cifra grande y "MXN/mes" chico, con el formato de `formatCurrency`.
-    expect(screen.getByText("$499.00")).toBeInTheDocument();
+    expect(screen.getByText("$999.00")).toBeInTheDocument();
     expect(screen.getByText(/MXN\/mes/)).toBeInTheDocument();
     expect(screen.getByText("¿Qué pasa si vence mi periodo de prueba?")).toBeInTheDocument();
   });
@@ -92,7 +92,7 @@ describe("Configuración → Suscripción", () => {
     await user.click(screen.getByRole("button", { name: /Pagar por Transferencia SPEI/ }));
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText("Pago por Transferencia SPEI")).toBeInTheDocument();
-    expect(within(dialog).getByText("$499.00 MXN")).toBeInTheDocument();
+    expect(within(dialog).getByText("$999.00 MXN")).toBeInTheDocument();
     expect(
       within(dialog).getByText("IVA incluido · Suscripción mensual Plan PRO"),
     ).toBeInTheDocument();
