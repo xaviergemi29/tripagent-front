@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   DEFAULT_DASHBOARD_TAB,
   type DashboardTab,
@@ -110,28 +111,49 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
   // Enlace profundo desde una notificación: cada `bookingId` nuevo lleva a la lista de pasajeros
   // sin filtros (un filtro podría ocultar el grupo). Se ajusta durante el render (patrón de React
   // para derivar estado de una prop), no en un efecto.
+  const router = useRouter();
+  const pathname = usePathname();
   const [appliedFocusId, setAppliedFocusId] = useState<string | null>(null);
+  const [dismissedFocusId, setDismissedFocusId] = useState<string | null>(null);
   if (focusBookingId && focusBookingId !== appliedFocusId) {
     setAppliedFocusId(focusBookingId);
     setActiveTab("passengers");
     clearFilters();
   }
-  const [dismissedFocusId, setDismissedFocusId] = useState<string | null>(null);
+  // Al apagar el resaltado se quita `?bookingId=` de la URL (efecto de abajo). Sin el parámetro se
+  // olvida el foco anterior, así otro clic en la misma notificación vuelve a enfocar el grupo.
+  if (!focusBookingId && (appliedFocusId || dismissedFocusId)) {
+    setAppliedFocusId(null);
+    setDismissedFocusId(null);
+  }
   const highlightedBookingId =
     focusBookingId && focusBookingId !== dismissedFocusId ? focusBookingId : null;
+  // ¿Ya está el grupo en el dashboard? El aviso nace de una acción pública del viajero y el dashboard
+  // se cachea 5 min sin refetch al enfocar: con un tour ya abierto, la caché no trae la reserva nueva.
+  const isFocusedBookingLoaded = Boolean(
+    focusBookingId && tour?.travelers?.some((t) => t.bookingId === focusBookingId),
+  );
   const hasTour = Boolean(tour);
+  const requestedRefreshFor = useRef<string | null>(null);
   useEffect(() => {
-    if (!highlightedBookingId || !hasTour) return;
+    if (!focusBookingId) requestedRefreshFor.current = null;
+    if (!focusBookingId || !hasTour || isFocusedBookingLoaded) return;
+    if (requestedRefreshFor.current === focusBookingId) return; // una sola recarga por enlace
+    requestedRefreshFor.current = focusBookingId;
+    void refetch();
+  }, [focusBookingId, hasTour, isFocusedBookingLoaded, refetch]);
+  useEffect(() => {
+    if (!highlightedBookingId || !isFocusedBookingLoaded) return;
     findVisibleBookingElement(highlightedBookingId)?.scrollIntoView({
       behavior: "smooth",
       block: "center",
     });
-    const timer = window.setTimeout(
-      () => setDismissedFocusId(highlightedBookingId),
-      FOCUS_HIGHLIGHT_MS,
-    );
+    const timer = window.setTimeout(() => {
+      setDismissedFocusId(highlightedBookingId);
+      router.replace(pathname, { scroll: false });
+    }, FOCUS_HIGHLIGHT_MS);
     return () => window.clearTimeout(timer);
-  }, [highlightedBookingId, hasTour]);
+  }, [highlightedBookingId, isFocusedBookingLoaded, router, pathname]);
   // Guía interactiva: se abre sola la primera vez, cuando el tour ya cargó. Los pasos cuyo
   // elemento no está en pantalla (p. ej. "Nueva Reserva" en Modo Auditoría) se omiten.
   const { start: startGuide } = useGuidedTour(TOUR_DASHBOARD_GUIDED_TOUR, {

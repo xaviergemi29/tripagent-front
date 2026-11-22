@@ -19,6 +19,13 @@ vi.mock("@/features/settings/hooks/useSubscriptionAccess", () => ({
   }),
 }));
 
+// El resaltado de una notificación limpia `?bookingId=` de la URL al apagarse.
+const routerReplace = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: routerReplace, push: vi.fn() }),
+  usePathname: () => "/tours/92779764-2131-4c4b-8153-398fbd74bfad",
+}));
+
 // Contenedor del Centro de Control: compone escritorio y celular con un solo estado (pestaña y
 // filtros). Los datos del tour y de la agencia se simulan en sus hooks; la red queda bloqueada.
 
@@ -113,11 +120,40 @@ const renderView = (focusBookingId: string | null = null) => {
 
 beforeEach(() => {
   subscriptionReadOnly = false;
+  routerReplace.mockReset();
   dashboardQuery.mockReset();
   dashboardQuery.mockReturnValue({ data: dashboard(), isLoading: false, isError: false });
 });
 
 describe("TourDashboardView", () => {
+  it("?bookingId= de una reserva que la caché aún no trae: recarga el dashboard una vez y la resalta", () => {
+    const newId = "33333333-3333-4333-8333-33333333333b";
+    const refetch = vi.fn();
+    const stale = dashboard();
+    dashboardQuery.mockReturnValue({ data: stale, isLoading: false, isError: false, refetch });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const { rerender } = render(<TourDashboardView tourId={TOUR_ID} focusBookingId={newId} />, {
+      wrapper,
+    });
+    expect(refetch).toHaveBeenCalledTimes(1);
+    expect(document.querySelector(`[data-booking-id="${newId}"]`)).toBeNull();
+
+    // Llega el dashboard fresco con la reserva nueva.
+    const fresh = dashboard();
+    fresh.travelers = [
+      ...fresh.travelers,
+      titular("33333333-3333-4333-8333-333333333333", "Carla Soto", { bookingId: newId }),
+    ];
+    dashboardQuery.mockReturnValue({ data: fresh, isLoading: false, isError: false, refetch });
+    rerender(<TourDashboardView tourId={TOUR_ID} focusBookingId={newId} />);
+    const row = document.querySelector(`[data-booking-id="${newId}"]`);
+    expect(row!.className).toMatch(/bg-indigo-50/);
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
   it("?bookingId= (notificación): resalta el grupo en escritorio y celular, y luego se apaga", () => {
     vi.useFakeTimers();
     try {
@@ -137,6 +173,33 @@ describe("TourDashboardView", () => {
       act(() => vi.advanceTimersByTime(4000));
       expect(row!.className).not.toMatch(/bg-indigo-50/);
       expect(card!.className).not.toMatch(/ring-indigo-400/);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("al apagar el resaltado quita ?bookingId= y otro clic en la misma notificación vuelve a resaltar", () => {
+    vi.useFakeTimers();
+    try {
+      const betoBookingId = "22222222-2222-4222-8222-22222222222b";
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      );
+      const view = (focus: string | null) => (
+        <TourDashboardView tourId={TOUR_ID} focusBookingId={focus} />
+      );
+      const { rerender } = render(view(betoBookingId), { wrapper });
+      const row = () => document.querySelector(`[data-booking-id="${betoBookingId}"]`)!;
+
+      act(() => vi.advanceTimersByTime(4000));
+      expect(row().className).not.toMatch(/bg-indigo-50/);
+      expect(routerReplace).toHaveBeenCalledWith(`/tours/${TOUR_ID}`, { scroll: false });
+
+      // La URL ya no trae el parámetro; el segundo clic lo vuelve a poner.
+      rerender(view(null));
+      rerender(view(betoBookingId));
+      expect(row().className).toMatch(/bg-indigo-50/);
     } finally {
       vi.useRealTimers();
     }

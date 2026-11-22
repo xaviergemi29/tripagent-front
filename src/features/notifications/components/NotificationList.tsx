@@ -1,6 +1,7 @@
 import { BellOff } from "lucide-react";
 import type { NotificationOutput } from "../schemas/notification.schema";
 import { NotificationItem } from "./NotificationItem";
+import { NotificationListSkeleton } from "./NotificationListSkeleton";
 
 interface NotificationListProps {
   items: NotificationOutput[];
@@ -12,7 +13,7 @@ interface NotificationListProps {
 /** Lista de tarjetas con su estado vacío (compartida por el popover y el drawer). */
 export function NotificationList({ items, onSelect, isLoading, isError }: NotificationListProps) {
   if (isLoading) {
-    return <p className="py-10 text-center text-xs text-slate-400">Cargando notificaciones…</p>;
+    return <NotificationListSkeleton />;
   }
   if (isError) {
     return (

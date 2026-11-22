@@ -24,7 +24,12 @@ const markAllNotificationsReadApi = (): Promise<unknown> =>
 // ============================================================================
 /**
  * Últimas 20 notificaciones de la agencia + no leídas. Se vuelve a pedir cada 45 s solo con la
- * pestaña visible (`refetchIntervalInBackground: false`).
+ * pestaña visible (`refetchIntervalInBackground: false`: TanStack omite los ticks sin foco, y el
+ * navegador además estrangula los temporizadores de pestañas ocultas).
+ *
+ * Por eso, al volver a la pestaña o recuperar la conexión se pide de inmediato si los datos ya
+ * pasaron `staleTime` (45 s). El `QueryClient` global apaga `refetchOnWindowFocus`; aquí se
+ * reactiva solo para esta query.
  */
 export function useNotifications() {
   return useQuery<NotificationsOutput, ApiError>({
@@ -34,6 +39,8 @@ export function useNotifications() {
     refetchIntervalInBackground: false,
     // Con el polling, la caché de 5 min por defecto haría que al volver a la pestaña se viera viejo.
     staleTime: NOTIFICATIONS_REFETCH_MS,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
 

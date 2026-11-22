@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NotificationCenter } from "../components/NotificationCenter";
 import { NotificationItem } from "../components/NotificationItem";
@@ -53,7 +53,9 @@ const setViewport = (isDesktop: boolean) => {
 const renderCenter = (data: NotificationsOutput) => {
   get.mockResolvedValue(data);
   patch.mockResolvedValue({});
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+  });
   render(
     <QueryClientProvider client={queryClient}>
       <NotificationCenter />
@@ -202,5 +204,70 @@ describe("NotificationCenter (campana)", () => {
 
     await user.click(within(dialog).getByRole("button", { name: "Cerrar" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+});
+
+describe("actualización de la campana", () => {
+  it("al volver a la pestaña con datos viejos (> 45 s) vuelve a pedir, aunque el provider apague el foco", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      renderCenter({ items: [notification()], unreadCount: 1 });
+      await screen.findByText("1");
+      expect(get).toHaveBeenCalledTimes(1);
+
+      vi.setSystemTime(Date.now() + 60_000);
+      get.mockResolvedValue({
+        items: [notification(), notification({ id: "n2" })],
+        unreadCount: 2,
+      });
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+
+      expect(await screen.findByText("2")).toBeInTheDocument();
+      expect(get).toHaveBeenCalledTimes(2);
+    } finally {
+      focusManager.setFocused(undefined);
+      vi.useRealTimers();
+    }
+  });
+
+  it.each([
+    ["escritorio", true],
+    ["celular", false],
+  ])(
+    "abrir la campana (%s) pide de nuevo y muestra el skeleton hasta que resuelve",
+    async (_n, isDesktop) => {
+      setViewport(isDesktop);
+      const user = userEvent.setup();
+      renderCenter({ items: [notification()], unreadCount: 1 });
+      const bell = await screen.findByRole("button", { name: /1 sin leer/ });
+      expect(get).toHaveBeenCalledTimes(1);
+
+      let resolveFetch: (value: NotificationsOutput) => void = () => {};
+      get.mockImplementation(() => new Promise<NotificationsOutput>((r) => (resolveFetch = r)));
+      await user.click(bell);
+
+      expect(await screen.findByRole("status")).toHaveTextContent("Cargando notificaciones");
+      expect(get).toHaveBeenCalledTimes(2);
+      // El contador de la campana no desaparece durante el refetch.
+      expect(
+        screen.getAllByRole("button", { name: /1 sin leer/, hidden: true }).length,
+      ).toBeGreaterThan(0);
+      expect(screen.queryByText("Mariana Ruiz")).not.toBeInTheDocument();
+
+      resolveFetch({ items: [notification({ travelerName: "Luis Pérez" })], unreadCount: 1 });
+      expect(await screen.findByText("Luis Pérez")).toBeInTheDocument();
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    },
+  );
+
+  it("si el refetch al abrir falla, conserva los datos en caché", async () => {
+    const user = userEvent.setup();
+    renderCenter({ items: [notification()], unreadCount: 1 });
+    const bell = await screen.findByRole("button", { name: /1 sin leer/ });
+    get.mockRejectedValue({ status: 500, message: "Error interno del servidor" });
+    await user.click(bell);
+    expect(await screen.findByText("Mariana Ruiz")).toBeInTheDocument();
+    expect(screen.queryByText(/No pudimos cargar/)).not.toBeInTheDocument();
   });
 });
