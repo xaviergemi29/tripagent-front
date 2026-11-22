@@ -13,6 +13,7 @@ import type {
 } from "../schemas/transfer-passenger.schema";
 import { TOUR_DASHBOARD_KEYS, TOUR_SEAT_KEYS, VEHICLE_KEYS } from "@/shared/api/query-keys";
 import { invalidateBookingChange } from "@/shared/api/invalidate-booking-change";
+import { formatCurrency } from "@/shared/utils/currency.util";
 
 /** Se envía una unidad de la agencia (`vehicleId`) o una plantilla del catálogo (`templateId`). */
 export type AssignVehicleInput =
@@ -195,19 +196,24 @@ export function useQuickRemovePassenger() {
       bookingId: string;
       passengerId: string;
       penaltyAmount?: number;
+      /** Divisa del tour, solo para el aviso del saldo a favor (no se envía a la API). */
+      currency?: Currency;
     }) =>
       apiClient.patch<never, { financialSummary?: CompanionDropSummary }>(
         `/bookingPassengers/${bookingId}/passengers/${passengerId}/cancel`,
         { penaltyAmount },
       ),
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       invalidateBookingChange(queryClient);
-      toast.success("Pasajero dado de baja", {
-        description:
-          (result?.financialSummary?.refundableSurplus ?? 0) > 0
-            ? "El asiento se liberó. Quedó saldo a devolver al titular: regístralo en su estado de cuenta."
-            : "El asiento ha sido liberado.",
-      });
+      // El monto lo calcula la API (`financialSummary`), no la vista previa del diálogo.
+      const surplus = result?.financialSummary?.refundableSurplus ?? 0;
+      if (surplus > 0) {
+        toast.info(
+          `Baja confirmada. El grupo tiene un saldo a favor de ${formatCurrency(surplus, { currency: variables.currency })}. Puedes registrar la devolución o ajuste en el historial financiero.`,
+        );
+        return;
+      }
+      toast.success("Pasajero dado de baja", { description: "El asiento ha sido liberado." });
     },
     onError: (error: ApiError) => {
       toast.error("Error al dar de baja", {

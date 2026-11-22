@@ -67,6 +67,7 @@ export function TravelerGroupDialogs({
         unitPrice={groupOfRemoved?.unitPrice}
         currentTotal={groupOfRemoved ? getGroupTotal(groupOfRemoved) : undefined}
         paidAmount={groupOfRemoved?.paidAmount}
+        passengersCount={groupOfRemoved?.groupSize}
         isSubmitting={actions.isRemoving}
         tourCurrency={tourCurrency}
       />

@@ -146,7 +146,7 @@ describe("TourDashboardView", () => {
     fresh.travelers = [
       ...fresh.travelers,
       titular("33333333-3333-4333-8333-333333333333", "Carla Soto", { bookingId: newId }),
-    ];
+    ] as TourDashboardOutput["travelers"];
     dashboardQuery.mockReturnValue({ data: fresh, isLoading: false, isError: false, refetch });
     rerender(<TourDashboardView tourId={TOUR_ID} focusBookingId={newId} />);
     const row = document.querySelector(`[data-booking-id="${newId}"]`);

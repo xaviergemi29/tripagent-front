@@ -8,7 +8,7 @@ import {
   useRemovePendingSlot,
 } from "@/features/tour-dashboard/hooks/useTourDashboard";
 import { toTransferWhatsapp } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
-import type { PassengerRole } from "@/shared/constants/domain.constants";
+import type { Currency, PassengerRole } from "@/shared/constants/domain.constants";
 
 export interface TransferTarget {
   bookingId: string;
@@ -49,13 +49,14 @@ export function useTravelerGroupActions(tourId: string) {
     );
   };
 
-  const confirmRemovePassenger = (penaltyAmount = 0): void => {
+  const confirmRemovePassenger = (penaltyAmount = 0, currency?: Currency): void => {
     if (!passengerToRemove) return;
     removePassenger(
       {
         bookingId: passengerToRemove.bookingId,
         passengerId: passengerToRemove.passengerId,
         penaltyAmount,
+        currency,
       },
       { onSuccess: () => setPassengerToRemove(null) },
     );
