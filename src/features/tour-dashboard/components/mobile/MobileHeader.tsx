@@ -1,4 +1,4 @@
-import { Calendar, Plus, CalendarX2 } from "lucide-react";
+import { Calendar, Plus, CalendarX2, Share2 } from "lucide-react";
 import { formatLocalDate } from "@/shared/utils/tour-date.util";
 import { GuidedTourButton } from "@/features/onboarding/components/GuidedTourButton";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
@@ -9,6 +9,8 @@ interface MobileHeaderProps {
   onOpenNewBookingModal?: () => void;
   /** Sin acción (tour finalizado o cancelado) no se ofrece cancelar el tour. */
   onCancelTour?: () => void;
+  /** Abre "Compartir con staff"; sin acción (tour cerrado o sin permiso) no se ofrece. */
+  onShareWithStaff?: () => void;
   /** Repite la guía interactiva del Centro de Control («Ver guía»). */
   onStartGuide?: () => void;
 }
@@ -18,6 +20,7 @@ export function MobileHeader({
   departureDateTime,
   onOpenNewBookingModal,
   onCancelTour,
+  onShareWithStaff,
   onStartGuide,
 }: MobileHeaderProps) {
   const dateString = departureDateTime.split("T")[0];
@@ -49,6 +52,15 @@ export function MobileHeader({
         >
           <Plus className="h-4 w-4" />
           Nueva Reserva
+        </button>
+      )}
+      {onShareWithStaff && (
+        <button
+          onClick={onShareWithStaff}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto"
+        >
+          <Share2 className="h-4 w-4" />
+          Compartir con staff
         </button>
       )}
       {onCancelTour && (

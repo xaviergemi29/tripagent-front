@@ -7,6 +7,7 @@ import {
   type DashboardTab,
 } from "@/features/tour-dashboard/constants/dashboard-tabs";
 import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
+import { StaffShareDialog } from "@/features/tour-dashboard/components/header/StaffShareDialog";
 import { CancelTourDialog } from "@/features/tour-dashboard/components/header/CancelTourDialog";
 import { CancelledTourBanner } from "@/features/tour-dashboard/components/header/CancelledTourBanner";
 import { RefundsPanel } from "@/features/tour-dashboard/components/finance/RefundsPanel";
@@ -103,6 +104,7 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
   const [selectedTravelerId, setSelectedTravelerId] = useState<string | null>(null);
   const [isQuickReservationOpen, setIsQuickReservationOpen] = useState(false);
   const [isCancelTourOpen, setIsCancelTourOpen] = useState(false);
+  const [isStaffShareOpen, setIsStaffShareOpen] = useState(false);
 
   // Pestaña única para escritorio y móvil (ver constants/dashboard-tabs.ts).
   const [activeTab, setActiveTab] = useState<DashboardTab>(DEFAULT_DASHBOARD_TAB);
@@ -236,6 +238,14 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
   const assignedSeatsCount = tour.metrics.logistics.assigned;
   // Cancelar el tour (decisión del PM, 2026-11-14): solo si aún opera (ni finalizado ni cancelado).
   const openCancelTour = isAuditMode ? undefined : () => setIsCancelTourOpen(true);
+  // Compartir con staff: nada en un tour cerrado (Modo Auditoría: FINALIZADO o CANCELADO). Con la
+  // cuenta en Solo Lectura solo se ofrece si ya hay un enlace (se puede copiar, no cambiar).
+  const isTourClosed =
+    tour.temporalStatus === TOUR_TEMPORAL_STATUS.FINISHED ||
+    tour.temporalStatus === TOUR_TEMPORAL_STATUS.CANCELLED;
+  const staffShare = tour.staffShare ?? null;
+  const openStaffShare =
+    !isTourClosed && (canWrite || staffShare) ? () => setIsStaffShareOpen(true) : undefined;
   // Reembolsos: se registran salvo en un tour FINALIZADO (excepción del Modo Auditoría para los
   // tours cancelados).
   const canRegisterRefunds =
@@ -287,6 +297,7 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
           logistics={tour.metrics.logistics}
           onNewReservation={isAuditMode ? undefined : () => setIsQuickReservationOpen(true)}
           onCancelTour={openCancelTour}
+          onShareWithStaff={openStaffShare}
           onStartGuide={handleStartGuide}
         />
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
@@ -375,6 +386,7 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
           departureDateTime={tour.departureDateTime}
           onOpenNewBookingModal={isAuditMode ? undefined : () => setIsQuickReservationOpen(true)}
           onCancelTour={openCancelTour}
+          onShareWithStaff={openStaffShare}
           onStartGuide={handleStartGuide}
         />
 
@@ -470,6 +482,15 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
         assignedSeatsCount={assignedSeatsCount}
         currentVehicle={tour.vehicle}
         onSuccess={() => setActiveTab("seatmap")}
+      />
+
+      <StaffShareDialog
+        tourId={tourId}
+        tourTitle={tour.title}
+        staffShare={staffShare}
+        canManage={canWrite}
+        open={isStaffShareOpen}
+        onOpenChange={setIsStaffShareOpen}
       />
 
       <CancelTourDialog

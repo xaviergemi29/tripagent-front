@@ -154,6 +154,13 @@ export const refundRowSchema = z.object({
   payments: z.array(paymentRecordSchema).default([]),
 });
 
+/** Enlace de solo lectura para el coordinador (staff) del tour; `null` si no hay uno activo. */
+export const staffShareLinkSchema = z.object({
+  token: z.string(),
+  expiresAt: z.string(),
+  isExpired: z.boolean().default(false),
+});
+
 export const tourDashboardOutputSchema = z.object({
   id: z.uuid(),
   title: z.string(),
@@ -178,6 +185,8 @@ export const tourDashboardOutputSchema = z.object({
   cancelledTravelers: z.array(titularSchema).default([]),
   cancellation: tourCancellationSchema.nullable().default(null),
   refunds: z.array(refundRowSchema).default([]),
+  /** Enlace para staff (`POST /tours/:id/staff-share`); ausente en respuestas anteriores. */
+  staffShare: staffShareLinkSchema.nullable().optional(),
 });
 
 export type { FormStatus } from "@/shared/constants/domain.constants";
@@ -189,6 +198,7 @@ export type TourMetrics = z.infer<typeof tourMetricsSchema>;
 export type VehicleOutput = z.infer<typeof vehicleOutputSchema>;
 export type TourDashboardOutput = z.infer<typeof tourDashboardOutputSchema>;
 export type TourCancellationOutput = z.infer<typeof tourCancellationSchema>;
+export type StaffShareLinkOutput = z.infer<typeof staffShareLinkSchema>;
 export type RefundRowOutput = z.infer<typeof refundRowSchema>;
 
 /**

@@ -10,6 +10,7 @@ import {
   Plus,
   Calendar,
   CalendarX2,
+  Share2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,8 @@ interface TourDashboardHeaderProps {
   onNewReservation?: () => void;
   /** Sin acción (tour finalizado o cancelado) no se ofrece cancelar el tour. */
   onCancelTour?: () => void;
+  /** Abre "Compartir con staff"; sin acción (tour cerrado o sin permiso) no se ofrece. */
+  onShareWithStaff?: () => void;
   /** Repite la guía interactiva del Centro de Control («Ver guía»). */
   onStartGuide?: () => void;
 }
@@ -42,6 +45,7 @@ export function TourDashboardHeader({
   logistics,
   onNewReservation,
   onCancelTour,
+  onShareWithStaff,
   onStartGuide,
 }: TourDashboardHeaderProps) {
   const occupancyStats = useMemo(() => {
@@ -78,9 +82,19 @@ export function TourDashboardHeader({
             <span>{displayDate}</span>
           </div>
         </div>
-        {(onNewReservation || onCancelTour || onStartGuide) && (
+        {(onNewReservation || onCancelTour || onShareWithStaff || onStartGuide) && (
           <div className="flex flex-wrap gap-2">
             {onStartGuide && <GuidedTourButton onClick={onStartGuide} className="h-10" />}
+            {onShareWithStaff && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={onShareWithStaff}
+              >
+                <Share2 className="mr-2 h-5 w-5" /> Compartir con staff
+              </Button>
+            )}
             {onCancelTour && (
               <Button
                 size="lg"

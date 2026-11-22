@@ -73,6 +73,14 @@ export const buildBrochureUrl = (tourId: string | undefined): string =>
   `${window.location.origin}/p/${tourId}`;
 
 /**
+ * @description URL pública (solo lectura, sin cuenta) del croquis y la lista de pasajeros para el
+ * coordinador del tour. Solo se puede usar en el cliente (depende de `window.location.origin`).
+ * @param {string} token - Token del enlace para staff.
+ * @returns {string} URL absoluta `/s/<token>`.
+ */
+export const buildStaffShareUrl = (token: string): string => `${window.location.origin}/s/${token}`;
+
+/**
  * @description URL pública de un archivo servido por la API (p. ej. el folleto PDF).
  * La API guarda rutas como `/uploads/brochures/x.pdf` y las sirve en `<origen API>/public/...`,
  * **fuera** del prefijo `/api` que trae `NEXT_PUBLIC_API_URL`.

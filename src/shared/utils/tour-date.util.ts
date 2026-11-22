@@ -167,6 +167,24 @@ export const formatShortDateTime = (dateString: string): string => {
 };
 
 /**
+ * @description Fecha y hora de un instante ISO en la zona de referencia del producto
+ * (`America/Mexico_City`), sin depender de la zona del navegador o del servidor.
+ * @example formatMexicoDateTime("2026-11-25T18:30:00.000Z") // "25 de noviembre de 2026, 12:30 p.m."
+ */
+export const formatMexicoDateTime = (isoDate: string): string => {
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/Mexico_City",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+};
+
+/**
  * @description Devuelve la fecha de hoy (zona horaria local) en formato "YYYY-MM-DD".
  * Útil para establecer valores por defecto en `<input type="date">` o prefijos de nombres de archivos.
  *
