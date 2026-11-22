@@ -230,3 +230,38 @@ describe("buildOperatorStatement", () => {
     expect(pdf.tour).toMatchObject({ title: "Zacatlán", returnDate: null });
   });
 });
+
+describe("BookingCard (celular): Enviar por WhatsApp", () => {
+  it("aparece en una reserva PENDING con el enlace wa.me y el Magic Link", () => {
+    renderCard({ tourTitle: "Zacatlán" }, titular({ requiredDeposit: 1000, paidAmount: 0 }));
+    const link = screen.getByRole("link", { name: "Enviar por WhatsApp" });
+    const href = link.getAttribute("href") ?? "";
+    expect(href.startsWith("https://wa.me/522281234567?text=")).toBe(true);
+    expect(decodeURIComponent(href)).toContain("/register?token=tok123");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("sin WhatsApp válido queda deshabilitado", () => {
+    renderCard({}, titular({ whatsapp: "Sin teléfono" }));
+    expect(screen.queryByRole("link", { name: "Enviar por WhatsApp" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Enviar por WhatsApp (no disponible)")).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
+  it("se oculta en Modo Auditoría y con la reserva confirmada", () => {
+    const { unmount } = render(
+      <BookingCard
+        titular={titular()}
+        tourCurrency="MXN"
+        isAuditMode
+        onAssignSeatClick={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText(/Enviar por WhatsApp/)).not.toBeInTheDocument();
+    unmount();
+    renderCard({}, titular({ bookingStatus: "CONFIRMED" }));
+    expect(screen.queryByLabelText(/Enviar por WhatsApp/)).not.toBeInTheDocument();
+  });
+});

@@ -141,6 +141,7 @@ export function SeatCell({
  * en reposo (borde, fondo, ícono y sombra) y uno más intenso al pasar el cursor:
  * - receipt (Comprobante PDF): azul cielo, un documento.
  * - magicLink (Copiar Magic Link): índigo, el color de la marca para compartir.
+ * - whatsapp (Enviar Magic Link y cobro por WhatsApp): verde WhatsApp.
  * - payments (Registrar abonos): esmeralda, dinero.
  * - remove (Dar de baja): rojo suave; es destructiva, así que en reposo no compite con las demás.
  */
@@ -149,6 +150,8 @@ export const ROW_ACTION_TONE = {
     "border-sky-200 bg-sky-50/60 text-sky-700 shadow-xs shadow-sky-100 hover:border-sky-300 hover:bg-sky-100 hover:text-sky-800",
   magicLink:
     "border-indigo-200 bg-indigo-50/60 text-indigo-600 shadow-xs shadow-indigo-100 hover:border-indigo-300 hover:bg-indigo-100 hover:text-indigo-700",
+  whatsapp:
+    "border-green-200 bg-green-50/60 text-green-700 shadow-xs shadow-green-100 hover:border-green-300 hover:bg-green-100 hover:text-green-800",
   payments:
     "border-emerald-200 bg-emerald-50/60 text-emerald-700 shadow-xs shadow-emerald-100 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800",
   remove:

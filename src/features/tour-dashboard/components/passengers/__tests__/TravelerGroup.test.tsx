@@ -255,3 +255,50 @@ describe("TravelerGroup: Modo Auditoría (solo lectura)", () => {
     expect(screen.getByRole("button", { name: "Registrar abonos y pagos" })).toBeInTheDocument();
   });
 });
+
+describe("TravelerGroup: Enviar por WhatsApp", () => {
+  const getLink = () => screen.getByRole("link", { name: "Enviar por WhatsApp" });
+
+  it.each(["AWAITING_REGISTRATION", "PENDING"] as const)(
+    "aparece con %s y abre wa.me con el Magic Link",
+    (bookingStatus) => {
+      renderGroup(
+        { tourTitle: "Zacatlán", bankDetails: { clabeNumber: "012345678901234567" } },
+        titular({ bookingStatus, requiredDeposit: 3000, paidAmount: 1000 }),
+      );
+      const href = getLink().getAttribute("href") ?? "";
+      expect(href.startsWith("https://wa.me/522281234567?text=")).toBe(true);
+      const text = decodeURIComponent(href.split("?text=")[1] ?? "");
+      expect(text).toContain("/register?token=tok123");
+      expect(text).toContain("$2,000.00 MXN");
+      expect(text).toContain("CLABE:");
+      // Registrada (PENDING) → recordatorio de pago; si no, invitación a registrarse.
+      expect(text).toContain(
+        bookingStatus === "PENDING"
+          ? "Gracias por completar tu registro"
+          : "registrar los datos de tus acompañantes",
+      );
+      expect(getLink()).toHaveAttribute("target", "_blank");
+      expect(getLink()).toHaveAttribute("rel", "noopener noreferrer");
+    },
+  );
+
+  it("sin WhatsApp válido queda deshabilitado", () => {
+    renderGroup({}, titular({ whatsapp: "Sin teléfono" }));
+    expect(screen.queryByRole("link", { name: "Enviar por WhatsApp" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Enviar por WhatsApp (no disponible)")).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
+  it("no se ofrece con la reserva confirmada", () => {
+    renderGroup({}, titular({ bookingStatus: "CONFIRMED" }));
+    expect(screen.queryByLabelText(/Enviar por WhatsApp/)).not.toBeInTheDocument();
+  });
+
+  it("no se ofrece en Modo Auditoría", () => {
+    renderGroup({ isAuditMode: true });
+    expect(screen.queryByLabelText(/Enviar por WhatsApp/)).not.toBeInTheDocument();
+  });
+});

@@ -6,6 +6,7 @@ import {
   type PassengerRole,
   FORM_STATUS,
 } from "@/shared/constants/domain.constants";
+import type { BookingWhatsAppBankDetails } from "@/shared/utils/booking-whatsapp.util";
 import { TitularRow } from "./TitularRow";
 import { CompanionRow } from "./CompanionRow";
 import { AddSlotRow, PendingSlotRow } from "./PendingSlotRows";
@@ -14,6 +15,8 @@ interface TravelerGroupProps {
   titular: TitularRowOutput;
   isAuditMode?: boolean;
   tourCurrency?: Currency;
+  tourTitle?: string;
+  bankDetails?: BookingWhatsAppBankDetails;
   isAdding?: boolean;
   isRemovingGhost?: boolean;
   freeSeatsCount?: number;
@@ -44,6 +47,8 @@ export function TravelerGroup({
   titular,
   isAuditMode,
   tourCurrency,
+  tourTitle,
+  bankDetails,
   isAdding,
   isRemovingGhost,
   freeSeatsCount,
@@ -71,6 +76,8 @@ export function TravelerGroup({
         onToggle={() => setIsExpanded(!isExpanded)}
         isAuditMode={isAuditMode}
         tourCurrency={tourCurrency}
+        tourTitle={tourTitle}
+        bankDetails={bankDetails}
         requiresSeats={requiresSeats}
         onRowClick={onRowClick}
         onAssignSeatClick={onAssignSeatClick}

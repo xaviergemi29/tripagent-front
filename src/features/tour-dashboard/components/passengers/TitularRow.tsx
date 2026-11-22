@@ -8,6 +8,7 @@ import {
   type Currency,
   DEFAULT_CURRENCY,
 } from "@/shared/constants/domain.constants";
+import type { BookingWhatsAppBankDetails } from "@/shared/utils/booking-whatsapp.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import {
   copyMagicLink,
@@ -18,6 +19,7 @@ import {
   SeatCell,
   TransferMenu,
 } from "./traveler-row-cells";
+import { canSendBookingWhatsApp, SendBookingWhatsAppAction } from "./SendBookingWhatsAppAction";
 import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { hasRegisteredPayments } from "@/features/tour-dashboard/utils/dashboard-travelers.util";
 import { formatPhoneForDisplay } from "@/shared/utils/phone.util";
@@ -29,6 +31,9 @@ interface TitularRowProps {
   onToggle: () => void;
   isAuditMode?: boolean;
   tourCurrency?: Currency;
+  tourTitle?: string;
+  /** Datos de transferencia de la agencia para el mensaje de WhatsApp. */
+  bankDetails?: BookingWhatsAppBankDetails;
   requiresSeats?: boolean;
   onRowClick: (id: string) => void;
   onAssignSeatClick: (passengerId: string) => void;
@@ -46,6 +51,8 @@ export function TitularRow({
   onToggle,
   isAuditMode,
   tourCurrency,
+  tourTitle = "",
+  bankDetails,
   requiresSeats,
   onRowClick,
   onAssignSeatClick,
@@ -186,6 +193,14 @@ export function TitularRow({
               >
                 <FileDown className="h-4 w-4" />
               </RowActionButton>
+            )}
+            {!isAuditMode && canSendBookingWhatsApp(titular) && (
+              <SendBookingWhatsAppAction
+                titular={titular}
+                tourTitle={tourTitle}
+                tourCurrency={tourCurrency || DEFAULT_CURRENCY}
+                bankDetails={bankDetails}
+              />
             )}
             {/* Magic Link permanente (registro y estado de cuenta) */}
             {titular.magicToken && (

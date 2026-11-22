@@ -21,6 +21,12 @@ import {
   FORM_STATUS,
   PAYMENT_STATUS,
 } from "@/shared/constants/domain.constants";
+import type { BookingWhatsAppBankDetails } from "@/shared/utils/booking-whatsapp.util";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  canSendBookingWhatsApp,
+  SendBookingWhatsAppAction,
+} from "@/features/tour-dashboard/components/passengers/SendBookingWhatsAppAction";
 import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { SeatWithoutDepositBadge } from "@/features/tour-dashboard/components/passengers/SeatWithoutDepositBadge";
@@ -38,6 +44,9 @@ import { buildTelUrl, formatPhoneForDisplay } from "@/shared/utils/phone.util";
 interface BookingCardProps {
   titular: TitularRowOutput;
   tourCurrency?: Currency;
+  tourTitle?: string;
+  /** Datos de transferencia de la agencia para el mensaje de WhatsApp. */
+  bankDetails?: BookingWhatsAppBankDetails;
   requiresSeats?: boolean;
   onAssignSeatClick: (passengerId: string) => void;
   /** Modo Auditoría (tour finalizado, pausado o cancelado): sin acciones sobre asientos. */
@@ -74,6 +83,8 @@ interface BookingCardProps {
 export function BookingCard({
   titular,
   tourCurrency = DEFAULT_CURRENCY,
+  tourTitle = "",
+  bankDetails,
   requiresSeats,
   onAssignSeatClick,
   isAuditMode = false,
@@ -391,6 +402,16 @@ export function BookingCard({
             >
               <FileText className="h-4 w-4" />
             </button>
+          )}
+          {canEditGroup && canSendBookingWhatsApp(titular) && (
+            <TooltipProvider delayDuration={150}>
+              <SendBookingWhatsAppAction
+                titular={titular}
+                tourTitle={tourTitle}
+                tourCurrency={tourCurrency}
+                bankDetails={bankDetails}
+              />
+            </TooltipProvider>
           )}
           {titular.magicToken && (
             <button

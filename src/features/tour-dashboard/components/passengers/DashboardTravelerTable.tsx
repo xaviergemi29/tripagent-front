@@ -1,5 +1,6 @@
 "use client";
 
+import type { BookingWhatsAppBankDetails } from "@/shared/utils/booking-whatsapp.util";
 import { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import { useTravelerGroupActions } from "@/features/tour-dashboard/hooks/useTravelerGroupActions";
 import { TravelerGroup } from "@/features/tour-dashboard/components/passengers/TravelerGroup";
@@ -28,6 +29,8 @@ interface DashboardTravelerTableProps {
   /** Marca, contacto, datos bancarios y políticas generales de la agencia para el PDF. */
   /** `null` mientras no hay datos de la agencia: el PDF no se genera (ver `downloadOperatorStatement`). */
   statementAgency: StatementPDFData["agency"] | null;
+  /** Datos de transferencia de la agencia para "Enviar por WhatsApp" (sin tarjeta). */
+  bankDetails?: BookingWhatsAppBankDetails;
   onStatementAgencyMissing?: () => void;
   /** Instrucciones Post-Pago (logística) del tour que se imprimen al final del PDF. */
   tourPostPaymentInstructions?: string | null;
@@ -55,6 +58,7 @@ export function DashboardTravelerTable({
   tourDepartureDate,
   tourReturnDate,
   statementAgency,
+  bankDetails,
   onStatementAgencyMissing,
   tourPostPaymentInstructions,
   requiresSeats,
@@ -116,6 +120,8 @@ export function DashboardTravelerTable({
                   titular={titular}
                   isAuditMode={isAuditMode}
                   tourCurrency={tourCurrency}
+                  tourTitle={tourTitle}
+                  bankDetails={bankDetails}
                   isAdding={groupActions.isAdding}
                   requiresSeats={requiresSeats}
                   onRowClick={onRowClick}
