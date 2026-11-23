@@ -19,6 +19,7 @@ export interface GuidedTourDefinition {
 
 export const TOUR_TARGET = {
   GUIDE_BUTTON: "guide-button",
+  NOTIFICATIONS_BELL: "notifications-bell",
   TOURS_CREATE: "tours-create",
   TOURS_FILTERS: "tours-filters",
   TOURS_LIST: "tours-list",
@@ -32,8 +33,10 @@ export const TOUR_TARGET = {
   DASHBOARD_TRAVELERS: "dashboard-travelers",
   DASHBOARD_ACTION_RECEIPT: "dashboard-action-receipt",
   DASHBOARD_ACTION_MAGIC_LINK: "dashboard-action-magic-link",
+  DASHBOARD_ACTION_WHATSAPP: "dashboard-action-whatsapp",
   DASHBOARD_ACTION_PAYMENTS: "dashboard-action-payments",
   DASHBOARD_ACTION_TRANSFER: "dashboard-action-transfer",
+  DASHBOARD_STAFF_SHARE: "dashboard-staff-share",
   TRAVELERS_FILTERS: "travelers-filters",
   TRAVELERS_LIST: "travelers-list",
   TRAVELERS_ACTION_EDIT: "travelers-action-edit",
@@ -56,26 +59,26 @@ const GUIDE_BUTTON_STEP: GuidedTourStep = {
 
 export const TOURS_GUIDED_TOUR: GuidedTourDefinition = {
   id: "tours",
-  // v2 (2026-11-15): un paso por botón de la columna "Acciones".
-  version: 2,
+  // v3 (2026-11-23): hospedaje, cancelación desde el Centro de Control y notificaciones.
+  version: 3,
   steps: [
     {
       title: "Tours y Operaciones",
       description:
-        "Aquí ves todas tus salidas programadas: su precio, los lugares ocupados y si están próximas, en curso o finalizadas.",
+        "Aquí controlas todas tus salidas: precios, lugares ocupados y si están próximas, en curso o finalizadas.",
     },
     {
       target: TOUR_TARGET.TOURS_CREATE,
       title: "Crea un tour",
       description:
-        "Define fecha, precio, anticipo, capacidad, puntos de abordaje, métodos de pago y el folleto PDF.",
+        "Configura fechas de salida y regreso, precio, anticipo, capacidad, puntos de abordaje y el folleto PDF. Si dura más de un día, tendrá pestaña de Hospedaje.",
       side: "bottom",
       align: "end",
     },
     {
       target: TOUR_TARGET.TOURS_FILTERS,
       title: "Busca y filtra",
-      description: "Encuentra un tour por nombre o destino y filtra por estado o tipo de destino.",
+      description: "Encuentra una salida por nombre o destino y filtra por estado o tipo de viaje.",
       side: "bottom",
       align: "start",
     },
@@ -83,14 +86,15 @@ export const TOURS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.TOURS_LIST,
       title: "Tus salidas",
       description:
-        "Cada fila muestra el precio, los lugares ocupados de la capacidad vendible y el estado del tour.",
+        "Revisa de un vistazo el precio, los lugares ocupados frente a tu capacidad vendible y el estatus de cada salida.",
       side: "top",
       align: "start",
     },
     {
       target: TOUR_TARGET.TOURS_ACTION_CONTROL_CENTER,
       title: "Centro de Control",
-      description: "Abre el panel del tour: reservas, abonos, asientos y la lista de abordaje.",
+      description:
+        "Entra al panel operativo del tour para gestionar reservas, abonos, asientos, hospedaje y lista de abordaje.",
       side: "left",
       align: "center",
     },
@@ -98,7 +102,7 @@ export const TOURS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.TOURS_ACTION_SHARE,
       title: "Compartir folleto",
       description:
-        "Copia un mensaje con el enlace del folleto digital, listo para pegarlo en WhatsApp. Desde el folleto, el cliente puede iniciar su reserva.",
+        "Copia un mensaje listo para WhatsApp con el enlace del folleto digital, desde donde tu cliente puede apartar su lugar.",
       side: "left",
       align: "center",
     },
@@ -106,9 +110,17 @@ export const TOURS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.TOURS_ACTION_MORE,
       title: "Más opciones",
       description:
-        "Edita los datos del tour o elimínalo. Solo se puede eliminar si no tiene reservas activas ni dinero abonado.",
+        "Edita los datos del tour o elimínalo (solo si aún no tiene reservas ni abonos). Para cancelar una salida, hazlo desde su Centro de Control.",
       side: "left",
       align: "center",
+    },
+    {
+      target: TOUR_TARGET.NOTIFICATIONS_BELL,
+      title: "Notificaciones",
+      description:
+        "Te avisa cuando un cliente aparta lugares desde tu folleto o completa el registro de su grupo en el Magic Link.",
+      side: "bottom",
+      align: "end",
     },
     GUIDE_BUTTON_STEP,
   ],
@@ -116,19 +128,19 @@ export const TOURS_GUIDED_TOUR: GuidedTourDefinition = {
 
 export const TOUR_DASHBOARD_GUIDED_TOUR: GuidedTourDefinition = {
   id: "tour-dashboard",
-  // v2 (2026-11-15): un paso por botón de la columna "Acciones".
-  version: 2,
+  // v3 (2026-11-23): hospedaje, "Enviar por WhatsApp" y enlace de staff.
+  version: 3,
   steps: [
     {
       title: "Centro de Control",
       description:
-        "Desde aquí operas el tour: reservas, cobranza, asientos y la lista de abordaje.",
+        "Desde aquí operas toda la salida: reservas, cobranza, asientos, hospedaje y lista de abordaje.",
     },
     {
       target: TOUR_TARGET.DASHBOARD_KPIS,
       title: "Resumen del tour",
       description:
-        "Ocupación de los lugares vendibles, lo cobrado contra lo proyectado y los pasajeros que aún no tienen asiento.",
+        "Monitorea lugares vendidos, lo cobrado frente a lo proyectado y cuántos pasajeros faltan por acomodar.",
       side: "bottom",
       align: "center",
     },
@@ -136,15 +148,16 @@ export const TOUR_DASHBOARD_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.DASHBOARD_NEW_BOOKING,
       title: "Aparta lugares",
       description:
-        "«Nueva Reserva» aparta lugares y genera el Magic Link que compartes por WhatsApp para que el cliente registre a su grupo.",
+        "«Nueva Reserva» bloquea lugares y genera el Magic Link para que el cliente registre a su grupo por WhatsApp.",
       side: "bottom",
       align: "end",
     },
     {
+      // Señala el contenedor de pestañas: la de Hospedaje solo existe en tours de varios días.
       target: TOUR_TARGET.DASHBOARD_TABS,
-      title: "Pasajeros y asientos",
+      title: "Pasajeros, asientos y hospedaje",
       description:
-        "Cambia entre la lista de pasajeros y el mapa de asientos, donde asignas el vehículo y acomodas a cada viajero.",
+        "Alterna entre la lista de pasajeros, el mapa de asientos del transporte y Hospedaje (en tours con pernocta) para asignar cuartos y copiar el Rooming List.",
       side: "bottom",
       align: "start",
     },
@@ -152,7 +165,7 @@ export const TOUR_DASHBOARD_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.DASHBOARD_FILTERS,
       title: "Encuentra a un viajero",
       description:
-        "Busca por nombre o teléfono y filtra por pagos, formularios o asientos. Aquí también descargas la lista de abordaje.",
+        "Busca por nombre o teléfono y filtra por pagos, formularios o asientos. Aquí mismo descargas la lista de abordaje.",
       side: "bottom",
       align: "start",
     },
@@ -160,7 +173,7 @@ export const TOUR_DASHBOARD_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.DASHBOARD_TRAVELERS,
       title: "Reservas y cobranza",
       description:
-        "Cada reserva agrupa al titular y sus acompañantes, con su asiento, punto de abordaje, registro y estado de pago. Despliega el grupo con la flecha de la izquierda para ver a cada acompañante.",
+        "Cada fila agrupa al titular y sus acompañantes con asiento, abordaje y saldo. Despliega con la flecha izquierda para ver el detalle.",
       side: "top",
       align: "start",
     },
@@ -168,7 +181,7 @@ export const TOUR_DASHBOARD_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.DASHBOARD_ACTION_RECEIPT,
       title: "Estado de cuenta PDF",
       description:
-        "Aparece cuando la reserva ya tiene abonos: descarga el estado de cuenta con la marca de tu agencia, los pasajeros y los pagos registrados.",
+        "Se activa en cuanto la reserva tiene abonos: descarga el comprobante con tu marca, pasajeros y pagos registrados.",
       side: "left",
       align: "center",
     },
@@ -176,7 +189,15 @@ export const TOUR_DASHBOARD_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.DASHBOARD_ACTION_MAGIC_LINK,
       title: "Copiar Magic Link",
       description:
-        "Copia el enlace personal del cliente. Con él registra a su grupo y después consulta su estado de cuenta y su pase de abordaje. No vence.",
+        "Copia el enlace personal del cliente para que registre a su grupo y consulte su estado de cuenta o pase de abordaje. No vence.",
+      side: "left",
+      align: "center",
+    },
+    {
+      target: TOUR_TARGET.DASHBOARD_ACTION_WHATSAPP,
+      title: "Enviar por WhatsApp",
+      description:
+        "Abre WhatsApp con un mensaje listo con el Magic Link, el anticipo pendiente y tus datos de transferencia. Aparece en reservas pendientes de registro o de pago.",
       side: "left",
       align: "center",
     },
@@ -184,7 +205,7 @@ export const TOUR_DASHBOARD_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.DASHBOARD_ACTION_PAYMENTS,
       title: "Registrar abonos y pagos",
       description:
-        "Abre el detalle financiero de la reserva: registra abonos, revisa el historial de pagos y anula un abono mal capturado.",
+        "Abre el detalle financiero para registrar abonos, consultar el historial o anular un pago mal capturado.",
       side: "left",
       align: "center",
     },
@@ -192,9 +213,17 @@ export const TOUR_DASHBOARD_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.DASHBOARD_ACTION_TRANSFER,
       title: "Más acciones",
       description:
-        "«Transferir titularidad» pasa la reserva y su saldo a otra persona. Al desplegar el grupo, cada acompañante tiene «Dar de baja pasajero» y «Transferir lugar», y cada lugar pendiente «Liberar lugar apartado».",
+        "Usa «Transferir titularidad» para ceder la reserva. Al desplegar el grupo puedes dar de baja pasajeros, transferir lugares o liberar apartados pendientes.",
       side: "left",
       align: "center",
+    },
+    {
+      target: TOUR_TARGET.DASHBOARD_STAFF_SHARE,
+      title: "Enlace de staff",
+      description:
+        "Comparte con tu guía o coordinador un enlace de solo lectura con el mapa de asientos y la lista de pasajeros con su punto de abordaje, sin montos ni datos de contacto.",
+      side: "bottom",
+      align: "end",
     },
     GUIDE_BUTTON_STEP,
   ],
@@ -202,19 +231,19 @@ export const TOUR_DASHBOARD_GUIDED_TOUR: GuidedTourDefinition = {
 
 export const TRAVELERS_GUIDED_TOUR: GuidedTourDefinition = {
   id: "travelers",
-  // v2 (2026-11-15): un paso por botón de la columna "Acciones".
-  version: 2,
+  // v3 (2026-11-23): eliminar = anonimizar (regla de privacidad).
+  version: 3,
   steps: [
     {
       title: "Directorio de Viajeros",
       description:
-        "Cada persona que reservas o que se registra con un Magic Link queda aquí, identificada por su WhatsApp.",
+        "Todo cliente que reservas o que se registra mediante un Magic Link se guarda aquí automáticamente, identificado por su WhatsApp.",
     },
     {
       target: TOUR_TARGET.TRAVELERS_FILTERS,
       title: "Busca y filtra",
       description:
-        "Encuentra a un viajero por nombre, teléfono o correo, y filtra por viajes nacionales o internacionales.",
+        "Localiza rápido a cualquier viajero por nombre, teléfono o correo, y filtra por viajes nacionales o internacionales.",
       side: "bottom",
       align: "start",
     },
@@ -222,7 +251,7 @@ export const TRAVELERS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.TRAVELERS_LIST,
       title: "Ficha del viajero",
       description:
-        "Consulta su contacto, contacto de emergencia y los tipos de viaje que ha hecho.",
+        "Consulta sus datos de contacto, teléfono de emergencia y los tipos de viaje que ha realizado contigo.",
       side: "top",
       align: "start",
     },
@@ -230,7 +259,7 @@ export const TRAVELERS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.TRAVELERS_ACTION_EDIT,
       title: "Editar viajero",
       description:
-        "Corrige su nombre, WhatsApp, correo, fecha de nacimiento o contacto de emergencia.",
+        "Actualiza su nombre, WhatsApp, correo, fecha de nacimiento o contacto de emergencia.",
       side: "left",
       align: "center",
     },
@@ -238,14 +267,15 @@ export const TRAVELERS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.TRAVELERS_ACTION_HISTORY,
       title: "Ver historial",
       description:
-        "Muestra los tours en los que ha viajado y lo que ha pagado en total en cada moneda.",
+        "Revisa todos los tours en los que ha viajado con tu agencia y el total pagado por moneda.",
       side: "left",
       align: "center",
     },
     {
       target: TOUR_TARGET.TRAVELERS_ACTION_DELETE,
       title: "Eliminar viajero",
-      description: "Lo quita del directorio. Antes te pide confirmación.",
+      description:
+        "Borra sus datos personales del directorio por privacidad, pero conserva su historial de viajes y pagos para tus reportes. No está disponible si tiene un viaje próximo o en curso.",
       side: "left",
       align: "center",
     },
@@ -255,17 +285,18 @@ export const TRAVELERS_GUIDED_TOUR: GuidedTourDefinition = {
 
 export const SETTINGS_GUIDED_TOUR: GuidedTourDefinition = {
   id: "settings",
-  version: 1,
+  // v2 (2026-11-23): textos actualizados.
+  version: 2,
   steps: [
     {
       title: "Configuración",
       description:
-        "Aquí ajustas tu cuenta y los datos de tu agencia que ven tus viajeros. Cada pestaña guarda por separado.",
+        "Personaliza tu cuenta y la información pública que ven tus viajeros. Cada pestaña se guarda por separado.",
     },
     {
       target: TOUR_TARGET.SETTINGS_TAB_SECURITY,
       title: "Seguridad",
-      description: "Revisa el correo y el rol de tu sesión y cambia tu contraseña.",
+      description: "Consulta el correo y rol de tu usuario y actualiza tu contraseña.",
       side: "bottom",
       align: "start",
     },
@@ -273,7 +304,7 @@ export const SETTINGS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.SETTINGS_TAB_AGENCY,
       title: "Agencia",
       description:
-        "Tu perfil público (nombre, correo, WhatsApp y dirección) y tus datos bancarios: banco, titular, CLABE y, si quieres, número de tarjeta. Tus viajeros los ven en el Magic Link y en su estado de cuenta.",
+        "Configura los datos públicos de tu agencia y tus cuentas bancarias (banco, titular, CLABE y tarjeta) para que tus clientes las vean en su Magic Link y estado de cuenta.",
       side: "bottom",
       align: "start",
     },
@@ -281,7 +312,7 @@ export const SETTINGS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.SETTINGS_TAB_POLICIES,
       title: "Políticas",
       description:
-        "Las políticas generales de tu agencia: el cliente las acepta al registrarse y se imprimen en todos los estados de cuenta PDF.",
+        "Define tus términos y condiciones de cancelación: el cliente los acepta al registrarse y se imprimen en cada estado de cuenta PDF.",
       side: "bottom",
       align: "center",
     },
@@ -289,7 +320,7 @@ export const SETTINGS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.SETTINGS_TAB_BRANDING,
       title: "Identidad visual",
       description:
-        "Sube tu logotipo (folleto, Magic Link y PDF) y elige los colores de marca de tus estados de cuenta.",
+        "Sube tu logotipo (para folleto, Magic Link y PDF) y elige los colores de tu marca.",
       side: "bottom",
       align: "center",
     },
@@ -297,7 +328,7 @@ export const SETTINGS_GUIDED_TOUR: GuidedTourDefinition = {
       target: TOUR_TARGET.SETTINGS_TAB_SUBSCRIPTION,
       title: "Suscripción",
       description:
-        "Consulta los días que le quedan a tu prueba gratuita y activa el Plan PRO con tarjeta o transferencia SPEI.",
+        "Revisa el estatus de tu prueba gratuita y activa tu Plan PRO con tarjeta o transferencia SPEI.",
       side: "bottom",
       align: "end",
     },

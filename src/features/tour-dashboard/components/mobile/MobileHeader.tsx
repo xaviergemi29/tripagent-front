@@ -57,6 +57,7 @@ export function MobileHeader({
       {onShareWithStaff && (
         <button
           onClick={onShareWithStaff}
+          data-tour={TOUR_TARGET.DASHBOARD_STAFF_SHARE}
           className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto"
         >
           <Share2 className="h-4 w-4" />

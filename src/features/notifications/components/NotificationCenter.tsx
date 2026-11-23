@@ -13,6 +13,7 @@ import type { NotificationOutput } from "../schemas/notification.schema";
 import { useAgency } from "@/features/settings/hooks/useAgency";
 import { useSubscriptionAccess } from "@/features/settings/hooks/useSubscriptionAccess";
 import { buildNotificationHref, buildNotificationWhatsAppUrl } from "../utils/notification.util";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import { NotificationBell } from "./NotificationBell";
 import { NotificationDrawer } from "./NotificationDrawer";
 import { NotificationPopover } from "./NotificationPopover";
@@ -86,7 +87,11 @@ export function NotificationCenter() {
     return (
       <Popover.Root open={isOpen} onOpenChange={handleOpenChange}>
         <Popover.Trigger asChild>
-          <NotificationBell unreadCount={unreadCount} isOpen={isOpen} />
+          <NotificationBell
+            unreadCount={unreadCount}
+            isOpen={isOpen}
+            data-tour={TOUR_TARGET.NOTIFICATIONS_BELL}
+          />
         </Popover.Trigger>
         <NotificationPopover {...panelProps} />
       </Popover.Root>
@@ -100,6 +105,7 @@ export function NotificationCenter() {
         isOpen={isOpen}
         onClick={() => handleOpenChange(true)}
         aria-haspopup="dialog"
+        data-tour={TOUR_TARGET.NOTIFICATIONS_BELL}
       />
       <NotificationDrawer open={isOpen} onOpenChange={handleOpenChange} {...panelProps} />
     </>

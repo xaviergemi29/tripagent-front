@@ -2,6 +2,7 @@
 
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TOUR_TARGET } from "@/features/onboarding/constants/guided-tours";
 import type { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import { BOOKING_STATUS, type Currency } from "@/shared/constants/domain.constants";
 import {
@@ -64,6 +65,7 @@ export function SendBookingWhatsAppAction({
             target="_blank"
             rel="noopener noreferrer"
             aria-label={label}
+            data-tour={TOUR_TARGET.DASHBOARD_ACTION_WHATSAPP}
             onClick={(event) => event.stopPropagation()}
             className={base}
           >
@@ -74,6 +76,7 @@ export function SendBookingWhatsAppAction({
             role="link"
             aria-disabled="true"
             aria-label={`${label} (no disponible)`}
+            data-tour={TOUR_TARGET.DASHBOARD_ACTION_WHATSAPP}
             tabIndex={0}
             className={`${base} cursor-not-allowed opacity-50`}
           >

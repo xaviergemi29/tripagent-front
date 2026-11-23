@@ -91,6 +91,7 @@ export function TourDashboardHeader({
                 variant="outline"
                 className="w-full sm:w-auto"
                 onClick={onShareWithStaff}
+                data-tour={TOUR_TARGET.DASHBOARD_STAFF_SHARE}
               >
                 <Share2 className="mr-2 h-5 w-5" /> Compartir con staff
               </Button>
