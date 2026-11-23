@@ -66,13 +66,8 @@ const baseTourSchema = z.object({
   // desde el Centro de Control (`POST /tours/:id/cancel`).
 
   acceptsBankTransfer: z.boolean(),
+  // Tarjeta sin enlace de pago (2026-11-22): el viajero lo pide a la agencia por WhatsApp.
   acceptsCreditCard: z.boolean(),
-  paymentLink: z
-    .union([
-      z.literal(""),
-      z.url({ message: "Debe ser una URL válida (ej. https://mercadopago.com/...)" }),
-    ])
-    .nullish(),
   // Indicaciones de logística del tour (ej. "Llevar botas de montaña"). Se muestran en el Magic
   // Link y en el estado de cuenta PDF, separadas de las políticas generales de la agencia.
   postPaymentInstructions: z
@@ -131,14 +126,6 @@ export const tourSchema = baseTourSchema.superRefine((data, ctx) => {
         path: ["departureDateTime"],
       });
     }
-  }
-
-  if (data.acceptsCreditCard && (!data.paymentLink || data.paymentLink === "")) {
-    ctx.addIssue({
-      code: "custom",
-      message: "Debes proporcionar un enlace de pago si aceptas tarjeta",
-      path: ["paymentLink"],
-    });
   }
 
   if (data.acceptsCash && (!data.cashInstructions || data.cashInstructions.trim().length < 10)) {

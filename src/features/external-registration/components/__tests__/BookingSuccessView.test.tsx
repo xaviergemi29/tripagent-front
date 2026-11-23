@@ -22,7 +22,6 @@ const booking = (over: Record<string, unknown> = {}) => ({
   clabeNumber: "012345678901234567",
   cardNumber: "4152313412345678",
   acceptsCreditCard: false,
-  paymentLink: null,
   acceptsCash: false,
   cashInstructions: null,
   ...over,
@@ -81,5 +80,27 @@ describe("BookingSuccessView: métodos y opciones de pago", () => {
         name: "Contactar a la agencia por WhatsApp para pedir datos de transferencia",
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it("tarjeta: sin enlace de pago, ofrece contactar a la agencia por WhatsApp (2026-11-22)", () => {
+    // Solo tarjeta: el bloque de pagos no queda vacío.
+    renderView({ acceptsBankTransfer: false, acceptsCreditCard: true });
+
+    expect(screen.getByText("Pago con tarjeta")).toBeInTheDocument();
+    const link = screen.getByRole("link", {
+      name: "Contactar a la agencia por WhatsApp para pagar con tarjeta",
+    });
+    expect(link.getAttribute("href")).toMatch(/^https:\/\/wa\.me\/522281234567\?text=/);
+    expect(decodeURIComponent(link.getAttribute("href") ?? "")).toContain(
+      'quiero pagar con tarjeta mi reservación para "Cuetzalan"',
+    );
+    expect(
+      screen.queryByText(/para recibir las instrucciones y opciones de pago/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("sin tarjeta aceptada no muestra la opción de tarjeta", () => {
+    renderView();
+    expect(screen.queryByText("Pago con tarjeta")).not.toBeInTheDocument();
   });
 });

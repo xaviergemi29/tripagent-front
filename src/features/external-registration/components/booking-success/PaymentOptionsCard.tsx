@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  AlertCircle,
-  Banknote,
-  Building2,
-  CreditCard,
-  ExternalLink,
-  MessageCircle,
-} from "lucide-react";
+import { AlertCircle, Banknote, Building2, CreditCard, MessageCircle } from "lucide-react";
 import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import type { Currency } from "@/shared/constants/domain.constants";
@@ -49,7 +42,7 @@ export function PaymentOptionsCard({
   const hasAnyPaymentMethod =
     showBankTransfer ||
     needsTransferData ||
-    (booking.acceptsCreditCard && booking.paymentLink) ||
+    booking.acceptsCreditCard ||
     (booking.acceptsCash && booking.cashInstructions);
 
   return hasAnyPaymentMethod ? (
@@ -134,28 +127,30 @@ export function PaymentOptionsCard({
           </div>
         )}
 
-        {/* OPCIÓN 2: PAGO CON TARJETA / LINK */}
-        {booking.acceptsCreditCard && booking.paymentLink?.trim() && (
+        {/* OPCIÓN 2: PAGO CON TARJETA. Sin enlace de pago desde el 2026-11-22: el cliente le pide a la
+            agencia por WhatsApp cómo pagar (mismo patrón que la transferencia sin CLABE). */}
+        {booking.acceptsCreditCard && (
           <div className="rounded-2xl border border-slate-200/90 bg-slate-50 p-4 transition-all">
             <div className="mb-1.5 flex items-center gap-2">
               <CreditCard className="h-4 w-4 shrink-0 text-indigo-600" />
               <h3 className="text-xs font-bold tracking-wide text-slate-800 uppercase">
-                Pago con Tarjeta / En línea
+                Pago con tarjeta
               </h3>
             </div>
-
             <p className="mb-3 text-xs leading-relaxed text-slate-500">
-              Acepta tarjetas de crédito, débito y plataformas digitales de forma segura.
+              Para pagar con tarjeta de crédito o débito, escríbele a la agencia por WhatsApp y te
+              indicará cómo hacerlo.
             </p>
-
             <a
-              href={booking.paymentLink}
+              href={buildWhatsAppUrl(agencyPhone, {
+                message: `Hola, quiero pagar con tarjeta mi reservación para "${tourTitle}". ¿Cómo puedo hacerlo?`,
+              })}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-xs font-bold text-indigo-700 shadow-sm transition hover:border-indigo-400 hover:bg-indigo-50/50 active:scale-[0.98]"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
             >
-              <span>Consultar opciones de pago</span>
-              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+              <MessageCircle className="h-4 w-4 shrink-0" />
+              <span>Contactar a la agencia por WhatsApp para pagar con tarjeta</span>
             </a>
           </div>
         )}

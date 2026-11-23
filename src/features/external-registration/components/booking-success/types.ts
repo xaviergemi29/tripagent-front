@@ -22,7 +22,6 @@ export interface BookingSuccessViewProps {
     clabeNumber: string | null;
     cardNumber?: string | null;
     acceptsCreditCard: boolean;
-    paymentLink: string | null;
     acceptsCash: boolean;
     cashInstructions: string | null;
   };

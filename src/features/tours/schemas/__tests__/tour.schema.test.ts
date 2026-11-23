@@ -18,7 +18,6 @@ const validTour = (overrides: Partial<TourInput> = {}): TourInput => ({
   staffCapacity: 1,
   acceptsBankTransfer: true,
   acceptsCreditCard: false,
-  paymentLink: "",
   postPaymentInstructions: null,
   acceptsCash: false,
   cashInstructions: null,
@@ -93,18 +92,17 @@ describe("tourSchema", () => {
     expect(tourSchema.parse(validTour({ returnDate: "" })).returnDate).toBeNull();
   });
 
-  it("tarjeta exige enlace de pago válido", () => {
-    expect(
-      errorsAt(validTour({ acceptsCreditCard: true, paymentLink: "" }), "paymentLink"),
-    ).toContain("Debes proporcionar un enlace de pago si aceptas tarjeta");
-    expect(
-      errorsAt(validTour({ acceptsCreditCard: true, paymentLink: "mercadopago" }), "paymentLink"),
-    ).toHaveLength(1);
-    expect(
-      tourSchema.safeParse(
-        validTour({ acceptsCreditCard: true, paymentLink: "https://mpago.la/abc" }),
-      ).success,
-    ).toBe(true);
+  it("tarjeta sin enlace de pago es válida (el enlace se eliminó el 2026-11-22)", () => {
+    const parsed = tourSchema.safeParse(
+      validTour({ acceptsBankTransfer: false, acceptsCreditCard: true }),
+    );
+    expect(parsed.success).toBe(true);
+    // Un `paymentLink` enviado por un cliente anterior se descarta, no se envía a la API.
+    const withLegacyLink = tourSchema.parse({
+      ...validTour({ acceptsCreditCard: true }),
+      paymentLink: "https://mpago.la/abc",
+    });
+    expect(withLegacyLink).not.toHaveProperty("paymentLink");
   });
 
   it("efectivo exige instrucciones de al menos 10 caracteres", () => {

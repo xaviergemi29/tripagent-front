@@ -66,7 +66,6 @@ const savedTour = (overrides: Partial<TourOutput> = {}): TourOutput =>
     isActive: true,
     acceptsBankTransfer: true,
     acceptsCreditCard: false,
-    paymentLink: null,
     postPaymentInstructions: "",
     acceptsCash: false,
     cashInstructions: null,
@@ -112,7 +111,7 @@ describe("TourForm — creación", () => {
     expect(screen.getByLabelText(/Lugares bloqueados para staff/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Precio Total por Pasajero/)).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /Nacional/ })).toBeInTheDocument();
-    for (const method of ["Transferencia", "Tarjeta / Link", "Efectivo"]) {
+    for (const method of ["Transferencia", "Tarjeta", "Efectivo"]) {
       expect(screen.getByRole("checkbox", { name: method })).toBeInTheDocument();
     }
 
@@ -164,18 +163,19 @@ describe("TourForm — creación", () => {
     expect(screen.getByText("4152313412345678")).toBeInTheDocument();
   });
 
-  it("Tarjeta exige el enlace de pago y Efectivo exige instrucciones", async () => {
+  it("Tarjeta ya no pide enlace de pago (solo un aviso) y Efectivo exige instrucciones", async () => {
     const user = userEvent.setup();
     render(<TourForm />);
 
-    await user.click(screen.getByRole("checkbox", { name: "Tarjeta / Link" }));
-    expect(screen.getByPlaceholderText("https://...")).toBeInTheDocument();
+    await user.click(screen.getByRole("checkbox", { name: "Tarjeta" }));
+    expect(screen.queryByPlaceholderText("https://...")).not.toBeInTheDocument();
+    expect(screen.getByText(/te escribirán por WhatsApp/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("checkbox", { name: "Efectivo" }));
     expect(screen.getByPlaceholderText("Ej. Paga directo al abordar")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("checkbox", { name: "Tarjeta / Link" }));
-    expect(screen.queryByPlaceholderText("https://...")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("checkbox", { name: "Tarjeta" }));
+    expect(screen.queryByText(/te escribirán por WhatsApp/)).not.toBeInTheDocument();
   });
 
   it("con datos válidos crea el tour (vacíos → null) y regresa al listado", async () => {
@@ -195,7 +195,6 @@ describe("TourForm — creación", () => {
       price: 1200,
       maxCapacity: 20,
       destinationType: "NATIONAL",
-      paymentLink: null,
       cashInstructions: null,
       postPaymentInstructions: null,
       returnDate: null,

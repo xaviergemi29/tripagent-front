@@ -88,7 +88,6 @@ export function TourForm({ tour }: TourFormProps) {
           staffCapacity: 0,
           acceptsBankTransfer: false,
           acceptsCreditCard: false,
-          paymentLink: "",
           acceptsCash: false,
           cashInstructions: "",
           boardingPoints: [{ location: "", time: "06:00" }],
@@ -139,7 +138,6 @@ export function TourForm({ tour }: TourFormProps) {
         ...tour,
         currency: tour.currency ?? DEFAULT_CURRENCY,
         departureDateTime: formatForDateInput(tour?.departureDateTime),
-        paymentLink: tour.paymentLink ?? "",
         cashInstructions: tour.cashInstructions ?? "",
         description: tour.description ?? "",
         postPaymentInstructions: tour.postPaymentInstructions ?? "",
@@ -184,7 +182,6 @@ export function TourForm({ tour }: TourFormProps) {
       // 1. Sanitización de capa de red: Convertir cadenas vacías ("") a explícito null
       const basePayload = {
         ...formData,
-        paymentLink: formData.paymentLink?.trim() || null,
         cashInstructions: formData.cashInstructions?.trim() || null,
         postPaymentInstructions: formData.postPaymentInstructions?.trim() || null,
         returnDate: formData.returnDate?.trim() || null,

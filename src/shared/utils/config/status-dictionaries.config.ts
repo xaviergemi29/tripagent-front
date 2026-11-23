@@ -58,7 +58,7 @@ export const PAYMENT_METHOD_DICT: Record<PaymentMethod, string> = {
 export const PAYMENT_METHOD_LABEL_DICT: Record<PaymentMethod, string> = {
   TRANSFER: "Transferencia",
   CASH: "Efectivo",
-  CARD: "Tarjeta / Link",
+  CARD: "Tarjeta",
   OTHER: "Otro",
 };
 

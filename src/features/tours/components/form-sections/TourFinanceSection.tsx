@@ -49,7 +49,7 @@ function MoneyInput({
 
 const PAYMENT_METHOD_TOGGLES = [
   { name: "acceptsBankTransfer", label: "Transferencia" },
-  { name: "acceptsCreditCard", label: "Tarjeta / Link" },
+  { name: "acceptsCreditCard", label: "Tarjeta" },
   { name: "acceptsCash", label: "Efectivo" },
 ] as const;
 
@@ -259,32 +259,12 @@ export function TourFinanceSection({
             />
           )}
 
+          {/* Tarjeta sin enlace de pago (2026-11-22): el Magic Link ofrece contactar a la agencia. */}
           {acceptsCreditCard && (
-            <Controller
-              name="paymentLink"
-              control={control}
-              render={({ field, fieldState }) => (
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="tour-finance-link-de-pago-mercadopago-clip-"
-                    className="text-sm font-semibold text-slate-700"
-                  >
-                    Link de Pago (MercadoPago, Clip, etc.)
-                  </Label>
-                  <Input
-                    id="tour-finance-link-de-pago-mercadopago-clip-"
-                    {...field}
-                    type="url"
-                    value={field.value ?? ""}
-                    placeholder="https://..."
-                    className="bg-white"
-                  />
-                  {fieldState.error && (
-                    <p className="text-xs text-red-500">{fieldState.error.message}</p>
-                  )}
-                </div>
-              )}
-            />
+            <p className="rounded-lg border border-slate-200 bg-white p-3 text-xs leading-relaxed text-slate-600">
+              Tus viajeros verán la opción de pagar con tarjeta y te escribirán por WhatsApp para
+              que les compartas cómo hacerlo.
+            </p>
           )}
 
           {acceptsCash && (

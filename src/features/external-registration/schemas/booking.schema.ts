@@ -154,7 +154,6 @@ export const bookingOutputSchema = z.object({
   depositAmount: z.number().nullable().optional(),
   totalAmount: z.number().nonnegative().optional(),
   acceptsCreditCard: z.boolean(),
-  paymentLink: z.string().nullable(),
   acceptsCash: z.boolean(),
   cashInstructions: z.string().nullable(),
   totalPassengersRegistered: z.number(),
