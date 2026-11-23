@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "@/lib/api-config";
 import { staffShareOutputSchema, type StaffShareOutput } from "../schemas/staff-share.schema";
+import { getForwardedClientIpHeaders } from "@/lib/forwarded-client-ip";
 
 export type StaffShareFetchResult =
   | { kind: "ok"; data: StaffShareOutput }
@@ -18,7 +19,7 @@ export async function fetchStaffShare(token: string): Promise<StaffShareFetchRes
   try {
     const res = await fetch(`${API_BASE_URL}/public/staff-share/${encodeURIComponent(token)}`, {
       cache: "no-store",
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...(await getForwardedClientIpHeaders()) },
     });
     if (res.status === 404) return { kind: "not-found" };
     if (res.status === 429) return { kind: "error", message: RATE_LIMIT_MESSAGE };

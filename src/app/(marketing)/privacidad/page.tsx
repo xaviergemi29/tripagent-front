@@ -161,6 +161,13 @@ export default function PrivacidadPage() {
               manifiesto de abordaje y tu estado de cuenta.
             </li>
             <li>
+              Acceso del staff del viaje: la agencia puede compartir con su coordinador o guía un
+              enlace de solo consulta con tu nombre, asiento, tipo de pasajero (adulto o niño),
+              punto y hora de abordaje y si tu anticipo está cubierto. Ese enlace no muestra
+              teléfonos, correos, contactos de emergencia ni montos; vence al día siguiente del
+              regreso y la agencia puede desactivarlo o cambiarlo en cualquier momento.
+            </li>
+            <li>
               No usamos tus datos para fines propios ni comerciales, guardamos confidencialidad y
               aplicamos medidas de seguridad. Cuando la agencia deja de usar el servicio, sus datos
               se devuelven o se suprimen a su solicitud.

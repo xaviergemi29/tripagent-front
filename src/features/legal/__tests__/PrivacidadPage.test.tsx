@@ -32,4 +32,11 @@ describe("/privacidad", () => {
     expect(section!.textContent).toMatch(/agencia es la responsable/);
     expect(section!.textContent).toMatch(/encargado tecnológico/);
   });
+
+  it("informa el enlace de solo consulta del staff y lo que no muestra", () => {
+    render(<PrivacidadPage />);
+    const text = document.getElementById("viajeros")!.textContent ?? "";
+    expect(text).toMatch(/Acceso del staff del viaje/);
+    expect(text).toMatch(/no muestra\s+teléfonos, correos, contactos de emergencia ni montos/);
+  });
 });

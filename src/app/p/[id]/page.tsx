@@ -25,6 +25,7 @@ import {
 import { getStoredPhoneCountry } from "@/shared/utils/phone.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { API_BASE_URL } from "@/lib/api-config";
+import { getForwardedClientIpHeaders } from "@/lib/forwarded-client-ip";
 
 /** Chat con un asesor para resolver dudas antes de reservar (CTA secundario). */
 function buildWhatsAppAdvisorUrl({
@@ -51,6 +52,7 @@ const getPublicTour = cache(async (tourId: string): Promise<PublicTourOutput | n
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        ...(await getForwardedClientIpHeaders()),
       },
     });
 

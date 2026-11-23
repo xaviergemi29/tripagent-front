@@ -12,6 +12,7 @@ import {
   describeValidationError,
   type MagicLinkValidation,
 } from "@/features/external-registration/utils/magic-link-validation";
+import { getForwardedClientIpHeaders } from "@/lib/forwarded-client-ip";
 
 // Enlace privado del cliente (Magic Link): título neutro y sin indexar.
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ async function validateTokenOnServer(token: string): Promise<MagicLinkValidation
   try {
     const res = await fetch(`${API_BASE_URL}/magic-tokens/${token}/validate`, {
       cache: "no-store",
+      headers: await getForwardedClientIpHeaders(),
     });
     return (await res.json()) as MagicLinkValidation;
   } catch {
