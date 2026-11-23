@@ -76,3 +76,9 @@ export const VEHICLE_TEMPLATE_KEYS = {
 export const NOTIFICATION_KEYS = {
   all: ["notifications"] as const,
 };
+
+/** `GET /lodging/:tourId` (hoteles y habitaciones del tour; pestaña Hospedaje). */
+export const LODGING_KEYS = {
+  all: ["lodging"] as const,
+  detail: (tourId: string) => [...LODGING_KEYS.all, tourId] as const,
+};

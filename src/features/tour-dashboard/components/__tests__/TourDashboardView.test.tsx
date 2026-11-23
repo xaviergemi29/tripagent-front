@@ -34,6 +34,10 @@ vi.mock("../../hooks/useTourDashboard", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../hooks/useTourDashboard")>()),
   useTourDashboardByTourId: () => dashboardQuery(),
 }));
+vi.mock("../../hooks/useLodging", () => ({
+  useTourLodging: () => ({ data: { hotels: [], passengers: [], totalRooms: 0, totalCapacity: 0 } }),
+  useRegisterLodgingRooms: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 vi.mock("@/features/settings/hooks/useAgency", () => ({
   useAgency: () => ({ data: { name: "Viajes Xalapa", bankName: "BBVA", clabeNumber: "012" } }),
 }));
@@ -337,5 +341,45 @@ describe("TourDashboardView", () => {
     renderView();
     expect(screen.queryByRole("button", { name: /Nueva Reserva/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Cancelar tour/ })).not.toBeInTheDocument();
+  });
+
+  describe("pestaña Hospedaje", () => {
+    const multiDay = (overrides: Partial<TourDashboardOutput> = {}) =>
+      dashboard({ returnDate: "2026-12-22", ...overrides });
+
+    it("no aparece en un tour sin regreso o de un día", () => {
+      renderView();
+      expect(screen.queryByRole("button", { name: /Hospedaje/ })).not.toBeInTheDocument();
+      dashboardQuery.mockReturnValue({
+        data: dashboard({ returnDate: "2026-12-20" }),
+        isLoading: false,
+        isError: false,
+      });
+      renderView();
+      expect(screen.queryByRole("button", { name: /Hospedaje/ })).not.toBeInTheDocument();
+    });
+
+    it("aparece en un tour de varios días con el badge de pendientes y abre el estado vacío", async () => {
+      dashboardQuery.mockReturnValue({ data: multiDay(), isLoading: false, isError: false });
+      renderView();
+      const tab = screen.getAllByRole("button", { name: /Hospedaje/ })[0];
+      expect(tab).toHaveTextContent("2 pendientes");
+      await userEvent.click(tab);
+      expect(
+        screen.getAllByText("Aún no hay hospedaje configurado para este tour").length,
+      ).toBeGreaterThan(0);
+    });
+
+    it("sin pasajeros no muestra el badge", () => {
+      dashboardQuery.mockReturnValue({
+        data: multiDay({ travelers: [] }),
+        isLoading: false,
+        isError: false,
+      });
+      renderView();
+      expect(screen.getAllByRole("button", { name: /Hospedaje/ })[0]).not.toHaveTextContent(
+        "pendientes",
+      );
+    });
   });
 });

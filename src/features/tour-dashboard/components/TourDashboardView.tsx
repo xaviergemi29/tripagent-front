@@ -40,6 +40,13 @@ import { VehicleSelectionModal } from "@/features/tour-dashboard/components/seat
 import { MobileHeader } from "./mobile/MobileHeader";
 import { MobileKpiCards } from "./mobile/MobileKpiCards";
 import { MobileTabsNav } from "./mobile/MobileTabsNav";
+import { LodgingTabContent } from "./lodging/LodgingTabContent";
+import { useTourLodging } from "../hooks/useLodging";
+import {
+  countActiveRegisteredPassengers,
+  countLodgingPendingPassengers,
+  tourHasLodgingNights,
+} from "../utils/lodging.util";
 import { MobileFilters } from "./mobile/MobileFilters";
 import { MobilePassengersList } from "./mobile/MobilePassengersList";
 import { MobileSeatsTab } from "./mobile/MobileSeatsTab";
@@ -101,6 +108,10 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
   const canChangeVehicle =
     !isAuditMode &&
     !(tour?.temporalStatus === TOUR_TEMPORAL_STATUS.IN_PROGRESS && Boolean(tour?.vehicle));
+  // Hospedaje: pestaña en tours de varios días. Si el tour deja de serlo con la pestaña activa, se
+  // muestra Pasajeros (derivado en el render). La insignia cuenta pasajeros sin cama.
+  const showLodging = tour ? tourHasLodgingNights(tour.departureDateTime, tour.returnDate) : false;
+  const lodgingQuery = useTourLodging(tourId, { enabled: showLodging });
   const [selectedTravelerId, setSelectedTravelerId] = useState<string | null>(null);
   const [isQuickReservationOpen, setIsQuickReservationOpen] = useState(false);
   const [isCancelTourOpen, setIsCancelTourOpen] = useState(false);
@@ -236,6 +247,12 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
 
   const totalEligiblePassengers = tour.metrics.logistics.total;
   const assignedSeatsCount = tour.metrics.logistics.assigned;
+  const currentTab: DashboardTab =
+    activeTab === "lodging" && !showLodging ? "passengers" : activeTab;
+  const lodgingPendingCount = countLodgingPendingPassengers(
+    lodgingQuery.data,
+    countActiveRegisteredPassengers(tour.travelers),
+  );
   // Cancelar el tour (decisión del PM, 2026-11-14): solo si aún opera (ni finalizado ni cancelado).
   const openCancelTour = isAuditMode ? undefined : () => setIsCancelTourOpen(true);
   // Compartir con staff: nada en un tour cerrado (Modo Auditoría: FINALIZADO o CANCELADO). Con la
@@ -305,7 +322,9 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
           <div data-tour={TOUR_TARGET.DASHBOARD_TABS}>
             <TourTabsNav
               requiresSeats={requiresSeats}
-              activeTab={activeTab}
+              showLodging={showLodging}
+              lodgingPendingCount={lodgingPendingCount}
+              activeTab={currentTab}
               onTabChange={setActiveTab}
               totalPassengers={totalEligiblePassengers}
               assignedSeatsCount={assignedSeatsCount}
@@ -314,7 +333,7 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
           </div>
 
           <div className="flex-1">
-            {activeTab === "passengers" && (
+            {currentTab === "passengers" && (
               <div className="animate-in fade-in space-y-4 duration-300">
                 {refundsPanel}
                 <div data-tour={TOUR_TARGET.DASHBOARD_FILTERS}>
@@ -360,7 +379,18 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
               </div>
             )}
 
-            {activeTab === "seatmap" && (
+            {currentTab === "lodging" && (
+              <LodgingTabContent
+                tourId={tourId}
+                tourTitle={tour.title}
+                departureDateTime={tour.departureDateTime}
+                returnDate={tour.returnDate}
+                unassignedPassengersCount={lodgingPendingCount}
+                readOnly={isAuditMode}
+              />
+            )}
+
+            {currentTab === "seatmap" && (
               <DesktopSeatingTab
                 tourId={tourId}
                 vehicle={tour.vehicle}
@@ -398,7 +428,9 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
 
         <div data-tour={TOUR_TARGET.DASHBOARD_TABS}>
           <MobileTabsNav
-            activeTab={activeTab}
+            showLodging={showLodging}
+            lodgingPendingCount={lodgingPendingCount}
+            activeTab={currentTab}
             onTabChange={setActiveTab}
             totalPassengers={totalEligiblePassengers}
             assignedCount={assignedSeatsCount}
@@ -407,7 +439,16 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
           />
         </div>
 
-        {activeTab === "passengers" ? (
+        {currentTab === "lodging" ? (
+          <LodgingTabContent
+            tourId={tourId}
+            tourTitle={tour.title}
+            departureDateTime={tour.departureDateTime}
+            returnDate={tour.returnDate}
+            unassignedPassengersCount={lodgingPendingCount}
+            readOnly={isAuditMode}
+          />
+        ) : currentTab === "passengers" ? (
           <div className="animate-in fade-in space-y-4 duration-300">
             {refundsPanel}
             <div data-tour={TOUR_TARGET.DASHBOARD_FILTERS}>

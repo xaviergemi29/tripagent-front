@@ -1,4 +1,4 @@
-import { Users, Bus } from "lucide-react";
+import { Users, Bus, Bed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { VehicleOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import type { DashboardTab } from "@/features/tour-dashboard/constants/dashboard-tabs";
@@ -8,6 +8,9 @@ interface TourTabsNavProps {
   totalPassengers: number;
   assignedSeatsCount: number;
   requiresSeats?: boolean;
+  /** Tour de varios días: muestra la pestaña Hospedaje. */
+  showLodging?: boolean;
+  lodgingPendingCount?: number;
   vehicle?: VehicleOutput | null;
   onTabChange: (tab: DashboardTab) => void;
 }
@@ -15,6 +18,8 @@ interface TourTabsNavProps {
 export function TourTabsNav({
   activeTab,
   requiresSeats,
+  showLodging,
+  lodgingPendingCount = 0,
   totalPassengers,
   assignedSeatsCount,
   vehicle,
@@ -60,6 +65,26 @@ export function TourTabsNav({
             <span className="ml-1.5 rounded-full bg-slate-200/60 px-2 py-0.5 text-xs text-slate-600">
               {assignedSeatsCount}/{totalPassengers}
             </span>
+          </button>
+        )}
+
+        {showLodging && (
+          <button
+            onClick={() => onTabChange("lodging")}
+            className={cn(
+              "flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all",
+              activeTab === "lodging"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-800",
+            )}
+          >
+            <Bed className="mr-2 h-4 w-4" />
+            Hospedaje
+            {lodgingPendingCount > 0 && (
+              <span className="ml-1.5 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-700">
+                {lodgingPendingCount} pendientes
+              </span>
+            )}
           </button>
         )}
       </div>
