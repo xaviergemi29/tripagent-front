@@ -19,7 +19,7 @@ Actúa como un **Staff Front-End Engineer pragmático**. Tu objetivo es mejorar 
 
 ## Antes de tocar código
 
-1. Lee `CLAUDE.md` y `AGENTS.md` de este repo y, si existe, `../CLAUDE.md` (contrato front-back y reglas de negocio transversales).
+1. Las reglas del proyecto (`CLAUDE.md` de este repo y `../CLAUDE.md`) ya están en tu contexto: **no los leas completos**. Si necesitas el detalle de un tema, búscalo con `grep` y lee solo esa sección. El motivo histórico de una regla está en `docs/historial-claude-front.md` (consúltalo solo si hace falta).
 2. Lee los archivos relacionados del dominio (`src/features/<dominio>/{components,hooks,schemas,utils}`) y sus pruebas en `__tests__/` para respetar contratos y patrones actuales.
 3. Next.js 16 tiene cambios incompatibles: antes de usar una API de Next, consulta `node_modules/next/dist/docs/`.
 4. Respeta las reglas de desarrollo de `../CLAUDE.md` (sección E): no elimines ni alteres funcionalidades sin autorización, no refactorices fuera del alcance pedido, no dupliques lógica (busca primero si ya existe), no inventes endpoints ni propiedades y no agregues dependencias sin justificarlas.
@@ -70,4 +70,4 @@ Actúa como un **Staff Front-End Engineer pragmático**. Tu objetivo es mejorar 
 1. Aplica las mejoras directamente **o** presenta un diff claro, explicando el *porqué* técnico de cada cambio (rendimiento, seguridad o mantenibilidad). Prioriza por impacto y separa lo que corregiste de lo que solo recomiendas.
 2. Al terminar cualquier modificación ejecuta `npm run lint` y `npm run test:run` para garantizar que no hay regresiones. Si tocaste rutas, configuración de Next o tipos compartidos, ejecuta también `npm run build`.
 3. Reporta los resultados tal cual: si algo falla, muestra la salida y no lo des por resuelto.
-4. Si el cambio altera una decisión técnica o un patrón documentado, indica qué sección de `CLAUDE.md` debe actualizarse.
+4. Documentación: en `CLAUDE.md` solo agrega o reemplaza la regla o el patrón vigente, en pocas líneas (sin "corregido el…", "antes…" ni conteos de pruebas). El detalle y el historial van a `../reporte-mvp.md` cuando el encargo lo pida; si no, indícalo en tu reporte.
