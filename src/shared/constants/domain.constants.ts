@@ -129,7 +129,14 @@ export const PASSENGER_ROLE = {
 } as const satisfies Record<PassengerRole, PassengerRole>;
 
 // Estado de la suscripción de la agencia (enum `subscription_status` de la API).
-export const SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due", "canceled"] as const;
+// `cancel_scheduled`: baja programada; acceso completo hasta la fecha de corte y luego Solo Lectura.
+export const SUBSCRIPTION_STATUSES = [
+  "trialing",
+  "active",
+  "past_due",
+  "canceled",
+  "cancel_scheduled",
+] as const;
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
 /** Acceso por nombre: `status === SUBSCRIPTION_STATUS.TRIALING`. */
@@ -138,11 +145,39 @@ export const SUBSCRIPTION_STATUS = {
   ACTIVE: "active",
   PAST_DUE: "past_due",
   CANCELED: "canceled",
+  CANCEL_SCHEDULED: "cancel_scheduled",
 } as const satisfies Record<string, SubscriptionStatus>;
+
+/** Motivos de baja de la suscripción (espejo de la API: `POST /agencies/subscription/cancel`). */
+export const SUBSCRIPTION_CANCELLATION_REASONS = [
+  "LOW_SEASON",
+  "PRICE",
+  "MISSING_FEATURES",
+  "OTHER",
+] as const;
+export type SubscriptionCancellationReason = (typeof SUBSCRIPTION_CANCELLATION_REASONS)[number];
+
+export const SUBSCRIPTION_CANCELLATION_REASON_DICT: Record<SubscriptionCancellationReason, string> =
+  {
+    LOW_SEASON: "Temporada baja / No tengo tours ahorita",
+    PRICE: "Precio",
+    MISSING_FEATURES: "Le faltan funciones",
+    OTHER: "Otro",
+  };
+
+/** Comentario opcional de la baja (mismo tope que la API). */
+export const SUBSCRIPTION_CANCELLATION_COMMENT_MAX = 500;
 
 // Rol del usuario de la agencia (enum `agency_roles` de la API; viaja en `GET /auth/me`).
 export const AGENCY_ROLES = ["ADMIN", "SALES", "GUIDE"] as const;
 export type AgencyRole = (typeof AGENCY_ROLES)[number];
+
+/** Acceso por nombre: `session.role === AGENCY_ROLE.ADMIN`. */
+export const AGENCY_ROLE = {
+  ADMIN: "ADMIN",
+  SALES: "SALES",
+  GUIDE: "GUIDE",
+} as const satisfies Record<AgencyRole, AgencyRole>;
 
 /**
  * Estado temporal del tour (`temporalStatus` del listado de tours), calculado por la API con la hora

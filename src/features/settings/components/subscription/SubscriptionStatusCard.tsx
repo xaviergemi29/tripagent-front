@@ -3,7 +3,11 @@ import { cn } from "@/lib/utils";
 import { SUBSCRIPTION_STATUS } from "@/shared/constants/domain.constants";
 import { formatSpanishLongDate } from "@/shared/utils/tour-date.util";
 import type { SubscriptionOutput } from "../../schemas/subscription.schema";
-import { getTrialConsumedPercent, toMexicoDateString } from "../../utils/subscription.util";
+import {
+  formatSubscriptionDate,
+  getTrialConsumedPercent,
+  toMexicoDateString,
+} from "../../utils/subscription.util";
 
 type StatusTone = "amber" | "red" | "emerald" | "slate";
 
@@ -27,6 +31,9 @@ interface StatusView {
 const getStatusView = (subscription: SubscriptionOutput): StatusView => {
   const endsOn = formatSpanishLongDate(toMexicoDateString(subscription.trialEndsAt));
   const remaining = subscription.trialDaysRemaining;
+  const periodEndsOn = subscription.currentPeriodEndsAt
+    ? formatSubscriptionDate(subscription.currentPeriodEndsAt)
+    : null;
 
   switch (subscription.status) {
     case SUBSCRIPTION_STATUS.ACTIVE:
@@ -34,10 +41,33 @@ const getStatusView = (subscription: SubscriptionOutput): StatusView => {
         tone: "emerald",
         badge: "Plan PRO activo",
         title: "Plan Agencia PRO",
-        subtitle: "Tu suscripción está al corriente. ¡Gracias por confiar en TripAgent!",
+        subtitle: periodEndsOn
+          ? `Próximo vencimiento: ${periodEndsOn} · Método de pago: Transferencia bancaria`
+          : "Tu suscripción está al corriente. ¡Gracias por confiar en TripAgent!",
         showTrialProgress: false,
         metricsTitle: "Tu operación en TripAgent",
       };
+    case SUBSCRIPTION_STATUS.CANCEL_SCHEDULED:
+      return subscription.isReadOnly
+        ? {
+            tone: "slate",
+            badge: "Suscripción cancelada",
+            title: "Tu suscripción está cancelada",
+            subtitle: `Tu acceso completo terminó${periodEndsOn ? ` el ${periodEndsOn}` : ""}. Reactiva tu plan cuando quieras: tu información sigue intacta.`,
+            showTrialProgress: false,
+            metricsTitle: "Tu operación en TripAgent",
+          }
+        : {
+            tone: "amber",
+            badge: "Cancelación programada",
+            title: periodEndsOn
+              ? `Acceso completo hasta: ${periodEndsOn}`
+              : "Cancelación programada",
+            subtitle:
+              "Después de esa fecha tu cuenta pasará a Modo Solo Lectura, sin perder información.",
+            showTrialProgress: false,
+            metricsTitle: "Tu operación en TripAgent",
+          };
     case SUBSCRIPTION_STATUS.PAST_DUE:
       return {
         tone: "red",

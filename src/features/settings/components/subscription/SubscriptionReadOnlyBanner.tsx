@@ -21,7 +21,8 @@ export function SubscriptionReadOnlyBanner() {
   const title =
     subscription.status === SUBSCRIPTION_STATUS.PAST_DUE
       ? "Tu plan tiene un pago pendiente"
-      : subscription.status === SUBSCRIPTION_STATUS.CANCELED
+      : subscription.status === SUBSCRIPTION_STATUS.CANCELED ||
+          subscription.status === SUBSCRIPTION_STATUS.CANCEL_SCHEDULED
         ? "Tu plan está cancelado"
         : "Tu prueba gratuita terminó";
 

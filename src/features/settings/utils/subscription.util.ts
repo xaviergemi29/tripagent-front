@@ -24,3 +24,15 @@ export const buildSpeiReceiptMessage = (agencyName: string, reference: string): 
 /** Fecha `YYYY-MM-DD` en hora de CDMX (para `formatSpanishLongDate`), no la fecha UTC del ISO. */
 export const toMexicoDateString = (iso: string): string =>
   new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
+
+/**
+ * Fecha de corte del plan para textos ("30 de noviembre de 2026"), en hora de CDMX. Lleva el año
+ * porque es un compromiso de acceso (a diferencia de las fechas de un tour, que se leen en contexto).
+ */
+export const formatSubscriptionDate = (iso: string): string =>
+  new Intl.DateTimeFormat("es-MX", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Mexico_City",
+  }).format(new Date(iso));

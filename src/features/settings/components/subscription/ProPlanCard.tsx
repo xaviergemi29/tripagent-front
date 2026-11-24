@@ -31,7 +31,10 @@ const splitCurrency = (formatted: string): { amount: string; code: string } => {
 
 /** Tarjeta derecha: Plan Agencia PRO, beneficios y botones de pago (tarjeta o SPEI). */
 export function ProPlanCard({ subscription, onPayWithCard, onPayWithSpei }: ProPlanCardProps) {
-  const isActive = subscription.status === SUBSCRIPTION_STATUS.ACTIVE;
+  // Una baja programada conserva el plan hasta la fecha de corte: no se ofrece volver a pagar.
+  const isActive =
+    subscription.status === SUBSCRIPTION_STATUS.ACTIVE ||
+    (subscription.status === SUBSCRIPTION_STATUS.CANCEL_SCHEDULED && !subscription.isReadOnly);
   const hasAllPaymentOptions = Boolean(onPayWithCard && onPayWithSpei);
   const price = splitCurrency(formatCurrency(subscription.priceMxn, { currency: "MXN" }));
 
@@ -75,7 +78,9 @@ export function ProPlanCard({ subscription, onPayWithCard, onPayWithSpei }: ProP
       <div className="mt-8 space-y-3">
         {isActive ? (
           <p className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-700">
-            Tu Plan Agencia PRO está activo.
+            {subscription.status === SUBSCRIPTION_STATUS.CANCEL_SCHEDULED
+              ? "Tu Plan Agencia PRO sigue activo hasta tu fecha de corte."
+              : "Tu Plan Agencia PRO está activo."}
           </p>
         ) : (
           <>

@@ -17,6 +17,8 @@ const baseSubscription = (): SubscriptionOutput => ({
   isReadOnly: false,
   // 28 de noviembre, 17:59 en CDMX.
   trialEndsAt: "2026-11-28T23:59:59.000Z",
+  currentPeriodEndsAt: null,
+  cancellation: null,
   priceMxn: 999,
   metrics: { activeToursCount: 12, registeredTravelersCount: 184 },
   speiDetails: {
@@ -32,7 +34,12 @@ const baseSubscription = (): SubscriptionOutput => ({
 let subscription: SubscriptionOutput | undefined;
 let loadError: Error | null = null;
 const refetchSubscription = vi.fn();
+const cancelSubscription = vi.fn();
+const reactivateSubscription = vi.fn();
+let sessionRole = "ADMIN";
 vi.mock("../../../hooks/useAgencySubscription", () => ({
+  useCancelSubscription: () => ({ mutate: cancelSubscription, isPending: false }),
+  useReactivateSubscription: () => ({ mutate: reactivateSubscription, isPending: false }),
   useAgencySubscription: () => ({
     data: subscription,
     isLoading: false,
@@ -43,7 +50,9 @@ vi.mock("../../../hooks/useAgencySubscription", () => ({
   }),
 }));
 vi.mock("@/features/auth/hooks/useSession", () => ({
-  useSession: () => ({ data: { agencyId: AGENCY_ID, agencyName: "Bruji Tours" } }),
+  useSession: () => ({
+    data: { agencyId: AGENCY_ID, agencyName: "Bruji Tours", role: sessionRole },
+  }),
 }));
 const copy = vi.fn<(text: string) => Promise<boolean>>(async () => true);
 vi.mock("@/shared/utils/clipboard", () => ({ copyToClipboard: (text: string) => copy(text) }));
@@ -52,9 +61,22 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const assign = vi.fn();
 beforeEach(() => {
   subscription = baseSubscription();
+  sessionRole = "ADMIN";
+  cancelSubscription.mockClear();
+  reactivateSubscription.mockClear();
   copy.mockClear();
   assign.mockClear();
   vi.stubGlobal("location", { ...window.location, assign });
+  // `unstubAllGlobals` (afterEach) también quita el ResizeObserver de vitest.setup.ts, que usa el
+  // RadioGroup de Radix del modal de baja.
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+    },
+  );
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -228,5 +250,108 @@ describe("subscription.util", () => {
     expect(getTrialConsumedPercent(24, 30)).toBe(80);
     expect(getTrialConsumedPercent(40, 30)).toBe(100);
     expect(getTrialConsumedPercent(0, 0)).toBe(100);
+  });
+});
+
+describe("Cancelar suscripción (cobro por transferencia)", () => {
+  // Plan activo con corte el 30 de noviembre, 23:59:59 CDMX.
+  const activeSubscription = (): SubscriptionOutput => ({
+    ...baseSubscription(),
+    status: "active",
+    currentPeriodEndsAt: "2026-12-01T05:59:59.999Z",
+  });
+
+  it("plan activo: vencimiento, método de pago y el enlace discreto para cancelar", () => {
+    subscription = activeSubscription();
+    render(<SubscriptionTab />);
+    expect(
+      screen.getByText(/Próximo vencimiento: .*30 de noviembre.*Transferencia bancaria/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancelar suscripción" })).toBeInTheDocument();
+  });
+
+  it("el enlace no aparece para un rol distinto de ADMIN ni en prueba", () => {
+    subscription = activeSubscription();
+    sessionRole = "SALES";
+    const { unmount } = render(<SubscriptionTab />);
+    expect(screen.queryByRole("button", { name: "Cancelar suscripción" })).not.toBeInTheDocument();
+    unmount();
+
+    sessionRole = "ADMIN";
+    subscription = baseSubscription(); // trialing
+    render(<SubscriptionTab />);
+    expect(screen.queryByRole("button", { name: "Cancelar suscripción" })).not.toBeInTheDocument();
+  });
+
+  it("el modal pide un motivo, avisa la fecha de corte y envía la baja", async () => {
+    const user = userEvent.setup();
+    subscription = activeSubscription();
+    render(<SubscriptionTab />);
+    await user.click(screen.getByRole("button", { name: "Cancelar suscripción" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Tu suscripción seguirá activa hasta el/)).toHaveTextContent(
+      /30 de noviembre de 2026.*Modo Solo Lectura/,
+    );
+
+    // Sin motivo no se envía.
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar cancelación" }));
+    expect(await within(dialog).findByText("Selecciona un motivo")).toBeInTheDocument();
+    expect(cancelSubscription).not.toHaveBeenCalled();
+
+    // "Otro" muestra el comentario opcional.
+    await user.click(within(dialog).getByLabelText("Otro"));
+    await user.type(within(dialog).getByLabelText(/Cuéntanos más/), "Cerramos la agencia");
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar cancelación" }));
+    expect(cancelSubscription.mock.calls[0]![0]).toEqual({
+      reason: "OTHER",
+      comments: "Cerramos la agencia",
+    });
+  });
+
+  it("un motivo distinto de 'Otro' se envía sin comentario", async () => {
+    const user = userEvent.setup();
+    subscription = activeSubscription();
+    render(<SubscriptionTab />);
+    await user.click(screen.getByRole("button", { name: "Cancelar suscripción" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByLabelText("Temporada baja / No tengo tours ahorita"));
+    expect(within(dialog).queryByLabelText(/Cuéntanos más/)).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar cancelación" }));
+    expect(cancelSubscription.mock.calls[0]![0]).toEqual({ reason: "LOW_SEASON" });
+  });
+
+  it("cancelación programada: banner con la fecha de corte, reactivar y sin enlace de cancelar", async () => {
+    const user = userEvent.setup();
+    subscription = {
+      ...activeSubscription(),
+      status: "cancel_scheduled",
+      cancellation: { canceledAt: "2026-11-23T18:00:00.000Z", reason: "PRICE", comment: null },
+    };
+    render(<SubscriptionTab />);
+    expect(
+      screen.getByText(/Tendrás acceso completo hasta el .*30 de noviembre/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Cancelación programada", { selector: "span" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cancelar suscripción" })).not.toBeInTheDocument();
+    // El plan sigue activo: no se ofrece volver a pagar.
+    expect(
+      screen.getByText("Tu Plan Agencia PRO sigue activo hasta tu fecha de corte."),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Reactivar suscripción/ }));
+    expect(reactivateSubscription).toHaveBeenCalledTimes(1);
+  });
+
+  it("pasada la fecha de corte la tarjeta dice cancelada y no hay banner de baja programada", () => {
+    subscription = {
+      ...activeSubscription(),
+      status: "cancel_scheduled",
+      isReadOnly: true,
+      cancellation: { canceledAt: "2026-11-23T18:00:00.000Z", reason: "PRICE", comment: null },
+    };
+    render(<SubscriptionTab />);
+    expect(screen.getByText("Suscripción cancelada")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Reactivar suscripción/ })).not.toBeInTheDocument();
   });
 });

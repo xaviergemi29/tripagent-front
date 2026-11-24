@@ -19,6 +19,14 @@ export function SubscriptionTabBadge() {
     );
   }
 
+  if (subscription.status === SUBSCRIPTION_STATUS.CANCEL_SCHEDULED && !subscription.isReadOnly) {
+    return (
+      <span className="rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+        Baja programada
+      </span>
+    );
+  }
+
   if (subscription.status === SUBSCRIPTION_STATUS.TRIALING) {
     return subscription.trialExpired ? (
       <span className="rounded-full border border-red-300 bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
