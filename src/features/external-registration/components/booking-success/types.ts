@@ -1,9 +1,11 @@
-import type { Currency } from "@/shared/constants/domain.constants";
+import type { Currency, PassengerStatus } from "@/shared/constants/domain.constants";
 
 export interface PassengerDTO {
   name: string;
   isTitular: boolean;
   boardingPoint: string | null;
+  /** `passenger_status`; la API envía solo activos, el front filtra por defensa si llega. */
+  status?: PassengerStatus;
 }
 
 export interface BookingSuccessViewProps {

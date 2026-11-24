@@ -11,6 +11,7 @@ import { TravelGroupCard } from "./partial-payment/TravelGroupCard";
 import { NextPaymentsCard } from "./partial-payment/NextPaymentsCard";
 import { ReportPaymentCta } from "./partial-payment/ReportPaymentCta";
 import type { PartialPaymentViewProps } from "./partial-payment/types";
+import { getActivePassengersTitularFirst } from "@/shared/utils/passenger-status.util";
 
 /**
  * Vista del Magic Link para `flowState = "PARTIAL_PAYMENT"`: estado de cuenta del cliente. Cada
@@ -31,9 +32,15 @@ export function PartialPaymentView({
   const totalCost = financials.totalAmount || 0;
   const totalPaid = financials.amountPaid || 0;
   const remaining = Math.max(0, financials.remainingBalance || 0);
-  const percentagePaid =
-    totalCost > 0 ? Math.min(100, Math.round((totalPaid / totalCost) * 100)) : 0;
   const isFullyPaid = remaining === 0;
+  // 100 % solo si no queda saldo (también con total $0); con saldo, nunca se redondea a 100 %.
+  const percentagePaid = isFullyPaid
+    ? 100
+    : totalCost > 0
+      ? Math.min(99, Math.floor((totalPaid / totalCost) * 100))
+      : 0;
+  // Solo pasajeros vigentes (un acompañante dado de baja no viaja); el titular primero.
+  const travelers = getActivePassengersTitularFirst(passengers);
 
   return (
     <PublicBookingLayout
@@ -91,7 +98,7 @@ export function PartialPaymentView({
         isFullyPaid={isFullyPaid}
       />
 
-      <TravelGroupCard passengers={passengers} />
+      <TravelGroupCard passengers={travelers} bookingStatus={bookingStatus} />
 
       {/* Indicaciones de logística del tour (Instrucciones Post-Pago) */}
       <TourInstructionsCard instructions={tourInfo.postPaymentInstructions} />

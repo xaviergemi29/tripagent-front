@@ -104,3 +104,34 @@ describe("BookingSuccessView: métodos y opciones de pago", () => {
     expect(screen.queryByText("Pago con tarjeta")).not.toBeInTheDocument();
   });
 });
+
+describe("BookingSuccessView: solo pasajeros vigentes", () => {
+  it("no lista a un acompañante dado de baja y cuenta solo a los activos", () => {
+    renderView({
+      titularName: "Nuevo Titular",
+      passengers: [
+        { name: "Eva Torres", isTitular: false, boardingPoint: null, status: "CANCELLED" },
+        { name: "Nuevo Titular", isTitular: true, boardingPoint: null, status: "ACTIVE" },
+      ],
+    });
+
+    expect(screen.getByText("Nuevo Titular")).toBeInTheDocument();
+    expect(screen.queryByText("Eva Torres")).not.toBeInTheDocument();
+    expect(screen.getByText("Viajeros Registrados (1)")).toBeInTheDocument();
+  });
+
+  it("varios acompañantes con baja de uno: titular primero y conteo de activos", () => {
+    renderView({
+      passengers: [
+        { name: "Luis Torres", isTitular: false, boardingPoint: null, status: "ACTIVE" },
+        { name: "Eva Torres", isTitular: false, boardingPoint: null, status: "CANCELLED" },
+        { name: "Ana Torres", isTitular: true, boardingPoint: null, status: "ACTIVE" },
+      ],
+    });
+
+    expect(screen.queryByText("Eva Torres")).not.toBeInTheDocument();
+    expect(screen.getByText("Viajeros Registrados (2)")).toBeInTheDocument();
+    const names = screen.getAllByText(/^(Ana|Luis) Torres$/).map((el) => el.textContent);
+    expect(names).toEqual(["Ana Torres", "Luis Torres"]);
+  });
+});

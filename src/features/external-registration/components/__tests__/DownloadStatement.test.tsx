@@ -167,3 +167,46 @@ describe("PartialPaymentView: Dónde hacer tus próximos pagos", () => {
     expect(screen.getByText("4152 3134 1234 5678")).toBeInTheDocument();
   });
 });
+
+describe("Magic Link: un acompañante dado de baja no aparece", () => {
+  it("PartialPaymentView: 'Personas en este viaje' solo lista activos, titular primero", () => {
+    render(<PartialPaymentView {...payload(2000)} />);
+
+    expect(screen.getByText("Personas en este viaje (2)")).toBeInTheDocument();
+    expect(screen.queryByText("Eva Torres")).not.toBeInTheDocument();
+    const names = screen.getAllByText(/^(Ana|Luis) Torres$/).map((el) => el.textContent);
+    expect(names).toEqual(["Ana Torres", "Luis Torres"]);
+  });
+
+  it("PaidBookingView: no hay boleto para el acompañante dado de baja", () => {
+    render(<PaidBookingView {...payload(4000)} />);
+
+    expect(screen.queryByText("Eva Torres")).not.toBeInTheDocument();
+    expect(screen.getByText("Ana Torres")).toBeInTheDocument();
+    expect(screen.getByText("Luis Torres")).toBeInTheDocument();
+  });
+
+  it("titular transferido con su acompañante dado de baja: un solo viajero en pantalla y en el PDF", async () => {
+    const user = userEvent.setup();
+    const base = payload(2000);
+    const data = {
+      ...base,
+      groupSize: 1,
+      passengers: [
+        { ...base.passengers[1]!, name: "Acompañante Baja" },
+        { ...base.passengers[2]!, name: "Nuevo Titular" },
+      ],
+    };
+    render(<PartialPaymentView {...data} />);
+
+    expect(screen.getByText("Personas en este viaje (1)")).toBeInTheDocument();
+    expect(screen.getByText("Nuevo Titular")).toBeInTheDocument();
+    expect(screen.queryByText("Acompañante Baja")).not.toBeInTheDocument();
+
+    await user.click(downloadButton());
+    await waitFor(() => expect(generate).toHaveBeenCalledTimes(1));
+    const pdf = generate.mock.calls[0]![0];
+    expect(pdf.passengers.map((p) => p.fullName)).toEqual(["Nuevo Titular"]);
+    expect(pdf.tour).toMatchObject({ totalPassengers: 1, registeredPassengers: 1 });
+  });
+});

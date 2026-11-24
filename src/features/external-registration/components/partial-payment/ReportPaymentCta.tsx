@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
-import { buildWhatsAppUrl } from "@/shared/utils/share-links.util";
+import { buildWhatsAppUrl, toPhoneDigits } from "@/shared/utils/share-links.util";
 
 /** "¿Hiciste otro abono o pago?": abre WhatsApp con la agencia para enviar el comprobante. */
 export function ReportPaymentCta({
@@ -11,9 +11,13 @@ export function ReportPaymentCta({
   tourTitle,
 }: {
   agencyName: string;
-  agencyPhone: string;
+  agencyPhone: string | null;
   tourTitle: string;
 }) {
+  // Sin teléfono de la agencia, `wa.me` abriría un chat vacío: no se ofrece el botón (igual que el
+  // pase de abordaje). El pie de la página tampoco muestra WhatsApp en ese caso.
+  if (!toPhoneDigits(agencyPhone)) return null;
+
   const handleSendWhatsApp = (): void => {
     const message = `¡Hola ${agencyName}! Quiero reportar un nuevo abono para mi reservación en el "${tourTitle}". Adjunto mi comprobante:`;
     window.open(buildWhatsAppUrl(agencyPhone, { message }), "_blank");

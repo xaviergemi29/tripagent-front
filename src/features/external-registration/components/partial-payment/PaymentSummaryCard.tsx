@@ -7,6 +7,7 @@ import { formatForDateInput, formatSpanishLongDate } from "@/shared/utils/tour-d
 import { getPaymentMethodText } from "@/shared/utils/config/status-dictionaries.config";
 import type { Currency } from "@/shared/constants/domain.constants";
 import { DownloadStatementButton } from "../DownloadStatementButton";
+import { buildStatementPayments } from "@/features/statements/pdf/payment-receipt.pdf";
 import type { PartialPaymentViewProps } from "./types";
 
 type PaymentSummaryCardProps = Pick<
@@ -36,6 +37,8 @@ export function PaymentSummaryCard({
   percentagePaid,
   isFullyPaid,
 }: PaymentSummaryCardProps) {
+  // Orden cronológico, el mismo del estado de cuenta PDF: "Abono N" coincide en ambos.
+  const orderedPayments = buildStatementPayments(paymentHistory);
   return (
     <Card className="overflow-hidden rounded-2xl border-indigo-100/70 bg-white shadow-sm">
       <CardContent className="space-y-4 p-4 sm:p-5">
@@ -151,7 +154,7 @@ export function PaymentSummaryCard({
             </p>
           ) : (
             <div className="space-y-2 pt-1">
-              {paymentHistory.map((p, index) => (
+              {orderedPayments.map((p, index) => (
                 <div
                   key={p.id}
                   className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition-colors hover:bg-slate-50"

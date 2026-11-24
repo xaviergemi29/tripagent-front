@@ -3,9 +3,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { PartialPaymentPassenger } from "./types";
 import { resolveBoardingPointDisplay } from "@/shared/utils/boarding-point.util";
 import { formatPickupTime } from "@/shared/utils/tour-date.util";
+import { BOOKING_STATUS } from "@/shared/constants/domain.constants";
 
-/** "Personas en este viaje": titular y acompañantes con su punto de abordaje. */
-export function TravelGroupCard({ passengers }: { passengers: PartialPaymentPassenger[] }) {
+/**
+ * "Personas en este viaje": titular y acompañantes con su punto de abordaje. La insignia sigue el
+ * estado de la reserva: "Confirmados" solo con `CONFIRMED` (anticipo cubierto + formulario lleno).
+ */
+export function TravelGroupCard({
+  passengers,
+  bookingStatus,
+}: {
+  passengers: PartialPaymentPassenger[];
+  bookingStatus?: string;
+}) {
+  const isConfirmed = bookingStatus === BOOKING_STATUS.CONFIRMED;
   return (
     <Card className="rounded-2xl border-indigo-100/70 bg-white shadow-sm">
       <CardContent className="space-y-4 p-4 sm:p-5">
@@ -15,16 +26,24 @@ export function TravelGroupCard({ passengers }: { passengers: PartialPaymentPass
             <Users className="h-4 w-4 text-indigo-700" />
             <span>Personas en este viaje ({passengers.length})</span>
           </div>
-          <span className="flex items-center gap-1 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-600" />
-            Confirmados
-          </span>
+          {isConfirmed ? (
+            <span className="flex items-center gap-1 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-600" />
+              Confirmados
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 rounded-full border border-amber-200/60 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              Por confirmar
+            </span>
+          )}
         </div>
 
         {/* Lista de Pasajeros */}
         <div className="space-y-3">
           {passengers.map((pass, idx) => {
-            const isLead = pass.type?.toLowerCase() === "titular";
+            // `isTitular` es el dato de la API; el texto de `type` solo respalda payloads anteriores.
+            const isLead = pass.isTitular ?? pass.type?.toLowerCase() === "titular";
 
             // Punto configurado en el tour (`boardingPointDetails`, misma regla que el pase de
             // abordaje y el PDF) con la hora en formato 12 h: "06:00 AM".

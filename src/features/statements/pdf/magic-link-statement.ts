@@ -1,8 +1,5 @@
-import {
-  type Currency,
-  DEFAULT_CURRENCY,
-  PASSENGER_STATUS,
-} from "@/shared/constants/domain.constants";
+import { type Currency, DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { getActivePassengersTitularFirst } from "@/shared/utils/passenger-status.util";
 import { resolveBoardingPointDisplay } from "@/shared/utils/boarding-point.util";
 import { buildApiPublicFileUrl } from "@/shared/utils/share-links.util";
 import {
@@ -66,9 +63,7 @@ export interface MagicLinkStatementSource {
  */
 export function buildMagicLinkStatement(source: MagicLinkStatementSource): StatementPDFData {
   const { tourInfo, financials, agency } = source;
-  const activePassengers = source.passengers
-    .filter((p) => p.status !== PASSENGER_STATUS.CANCELLED)
-    .sort((a, b) => Number(Boolean(b.isTitular)) - Number(Boolean(a.isTitular)));
+  const activePassengers = getActivePassengersTitularFirst(source.passengers);
   // Sin número de tarjeta (decisión del PM): el PDF solo lleva banco, titular y CLABE.
   const hasBankInfo = Boolean(agency.bankName || agency.clabeNumber);
 

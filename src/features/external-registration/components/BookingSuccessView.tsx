@@ -7,6 +7,7 @@ import { ReservationConfirmedCard } from "./booking-success/ReservationConfirmed
 import { PaymentOptionsCard } from "./booking-success/PaymentOptionsCard";
 import { SendReceiptCard } from "./booking-success/SendReceiptCard";
 import type { BookingSuccessViewProps, PassengerDTO } from "./booking-success/types";
+import { getActivePassengersTitularFirst } from "@/shared/utils/passenger-status.util";
 
 /**
  * Vista del Magic Link para `flowState = "PENDING_PAYMENT"`: lugares apartados y cómo pagar.
@@ -25,14 +26,17 @@ export function BookingSuccessView({
   const agencyPhone = booking.agencyPhone;
   const mainTitular = booking.titularName || titularName;
 
-  const normalizedPassengers: PassengerDTO[] = booking.passengers || [
-    { name: mainTitular, isTitular: true, boardingPoint: null },
-    ...(booking.companionNames || []).map((name) => ({
-      name,
-      isTitular: false,
-      boardingPoint: null,
-    })),
-  ];
+  // Solo pasajeros vigentes con el titular primero (un acompañante dado de baja no se lista).
+  const normalizedPassengers: PassengerDTO[] = booking.passengers
+    ? getActivePassengersTitularFirst(booking.passengers)
+    : [
+        { name: mainTitular, isTitular: true, boardingPoint: null },
+        ...(booking.companionNames || []).map((name) => ({
+          name,
+          isTitular: false,
+          boardingPoint: null,
+        })),
+      ];
 
   const currency = tourInfo.currency || DEFAULT_CURRENCY;
   const whatsappText = `Hola, acabo de registrar mis lugares para el ${tourInfo.title}. Adjunto mi comprobante de pago a nombre de ${mainTitular}.`;
