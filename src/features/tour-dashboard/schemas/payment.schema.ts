@@ -5,6 +5,10 @@ import {
   PAYMENT_METHODS,
   PAYMENT_TYPES,
 } from "@/shared/constants/domain.constants";
+import {
+  EXCHANGE_RATE_DECIMALS,
+  hasAtMostDecimals,
+} from "@/features/tour-dashboard/utils/exchange-rate.util";
 
 /** Formulario de `RegisterPaymentModal` (abono o reembolso). Única definición del front. */
 export const paymentFormSchema = z.object({
@@ -13,14 +17,56 @@ export const paymentFormSchema = z.object({
   // REFUND: devolución al cliente (monto positivo; la API lo guarda en negativo).
   type: z.enum(PAYMENT_TYPES),
   referenceInfo: z.string().optional(),
+  // Solo tours en USD (RB-PAG-004). `0` = campo vacío (`NumericInput`).
+  collectedAmount: z.number().optional(),
+  exchangeRate: z.number().optional(),
 });
 
-export const createPaymentInputSchema = paymentFormSchema.extend({
-  currency: z.enum(CURRENCIES).default(DEFAULT_CURRENCY),
-  collectedAmount: z.number().positive().optional(),
-  collectedCurrency: z.enum(CURRENCIES).optional(),
-  exchangeRate: z.number().positive().optional(),
-});
+/**
+ * Reglas del formulario según la moneda del tour. En USD: pesos > 0 (2 decimales), tipo de cambio
+ * > 0 (hasta 4 decimales) y dólares con 2 decimales (espejo de `createPaymentBodySchema` de la API).
+ * En MXN no cambia nada.
+ */
+export const buildPaymentFormSchema = ({ isUSD }: { isUSD: boolean }) =>
+  paymentFormSchema.superRefine((values, ctx) => {
+    if (!isUSD) return;
+    if (!hasAtMostDecimals(values.amount, 2)) {
+      ctx.addIssue({ code: "custom", path: ["amount"], message: "Máximo 2 decimales" });
+    }
+    const collected = values.collectedAmount ?? 0;
+    if (!(collected > 0)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["collectedAmount"],
+        message: "Ingresa el monto en pesos",
+      });
+    } else if (!hasAtMostDecimals(collected, 2)) {
+      ctx.addIssue({ code: "custom", path: ["collectedAmount"], message: "Máximo 2 decimales" });
+    }
+    const rate = values.exchangeRate ?? 0;
+    if (!(rate > 0)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["exchangeRate"],
+        message: "Ingresa el tipo de cambio",
+      });
+    } else if (!hasAtMostDecimals(rate, EXCHANGE_RATE_DECIMALS)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["exchangeRate"],
+        message: `Máximo ${EXCHANGE_RATE_DECIMALS} decimales`,
+      });
+    }
+  });
+
+export const createPaymentInputSchema = paymentFormSchema
+  .omit({ collectedAmount: true, exchangeRate: true })
+  .extend({
+    currency: z.enum(CURRENCIES).default(DEFAULT_CURRENCY),
+    collectedAmount: z.number().positive().optional(),
+    collectedCurrency: z.enum(CURRENCIES).optional(),
+    exchangeRate: z.number().positive().optional(),
+  });
 
 export const paymentRecordSchema = z.object({
   id: z.uuid(),

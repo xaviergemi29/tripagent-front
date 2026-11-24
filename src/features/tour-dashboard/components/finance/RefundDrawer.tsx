@@ -142,6 +142,7 @@ export function RefundDrawer({
         tourCurrency={currency}
         balance={refund.refundableAmount}
         mode="REFUND"
+        holderName={refund.fullName}
       />
     </>
   );

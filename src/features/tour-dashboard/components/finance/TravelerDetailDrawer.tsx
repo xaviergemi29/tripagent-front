@@ -508,6 +508,7 @@ export function TravelerDetailDrawer({
           tourCurrency={tourCurrency}
           balance={traveler.balance}
           correctionData={correctionData}
+          holderName={traveler.fullName}
         />
       )}
 
@@ -520,6 +521,7 @@ export function TravelerDetailDrawer({
           tourCurrency={tourCurrency}
           balance={titularSurplus}
           mode={PAYMENT_TYPE.REFUND}
+          holderName={traveler.fullName}
         />
       )}
 
