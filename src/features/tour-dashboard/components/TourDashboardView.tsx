@@ -14,6 +14,8 @@ import { RefundsPanel } from "@/features/tour-dashboard/components/finance/Refun
 import { useSubscriptionAccess } from "@/features/settings/hooks/useSubscriptionAccess";
 import { TourDashboardHeader } from "@/features/tour-dashboard/components/header/TourDashboardHeader";
 import { useTourDashboardByTourId } from "../hooks/useTourDashboard";
+import { useSyncingBookingIds } from "../hooks/useSyncingBookingIds";
+import { DashboardLoadingSkeleton } from "./passengers/PassengersSkeleton";
 import { useTourSeats } from "../hooks/useTourSeats";
 import { QuickReservationModal } from "@/features/tour-dashboard/components/passengers/QuickReservationModal";
 import { DashboardTravelerTable } from "@/features/tour-dashboard/components/passengers/DashboardTravelerTable";
@@ -33,7 +35,6 @@ import { isNotFoundError } from "@/lib/api-error";
 
 import { TravelersTableToolbar } from "@/features/tour-dashboard/components/passengers/TravelersTableToolbar";
 import { TravelerDetailDrawer } from "@/features/tour-dashboard/components/finance/TravelerDetailDrawer";
-import { Skeleton } from "@/components/ui/skeleton";
 import { TourTabsNav } from "@/features/tour-dashboard/components/header/TourTabsNav";
 import { DesktopSeatingTab } from "@/features/tour-dashboard/components/seating/DesktopSeatingTab";
 import { VehicleSelectionModal } from "@/features/tour-dashboard/components/seating/VehicleSelectionModal";
@@ -83,7 +84,11 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
     error,
     refetch,
     isFetching,
+    dataUpdatedAt,
   } = useTourDashboardByTourId(tourId);
+  // Grupos que están cambiando (baja de acompañante o cancelación total): se muestran como
+  // skeleton hasta que llega el dashboard recargado, en escritorio y celular.
+  const syncingBookingIds = useSyncingBookingIds({ dataUpdatedAt, isFetching });
   // Datos de la agencia para el estado de cuenta PDF (perfil, banco y colores de marca).
   const agencyQuery = useAgency();
   const brandingQuery = useAgencyBranding();
@@ -237,13 +242,7 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
   }
 
   if (isLoading || !tour) {
-    return (
-      <div className="space-y-6 p-6">
-        <Skeleton className="h-32 w-full rounded-xl" />
-        <Skeleton className="h-14 w-full rounded-xl" />
-        <Skeleton className="h-96 w-full rounded-xl" />
-      </div>
-    );
+    return <DashboardLoadingSkeleton />;
   }
 
   const totalEligiblePassengers = tour.metrics.logistics.total;
@@ -375,6 +374,7 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
                     onClearFilters={clearFilters}
                     requiresSeats={requiresSeats}
                     highlightedBookingId={highlightedBookingId}
+                    syncingBookingIds={syncingBookingIds}
                   />
                 </div>
               </div>
@@ -484,6 +484,7 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
                 onAssignSeatClick={handleAssignSeatIntent}
                 onRowClick={(id) => setSelectedTravelerId(id)}
                 highlightedBookingId={highlightedBookingId}
+                syncingBookingIds={syncingBookingIds}
               />
             </div>
           </div>

@@ -7,14 +7,18 @@ import { DeleteRoomModal } from "../DeleteRoomModal";
 
 const bed: TargetBedDeletion = {
   roomId: "r1",
-  roomName: "Doble Individual #1 · Hab. 102",
+  roomName: "Triple · 1 matrimonial + 1 individual #1 · Hab. 102",
   slotIndex: 2,
-  bedLabel: "Cama B",
-  assignedPassenger: { id: "p1", fullName: "Ana Pérez" },
+  bedName: "cama matrimonial 1",
+  slotsCount: 2,
+  assignedPassengers: [
+    { id: "p1", fullName: "Ana Pérez" },
+    { id: "p2", fullName: "Luis Pérez" },
+  ],
 };
 const room: TargetRoomDeletion = {
   roomId: "r1",
-  roomName: "Doble Individual #1 · Hab. 102",
+  roomName: "Triple · 1 matrimonial + 1 individual #1 · Hab. 102",
   totalBeds: 2,
   assignedPassengersCount: 2,
 };
@@ -28,10 +32,13 @@ describe("DeleteBedModal", () => {
   it("con pasajero avisa que regresará a 'sin habitación' y confirma", async () => {
     const onConfirm = vi.fn();
     render(<DeleteBedModal targetBed={bed} onClose={vi.fn()} onConfirm={onConfirm} />);
-    expect(screen.getByText("¿Eliminar Cama B?")).toBeInTheDocument();
-    expect(screen.getByText("Doble Individual #1 · Hab. 102")).toBeInTheDocument();
-    expect(screen.getByText("Ana Pérez")).toBeInTheDocument();
-    expect(screen.getByText(/quedará sin cama asignada/)).toBeInTheDocument();
+    expect(screen.getByText("¿Eliminar la cama matrimonial 1?")).toBeInTheDocument();
+    expect(
+      screen.getByText("Triple · 1 matrimonial + 1 individual #1 · Hab. 102"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/cama matrimonial 1 \(2 lugares\)/)).toBeInTheDocument();
+    expect(screen.getByText("Ana Pérez y Luis Pérez")).toBeInTheDocument();
+    expect(screen.getByText(/quedarán sin cama asignada/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Sí, eliminar cama" }));
     expect(onConfirm).toHaveBeenCalledWith(bed);
   });
@@ -39,13 +46,13 @@ describe("DeleteBedModal", () => {
   it("con la cama libre dice que nadie se ve afectado", () => {
     render(
       <DeleteBedModal
-        targetBed={{ ...bed, assignedPassenger: null }}
+        targetBed={{ ...bed, assignedPassengers: [], slotsCount: 1, bedName: "cama individual 1" }}
         onClose={vi.fn()}
         onConfirm={vi.fn()}
       />,
     );
     expect(screen.getByText(/ningún pasajero se verá afectado/)).toBeInTheDocument();
-    expect(screen.queryByText(/quedará sin cama/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/sin cama asignada/)).not.toBeInTheDocument();
   });
 
   it("cancela, y mientras elimina no se cierra ni se puede confirmar de nuevo", async () => {
@@ -68,7 +75,9 @@ describe("DeleteRoomModal", () => {
   it("con pasajeros usa plural y avisa que regresan", async () => {
     const onConfirm = vi.fn();
     render(<DeleteRoomModal targetRoom={room} onClose={vi.fn()} onConfirm={onConfirm} />);
-    expect(screen.getByText("¿Eliminar Doble Individual #1 · Hab. 102?")).toBeInTheDocument();
+    expect(
+      screen.getByText("¿Eliminar Triple · 1 matrimonial + 1 individual #1 · Hab. 102?"),
+    ).toBeInTheDocument();
     expect(screen.getByText("2 lugares")).toBeInTheDocument();
     expect(screen.getByText("2 pasajeros asignados")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Sí, eliminar habitación" }));

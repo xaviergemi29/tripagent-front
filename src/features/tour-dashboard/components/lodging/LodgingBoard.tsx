@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Plus } from "lucide-react";
+import { Copy, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LODGING_ROOM_STATUS, LODGING_SLOT_INDEX } from "@/shared/constants/domain.constants";
 import { copyToClipboard } from "@/shared/utils/clipboard";
 import {
   useAssignLodgingRoom,
   useDeleteLodgingBed,
   useDeleteLodgingRoom,
+  useLodgingActivity,
   useUnassignLodgingSlot,
   useUpdateLodgingRoom,
 } from "../../hooks/useLodging";
@@ -24,7 +24,7 @@ import {
   buildRoomDeletionTarget,
   buildRoomingListText,
   buildStayLabel,
-  findEmptyMatrimonial,
+  findFreeMatrimonialBed,
   getFreeBeds,
   getHotelAssignedIds,
   getRoomFreeBeds,
@@ -48,6 +48,8 @@ interface LodgingBoardProps {
   onRegisterClick?: (hotelName?: string) => void;
 }
 
+const normalizeHotelName = (name: string) => name.trim().toLowerCase();
+
 /** Tablero de hospedaje: hotel activo, KPIs, pasajeros sin cama y habitaciones. */
 export function LodgingBoard({
   tourId,
@@ -64,6 +66,7 @@ export function LodgingBoard({
   const updateRoom = useUpdateLodgingRoom(tourId);
   const deleteBed = useDeleteLodgingBed(tourId);
   const deleteRoom = useDeleteLodgingRoom(tourId);
+  const { busyRoomIds, registeringRooms, isUpdating } = useLodgingActivity(tourId);
   const [bedTarget, setBedTarget] = useState<TargetBedDeletion | null>(null);
   const [roomTarget, setRoomTarget] = useState<TargetRoomDeletion | null>(null);
 
@@ -73,16 +76,18 @@ export function LodgingBoard({
     lodging.passengers.map((passenger) => [passenger.bookingPassengerId, passenger]),
   );
   const unassigned = getUnassignedPassengers(hotel, lodging.passengers);
-  const freeBeds = getFreeBeds(hotel.rooms);
-  const emptyMatrimonial = findEmptyMatrimonial(hotel.rooms);
+  // Una habitación con una mutación en curso no ofrece sus camas: sus índices aún pueden cambiar.
+  const settledRooms = hotel.rooms.filter((room) => !busyRoomIds.has(room.id));
+  const freeBeds = getFreeBeds(settledRooms);
+  const freeMatrimonialBed = findFreeMatrimonialBed(settledRooms);
+  const registeringCount = registeringRooms
+    .filter(({ hotelName }) => normalizeHotelName(hotelName) === normalizeHotelName(hotel.name))
+    .reduce((total, { count }) => total + count, 0);
 
   const assignedCount = getHotelAssignedIds(hotel).size;
   const totalPassengers = lodging.passengers.length;
   const freeBedsCount = hotel.rooms.reduce((sum, room) => sum + getRoomFreeBeds(room), 0);
-  const confirmedCount = hotel.rooms.filter(
-    (room) => room.status === LODGING_ROOM_STATUS.CONFIRMED,
-  ).length;
-  const consultedCount = hotel.rooms.length - confirmedCount;
+  const hotelCapacity = hotel.rooms.reduce((sum, room) => sum + room.capacity, 0);
   const progress = totalPassengers > 0 ? Math.round((assignedCount / totalPassengers) * 100) : 0;
 
   const handleCopy = async () => {
@@ -103,11 +108,60 @@ export function LodgingBoard({
   const roomTitles = getRoomTitles(hotel.rooms);
   const findRoom = (roomId: string) => hotel.rooms.find((room) => room.id === roomId);
 
+  /**
+   * Elimina la cama solo si el tablero sigue como cuando se abrió el diálogo: los lugares siguientes
+   * se recorren al eliminar una cama, así que un índice viejo borraría otra cama (o ninguna).
+   */
+  const confirmBedDeletion = (target: TargetBedDeletion) => {
+    setBedTarget(null);
+    const room = findRoom(target.roomId);
+    const current = room
+      ? buildBedDeletionTarget(room, roomTitles[room.id], target.slotIndex, lodging.passengers)
+      : null;
+    const sameOccupants = (ids: string[]) => ids.join("|");
+    const isUnchanged =
+      room !== undefined &&
+      !busyRoomIds.has(room.id) &&
+      room.matrimonialBeds + room.singleBeds > 1 &&
+      target.slotIndex <= room.capacity &&
+      sameOccupants(current?.assignedPassengers.map((item) => item.id) ?? []) ===
+        sameOccupants(target.assignedPassengers.map((item) => item.id)) &&
+      current?.slotsCount === target.slotsCount;
+    if (!isUnchanged) {
+      toast.error("La cama cambió", {
+        description:
+          "El tablero se actualizó mientras confirmabas. Revísalo y vuelve a intentarlo.",
+      });
+      return;
+    }
+    deleteBed.mutate({ roomId: target.roomId, slotIndex: target.slotIndex });
+  };
+
+  const confirmRoomDeletion = ({ roomId }: TargetRoomDeletion) => {
+    setRoomTarget(null);
+    if (!findRoom(roomId) || busyRoomIds.has(roomId)) return;
+    deleteRoom.mutate({ roomId });
+  };
+
   return (
     <div className="space-y-5 rounded-2xl bg-slate-50/70 p-1 sm:p-2">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Hospedaje y Rooming List</h2>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            Hospedaje y Rooming List
+            <span
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-1 text-xs font-semibold text-indigo-600"
+            >
+              {isUpdating && (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  Actualizando…
+                </>
+              )}
+            </span>
+          </h2>
           <p className="text-sm text-slate-500">
             Control de distribución de habitaciones y asignación de camas para esta salida
           </p>
@@ -137,7 +191,11 @@ export function LodgingBoard({
 
       <div className="flex flex-wrap items-center gap-2">
         {lodging.hotels.length > 1 && (
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Hotel activo">
+          <div
+            className="flex flex-wrap gap-1.5 rounded-2xl bg-slate-100 p-1.5"
+            role="group"
+            aria-label="Hotel activo"
+          >
             {lodging.hotels.map((item) => (
               <button
                 key={item.id}
@@ -145,10 +203,11 @@ export function LodgingBoard({
                 aria-pressed={item.id === hotel.id}
                 onClick={() => setSelectedHotelId(item.id)}
                 className={cn(
-                  "rounded-xl border px-3.5 py-1.5 text-sm font-semibold transition-colors",
+                  "min-h-10 rounded-xl px-4 text-sm font-semibold transition-colors",
+                  "focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:outline-none",
                   item.id === hotel.id
-                    ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-white hover:text-slate-900",
                 )}
               >
                 {item.name}
@@ -173,10 +232,10 @@ export function LodgingBoard({
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-busy={isUpdating}>
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold text-slate-500">Pasajeros alojados</p>
-          <p className="mt-1 text-xl font-bold text-slate-900">
+          <p className={cn("mt-1 text-xl font-bold text-slate-900", isUpdating && "animate-pulse")}>
             {assignedCount} / {totalPassengers}
           </p>
           <div
@@ -192,12 +251,17 @@ export function LodgingBoard({
         </div>
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-700">Disponibilidad</p>
-          <p className="mt-1 text-xl font-bold text-emerald-800">{freeBedsCount} camas libres</p>
+          <p
+            className={cn("mt-1 text-xl font-bold text-emerald-800", isUpdating && "animate-pulse")}
+          >
+            {freeBedsCount} camas libres
+          </p>
         </div>
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500">Estado de cuartos</p>
-          <p className="mt-1 text-xl font-bold text-slate-900">
-            {confirmedCount} Conf. · {consultedCount} Consult.
+          <p className="text-xs font-semibold text-slate-500">Habitaciones</p>
+          <p className={cn("mt-1 text-xl font-bold text-slate-900", isUpdating && "animate-pulse")}>
+            {hotel.rooms.length} {hotel.rooms.length === 1 ? "habitación" : "habitaciones"} ·{" "}
+            {hotelCapacity} {hotelCapacity === 1 ? "lugar" : "lugares"}
           </p>
         </div>
       </div>
@@ -210,8 +274,9 @@ export function LodgingBoard({
             hotelName={hotel.name}
             stayLabel={stayLabel}
             passengers={unassigned}
+            isUpdating={isUpdating}
             freeBeds={freeBeds}
-            hasEmptyMatrimonial={Boolean(emptyMatrimonial)}
+            hasFreeMatrimonialBed={Boolean(freeMatrimonialBed)}
             onAssign={
               canEdit
                 ? (bed, bookingPassengerId) =>
@@ -222,13 +287,16 @@ export function LodgingBoard({
                 : undefined
             }
             onAssignCouple={
-              canEdit && emptyMatrimonial
+              canEdit && freeMatrimonialBed
                 ? ([first, second]) =>
                     assign.mutate({
-                      roomId: emptyMatrimonial.id,
+                      roomId: freeMatrimonialBed.roomId,
                       assignments: [
-                        { slotIndex: LODGING_SLOT_INDEX.first, bookingPassengerId: first },
-                        { slotIndex: LODGING_SLOT_INDEX.first + 1, bookingPassengerId: second },
+                        { slotIndex: freeMatrimonialBed.slotIndexes[0], bookingPassengerId: first },
+                        {
+                          slotIndex: freeMatrimonialBed.slotIndexes[1],
+                          bookingPassengerId: second,
+                        },
                       ],
                     })
                 : undefined
@@ -239,6 +307,8 @@ export function LodgingBoard({
           <RoomGrid
             key={hotel.id}
             rooms={hotel.rooms}
+            busyRoomIds={busyRoomIds}
+            registeringCount={registeringCount}
             onRegisterClick={
               canEdit && onRegisterClick ? () => onRegisterClick(hotel.name) : undefined
             }
@@ -283,30 +353,20 @@ export function LodgingBoard({
                 ? (roomId, roomNumber) => updateRoom.mutate({ roomId, roomNumber })
                 : undefined
             }
-            onConfirm={
-              canEdit
-                ? (roomId) => updateRoom.mutate({ roomId, status: LODGING_ROOM_STATUS.CONFIRMED })
-                : undefined
-            }
           />
         </div>
       </div>
 
+      {/* Se cierran al confirmar (la caché ya refleja el cambio): un segundo clic no repite la baja. */}
       <DeleteBedModal
         targetBed={bedTarget}
-        isDeleting={deleteBed.isPending}
         onClose={() => setBedTarget(null)}
-        onConfirm={({ roomId, slotIndex }) =>
-          deleteBed.mutate({ roomId, slotIndex }, { onSettled: () => setBedTarget(null) })
-        }
+        onConfirm={confirmBedDeletion}
       />
       <DeleteRoomModal
         targetRoom={roomTarget}
-        isDeleting={deleteRoom.isPending}
         onClose={() => setRoomTarget(null)}
-        onConfirm={({ roomId }) =>
-          deleteRoom.mutate({ roomId }, { onSettled: () => setRoomTarget(null) })
-        }
+        onConfirm={confirmRoomDeletion}
       />
     </div>
   );

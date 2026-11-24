@@ -34,7 +34,13 @@ describe("Barra de pestañas de Configuración", () => {
     expect(list.className).toMatch(/overflow-x-auto/);
     expect(list.className).toMatch(/lg:overflow-visible/);
     for (const name of [/Seguridad/, /Agencia/, /Políticas/, /Marca y PDFs/, /Suscripción/]) {
-      expect(screen.getByRole("tab", { name })).toHaveClass("shrink-0");
+      expect(screen.getByRole("tab", { name })).toHaveClass("shrink-0", "min-h-11");
+    }
+    const active = screen.getByRole("tab", { name: /Suscripción/ });
+    expect(active.className).toMatch(/data-active:bg-indigo-600/);
+    expect(active.className).toMatch(/lg:data-active:border-indigo-600/);
+    expect(active.className).toMatch(/focus-visible:ring-2/);
+    {
     }
     expect(screen.getByRole("tab", { name: /Suscripción/ })).toHaveTextContent("Prueba 6d");
     expect(screen.getByRole("tab", { name: /Suscripción/ })).toHaveAttribute(

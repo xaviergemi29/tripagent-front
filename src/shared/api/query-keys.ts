@@ -36,6 +36,17 @@ export const TOUR_SEAT_KEYS = {
   byTour: (tourId: string) => ["tours", tourId, "seats"] as const,
 };
 
+/**
+ * Claves de mutación (no de caché). `bookingGroupChange`: baja de un acompañante y cancelación
+ * total, con `bookingId` en las variables; el Centro de Control las usa para saber qué grupo se
+ * está actualizando (`useSyncingBookingIds`).
+ */
+export const MUTATION_KEYS = {
+  bookingGroupChange: ["booking-group-change"] as const,
+  /** Mutaciones de hospedaje de un tour (camas, habitaciones y registro). */
+  lodgingChange: (tourId: string) => ["lodging-change", tourId] as const,
+};
+
 export const TOUR_DASHBOARD_KEYS = {
   all: ["tour-dashboard"] as const,
   detail: (tourId: string) => [...TOUR_DASHBOARD_KEYS.all, tourId] as const,

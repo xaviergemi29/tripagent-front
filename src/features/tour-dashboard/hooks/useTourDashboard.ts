@@ -11,7 +11,12 @@ import type {
   TransferPassengerInput,
   TransferPassengerOutput,
 } from "../schemas/transfer-passenger.schema";
-import { TOUR_DASHBOARD_KEYS, TOUR_SEAT_KEYS, VEHICLE_KEYS } from "@/shared/api/query-keys";
+import {
+  MUTATION_KEYS,
+  TOUR_DASHBOARD_KEYS,
+  TOUR_SEAT_KEYS,
+  VEHICLE_KEYS,
+} from "@/shared/api/query-keys";
 import { invalidateBookingChange } from "@/shared/api/invalidate-booking-change";
 import { formatCurrency } from "@/shared/utils/currency.util";
 
@@ -188,6 +193,7 @@ export function useQuickRemovePassenger() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: MUTATION_KEYS.bookingGroupChange,
     mutationFn: ({
       bookingId,
       passengerId,

@@ -1,19 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Bed, BedDouble, CheckCircle2, Pencil, Trash2, Users, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bed, BedDouble, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  LODGING_ROOM_NUMBER_MAX,
-  LODGING_ROOM_STATUS,
-  type LodgingRoomType,
-} from "@/shared/constants/domain.constants";
-import { LODGING_ROOM_STATUS_DICT } from "@/shared/utils/config/status-dictionaries.config";
+import { LODGING_ROOM_NUMBER_MAX } from "@/shared/constants/domain.constants";
+import { getBedOfSlot, getSlotLabel } from "@/shared/utils/lodging-beds.util";
 import type { LodgingPassengerOutput, LodgingRoomOutput } from "../../schemas/lodging.schema";
 import {
-  getBedLabel,
   getInitials,
   getRoomDescription,
   getRoomBeds,
@@ -22,17 +17,9 @@ import {
 } from "../../utils/lodging.util";
 import { AssignPassengerPopover } from "./AssignPassengerPopover";
 
-const ROOM_ICON: Record<LodgingRoomType, typeof Bed> = {
-  MATRIMONIAL: Bed,
-  DOUBLE_INDIVIDUAL: BedDouble,
-  TRIPLE: Users,
-  QUADRUPLE: Users,
-  SINGLE: Bed,
-};
-
 interface RoomCardProps {
   room: LodgingRoomOutput;
-  /** "Matrimonial #1". */
+  /** "Doble · 2 individuales #1". */
   title: string;
   passengersById: Record<string, LodgingPassengerOutput>;
   /** Pasajeros sin cama en el hotel (candidatos de las camas libres). */
@@ -41,32 +28,39 @@ interface RoomCardProps {
   onAssign?: (slotIndex: number, bookingPassengerId: string) => void;
   onUnassign?: (slotIndex: number) => void;
   onRoomNumberChange?: (roomNumber: string | null) => void;
-  onConfirm?: () => void;
   onDeleteRoom?: () => void;
-  /** Se ofrece solo con más de una cama (con una sola se elimina la habitación). */
+  /** Hay una mutación en curso sobre esta habitación: se bloquean sus acciones hasta que responda. */
+  isBusy?: boolean;
+  /** Elimina la cama completa que contiene el lugar; solo con más de una cama (con una sola se elimina la habitación). */
   onDeleteBed?: (slotIndex: number) => void;
 }
 
 const ICON_BUTTON =
-  "rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600";
+  "rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-50";
 
 function IconAction({
   label,
   tooltip,
   onClick,
-  className = ICON_BUTTON,
+  disabled = false,
   children,
 }: {
   label: string;
   tooltip: string;
   onClick: () => void;
-  className?: string;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button type="button" onClick={onClick} aria-label={label} className={className}>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          disabled={disabled}
+          className={ICON_BUTTON}
+        >
           {children}
         </button>
       </TooltipTrigger>
@@ -83,22 +77,30 @@ export function RoomCard({
   onAssign,
   onUnassign,
   onRoomNumberChange,
-  onConfirm,
   onDeleteRoom,
+  isBusy = false,
   onDeleteBed,
 }: RoomCardProps) {
-  const Icon = ROOM_ICON[room.roomType];
-  const statusConfig = LODGING_ROOM_STATUS_DICT[room.status];
+  const Icon = room.matrimonialBeds > 0 ? BedDouble : Bed;
   const occupied = getRoomOccupied(room);
   const free = getRoomFreeBeds(room);
-  const isConsulted = room.status === LODGING_ROOM_STATUS.CONSULTED;
-  const canDeleteBeds = Boolean(onDeleteBed) && room.capacity > 1;
+  const canDeleteBeds = Boolean(onDeleteBed) && room.matrimonialBeds + room.singleBeds > 1;
 
   return (
     <article
       aria-label={title}
-      className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm"
+      aria-busy={isBusy}
+      className="relative flex flex-col rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm"
     >
+      {isBusy && (
+        <span
+          role="status"
+          className="absolute top-2 right-3 flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600"
+        >
+          <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+          Actualizando…
+        </span>
+      )}
       <header className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-600">
@@ -111,20 +113,17 @@ export function RoomCard({
               key={room.roomNumber ?? ""}
               roomNumber={room.roomNumber}
               onChange={onRoomNumberChange}
+              disabled={isBusy}
             />
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusConfig.badgeClass}`}
-          >
-            {statusConfig.label}
-          </span>
           {onDeleteRoom && (
             <IconAction
               label={`Eliminar ${title}`}
               tooltip="Eliminar habitación"
               onClick={onDeleteRoom}
+              disabled={isBusy}
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </IconAction>
@@ -142,9 +141,10 @@ export function RoomCard({
         </span>
       </div>
 
-      <ul className="mt-3 space-y-2">
+      <ul className={cn("mt-3 space-y-2 transition-opacity", isBusy && "opacity-60")}>
         {getRoomBeds(room).map((bed) => {
-          const label = getBedLabel(room.roomType, bed.slotIndex);
+          const label = getSlotLabel(room, bed.slotIndex);
+          const bedSize = getBedOfSlot(room, bed.slotIndex)?.size ?? 1;
           const passenger = bed.bookingPassengerId
             ? passengersById[bed.bookingPassengerId]
             : undefined;
@@ -152,8 +152,13 @@ export function RoomCard({
             <div className="ml-1 shrink-0 border-l border-slate-200 pl-1.5">
               <IconAction
                 label={`Eliminar ${label}`}
-                tooltip="Eliminar esta cama"
+                tooltip={
+                  bedSize > 1
+                    ? "Eliminar la cama matrimonial completa (2 lugares)"
+                    : "Eliminar esta cama"
+                }
                 onClick={() => onDeleteBed(bed.slotIndex)}
+                disabled={isBusy}
               >
                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               </IconAction>
@@ -185,6 +190,7 @@ export function RoomCard({
                       label={`Quitar a ${passenger?.fullName ?? "pasajero"} de ${label}`}
                       tooltip="Quitar pasajero de esta cama"
                       onClick={() => onUnassign(bed.slotIndex)}
+                      disabled={isBusy}
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </IconAction>
@@ -201,7 +207,8 @@ export function RoomCard({
                       <button
                         type="button"
                         aria-label={`Asignar pasajero a ${label}`}
-                        className="flex w-full min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-dashed border-slate-300 p-2.5 text-left text-sm text-slate-500 transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600"
+                        disabled={isBusy}
+                        className="flex w-full min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-dashed border-slate-300 p-2.5 text-left text-sm text-slate-500 transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600 disabled:pointer-events-none"
                       >
                         <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                           {label}
@@ -224,21 +231,6 @@ export function RoomCard({
           );
         })}
       </ul>
-
-      {isConsulted && onConfirm && (
-        <footer className="mt-3 border-t border-slate-100 pt-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onConfirm}
-            className="w-full gap-1.5 rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
-          >
-            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-            Marcar como Confirmada
-          </Button>
-        </footer>
-      )}
     </article>
   );
 }
@@ -246,10 +238,11 @@ export function RoomCard({
 interface RoomNumberChipProps {
   roomNumber: string | null;
   onChange?: (roomNumber: string | null) => void;
+  disabled?: boolean;
 }
 
 /** Número de cuarto editable en línea: Enter o salir del campo guarda; Escape cancela. */
-function RoomNumberChip({ roomNumber, onChange }: RoomNumberChipProps) {
+function RoomNumberChip({ roomNumber, onChange, disabled = false }: RoomNumberChipProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(roomNumber ?? "");
   // Enter y Escape desmontan el campo: evita que el blur resultante guarde otra vez.
@@ -279,7 +272,8 @@ function RoomNumberChip({ roomNumber, onChange }: RoomNumberChipProps) {
           setIsEditing(true);
         }}
         aria-label={roomNumber ? `Editar número de cuarto (${label})` : "Editar número de cuarto"}
-        className="mt-0.5 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs text-slate-500 transition-colors hover:bg-slate-100 hover:text-indigo-600"
+        disabled={disabled}
+        className="mt-0.5 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs text-slate-500 transition-colors hover:bg-slate-100 hover:text-indigo-600 disabled:pointer-events-none"
       >
         {label}
         <Pencil className="h-3 w-3" aria-hidden="true" />

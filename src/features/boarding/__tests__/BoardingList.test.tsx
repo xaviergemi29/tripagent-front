@@ -14,7 +14,14 @@ const items: BoardingListItem[] = [
     seatLabel: "4",
     boardingPointCode: "P1",
     rooms: [
-      { hotelName: "Hotel Sierra", roomNumber: "102", roomType: "MATRIMONIAL", typeIndex: 1 },
+      {
+        hotelName: "Hotel Sierra",
+        roomNumber: "102",
+        roomType: null,
+        matrimonialBeds: 1,
+        singleBeds: 0,
+        typeIndex: 1,
+      },
     ],
     boardedAt: null,
     isMinor: false,

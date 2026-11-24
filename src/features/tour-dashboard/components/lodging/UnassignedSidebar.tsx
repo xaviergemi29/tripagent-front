@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Building2, Heart, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import type { LodgingPassengerOutput } from "../../schemas/lodging.schema";
 import {
@@ -18,9 +19,11 @@ interface UnassignedSidebarProps {
   stayLabel: string;
   /** Pasajeros sin cama en el hotel activo. */
   passengers: LodgingPassengerOutput[];
+  /** Hay cambios del hospedaje en curso: la lista y su conteo se marcan como "actualizando". */
+  isUpdating?: boolean;
   freeBeds: FreeBed[];
-  /** Hay una Matrimonial sin ocupantes (habilita "Asignar pareja juntos"). */
-  hasEmptyMatrimonial: boolean;
+  /** Hay una cama matrimonial con sus 2 lugares libres (habilita "Asignar pareja juntos"). */
+  hasFreeMatrimonialBed: boolean;
   /** Sin callbacks (solo consulta) no se ofrece asignar. */
   onAssign?: (bed: FreeBed, bookingPassengerId: string) => void;
   onAssignCouple?: (bookingPassengerIds: [string, string]) => void;
@@ -30,8 +33,9 @@ export function UnassignedSidebar({
   hotelName,
   stayLabel,
   passengers,
+  isUpdating = false,
   freeBeds,
-  hasEmptyMatrimonial,
+  hasFreeMatrimonialBed,
   onAssign,
   onAssignCouple,
 }: UnassignedSidebarProps) {
@@ -79,12 +83,16 @@ export function UnassignedSidebar({
     <div className="space-y-4">
       <section
         aria-label="Pasajeros sin habitación"
+        aria-busy={isUpdating}
         className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm"
       >
         <header className="mb-3 flex items-center justify-between gap-2">
           <h3 className="text-sm font-bold text-slate-900">Pasajeros sin habitación</h3>
           <span
-            className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-600"
+            className={cn(
+              "rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-600",
+              isUpdating && "animate-pulse",
+            )}
             aria-label={`${passengers.length} sin habitación`}
           >
             {passengers.length}
@@ -116,7 +124,7 @@ export function UnassignedSidebar({
             {visibleGroups.map(({ group, visible }) => {
               const [first, second] = group.passengers;
               const canAssignCouple =
-                group.passengers.length === 2 && hasEmptyMatrimonial && Boolean(onAssignCouple);
+                group.passengers.length === 2 && hasFreeMatrimonialBed && Boolean(onAssignCouple);
               return (
                 <div key={group.bookingId} className="space-y-2">
                   <h4 className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
@@ -131,7 +139,7 @@ export function UnassignedSidebar({
                       className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
                     >
                       <Heart className="h-3.5 w-3.5" aria-hidden="true" />
-                      Asignar pareja juntos a Matrimonial
+                      Asignar pareja juntos a cama matrimonial
                     </button>
                   )}
                   <ul className="space-y-2">{visible.map(renderPassenger)}</ul>

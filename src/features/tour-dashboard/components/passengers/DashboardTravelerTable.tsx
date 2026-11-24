@@ -50,6 +50,8 @@ interface DashboardTravelerTableProps {
   onClearFilters?: () => void;
   /** Reserva a la que llevó una notificación (`?bookingId=`): su grupo se resalta. */
   highlightedBookingId?: string | null;
+  /** Reservas que se están actualizando (baja o cancelación): se dibujan como skeleton. */
+  syncingBookingIds?: ReadonlySet<string>;
 }
 
 export function DashboardTravelerTable({
@@ -75,6 +77,7 @@ export function DashboardTravelerTable({
   onAssignSeatClick,
   onClearFilters,
   highlightedBookingId = null,
+  syncingBookingIds,
 }: DashboardTravelerTableProps) {
   // Agregar lugar, dar de baja, liberar y transferir: compartido con el celular.
   const groupActions = useTravelerGroupActions(tourId);
@@ -136,6 +139,7 @@ export function DashboardTravelerTable({
                   onTransferPassengerClick={groupActions.openTransfer}
                   onDownloadReceiptClick={handleDownloadReceipt}
                   isHighlighted={titular.bookingId === highlightedBookingId}
+                  isSyncing={syncingBookingIds?.has(titular.bookingId)}
                 />
               ))}
 

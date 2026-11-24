@@ -1,15 +1,5 @@
 import type { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
-import {
-  LODGING_ROOM_CAPACITY,
-  LODGING_ROOM_TYPE,
-  LODGING_ROOM_TYPE_BY_CAPACITY,
-  LODGING_SLOT_INDEX,
-  type LodgingRoomType,
-} from "@/shared/constants/domain.constants";
-import {
-  LODGING_ROOM_STATUS_DICT,
-  LODGING_ROOM_TYPE_DICT,
-} from "@/shared/utils/config/status-dictionaries.config";
+import { LODGING_SLOT_INDEX } from "@/shared/constants/domain.constants";
 import { matchesSearch } from "@/shared/utils/search.util";
 import { formatForDateInput, formatLocalDate, parseDateOnly } from "@/shared/utils/tour-date.util";
 import type {
@@ -20,6 +10,15 @@ import type {
   TargetBedDeletion,
   TargetRoomDeletion,
 } from "../schemas/lodging.schema";
+import {
+  describeBeds,
+  getBedName,
+  getBedOfSlot,
+  getBedsKey,
+  getRoomKindName,
+  getSlotLabel,
+  removeBedFromBeds,
+} from "@/shared/utils/lodging-beds.util";
 
 /**
  * Hospedaje en el Centro de Control. La pestaña se decide por la duración del tour; la asignación
@@ -86,24 +85,16 @@ export function getUnassignedPassengers(
 export const sortRooms = (rooms: LodgingRoomOutput[]): LodgingRoomOutput[] =>
   [...rooms].sort((a, b) => a.position - b.position);
 
-/** "Doble Individual #2": n = orden por `position` entre las habitaciones del mismo tipo. */
+/** "Doble · 2 individuales #2": n = orden por `position` entre las habitaciones con las mismas camas. */
 export function getRoomTitles(rooms: LodgingRoomOutput[]): Record<string, string> {
-  const counters: Partial<Record<LodgingRoomType, number>> = {};
+  const counters: Record<string, number> = {};
   const titles: Record<string, string> = {};
   for (const room of sortRooms(rooms)) {
-    const next = (counters[room.roomType] ?? 0) + 1;
-    counters[room.roomType] = next;
-    titles[room.id] = `${LODGING_ROOM_TYPE_DICT[room.roomType].name} #${next}`;
+    const key = getBedsKey(room);
+    counters[key] = (counters[key] ?? 0) + 1;
+    titles[room.id] = `${getRoomKindName(room)} #${counters[key]}`;
   }
   return titles;
-}
-
-/** Etiqueta de la cama: A/B en Individual y Doble Individual; "Lugar N" en el resto. */
-export function getBedLabel(roomType: LodgingRoomType, slotIndex: number): string {
-  if (roomType === LODGING_ROOM_TYPE.DOUBLE_INDIVIDUAL || roomType === LODGING_ROOM_TYPE.SINGLE) {
-    return `Cama ${String.fromCharCode(64 + slotIndex)}`;
-  }
-  return `Lugar ${slotIndex}`;
 }
 
 /** Lugares 1..capacidad de la habitación, con el `bookingPassengerId` que lo ocupa (o `null`). */
@@ -124,7 +115,7 @@ export const getRoomFreeBeds = (room: LodgingRoomOutput): number =>
 export interface FreeBed {
   roomId: string;
   slotIndex: number;
-  /** "Doble Individual #1 · Cama B". */
+  /** "Doble · 2 individuales #1 · Cama individual 2". */
   label: string;
 }
 
@@ -137,22 +128,15 @@ export function getFreeBeds(rooms: LodgingRoomOutput[]): FreeBed[] {
       .map((bed) => ({
         roomId: room.id,
         slotIndex: bed.slotIndex,
-        label: `${titles[room.id]} · ${getBedLabel(room.roomType, bed.slotIndex)}`,
+        label: `${titles[room.id]} · ${getSlotLabel(room, bed.slotIndex)}`,
       })),
   );
 }
 
-/**
- * Descripción de la habitación: la de su tipo ("2 camas individuales · 2 pers."). La API mantiene
- * el tipo acorde a la capacidad; solo con datos anteriores que no coincidan se añade "N lugares".
- */
-export function getRoomDescription(room: LodgingRoomOutput): string {
-  const config = LODGING_ROOM_TYPE_DICT[room.roomType];
-  if (room.capacity === LODGING_ROOM_CAPACITY[room.roomType]) return config.description;
-  return `${config.description} (${room.capacity} ${room.capacity === 1 ? "lugar" : "lugares"})`;
-}
+/** Camas de la habitación: "1 cama matrimonial + 2 camas individuales · 3 personas". */
+export const getRoomDescription = (room: LodgingRoomOutput): string => describeBeds(room);
 
-/** "Doble Individual #1 · Hab. 102" (sin número de cuarto, solo el título). */
+/** "Doble · 2 individuales #1 · Hab. 102" (sin número de cuarto, solo el título). */
 export const getRoomDisplayName = (title: string, roomNumber: string | null): string =>
   roomNumber ? `${title} · Hab. ${roomNumber}` : title;
 
@@ -162,22 +146,26 @@ export function buildBedDeletionTarget(
   slotIndex: number,
   passengers: LodgingPassengerOutput[],
 ): TargetBedDeletion {
-  const slot = room.slots.find((item) => item.slotIndex === slotIndex);
-  const passenger = slot
-    ? passengers.find((item) => item.bookingPassengerId === slot.bookingPassengerId)
-    : undefined;
+  const bed = getBedOfSlot(room, slotIndex);
+  const firstSlot = bed?.firstSlot ?? slotIndex;
+  const size = bed?.size ?? 1;
+  const assignedPassengers = room.slots
+    .filter((slot) => slot.slotIndex >= firstSlot && slot.slotIndex < firstSlot + size)
+    .sort((a, b) => a.slotIndex - b.slotIndex)
+    .map((slot) => ({
+      id: slot.bookingPassengerId,
+      // Un pasajero que ya no viene en la lista conserva un nombre genérico.
+      fullName:
+        passengers.find((item) => item.bookingPassengerId === slot.bookingPassengerId)?.fullName ??
+        "Pasajero",
+    }));
   return {
     roomId: room.id,
     roomName: getRoomDisplayName(title, room.roomNumber),
     slotIndex,
-    bedLabel: getBedLabel(room.roomType, slotIndex),
-    // Una cama ocupada por un pasajero que ya no viene en la lista conserva un nombre genérico.
-    assignedPassenger: slot
-      ? {
-          id: slot.bookingPassengerId,
-          fullName: passenger?.fullName ?? "Pasajero",
-        }
-      : null,
+    bedName: bed ? getBedName(bed) : "cama",
+    slotsCount: size,
+    assignedPassengers,
   };
 }
 
@@ -192,31 +180,22 @@ export const buildRoomDeletionTarget = (
 });
 
 /**
- * Tipo de la habitación tras quedar con `capacity` lugares (espejo de la API): si coincide con la
- * capacidad del tipo actual lo conserva; si no, el que corresponde (1 Individual … 4 Cuádruple).
- */
-export function resolveRoomTypeForCapacity(
-  currentType: LodgingRoomType,
-  capacity: number,
-): LodgingRoomType {
-  if (LODGING_ROOM_CAPACITY[currentType] === capacity) return currentType;
-  return LODGING_ROOM_TYPE_BY_CAPACITY[capacity] ?? currentType;
-}
-
-/**
- * Espejo de `DELETE .../beds/:slotIndex`: baja la capacidad, recorre las camas siguientes y
- * cambia el tipo al de la nueva capacidad.
+ * Espejo de `DELETE .../beds/:slotIndex`: elimina la cama completa que contiene el lugar (una
+ * matrimonial son 2 lugares), quita a sus ocupantes y recorre los lugares siguientes.
  */
 export function removeBedFromRoom(room: LodgingRoomOutput, slotIndex: number): LodgingRoomOutput {
-  const capacity = Math.max(1, room.capacity - 1);
+  const bed = getBedOfSlot(room, slotIndex);
+  if (!bed) return room;
+  const beds = removeBedFromBeds(room, slotIndex);
+  const lastSlot = bed.firstSlot + bed.size - 1;
   return {
     ...room,
-    capacity,
-    roomType: resolveRoomTypeForCapacity(room.roomType, capacity),
+    ...beds,
+    capacity: room.capacity - bed.size,
     slots: room.slots
-      .filter((slot) => slot.slotIndex !== slotIndex)
+      .filter((slot) => slot.slotIndex < bed.firstSlot || slot.slotIndex > lastSlot)
       .map((slot) =>
-        slot.slotIndex > slotIndex ? { ...slot, slotIndex: slot.slotIndex - 1 } : slot,
+        slot.slotIndex > lastSlot ? { ...slot, slotIndex: slot.slotIndex - bed.size } : slot,
       ),
   };
 }
@@ -236,11 +215,25 @@ export function removeRoomFromLodging(lodging: LodgingOutput, roomId: string): L
   };
 }
 
-/** Primera Matrimonial sin ocupantes (destino de "Asignar pareja juntos"). */
-export const findEmptyMatrimonial = (rooms: LodgingRoomOutput[]): LodgingRoomOutput | undefined =>
-  sortRooms(rooms).find(
-    (room) => room.roomType === LODGING_ROOM_TYPE.MATRIMONIAL && room.slots.length === 0,
-  );
+export interface FreeMatrimonialBed {
+  roomId: string;
+  /** Los dos lugares de la cama matrimonial. */
+  slotIndexes: [number, number];
+}
+
+/** Primera cama matrimonial con sus dos lugares libres, en cualquier habitación (destino de la pareja). */
+export function findFreeMatrimonialBed(rooms: LodgingRoomOutput[]): FreeMatrimonialBed | undefined {
+  for (const room of sortRooms(rooms)) {
+    const taken = new Set(room.slots.map((slot) => slot.slotIndex));
+    for (let bed = 1; bed <= room.matrimonialBeds; bed += 1) {
+      const first = bed * 2 - 1;
+      if (!taken.has(first) && !taken.has(first + 1)) {
+        return { roomId: room.id, slotIndexes: [first, first + 1] };
+      }
+    }
+  }
+  return undefined;
+}
 
 export interface PassengerGroup {
   bookingId: string;
@@ -276,14 +269,14 @@ export function groupUnassignedPassengers(passengers: LodgingPassengerOutput[]):
 export const matchesPassengerSearch = (query: string, passenger: LodgingPassengerOutput): boolean =>
   matchesSearch(query, { texts: [passenger.fullName, passenger.groupLabel] });
 
-export type RoomFilter = "ALL" | "MATRIMONIAL" | "DOUBLE_INDIVIDUAL" | "FREE_BEDS";
+export type RoomFilter = "ALL" | "WITH_MATRIMONIAL" | "ONLY_SINGLES" | "FREE_BEDS";
 
 export function filterRooms(rooms: LodgingRoomOutput[], filter: RoomFilter): LodgingRoomOutput[] {
   switch (filter) {
-    case "MATRIMONIAL":
-      return rooms.filter((room) => room.roomType === LODGING_ROOM_TYPE.MATRIMONIAL);
-    case "DOUBLE_INDIVIDUAL":
-      return rooms.filter((room) => room.roomType === LODGING_ROOM_TYPE.DOUBLE_INDIVIDUAL);
+    case "WITH_MATRIMONIAL":
+      return rooms.filter((room) => room.matrimonialBeds > 0);
+    case "ONLY_SINGLES":
+      return rooms.filter((room) => room.matrimonialBeds === 0);
     case "FREE_BEDS":
       return rooms.filter((room) => getRoomFreeBeds(room) > 0);
     default:
@@ -343,7 +336,7 @@ export function buildRoomingListText({
       .map((slot) => namesById.get(slot.bookingPassengerId) ?? "Pasajero");
     const label = room.roomNumber ? `Hab. ${room.roomNumber}` : titles[room.id];
     return [
-      `• ${label} (${getRoomDescription(room)}) [${LODGING_ROOM_STATUS_DICT[room.status].label}]:`,
+      `• ${label} (${getRoomDescription(room)}):`,
       `  - ${names.length > 0 ? names.join(", ") : "Sin asignar"}`,
     ];
   });

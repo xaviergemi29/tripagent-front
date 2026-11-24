@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { PASSENGERS } from "../../../utils/__tests__/lodging.fixtures";
 import { UnassignedSidebar } from "../UnassignedSidebar";
 
-const FREE_BEDS = [{ roomId: "r2", slotIndex: 2, label: "Doble Individual #1 · Cama B" }];
+const FREE_BEDS = [
+  { roomId: "r2", slotIndex: 2, label: "Doble · 2 individuales #1 · Cama individual 2" },
+];
 
 function setup(overrides: Partial<React.ComponentProps<typeof UnassignedSidebar>> = {}) {
   const onAssign = vi.fn();
@@ -15,7 +17,7 @@ function setup(overrides: Partial<React.ComponentProps<typeof UnassignedSidebar>
       stayLabel="14 nov – 16 nov (2 noches)"
       passengers={PASSENGERS}
       freeBeds={FREE_BEDS}
-      hasEmptyMatrimonial
+      hasFreeMatrimonialBed
       onAssign={onAssign}
       onAssignCouple={onAssignCouple}
       {...overrides}
@@ -35,25 +37,27 @@ describe("UnassignedSidebar", () => {
     expect(screen.getByText("14 nov – 16 nov (2 noches)")).toBeInTheDocument();
   });
 
-  it("asigna a la pareja a la Matrimonial en una sola acción", async () => {
+  it("asigna a la pareja a una cama matrimonial en una sola acción", async () => {
     const { onAssignCouple } = setup();
     await userEvent.click(
-      screen.getByRole("button", { name: "Asignar pareja juntos a Matrimonial" }),
+      screen.getByRole("button", { name: "Asignar pareja juntos a cama matrimonial" }),
     );
     expect(onAssignCouple).toHaveBeenCalledWith(["p1", "p2"]);
   });
 
-  it("sin Matrimonial vacía no ofrece la acción de pareja", () => {
-    setup({ hasEmptyMatrimonial: false });
+  it("sin cama matrimonial libre no ofrece la acción de pareja", () => {
+    setup({ hasFreeMatrimonialBed: false });
     expect(
-      screen.queryByRole("button", { name: "Asignar pareja juntos a Matrimonial" }),
+      screen.queryByRole("button", { name: "Asignar pareja juntos a cama matrimonial" }),
     ).not.toBeInTheDocument();
   });
 
   it("asigna desde la lista de camas libres", async () => {
     const { onAssign } = setup();
     await userEvent.click(screen.getByRole("button", { name: "Asignar a Marta Ruiz" }));
-    await userEvent.click(screen.getByRole("button", { name: "Doble Individual #1 · Cama B" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Doble · 2 individuales #1 · Cama individual 2" }),
+    );
     expect(onAssign).toHaveBeenCalledWith(FREE_BEDS[0], "p3");
   });
 

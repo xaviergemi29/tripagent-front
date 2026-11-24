@@ -9,6 +9,7 @@ import {
   type OperatorStatementDownloadContext,
 } from "@/features/tour-dashboard/utils/statement-agency.util";
 import type { BookingWhatsAppBankDetails } from "@/shared/utils/booking-whatsapp.util";
+import { SyncingBookingCard } from "@/features/tour-dashboard/components/passengers/PassengersSkeleton";
 import { BookingCard } from "./BookingCard";
 
 interface MobilePassengersListProps {
@@ -28,6 +29,8 @@ interface MobilePassengersListProps {
   onRowClick: (id: string) => void;
   /** Reserva a la que llevó una notificación (`?bookingId=`): su tarjeta se resalta. */
   highlightedBookingId?: string | null;
+  /** Reservas que se están actualizando (baja o cancelación): se dibujan como skeleton. */
+  syncingBookingIds?: ReadonlySet<string>;
 }
 
 /**
@@ -47,36 +50,41 @@ export function MobilePassengersList({
   onAssignSeatClick,
   onRowClick,
   highlightedBookingId = null,
+  syncingBookingIds,
 }: MobilePassengersListProps) {
   const groupActions = useTravelerGroupActions(tourId);
 
   return (
     <>
       <div className="space-y-3">
-        {travelers.map((titular) => (
-          <BookingCard
-            key={titular.id}
-            titular={titular}
-            tourCurrency={tourCurrency}
-            tourTitle={statementContext.tourTitle}
-            bankDetails={bankDetails}
-            requiresSeats={requiresSeats}
-            onAssignSeatClick={onAssignSeatClick}
-            onRowClick={onRowClick}
-            isAuditMode={isAuditMode}
-            onDownloadReceiptClick={(t) => void downloadOperatorStatement(t, statementContext)}
-            onTransferPassengerClick={groupActions.openTransfer}
-            onRemovePassengerClick={groupActions.openRemovePassenger}
-            isHighlighted={titular.bookingId === highlightedBookingId}
-            onRemoveGhostSlotClick={(bookingId) =>
-              groupActions.openReleaseSlot(bookingId, titular.fullName)
-            }
-            onAddPassengerClick={groupActions.openAddPassenger}
-            isAdding={groupActions.isAdding}
-            isRemovingGhost={groupActions.isRemovingGhost}
-            freeSeatsCount={freeSeatsCount}
-          />
-        ))}
+        {travelers.map((titular) =>
+          syncingBookingIds?.has(titular.bookingId) ? (
+            <SyncingBookingCard key={titular.id} bookingId={titular.bookingId} />
+          ) : (
+            <BookingCard
+              key={titular.id}
+              titular={titular}
+              tourCurrency={tourCurrency}
+              tourTitle={statementContext.tourTitle}
+              bankDetails={bankDetails}
+              requiresSeats={requiresSeats}
+              onAssignSeatClick={onAssignSeatClick}
+              onRowClick={onRowClick}
+              isAuditMode={isAuditMode}
+              onDownloadReceiptClick={(t) => void downloadOperatorStatement(t, statementContext)}
+              onTransferPassengerClick={groupActions.openTransfer}
+              onRemovePassengerClick={groupActions.openRemovePassenger}
+              isHighlighted={titular.bookingId === highlightedBookingId}
+              onRemoveGhostSlotClick={(bookingId) =>
+                groupActions.openReleaseSlot(bookingId, titular.fullName)
+              }
+              onAddPassengerClick={groupActions.openAddPassenger}
+              isAdding={groupActions.isAdding}
+              isRemovingGhost={groupActions.isRemovingGhost}
+              freeSeatsCount={freeSeatsCount}
+            />
+          ),
+        )}
 
         {travelers.length === 0 && (
           <div className="py-12 text-center text-slate-500">

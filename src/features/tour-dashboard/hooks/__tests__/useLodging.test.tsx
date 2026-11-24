@@ -7,6 +7,7 @@ import {
   useAssignLodgingRoom,
   useDeleteLodgingBed,
   useDeleteLodgingRoom,
+  useLodgingActivity,
   useRegisterLodgingRooms,
   useTourLodging,
   useUnassignLodgingSlot,
@@ -57,7 +58,7 @@ describe("hooks de hospedaje", () => {
     const { result } = renderHook(() => useRegisterLodgingRooms("t1"), { wrapper });
     const body = {
       hotelName: "Hotel Sierra",
-      rooms: [{ roomType: "MATRIMONIAL" as const, quantity: 2 }],
+      rooms: [{ matrimonialBeds: 1, singleBeds: 0, quantity: 2 }],
     };
     result.current.mutate(body);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -119,10 +120,13 @@ describe("hooks de hospedaje", () => {
   });
 
   it("useDeleteLodgingBed hace DELETE, baja la capacidad y recorre las camas siguientes", async () => {
-    del.mockResolvedValueOnce({ room: makeRoom("r1"), releasedPassenger: true } as never);
+    del.mockResolvedValueOnce({
+      room: makeRoom("r1"),
+      releasedPassenger: true,
+      releasedPassengers: 1,
+    } as never);
     const room = makeRoom("r1", {
-      roomType: "TRIPLE",
-      capacity: 3,
+      singleBeds: 3,
       slots: [
         { slotIndex: 1, bookingPassengerId: "p1" },
         { slotIndex: 2, bookingPassengerId: "p2" },
@@ -155,7 +159,7 @@ describe("hooks de hospedaje", () => {
     expect(cached?.hotels[0].rooms[0].capacity).toBe(2);
     expect(cached?.hotels[0].rooms[0].slots[0].slotIndex).toBe(2);
     expect(toast.error).toHaveBeenCalledWith("No se pudo eliminar la cama", {
-      description: "Última cama",
+      description: "Última cama. El tablero se actualizó; revisa y vuelve a intentarlo.",
     });
   });
 
@@ -182,5 +186,123 @@ describe("hooks de hospedaje", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     const cached = queryClient.getQueryData<LodgingOutput>(LODGING_KEYS.detail("t1"));
     expect(cached?.hotels[0].rooms).toHaveLength(1);
+  });
+
+  describe("mutaciones simultáneas", () => {
+    const deferred = <T,>() => {
+      let resolve!: (value: T) => void;
+      let reject!: (reason: unknown) => void;
+      const promise = new Promise<T>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return { promise, resolve, reject };
+    };
+
+    it("solo la última mutación en vuelo recarga: no pisa el cambio optimista de la otra", async () => {
+      const first = deferred<unknown>();
+      const second = deferred<unknown>();
+      del.mockReset();
+      del.mockImplementationOnce(() => first.promise as never);
+      del.mockImplementationOnce(() => second.promise as never);
+      const rooms = [makeRoom("r1"), makeRoom("r2")];
+      const { wrapper, invalidate } = setup(makeLodging(rooms));
+      const { result } = renderHook(
+        () => ({ a: useUnassignLodgingSlot("t1"), b: useUnassignLodgingSlot("t1") }),
+        { wrapper },
+      );
+      result.current.a.mutate({ roomId: "r1", slotIndex: 1 });
+      result.current.b.mutate({ roomId: "r2", slotIndex: 1 });
+      await waitFor(() => expect(del).toHaveBeenCalledTimes(2));
+
+      first.resolve({ room: makeRoom("r1") });
+      await waitFor(() => expect(result.current.a.isSuccess).toBe(true));
+      expect(invalidate).not.toHaveBeenCalled();
+
+      second.resolve({ room: makeRoom("r2") });
+      await waitFor(() => expect(result.current.b.isSuccess).toBe(true));
+      expect(invalidate).toHaveBeenCalledTimes(1);
+      del.mockReset();
+      del.mockResolvedValue({ room: makeRoom("r1") } as never);
+    });
+
+    it("si una falla con otra en vuelo, no restaura la foto vieja (borraría el cambio de la otra)", async () => {
+      const first = deferred<unknown>();
+      const second = deferred<unknown>();
+      del.mockReset();
+      del.mockImplementationOnce(() => first.promise as never);
+      del.mockImplementationOnce(() => second.promise as never);
+      const withSlot = (id: string) =>
+        makeRoom(id, { slots: [{ slotIndex: 1, bookingPassengerId: `p-${id}` }] });
+      const { wrapper, queryClient } = setup(makeLodging([withSlot("r1"), withSlot("r2")]));
+      const { result } = renderHook(
+        () => ({ a: useUnassignLodgingSlot("t1"), b: useUnassignLodgingSlot("t1") }),
+        { wrapper },
+      );
+      result.current.a.mutate({ roomId: "r1", slotIndex: 1 });
+      result.current.b.mutate({ roomId: "r2", slotIndex: 1 });
+      await waitFor(() => expect(del).toHaveBeenCalledTimes(2));
+
+      first.reject({ status: 404, message: "No hay un pasajero asignado en esa cama" });
+      await waitFor(() => expect(result.current.a.isError).toBe(true));
+      const cached = queryClient.getQueryData<LodgingOutput>(LODGING_KEYS.detail("t1"));
+      // La cama de r2 sigue liberada de forma optimista; r1 se corrige con la recarga final.
+      expect(cached?.hotels[0].rooms[1].slots).toHaveLength(0);
+      expect(toast.error).toHaveBeenCalledWith("No se pudo liberar la cama", {
+        description:
+          "No hay un pasajero asignado en esa cama. El tablero se actualizó; revisa y vuelve a intentarlo.",
+      });
+      second.resolve({ room: makeRoom("r2") });
+      await waitFor(() => expect(result.current.b.isSuccess).toBe(true));
+      del.mockReset();
+      del.mockResolvedValue({ room: makeRoom("r1") } as never);
+    });
+
+    it("useLodgingActivity marca la habitación ocupada hasta que llega la respuesta", async () => {
+      const pending = deferred<unknown>();
+      del.mockReset();
+      del.mockImplementationOnce(() => pending.promise as never);
+      const { wrapper } = setup(makeLodging([makeRoom("r1", { slots: [] })]));
+      const { result } = renderHook(
+        () => ({ unassign: useUnassignLodgingSlot("t1"), activity: useLodgingActivity("t1") }),
+        { wrapper },
+      );
+      expect(result.current.activity.isUpdating).toBe(false);
+      result.current.unassign.mutate({ roomId: "r1", slotIndex: 1 });
+      await waitFor(() => expect(result.current.activity.busyRoomIds.has("r1")).toBe(true));
+      expect(result.current.activity.isUpdating).toBe(true);
+      pending.resolve({ room: makeRoom("r1") });
+      await waitFor(() => expect(result.current.activity.busyRoomIds.size).toBe(0));
+      del.mockReset();
+      del.mockResolvedValue({ room: makeRoom("r1") } as never);
+    });
+
+    it("useLodgingActivity cuenta las habitaciones que se están registrando", async () => {
+      const pending = deferred<unknown>();
+      post.mockImplementationOnce(() => pending.promise as never);
+      const { wrapper } = setup();
+      const { result } = renderHook(
+        () => ({ register: useRegisterLodgingRooms("t1"), activity: useLodgingActivity("t1") }),
+        { wrapper },
+      );
+      result.current.register.mutate({
+        hotelName: "Hotel Sierra",
+        rooms: [
+          { matrimonialBeds: 1, singleBeds: 0, quantity: 2 },
+          { matrimonialBeds: 1, singleBeds: 1, quantity: 1 },
+        ],
+      });
+      await waitFor(() =>
+        expect(result.current.activity.registeringRooms).toEqual([
+          { hotelName: "Hotel Sierra", count: 3 },
+        ]),
+      );
+      pending.resolve({
+        hotel: { id: "h1", name: "Hotel Sierra", createdAt: "x", rooms: [] },
+        createdRooms: 3,
+        createdCapacity: 7,
+      });
+      await waitFor(() => expect(result.current.activity.registeringRooms).toEqual([]));
+    });
   });
 });

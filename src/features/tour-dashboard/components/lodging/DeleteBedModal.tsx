@@ -16,7 +16,8 @@ export function DeleteBedModal({
   isDeleting = false,
 }: DeleteBedModalProps) {
   if (!targetBed) return null;
-  const passenger = targetBed.assignedPassenger;
+  const { assignedPassengers, slotsCount, bedName } = targetBed;
+  const names = assignedPassengers.map((passenger) => passenger.fullName).join(" y ");
 
   return (
     <DeleteLodgingDialog
@@ -24,22 +25,26 @@ export function DeleteBedModal({
       onClose={onClose}
       onConfirm={() => onConfirm(targetBed)}
       isDeleting={isDeleting}
-      title={`¿Eliminar ${targetBed.bedLabel}?`}
+      title={`¿Eliminar la ${bedName}?`}
       description={
         <>
-          Se eliminará este espacio de{" "}
+          Se eliminará la {bedName} ({slotsCount} {slotsCount === 1 ? "lugar" : "lugares"}) de{" "}
           <strong className="font-semibold text-slate-900">{targetBed.roomName}</strong>. La
-          capacidad del cuarto se reducirá en 1 lugar.
+          capacidad de la habitación se reducirá en {slotsCount}{" "}
+          {slotsCount === 1 ? "lugar" : "lugares"}.
         </>
       }
       callout={
-        passenger
+        assignedPassengers.length > 0
           ? {
               isWarning: true,
               content: (
                 <>
-                  <strong className="font-semibold">{passenger.fullName}</strong> quedará sin cama
-                  asignada y regresará automáticamente a{" "}
+                  <strong className="font-semibold">{names}</strong>{" "}
+                  {assignedPassengers.length === 1
+                    ? "quedará sin cama asignada y regresará"
+                    : "quedarán sin cama asignada y regresarán"}{" "}
+                  automáticamente a{" "}
                   <span className="font-medium">&quot;Pasajeros sin habitación&quot;</span>.
                 </>
               ),

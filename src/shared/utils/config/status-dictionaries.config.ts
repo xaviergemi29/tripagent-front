@@ -3,8 +3,6 @@ import type {
   AgencyRole,
   BookingPaymentStatus,
   FormStatus,
-  LodgingRoomStatus,
-  LodgingRoomType,
   PassengerRole,
   PaymentMethod,
 } from "@/shared/constants/domain.constants";
@@ -90,54 +88,4 @@ export const TOUR_CANCELLATION_REASON_DICT: Record<TourCancellationReason, strin
   SECURITY: "Motivos de seguridad / Cierre carretero",
   LOW_SALES: "Cupo mínimo no alcanzado",
   OTHER: "Causa de fuerza mayor de la agencia",
-};
-
-// Tipos de habitación del hospedaje (nombre, píldora, descripción y camas que se dibujan por cuarto).
-export interface LodgingRoomTypeConfig {
-  name: string;
-  badgeLabel: string;
-  description: string;
-  beds: readonly string[];
-}
-
-export const LODGING_ROOM_TYPE_DICT: Record<LodgingRoomType, LodgingRoomTypeConfig> = {
-  MATRIMONIAL: {
-    name: "Matrimonial",
-    badgeLabel: "2 pers.",
-    description: "1 cama matrimonial · 2 pers.",
-    beds: ["Cama 1 Matrimonial"],
-  },
-  DOUBLE_INDIVIDUAL: {
-    name: "Doble Individual",
-    badgeLabel: "2 pers.",
-    description: "2 camas individuales · 2 pers.",
-    beds: ["Cama 1 Individual", "Cama 2 Individual"],
-  },
-  TRIPLE: {
-    name: "Triple Familiar",
-    badgeLabel: "3 pers.",
-    description: "1 matrimonial + 1 individual · 3 pers.",
-    beds: ["Cama 1 Matrimonial", "Cama 2 Individual"],
-  },
-  QUADRUPLE: {
-    name: "Cuádruple",
-    badgeLabel: "4 pers.",
-    description: "2 camas matrimoniales / queen · 4 pers.",
-    beds: ["Cama 1 Matrimonial", "Cama 2 Matrimonial"],
-  },
-  SINGLE: {
-    name: "Individual",
-    badgeLabel: "1 pers.",
-    description: "1 cama individual · 1 pers.",
-    beds: ["Cama 1 Individual"],
-  },
-};
-
-/** Estado de la habitación del hospedaje: etiqueta y clases de la insignia. */
-export const LODGING_ROOM_STATUS_DICT: Record<
-  LodgingRoomStatus,
-  { label: string; badgeClass: string }
-> = {
-  CONSULTED: { label: "Consultada", badgeClass: "bg-amber-100 text-amber-800" },
-  CONFIRMED: { label: "Confirmada", badgeClass: "bg-emerald-100 text-emerald-800" },
 };

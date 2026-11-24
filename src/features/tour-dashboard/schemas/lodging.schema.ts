@@ -1,33 +1,41 @@
 import { z } from "zod";
 import {
+  LODGING_BED_LIMITS,
   LODGING_LIMITS,
   LODGING_ROOM_NUMBER_MAX,
-  LODGING_ROOM_STATUSES,
-  LODGING_ROOM_TYPES,
   LODGING_SLOT_INDEX,
 } from "@/shared/constants/domain.constants";
+import {
+  exceedsRegisterLimits,
+  groupRoomsByBeds,
+  isValidBeds,
+} from "@/shared/utils/lodging-beds.util";
 
 /**
  * Hospedaje del tour. Replica `POST /lodging/:tourId/rooms` de la API: nombre 1..120 recortado,
- * 1..5 tipos sin repetir (cantidad entera 1..50) y máximo 200 habitaciones por envío.
+ * 1..20 configuraciones de camas `{ matrimonialBeds, singleBeds, quantity }` (cantidad 1..50) y
+ * máximo 200 habitaciones por envío.
  */
-export const lodgingRoomTypeSchema = z.enum(LODGING_ROOM_TYPES);
+const bedsFields = {
+  matrimonialBeds: z.number().int().min(0).max(LODGING_BED_LIMITS.matrimonialMax),
+  singleBeds: z.number().int().min(0).max(LODGING_BED_LIMITS.singleMax),
+};
 
 export const registerLodgingRoomsInputSchema = z.object({
   hotelName: z.string().trim().min(1).max(LODGING_LIMITS.hotelNameMax),
   rooms: z
     .array(
       z.object({
-        roomType: lodgingRoomTypeSchema,
+        ...bedsFields,
         quantity: z.number().int().min(1).max(LODGING_LIMITS.quantityMax),
       }),
     )
     .min(1)
-    .max(LODGING_ROOM_TYPES.length),
+    .max(LODGING_LIMITS.roomConfigsMax),
 });
 export type RegisterLodgingRoomsInput = z.infer<typeof registerLodgingRoomsInputSchema>;
 
-/** Formulario del modal: una cantidad por tipo (0 = no se registra). */
+/** Formulario del modal: una fila por habitación, con sus camas. */
 export const registerLodgingRoomsFormSchema = z
   .object({
     hotelName: z
@@ -35,36 +43,20 @@ export const registerLodgingRoomsFormSchema = z
       .trim()
       .min(1, "Escribe el nombre del hotel")
       .max(LODGING_LIMITS.hotelNameMax, "Máximo 120 caracteres"),
-    quantities: z.object({
-      MATRIMONIAL: z.number().int().min(0).max(LODGING_LIMITS.quantityMax),
-      DOUBLE_INDIVIDUAL: z.number().int().min(0).max(LODGING_LIMITS.quantityMax),
-      TRIPLE: z.number().int().min(0).max(LODGING_LIMITS.quantityMax),
-      QUADRUPLE: z.number().int().min(0).max(LODGING_LIMITS.quantityMax),
-      SINGLE: z.number().int().min(0).max(LODGING_LIMITS.quantityMax),
-    }),
+    rooms: z.array(z.object(bedsFields)).min(1).max(LODGING_LIMITS.totalRoomsMax),
   })
-  .refine(
-    ({ quantities }) => {
-      const total = Object.values(quantities).reduce((sum, value) => sum + value, 0);
-      return total >= 1 && total <= LODGING_LIMITS.totalRoomsMax;
-    },
-    { path: ["quantities"], message: "Agrega entre 1 y 200 habitaciones" },
-  );
+  .refine(({ rooms }) => rooms.every(isValidBeds) && !exceedsRegisterLimits(rooms), {
+    path: ["rooms"],
+    message: "Elige al menos una cama en cada habitación",
+  });
 export type RegisterLodgingRoomsFormInput = z.infer<typeof registerLodgingRoomsFormSchema>;
 
-/** Del formulario al cuerpo de la API: solo los tipos con cantidad > 0 y el nombre recortado. */
+/** Del formulario al cuerpo de la API: habitaciones idénticas agrupadas y nombre recortado. */
 export function toRegisterLodgingRoomsInput(
   form: RegisterLodgingRoomsFormInput,
 ): RegisterLodgingRoomsInput {
-  return {
-    hotelName: form.hotelName.trim(),
-    rooms: LODGING_ROOM_TYPES.filter((roomType) => form.quantities[roomType] > 0).map(
-      (roomType) => ({ roomType, quantity: form.quantities[roomType] }),
-    ),
-  };
+  return { hotelName: form.hotelName.trim(), rooms: groupRoomsByBeds(form.rooms) };
 }
-
-export const lodgingRoomStatusSchema = z.enum(LODGING_ROOM_STATUSES);
 
 /** Cama ocupada: `slotIndex` (1..capacidad) y la fila de `booking_passengers` que la ocupa. */
 export const lodgingSlotOutputSchema = z.object({
@@ -72,16 +64,23 @@ export const lodgingSlotOutputSchema = z.object({
   bookingPassengerId: z.string(),
 });
 
-export const lodgingRoomOutputSchema = z.object({
-  id: z.string(),
-  roomType: lodgingRoomTypeSchema,
-  capacity: z.number(),
-  position: z.number(),
-  /** Número que da la recepción del hotel; `null` hasta que el operador lo captura. */
-  roomNumber: z.string().nullable(),
-  status: lodgingRoomStatusSchema,
-  slots: z.array(lodgingSlotOutputSchema),
-});
+export const lodgingRoomOutputSchema = z
+  .object({
+    id: z.string(),
+    /** Heredado de la API: nunca se usa para mostrar (el nombre sale de las camas). */
+    roomType: z.string().nullable().catch(null),
+    matrimonialBeds: z.number().int().min(0).catch(0),
+    singleBeds: z.number().int().min(0).catch(0),
+    capacity: z.number(),
+    position: z.number(),
+    /** Número que da la recepción del hotel; `null` hasta que el operador lo captura. */
+    roomNumber: z.string().nullable(),
+    slots: z.array(lodgingSlotOutputSchema),
+  })
+  // Datos anteriores sin camas: se toman como individuales (1 lugar cada una).
+  .transform((room) =>
+    room.matrimonialBeds + room.singleBeds === 0 ? { ...room, singleBeds: room.capacity } : room,
+  );
 
 export const lodgingHotelOutputSchema = z.object({
   id: z.string(),
@@ -130,11 +129,10 @@ export const updateLodgingRoomInputSchema = z.object({
     .transform((value) => value || null)
     .nullable()
     .optional(),
-  status: lodgingRoomStatusSchema.optional(),
 });
 export type UpdateLodgingRoomInput = z.input<typeof updateLodgingRoomInputSchema>;
 
-/** `POST /lodging/:tourId/rooms/:roomId/assignments`: 1..4 camas por envío. */
+/** `POST /lodging/:tourId/rooms/:roomId/assignments`: 1..6 lugares por envío. */
 export const assignLodgingRoomInputSchema = z.object({
   assignments: z
     .array(
@@ -159,22 +157,27 @@ export const deleteLodgingRoomOutputSchema = z.object({
 });
 export type DeleteLodgingRoomOutput = z.infer<typeof deleteLodgingRoomOutputSchema>;
 
-/** `DELETE /lodging/:tourId/rooms/:roomId/beds/:slotIndex`: la habitación ya con una cama menos. */
+/** `DELETE …/beds/:slotIndex`: la habitación ya sin la cama completa y cuántos pasajeros quedaron sin cama. */
 export const deleteLodgingBedOutputSchema = z.object({
   room: lodgingRoomOutputSchema,
-  releasedPassenger: z.boolean(),
+  releasedPassenger: z.boolean().catch(false),
+  releasedPassengers: z.number().int().catch(0),
 });
 export type DeleteLodgingBedOutput = z.infer<typeof deleteLodgingBedOutputSchema>;
 
-/** Cama que el operador va a eliminar (estado del diálogo de confirmación). */
+/** Cama completa que el operador va a eliminar (estado del diálogo de confirmación). */
 export interface TargetBedDeletion {
   roomId: string;
-  /** "Doble Individual #1 · Hab. 102". */
+  /** "Doble · 2 individuales #1 · Hab. 102". */
   roomName: string;
+  /** Lugar que se tocó; la API elimina la cama que lo contiene. */
   slotIndex: number;
-  /** "Cama B". */
-  bedLabel: string;
-  assignedPassenger: { id: string; fullName: string } | null;
+  /** "cama matrimonial 1". */
+  bedName: string;
+  /** Lugares que desaparecen (2 en matrimonial, 1 en individual). */
+  slotsCount: number;
+  /** Pasajeros que quedan sin cama. */
+  assignedPassengers: { id: string; fullName: string }[];
 }
 
 /** Habitación que el operador va a eliminar. */

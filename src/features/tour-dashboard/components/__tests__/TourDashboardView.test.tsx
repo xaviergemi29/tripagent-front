@@ -213,6 +213,8 @@ describe("TourDashboardView", () => {
     dashboardQuery.mockReturnValue({ data: undefined, isLoading: true, isError: false });
     renderView();
     expect(screen.queryByText("Huasteca Potosina")).not.toBeInTheDocument();
+    // Skeleton con la forma de la lista (escritorio y celular), anunciado como estado.
+    expect(screen.getByRole("status", { name: "Cargando pasajeros" })).toBeInTheDocument();
   });
 
   it("si falla muestra el aviso con Volver a intentar, sin el error técnico", async () => {
@@ -349,20 +351,20 @@ describe("TourDashboardView", () => {
 
     it("no aparece en un tour sin regreso o de un día", () => {
       renderView();
-      expect(screen.queryByRole("button", { name: /Hospedaje/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("tab", { name: /Hospedaje/ })).not.toBeInTheDocument();
       dashboardQuery.mockReturnValue({
         data: dashboard({ returnDate: "2026-12-20" }),
         isLoading: false,
         isError: false,
       });
       renderView();
-      expect(screen.queryByRole("button", { name: /Hospedaje/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("tab", { name: /Hospedaje/ })).not.toBeInTheDocument();
     });
 
     it("aparece en un tour de varios días con el badge de pendientes y abre el estado vacío", async () => {
       dashboardQuery.mockReturnValue({ data: multiDay(), isLoading: false, isError: false });
       renderView();
-      const tab = screen.getAllByRole("button", { name: /Hospedaje/ })[0];
+      const tab = screen.getAllByRole("tab", { name: /Hospedaje/ })[0];
       expect(tab).toHaveTextContent("2 pendientes");
       await userEvent.click(tab);
       expect(
@@ -377,7 +379,7 @@ describe("TourDashboardView", () => {
         isError: false,
       });
       renderView();
-      expect(screen.getAllByRole("button", { name: /Hospedaje/ })[0]).not.toHaveTextContent(
+      expect(screen.getAllByRole("tab", { name: /Hospedaje/ })[0]).not.toHaveTextContent(
         "pendientes",
       );
     });

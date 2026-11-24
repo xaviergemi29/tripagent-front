@@ -1,6 +1,11 @@
 import { Users, Armchair, Bed, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DashboardTab } from "@/features/tour-dashboard/constants/dashboard-tabs";
+import {
+  DashboardTabButton,
+  DashboardTabList,
+  tabCountClass,
+} from "@/features/tour-dashboard/components/header/DashboardTabsList";
 
 interface MobileTabsNavProps {
   activeTab: DashboardTab;
@@ -13,6 +18,12 @@ interface MobileTabsNavProps {
   onTabChange: (tab: DashboardTab) => void;
 }
 
+const GRID_COLUMNS: Record<number, string> = {
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+};
+
 export function MobileTabsNav({
   activeTab,
   requiresSeats,
@@ -23,76 +34,55 @@ export function MobileTabsNav({
   totalBookedPax,
   onTabChange,
 }: MobileTabsNavProps) {
-  // "Abordaje" siempre está: la barra se muestra en todo tour.
+  // "Abordaje" siempre está: la barra se muestra en todo tour (de 2 a 4 pestañas).
   const tabCount = 2 + (requiresSeats ? 1 : 0) + (showLodging ? 1 : 0);
+
+  const tab = (id: DashboardTab) => ({
+    isActive: activeTab === id,
+    variant: "segment" as const,
+    onSelect: () => onTabChange(id),
+  });
+  const countBadge = (id: DashboardTab) =>
+    `rounded-full px-1.5 py-px text-[10px] font-bold ${tabCountClass(activeTab === id, "segment")}`;
+
   return (
-    <div
-      className={cn(
-        "grid gap-1 rounded-xl bg-slate-100 p-1 text-sm font-semibold",
-        tabCount === 3 ? "grid-cols-3" : "grid-cols-2",
-      )}
+    <DashboardTabList
+      label="Secciones del Centro de Control"
+      className={cn("grid gap-1 rounded-xl bg-slate-100 p-1", GRID_COLUMNS[tabCount])}
     >
-      <button
-        onClick={() => onTabChange("passengers")}
-        className={cn(
-          "flex items-center justify-center gap-2 rounded-lg py-2.5 transition-all",
-          activeTab === "passengers"
-            ? "bg-white text-slate-900 shadow-sm"
-            : "text-slate-500 hover:text-slate-700",
-        )}
-      >
-        <Users className="h-4 w-4" />
-        <span className="truncate">Pasajeros ({totalPassengers})</span>
-      </button>
+      <DashboardTabButton {...tab("passengers")}>
+        <Users className="h-4 w-4" aria-hidden="true" />
+        <span className="max-w-full truncate">Pasajeros</span>
+        <span className={countBadge("passengers")}>{totalPassengers}</span>
+      </DashboardTabButton>
 
       {requiresSeats && (
-        <button
-          onClick={() => onTabChange("seatmap")}
-          className={cn(
-            "flex items-center justify-center gap-2 rounded-lg py-2.5 transition-all",
-            activeTab === "seatmap"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700",
-          )}
-        >
-          <Armchair className="h-4 w-4" />
-          <span className="truncate">
-            Asientos ({assignedCount}/{totalBookedPax})
+        <DashboardTabButton {...tab("seatmap")}>
+          <Armchair className="h-4 w-4" aria-hidden="true" />
+          <span className="max-w-full truncate">Asientos</span>
+          <span className={countBadge("seatmap")}>
+            {assignedCount}/{totalBookedPax}
           </span>
-        </button>
+        </DashboardTabButton>
       )}
 
       {showLodging && (
-        <button
-          onClick={() => onTabChange("lodging")}
-          className={cn(
-            "flex items-center justify-center gap-2 rounded-lg py-2.5 transition-all",
-            activeTab === "lodging"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700",
-          )}
-        >
-          <Bed className="h-4 w-4" />
-          <span className="truncate">Hospedaje</span>
+        <DashboardTabButton {...tab("lodging")}>
+          <Bed className="h-4 w-4" aria-hidden="true" />
+          <span className="max-w-full truncate">Hospedaje</span>
           {lodgingPendingCount > 0 && (
-            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-700">
-              {lodgingPendingCount} pendientes
+            <span className="rounded-full bg-rose-100 px-1.5 py-px text-[10px] font-bold text-rose-700">
+              {lodgingPendingCount}
+              <span className="sr-only"> pendientes</span>
             </span>
           )}
-        </button>
+        </DashboardTabButton>
       )}
-      <button
-        onClick={() => onTabChange("boarding")}
-        className={cn(
-          "flex items-center justify-center gap-2 rounded-lg py-2.5 transition-all",
-          activeTab === "boarding"
-            ? "bg-white text-slate-900 shadow-sm"
-            : "text-slate-500 hover:text-slate-700",
-        )}
-      >
-        <ClipboardCheck className="h-4 w-4" />
-        <span className="truncate">Abordaje</span>
-      </button>
-    </div>
+
+      <DashboardTabButton {...tab("boarding")}>
+        <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
+        <span className="max-w-full truncate">Abordaje</span>
+      </DashboardTabButton>
+    </DashboardTabList>
   );
 }

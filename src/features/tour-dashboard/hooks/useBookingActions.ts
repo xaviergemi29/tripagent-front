@@ -6,7 +6,7 @@ import type {
   QuickBookingInput,
   QuickBookingOutput,
 } from "../schemas/quick-booking.schema";
-import { BOOKING_KEYS } from "@/shared/api/query-keys";
+import { BOOKING_KEYS, MUTATION_KEYS } from "@/shared/api/query-keys";
 import { invalidateBookingChange } from "@/shared/api/invalidate-booking-change";
 
 /**
@@ -52,6 +52,7 @@ export function useQuickReservation() {
 export const useCancelFullBooking = () => {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: MUTATION_KEYS.bookingGroupChange,
     mutationFn: cancelFullBookingApi,
     onSuccess: () => {
       toast.success("Reserva cancelada por completo");

@@ -9,6 +9,7 @@ import {
 import type { BookingWhatsAppBankDetails } from "@/shared/utils/booking-whatsapp.util";
 import { TitularRow } from "./TitularRow";
 import { CompanionRow } from "./CompanionRow";
+import { SyncingGroupRow } from "./PassengersSkeleton";
 import { AddSlotRow, PendingSlotRow } from "./PendingSlotRows";
 
 interface TravelerGroupProps {
@@ -36,6 +37,8 @@ interface TravelerGroupProps {
   onDownloadReceiptClick?: (titular: TitularRowOutput) => void;
   /** Grupo al que llevó una notificación (`?bookingId=`): se resalta unos segundos. */
   isHighlighted?: boolean;
+  /** Baja o cancelación en curso (o dashboard recargando): el grupo se dibuja como skeleton. */
+  isSyncing?: boolean;
 }
 
 /**
@@ -61,11 +64,16 @@ export function TravelerGroup({
   onTransferPassengerClick,
   onDownloadReceiptClick,
   isHighlighted = false,
+  isSyncing = false,
 }: TravelerGroupProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const registeredCount = 1 + (titular.companions?.length || 0);
   const missingCount = Math.max(0, titular.groupSize - registeredCount);
+
+  if (isSyncing) {
+    return <SyncingGroupRow bookingId={titular.bookingId} colSpan={requiresSeats ? 8 : 7} />;
+  }
 
   return (
     <>

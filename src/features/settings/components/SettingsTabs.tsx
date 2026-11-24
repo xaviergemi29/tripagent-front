@@ -56,18 +56,22 @@ const TAB_ITEMS: { value: TabValue; icon: LucideIcon; label: ReactNode; badge?: 
 
 /**
  * Por debajo de `lg` la barra es una fila de píldoras deslizable (sin salto de línea, inercia
- * táctil y sin barra de desplazamiento visible); desde `lg` vuelve al diseño original.
+ * táctil y sin barra de desplazamiento visible); desde `lg` es una barra con línea inferior donde
+ * la pestaña activa lleva subrayado índigo (mismo lenguaje que el Centro de Control).
  */
 const TABS_LIST_CLASS =
-  "flex h-auto w-full flex-nowrap justify-start gap-2 overflow-x-auto rounded-2xl bg-slate-100/80 p-1.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] group-data-horizontal/tabs:h-auto [&::-webkit-scrollbar]:hidden lg:w-auto lg:flex-wrap lg:gap-0 lg:overflow-visible lg:rounded-xl lg:bg-slate-100 lg:p-1";
+  "flex h-auto w-full flex-nowrap justify-start gap-2 overflow-x-auto rounded-2xl bg-slate-100/80 p-1.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] group-data-horizontal/tabs:h-auto [&::-webkit-scrollbar]:hidden lg:flex-wrap lg:gap-1 lg:overflow-visible lg:rounded-none lg:border-b lg:border-slate-200 lg:bg-transparent lg:p-0";
 
 const TABS_TRIGGER_CLASS = [
-  // Celular / tablet: píldora con área táctil cómoda; la activa en el color de la marca.
-  "flex-none shrink-0 gap-2 rounded-xl border border-slate-200/60 bg-white/70 px-4 py-2 text-slate-600 hover:bg-white hover:text-slate-900",
-  "data-active:border-transparent data-active:bg-indigo-600 data-active:font-semibold data-active:text-white data-active:shadow-sm data-active:shadow-indigo-200",
-  // Escritorio: el estilo original de la barra.
-  "lg:flex-1 lg:rounded-md lg:border-transparent lg:bg-transparent lg:font-medium lg:text-foreground/60 lg:hover:bg-transparent lg:hover:text-foreground",
-  "lg:data-active:bg-background lg:data-active:font-medium lg:data-active:text-foreground lg:data-active:shadow-black/5",
+  // Base: área táctil >= 44 px, foco de teclado visible, íconos atenuados salvo en la activa.
+  // `flex-1 basis-auto shrink-0`: reparten todo el ancho; si no caben (celular), se desliza.
+  "min-h-11 flex-1 basis-auto shrink-0 gap-2 text-sm transition-colors focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:outline-none [&_svg]:text-slate-400",
+  // Celular / tablet: píldora; la activa en el color de la marca.
+  "rounded-xl border border-slate-200/60 bg-white/70 px-4 py-2 font-medium text-slate-600 hover:bg-white hover:text-slate-900",
+  "data-active:border-transparent data-active:bg-indigo-600 data-active:font-semibold data-active:text-white data-active:shadow-sm data-active:shadow-indigo-200 data-active:[&_svg]:text-white",
+  // Escritorio: pestaña con subrayado.
+  "lg:min-h-12 lg:-mb-px lg:rounded-b-none lg:rounded-t-lg lg:border-0 lg:border-b-2 lg:border-transparent lg:bg-transparent lg:px-5 lg:font-semibold lg:text-slate-600 lg:hover:bg-slate-100 lg:hover:text-slate-900",
+  "lg:data-active:border-indigo-600 lg:data-active:bg-indigo-50/60 lg:data-active:font-semibold lg:data-active:text-indigo-700 lg:data-active:shadow-none lg:data-active:[&_svg]:text-indigo-600",
 ].join(" ");
 
 /**
@@ -111,7 +115,7 @@ export function SettingsTabs() {
             className={TABS_TRIGGER_CLASS}
             data-tour={TAB_GUIDE_TARGET[value]}
           >
-            <Icon className="h-4 w-4" /> {label}
+            <Icon className="h-4 w-4" aria-hidden="true" /> {label}
             {badge}
           </TabsTrigger>
         ))}

@@ -19,19 +19,29 @@ export const makePassenger = (
   ...overrides,
 });
 
+/**
+ * Habitación de prueba. Sin camas indicadas es 1 matrimonial; con camas, la capacidad sale de
+ * ellas (2 por matrimonial + 1 por individual) salvo que se indique.
+ */
 export const makeRoom = (
   id: string,
   overrides: Partial<LodgingRoomOutput> = {},
-): LodgingRoomOutput => ({
-  id,
-  roomType: "MATRIMONIAL",
-  capacity: 2,
-  position: 1,
-  roomNumber: null,
-  status: "CONSULTED",
-  slots: [],
-  ...overrides,
-});
+): LodgingRoomOutput => {
+  const hasBeds = overrides.matrimonialBeds !== undefined || overrides.singleBeds !== undefined;
+  const matrimonialBeds = overrides.matrimonialBeds ?? (hasBeds ? 0 : 1);
+  const singleBeds = overrides.singleBeds ?? 0;
+  return {
+    id,
+    roomType: null,
+    matrimonialBeds,
+    singleBeds,
+    capacity: matrimonialBeds * 2 + singleBeds,
+    position: 1,
+    roomNumber: null,
+    slots: [],
+    ...overrides,
+  };
+};
 
 export const makeHotel = (
   rooms: LodgingRoomOutput[],
@@ -58,8 +68,8 @@ export const PASSENGERS: LodgingPassengerOutput[] = [
 
 export const ROOMS: LodgingRoomOutput[] = [
   makeRoom("r1", { position: 1 }),
-  makeRoom("r2", { roomType: "DOUBLE_INDIVIDUAL", position: 2, roomNumber: "102" }),
-  makeRoom("r3", { roomType: "DOUBLE_INDIVIDUAL", position: 3, status: "CONFIRMED" }),
+  makeRoom("r2", { singleBeds: 2, position: 2, roomNumber: "102" }),
+  makeRoom("r3", { singleBeds: 2, position: 3 }),
 ];
 
 export const makeLodging = (

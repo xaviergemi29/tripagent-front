@@ -10,7 +10,11 @@ import { PASSENGER_TYPE, PASSENGER_TYPES } from "@/shared/constants/domain.const
 export const boardingRoomSchema = z.object({
   hotelName: z.string().catch(""),
   roomNumber: z.string().nullable().catch(null),
-  roomType: z.string().catch(""),
+  /** Heredado de la API: no se usa para mostrar (el nombre sale de las camas). */
+  roomType: z.string().nullable().catch(null),
+  matrimonialBeds: z.number().int().min(0).catch(0),
+  singleBeds: z.number().int().min(0).catch(0),
+  /** Posición entre las habitaciones del hotel con las mismas camas. */
   typeIndex: z.number().catch(1),
 });
 

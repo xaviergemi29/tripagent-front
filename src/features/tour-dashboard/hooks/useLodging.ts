@@ -1,7 +1,14 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import {
+  useIsFetching,
+  useMutation,
+  useMutationState,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient, type ApiError } from "@/lib/api-client";
-import { LODGING_KEYS } from "@/shared/api/query-keys";
+import { LODGING_KEYS, MUTATION_KEYS } from "@/shared/api/query-keys";
 import { removeBedFromRoom, removeRoomFromLodging } from "../utils/lodging.util";
 import type {
   AssignLodgingRoomInput,
@@ -33,10 +40,10 @@ export function useRegisterLodgingRooms(tourId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<RegisterLodgingRoomsOutput, ApiError, RegisterLodgingRoomsInput>({
+    mutationKey: MUTATION_KEYS.lodgingChange(tourId),
     mutationFn: (data) =>
       apiClient.post<never, RegisterLodgingRoomsOutput>(`/lodging/${tourId}/rooms`, data),
     onSuccess: ({ hotel, createdRooms, createdCapacity }) => {
-      void queryClient.invalidateQueries({ queryKey: LODGING_KEYS.detail(tourId) });
       toast.success(`Habitaciones agregadas a ${hotel.name}`, {
         description: `${createdRooms} ${createdRooms === 1 ? "habitación" : "habitaciones"} (${createdCapacity} lugares)`,
       });
@@ -44,7 +51,20 @@ export function useRegisterLodgingRooms(tourId: string) {
     onError: (error) => {
       toast.error("No se pudieron agregar las habitaciones", { description: error.message });
     },
+    onSettled: () => refreshLodgingWhenIdle(queryClient, tourId),
   });
+}
+
+/**
+ * Recarga el hospedaje solo cuando esta es la última mutación en curso del tour: con otra en vuelo,
+ * la recarga traería un estado sin ese cambio y pisaría su actualización optimista (parpadeo). La
+ * promesa devuelta mantiene la mutación `pending` hasta que llegan los datos frescos, así el
+ * tablero sigue marcado como "actualizando" y no hay un instante con datos intermedios.
+ */
+function refreshLodgingWhenIdle(queryClient: QueryClient, tourId: string): Promise<void> {
+  const inFlight = queryClient.isMutating({ mutationKey: MUTATION_KEYS.lodgingChange(tourId) });
+  if (inFlight > 1) return Promise.resolve();
+  return queryClient.invalidateQueries({ queryKey: LODGING_KEYS.detail(tourId) });
 }
 
 /**
@@ -81,6 +101,28 @@ interface LodgingMutationContext {
   previous: LodgingOutput | undefined;
 }
 
+/**
+ * Regresa la foto anterior solo si no hay otra mutación en vuelo (restaurarla borraría su cambio
+ * optimista); en ese caso la recarga final deja la caché igual que la API.
+ */
+function restoreLodging(
+  queryClient: QueryClient,
+  tourId: string,
+  context: LodgingMutationContext | undefined,
+) {
+  const inFlight = queryClient.isMutating({ mutationKey: MUTATION_KEYS.lodgingChange(tourId) });
+  if (context?.previous && inFlight <= 1) {
+    queryClient.setQueryData(LODGING_KEYS.detail(tourId), context.previous);
+  }
+}
+
+/** Un 404 o 409 significa que el tablero estaba desactualizado (la recarga lo corrige). */
+function describeLodgingError(error: ApiError): string {
+  if (error.status === 404 || error.status === 409) {
+    return `${error.message.replace(/\.$/, "")}. El tablero se actualizó; revisa y vuelve a intentarlo.`;
+  }
+  return error.message;
+}
 /** Hooks de las mutaciones de habitación: mismo rollback, toast e invalidación. */
 function useLodgingRoomMutation<
   TVariables extends { roomId: string },
@@ -102,6 +144,7 @@ function useLodgingRoomMutation<
   const queryClient = useQueryClient();
 
   return useMutation<TResult, ApiError, TVariables, LodgingMutationContext>({
+    mutationKey: MUTATION_KEYS.lodgingChange(tourId),
     mutationFn: request,
     onSuccess,
     onMutate: (variables) =>
@@ -109,26 +152,21 @@ function useLodgingRoomMutation<
         optimistic(room, variables),
       ),
     onError: (error, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(LODGING_KEYS.detail(tourId), context.previous);
-      }
-      toast.error(errorTitle, { description: error.message });
+      restoreLodging(queryClient, tourId, context);
+      toast.error(errorTitle, { description: describeLodgingError(error) });
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: LODGING_KEYS.detail(tourId) });
-    },
+    onSettled: () => refreshLodgingWhenIdle(queryClient, tourId),
   });
 }
 
-/** Número de cuarto y/o estado de una habitación. */
+/** Número de cuarto de una habitación. */
 export function useUpdateLodgingRoom(tourId: string) {
   return useLodgingRoomMutation<{ roomId: string } & UpdateLodgingRoomInput>(tourId, {
     request: ({ roomId, ...body }) =>
       apiClient.patch<never, LodgingRoomResultOutput>(`/lodging/${tourId}/rooms/${roomId}`, body),
-    optimistic: (room, { roomNumber, status }) => ({
+    optimistic: (room, { roomNumber }) => ({
       ...room,
       roomNumber: roomNumber === undefined ? room.roomNumber : roomNumber?.trim() || null,
-      status: status ?? room.status,
     }),
     errorTitle: "No se pudo actualizar la habitación",
   });
@@ -165,7 +203,7 @@ export function useUnassignLodgingSlot(tourId: string) {
   });
 }
 
-/** Elimina una cama (baja la capacidad y recorre las siguientes); su pasajero queda sin cama. */
+/** Elimina la cama completa del lugar (matrimonial = 2 lugares): baja la capacidad, recorre los siguientes y sus pasajeros quedan sin cama. */
 export function useDeleteLodgingBed(tourId: string) {
   return useLodgingRoomMutation<{ roomId: string; slotIndex: number }, DeleteLodgingBedOutput>(
     tourId,
@@ -176,12 +214,15 @@ export function useDeleteLodgingBed(tourId: string) {
         ),
       optimistic: (room, { slotIndex }) => removeBedFromRoom(room, slotIndex),
       errorTitle: "No se pudo eliminar la cama",
-      onSuccess: ({ releasedPassenger }) =>
+      onSuccess: ({ releasedPassenger, releasedPassengers }) => {
+        const released = releasedPassengers || (releasedPassenger ? 1 : 0);
         toast.success("Cama eliminada", {
-          description: releasedPassenger
-            ? 'El pasajero regresó a "Pasajeros sin habitación"'
-            : undefined,
-        }),
+          description:
+            released > 0
+              ? `${released} ${released === 1 ? "pasajero regresó" : "pasajeros regresaron"} a "Pasajeros sin habitación"`
+              : undefined,
+        });
+      },
     },
   );
 }
@@ -192,6 +233,7 @@ export function useDeleteLodgingRoom(tourId: string) {
 
   return useMutation<DeleteLodgingRoomOutput, ApiError, { roomId: string }, LodgingMutationContext>(
     {
+      mutationKey: MUTATION_KEYS.lodgingChange(tourId),
       mutationFn: ({ roomId }) =>
         apiClient.delete<never, DeleteLodgingRoomOutput>(`/lodging/${tourId}/rooms/${roomId}`),
       onMutate: ({ roomId }) =>
@@ -206,14 +248,53 @@ export function useDeleteLodgingRoom(tourId: string) {
               : undefined,
         }),
       onError: (error, _variables, context) => {
-        if (context?.previous) {
-          queryClient.setQueryData(LODGING_KEYS.detail(tourId), context.previous);
-        }
-        toast.error("No se pudo eliminar la habitación", { description: error.message });
+        restoreLodging(queryClient, tourId, context);
+        toast.error("No se pudo eliminar la habitación", {
+          description: describeLodgingError(error),
+        });
       },
-      onSettled: () => {
-        void queryClient.invalidateQueries({ queryKey: LODGING_KEYS.detail(tourId) });
-      },
+      onSettled: () => refreshLodgingWhenIdle(queryClient, tourId),
     },
   );
+}
+
+interface LodgingActivity {
+  /** Habitaciones con una mutación en curso: sus acciones se bloquean hasta que la API responde. */
+  busyRoomIds: ReadonlySet<string>;
+  /** Habitaciones que se están registrando por hotel (marcadores mientras llegan los datos). */
+  registeringRooms: { hotelName: string; count: number }[];
+  /** Hay una mutación o una recarga del hospedaje en curso. */
+  isUpdating: boolean;
+}
+
+interface PendingLodgingChange {
+  roomId?: string;
+  hotelName?: string;
+  rooms?: { quantity: number }[];
+}
+
+/**
+ * Qué se está actualizando en el hospedaje, derivado en el render: las mutaciones siguen
+ * `pending` hasta que llega la recarga (ver `refreshLodgingWhenIdle`), así que no hace falta
+ * estado propio.
+ */
+export function useLodgingActivity(tourId: string): LodgingActivity {
+  const pending = useMutationState<PendingLodgingChange>({
+    filters: { mutationKey: MUTATION_KEYS.lodgingChange(tourId), status: "pending" },
+    select: (mutation) => (mutation.state.variables ?? {}) as PendingLodgingChange,
+  });
+  const fetching = useIsFetching({ queryKey: LODGING_KEYS.detail(tourId) });
+
+  const busyRoomIds = new Set<string>();
+  const registeringRooms: LodgingActivity["registeringRooms"] = [];
+  for (const change of pending) {
+    if (change.roomId) busyRoomIds.add(change.roomId);
+    if (change.hotelName && change.rooms) {
+      registeringRooms.push({
+        hotelName: change.hotelName,
+        count: change.rooms.reduce((total, item) => total + item.quantity, 0),
+      });
+    }
+  }
+  return { busyRoomIds, registeringRooms, isUpdating: pending.length > 0 || fetching > 0 };
 }

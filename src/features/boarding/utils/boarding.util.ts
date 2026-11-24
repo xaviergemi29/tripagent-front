@@ -1,7 +1,6 @@
 import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
-import { LODGING_ROOM_TYPE_DICT } from "@/shared/utils/config/status-dictionaries.config";
+import { getBedsCapacity, getRoomKindName } from "@/shared/utils/lodging-beds.util";
 import { matchesSearch } from "@/shared/utils/search.util";
-import type { LodgingRoomType } from "@/shared/constants/domain.constants";
 import type { BoardingListItem, BoardingRoomOutput } from "../schemas/boarding.schema";
 
 export const BOARDING_FILTERS = ["missing", "boarded", "all"] as const;
@@ -36,11 +35,12 @@ export const filterBoardingItems = (
   });
 
 /**
- * Habitación para mostrar: "Hab. 102" con número o "Matrimonial #2" sin él. Con más de un hotel en
+ * Habitación para mostrar: "Hab. 102" con número o "Doble · 2 individuales #2" sin él. Con más de un hotel en
  * el tour se agrega el nombre del hotel.
  */
 export const formatBoardingRoom = (room: BoardingRoomOutput, withHotel: boolean): string => {
-  const typeName = LODGING_ROOM_TYPE_DICT[room.roomType as LodgingRoomType]?.name ?? "Habitación";
+  // Datos anteriores sin camas: solo "Habitación #n".
+  const typeName = getBedsCapacity(room) > 0 ? getRoomKindName(room) : "Habitación";
   const label = room.roomNumber ? `Hab. ${room.roomNumber}` : `${typeName} #${room.typeIndex}`;
   return withHotel && room.hotelName ? `${label} · ${room.hotelName}` : label;
 };

@@ -259,69 +259,18 @@ export const SUBSCRIPTION_PLAN = {
   trialDaysTotal: 30,
 } as const;
 
-// Tipos de habitación del hospedaje del tour (espejo de la API; el servidor decide la capacidad).
-export const LODGING_ROOM_TYPES = [
-  "MATRIMONIAL",
-  "DOUBLE_INDIVIDUAL",
-  "TRIPLE",
-  "QUADRUPLE",
-  "SINGLE",
-] as const;
-export type LodgingRoomType = (typeof LODGING_ROOM_TYPES)[number];
-
-/** Acceso por nombre para comparar sin escribir el texto: `type === LODGING_ROOM_TYPE.TRIPLE`. */
-export const LODGING_ROOM_TYPE = {
-  MATRIMONIAL: "MATRIMONIAL",
-  DOUBLE_INDIVIDUAL: "DOUBLE_INDIVIDUAL",
-  TRIPLE: "TRIPLE",
-  QUADRUPLE: "QUADRUPLE",
-  SINGLE: "SINGLE",
-} as const satisfies Record<LodgingRoomType, LodgingRoomType>;
-
-/** Lugares por habitación de cada tipo (la API es la fuente de verdad; aquí solo la vista previa). */
-export const LODGING_ROOM_CAPACITY: Record<LodgingRoomType, number> = {
-  MATRIMONIAL: 2,
-  DOUBLE_INDIVIDUAL: 2,
-  TRIPLE: 3,
-  QUADRUPLE: 4,
-  SINGLE: 1,
-};
-
-/** Tipo que corresponde a una capacidad (1..4) cuando se eliminan camas; espejo de la API. */
-export const LODGING_ROOM_TYPE_BY_CAPACITY: Record<number, LodgingRoomType> = {
-  1: "SINGLE",
-  2: "DOUBLE_INDIVIDUAL",
-  3: "TRIPLE",
-  4: "QUADRUPLE",
-};
-
-/** Tipos que el modal ofrece desde el inicio; el resto se agrega bajo demanda. */
-export const LODGING_BASE_ROOM_TYPES: readonly LodgingRoomType[] = [
-  LODGING_ROOM_TYPE.MATRIMONIAL,
-  LODGING_ROOM_TYPE.DOUBLE_INDIVIDUAL,
-];
-export const LODGING_EXTRA_ROOM_TYPES: readonly LodgingRoomType[] = [
-  LODGING_ROOM_TYPE.SINGLE,
-  LODGING_ROOM_TYPE.TRIPLE,
-  LODGING_ROOM_TYPE.QUADRUPLE,
-];
+// Camas por habitación (espejo de la API, que valida): la capacidad es 2 por matrimonial + 1 por individual.
+export const LODGING_BED_LIMITS = { matrimonialMax: 2, singleMax: 4, capacityMax: 6 } as const;
 
 /** Límites del contrato de `POST /lodging/:tourId/rooms`. */
 export const LODGING_LIMITS = {
   hotelNameMax: 120,
   quantityMax: 50,
   totalRoomsMax: 200,
+  roomConfigsMax: 20,
 } as const;
 
-/** Estado de una habitación del hospedaje: consultada con el hotel o confirmada por él. */
-export const LODGING_ROOM_STATUSES = ["CONSULTED", "CONFIRMED"] as const;
-export type LodgingRoomStatus = (typeof LODGING_ROOM_STATUSES)[number];
-export const LODGING_ROOM_STATUS = {
-  CONSULTED: "CONSULTED",
-  CONFIRMED: "CONFIRMED",
-} as const satisfies Record<LodgingRoomStatus, LodgingRoomStatus>;
-
-/** Camas (lugares) por habitación: `slotIndex` va de 1 a la capacidad (máximo 4). */
-export const LODGING_SLOT_INDEX = { first: 1, max: 4 } as const;
+/** Lugares por habitación: `slotIndex` va de 1 a la capacidad (máximo 6). */
+export const LODGING_SLOT_INDEX = { first: 1, max: LODGING_BED_LIMITS.capacityMax } as const;
 /** Largo máximo del número de cuarto que captura el operador. */
 export const LODGING_ROOM_NUMBER_MAX = 10;

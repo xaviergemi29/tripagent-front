@@ -4,15 +4,13 @@ import {
   buildRoomDeletionTarget,
   buildRoomingListText,
   removeBedFromRoom,
-  resolveRoomTypeForCapacity,
   removeRoomFromLodging,
   getRoomDescription,
   getRoomDisplayName,
   buildStayLabel,
   countLodgingPendingPassengers,
   filterRooms,
-  findEmptyMatrimonial,
-  getBedLabel,
+  findFreeMatrimonialBed,
   getFreeBeds,
   getRoomTitles,
   getUnassignedPassengers,
@@ -52,46 +50,70 @@ describe("hospedaje: pendientes de la insignia", () => {
 });
 
 describe("hospedaje: títulos y camas", () => {
-  it("numera por posición entre las habitaciones del mismo tipo", () => {
+  it("numera por posición entre las habitaciones con las mismas camas", () => {
     const titles = getRoomTitles([
-      makeRoom("x", { roomType: "DOUBLE_INDIVIDUAL", position: 3 }),
-      makeRoom("y", { roomType: "MATRIMONIAL", position: 1 }),
-      makeRoom("z", { roomType: "DOUBLE_INDIVIDUAL", position: 2 }),
+      makeRoom("x", { singleBeds: 2, position: 3 }),
+      makeRoom("y", { matrimonialBeds: 1, position: 1 }),
+      makeRoom("z", { singleBeds: 2, position: 2 }),
+      makeRoom("w", { matrimonialBeds: 1, singleBeds: 1, position: 4 }),
     ]);
     expect(titles).toEqual({
       y: "Matrimonial #1",
-      z: "Doble Individual #1",
-      x: "Doble Individual #2",
+      z: "Doble · 2 individuales #1",
+      x: "Doble · 2 individuales #2",
+      w: "Triple · 1 matrimonial + 1 individual #1",
     });
   });
 
-  it("etiqueta las camas según el tipo", () => {
-    expect(getBedLabel("DOUBLE_INDIVIDUAL", 1)).toBe("Cama A");
-    expect(getBedLabel("DOUBLE_INDIVIDUAL", 2)).toBe("Cama B");
-    expect(getBedLabel("MATRIMONIAL", 2)).toBe("Lugar 2");
-    expect(getBedLabel("TRIPLE", 3)).toBe("Lugar 3");
-    expect(getBedLabel("QUADRUPLE", 4)).toBe("Lugar 4");
+  it("ignora el roomType heredado: 2 individuales nunca se muestran como matrimonial", () => {
+    const room = makeRoom("a", { roomType: "MATRIMONIAL", singleBeds: 2 });
+    expect(getRoomTitles([room])).toEqual({ a: "Doble · 2 individuales #1" });
+    expect(getRoomDescription(room)).toBe("2 camas individuales · 2 personas");
   });
 
-  it("lista las camas libres con su etiqueta", () => {
+  it("lista las camas libres con su etiqueta por disposición", () => {
     const rooms = [
       makeRoom("r2", {
-        roomType: "DOUBLE_INDIVIDUAL",
+        matrimonialBeds: 1,
+        singleBeds: 1,
         slots: [{ slotIndex: 1, bookingPassengerId: "p1" }],
       }),
     ];
     expect(getFreeBeds(rooms)).toEqual([
-      { roomId: "r2", slotIndex: 2, label: "Doble Individual #1 · Cama B" },
+      {
+        roomId: "r2",
+        slotIndex: 2,
+        label: "Triple · 1 matrimonial + 1 individual #1 · Cama matrimonial 1 · lado B",
+      },
+      {
+        roomId: "r2",
+        slotIndex: 3,
+        label: "Triple · 1 matrimonial + 1 individual #1 · Cama individual 1",
+      },
     ]);
   });
 
-  it("encuentra la matrimonial vacía y filtra habitaciones", () => {
-    expect(findEmptyMatrimonial(ROOMS)?.id).toBe("r1");
+  it("busca una cama matrimonial con sus 2 lugares libres en cualquier habitación", () => {
+    expect(findFreeMatrimonialBed(ROOMS)).toEqual({ roomId: "r1", slotIndexes: [1, 2] });
     const occupied = [makeRoom("r1", { slots: [{ slotIndex: 1, bookingPassengerId: "p1" }] })];
-    expect(findEmptyMatrimonial(occupied)).toBeUndefined();
+    expect(findFreeMatrimonialBed(occupied)).toBeUndefined();
+    expect(findFreeMatrimonialBed([makeRoom("s", { singleBeds: 2 })])).toBeUndefined();
+    // La segunda cama matrimonial de una habitación con la primera ocupada.
+    const twoBeds = [
+      makeRoom("d", {
+        matrimonialBeds: 2,
+        singleBeds: 1,
+        slots: [{ slotIndex: 2, bookingPassengerId: "p1" }],
+      }),
+    ];
+    expect(findFreeMatrimonialBed(twoBeds)).toEqual({ roomId: "d", slotIndexes: [3, 4] });
+  });
+
+  it("filtra habitaciones por camas", () => {
+    const occupied = [makeRoom("r1", { slots: [{ slotIndex: 1, bookingPassengerId: "p1" }] })];
     expect(filterRooms(ROOMS, "ALL")).toHaveLength(3);
-    expect(filterRooms(ROOMS, "MATRIMONIAL")).toHaveLength(1);
-    expect(filterRooms(ROOMS, "DOUBLE_INDIVIDUAL")).toHaveLength(2);
+    expect(filterRooms(ROOMS, "WITH_MATRIMONIAL")).toHaveLength(1);
+    expect(filterRooms(ROOMS, "ONLY_SINGLES")).toHaveLength(2);
     expect(filterRooms(occupied, "FREE_BEDS")).toHaveLength(1);
   });
 });
@@ -138,12 +160,7 @@ describe("hospedaje: fechas y texto del rooming list", () => {
           { slotIndex: 2, bookingPassengerId: "p2" },
         ],
       }),
-      makeRoom("r2", {
-        roomType: "DOUBLE_INDIVIDUAL",
-        position: 2,
-        roomNumber: "102",
-        status: "CONFIRMED",
-      }),
+      makeRoom("r2", { singleBeds: 2, position: 2, roomNumber: "102" }),
     ]);
     const text = buildRoomingListText({
       tourTitle: "Huasteca Potosina",
@@ -155,108 +172,92 @@ describe("hospedaje: fechas y texto del rooming list", () => {
       "ROOMING LIST - HUASTECA POTOSINA",
       "Hotel: Hotel Sierra (14 nov – 16 nov (2 noches))",
       "----------------------------------------",
-      "• Matrimonial #1 (1 cama matrimonial · 2 pers.) [Consultada]:",
+      "• Matrimonial #1 (1 cama matrimonial · 2 personas):",
       "  - Ana Pérez, Luis Pérez",
-      "• Hab. 102 (2 camas individuales · 2 pers.) [Confirmada]:",
+      "• Hab. 102 (2 camas individuales · 2 personas):",
       "  - Sin asignar",
     ]);
   });
 });
 
 describe("hospedaje: eliminar camas y habitaciones", () => {
-  it("la descripción es la del tipo; con datos que no coinciden añade los lugares", () => {
-    expect(getRoomDescription(makeRoom("a", { roomType: "DOUBLE_INDIVIDUAL" }))).toBe(
-      "2 camas individuales · 2 pers.",
+  it("nombre con número de cuarto", () => {
+    expect(getRoomDisplayName("Doble · 2 individuales #1", "102")).toBe(
+      "Doble · 2 individuales #1 · Hab. 102",
     );
-    expect(getRoomDescription(makeRoom("a", { roomType: "SINGLE", capacity: 1 }))).toBe(
-      "1 cama individual · 1 pers.",
-    );
-    expect(getRoomDescription(makeRoom("a", { roomType: "TRIPLE", capacity: 2 }))).toBe(
-      "1 matrimonial + 1 individual · 3 pers. (2 lugares)",
-    );
+    expect(getRoomDisplayName("Doble · 2 individuales #1", null)).toBe("Doble · 2 individuales #1");
   });
 
-  it("nombre con número de cuarto y etiquetas por tipo y posición", () => {
-    expect(getRoomDisplayName("Doble Individual #1", "102")).toBe("Doble Individual #1 · Hab. 102");
-    expect(getRoomDisplayName("Doble Individual #1", null)).toBe("Doble Individual #1");
-    expect(getBedLabel("DOUBLE_INDIVIDUAL", 1)).toBe("Cama A");
-  });
-
-  it("la pareja va a una Matrimonial vacía; una Individual no sirve", () => {
-    expect(
-      findEmptyMatrimonial([makeRoom("s", { roomType: "SINGLE", capacity: 1 })]),
-    ).toBeUndefined();
-    expect(
-      findEmptyMatrimonial([
-        makeRoom("s", { roomType: "SINGLE", capacity: 1, position: 1 }),
-        makeRoom("m", { position: 2 }),
-      ])?.id,
-    ).toBe("m");
-  });
-
-  it("resolveRoomTypeForCapacity: conserva el tipo si coincide y si no usa el de la capacidad", () => {
-    expect(resolveRoomTypeForCapacity("MATRIMONIAL", 2)).toBe("MATRIMONIAL");
-    expect(resolveRoomTypeForCapacity("DOUBLE_INDIVIDUAL", 2)).toBe("DOUBLE_INDIVIDUAL");
-    expect(resolveRoomTypeForCapacity("MATRIMONIAL", 1)).toBe("SINGLE");
-    expect(resolveRoomTypeForCapacity("DOUBLE_INDIVIDUAL", 1)).toBe("SINGLE");
-    expect(resolveRoomTypeForCapacity("TRIPLE", 3)).toBe("TRIPLE");
-    expect(resolveRoomTypeForCapacity("TRIPLE", 2)).toBe("DOUBLE_INDIVIDUAL");
-    expect(resolveRoomTypeForCapacity("QUADRUPLE", 3)).toBe("TRIPLE");
-    expect(resolveRoomTypeForCapacity("QUADRUPLE", 4)).toBe("QUADRUPLE");
-    expect(resolveRoomTypeForCapacity("SINGLE", 1)).toBe("SINGLE");
-  });
-
-  it("eliminar una cama cambia el tipo y el título pasa a 'Individual #1'", () => {
-    const room = makeRoom("r1", { roomType: "DOUBLE_INDIVIDUAL", capacity: 2 });
-    const next = removeBedFromRoom(room, 2);
-    expect(next.roomType).toBe("SINGLE");
-    expect(next.capacity).toBe(1);
-    expect(getRoomTitles([next])).toEqual({ r1: "Individual #1" });
-    expect(getRoomDescription(next)).toBe("1 cama individual · 1 pers.");
-    expect(getBedLabel("SINGLE", 1)).toBe("Cama A");
-    expect(removeBedFromRoom(makeRoom("m", { capacity: 2 }), 1).roomType).toBe("SINGLE");
-  });
-
-  it("objetivos de eliminación: cama ocupada, libre y habitación", () => {
+  it("eliminar una cama individual baja un lugar y recorre las siguientes", () => {
     const room = makeRoom("r1", {
-      roomType: "DOUBLE_INDIVIDUAL",
-      roomNumber: "102",
-      slots: [{ slotIndex: 2, bookingPassengerId: "p1" }],
-    });
-    expect(buildBedDeletionTarget(room, "Doble Individual #1", 2, PASSENGERS)).toEqual({
-      roomId: "r1",
-      roomName: "Doble Individual #1 · Hab. 102",
-      slotIndex: 2,
-      bedLabel: "Cama B",
-      assignedPassenger: { id: "p1", fullName: "Ana Pérez" },
-    });
-    expect(
-      buildBedDeletionTarget(room, "Doble Individual #1", 1, PASSENGERS).assignedPassenger,
-    ).toBeNull();
-    expect(buildRoomDeletionTarget(room, "Doble Individual #1")).toEqual({
-      roomId: "r1",
-      roomName: "Doble Individual #1 · Hab. 102",
-      totalBeds: 2,
-      assignedPassengersCount: 1,
-    });
-  });
-
-  it("removeBedFromRoom libera la cama y recorre las siguientes", () => {
-    const room = makeRoom("r1", {
-      capacity: 4,
+      singleBeds: 3,
       slots: [
         { slotIndex: 1, bookingPassengerId: "p1" },
         { slotIndex: 2, bookingPassengerId: "p2" },
-        { slotIndex: 4, bookingPassengerId: "p3" },
+        { slotIndex: 3, bookingPassengerId: "p3" },
       ],
     });
     const next = removeBedFromRoom(room, 2);
-    expect(next.capacity).toBe(3);
-    expect(next.roomType).toBe("TRIPLE");
+    expect(next.capacity).toBe(2);
+    expect(next.singleBeds).toBe(2);
     expect(next.slots).toEqual([
       { slotIndex: 1, bookingPassengerId: "p1" },
-      { slotIndex: 3, bookingPassengerId: "p3" },
+      { slotIndex: 2, bookingPassengerId: "p3" },
     ]);
+    expect(getRoomTitles([next])).toEqual({ r1: "Doble · 2 individuales #1" });
+  });
+
+  it("eliminar un lugar de una matrimonial quita la cama completa (2 lugares)", () => {
+    const room = makeRoom("r1", {
+      matrimonialBeds: 1,
+      singleBeds: 1,
+      slots: [
+        { slotIndex: 1, bookingPassengerId: "p1" },
+        { slotIndex: 2, bookingPassengerId: "p2" },
+        { slotIndex: 3, bookingPassengerId: "p3" },
+      ],
+    });
+    const next = removeBedFromRoom(room, 2);
+    expect(next.capacity).toBe(1);
+    expect(next.matrimonialBeds).toBe(0);
+    expect(next.singleBeds).toBe(1);
+    expect(next.slots).toEqual([{ slotIndex: 1, bookingPassengerId: "p3" }]);
+    expect(getRoomTitles([next])).toEqual({ r1: "Individual #1" });
+  });
+
+  it("objetivos de eliminación: matrimonial con 2 ocupantes, individual libre y habitación", () => {
+    const room = makeRoom("r1", {
+      matrimonialBeds: 1,
+      singleBeds: 1,
+      roomNumber: "102",
+      slots: [
+        { slotIndex: 1, bookingPassengerId: "p1" },
+        { slotIndex: 2, bookingPassengerId: "p2" },
+      ],
+    });
+    expect(buildBedDeletionTarget(room, "Triple #1", 2, PASSENGERS)).toEqual({
+      roomId: "r1",
+      roomName: "Triple #1 · Hab. 102",
+      slotIndex: 2,
+      bedName: "cama matrimonial 1",
+      slotsCount: 2,
+      assignedPassengers: [
+        { id: "p1", fullName: "Ana Pérez" },
+        { id: "p2", fullName: "Luis Pérez" },
+      ],
+    });
+    const single = buildBedDeletionTarget(room, "Triple #1", 3, PASSENGERS);
+    expect(single).toMatchObject({
+      bedName: "cama individual 1",
+      slotsCount: 1,
+      assignedPassengers: [],
+    });
+    expect(buildRoomDeletionTarget(room, "Triple #1")).toEqual({
+      roomId: "r1",
+      roomName: "Triple #1 · Hab. 102",
+      totalBeds: 3,
+      assignedPassengersCount: 2,
+    });
   });
 
   it("removeRoomFromLodging conserva el hotel aunque quede sin habitaciones", () => {

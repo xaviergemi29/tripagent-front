@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
-import { BedDouble, Minus, Plus, Trash2 } from "lucide-react";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { Bed, BedDouble, Copy, Minus, Plus, Trash2, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,15 +13,18 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LODGING_BED_LIMITS, LODGING_LIMITS } from "@/shared/constants/domain.constants";
 import {
-  LODGING_BASE_ROOM_TYPES,
-  LODGING_EXTRA_ROOM_TYPES,
-  LODGING_LIMITS,
-  LODGING_ROOM_CAPACITY,
-  LODGING_ROOM_TYPES,
-  type LodgingRoomType,
-} from "@/shared/constants/domain.constants";
-import { LODGING_ROOM_TYPE_DICT } from "@/shared/utils/config/status-dictionaries.config";
+  canAddBed,
+  describeBeds,
+  exceedsRegisterLimits,
+  getBedsCapacity,
+  getRegisterableCapacity,
+  getRoomKindLabel,
+  isValidBeds,
+  type BedKind,
+  type RoomBeds,
+} from "@/shared/utils/lodging-beds.util";
 import { useRegisterLodgingRooms } from "../../hooks/useLodging";
 import {
   registerLodgingRoomsFormSchema,
@@ -38,7 +40,7 @@ interface RoomRegistrationModalProps {
   initialHotelName?: string;
 }
 
-/** Registra un hotel y sus habitaciones por lote (tipo y cantidad). Abre limpio cada vez. */
+/** Registra un hotel y sus habitaciones, una por una, eligiendo sus camas. Abre limpio cada vez. */
 export function RoomRegistrationModal({
   isOpen,
   onClose,
@@ -49,8 +51,8 @@ export function RoomRegistrationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && !isPending && onClose()}>
-      <DialogContent className="w-[95vw] gap-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-0 shadow-2xl sm:max-w-lg">
-        <DialogHeader className="border-b border-slate-100 p-6 pb-5 text-left">
+      <DialogContent className="flex max-h-[90dvh] w-[95vw] flex-col gap-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-0 shadow-2xl sm:max-w-3xl">
+        <DialogHeader className="shrink-0 border-b border-slate-100 p-6 pb-5 text-left">
           <DialogTitle className="text-xl font-bold tracking-tight text-slate-900">
             Registrar habitaciones y camas
           </DialogTitle>
@@ -69,13 +71,8 @@ export function RoomRegistrationModal({
   );
 }
 
-const EMPTY_QUANTITIES: RegisterLodgingRoomsFormInput["quantities"] = {
-  MATRIMONIAL: 0,
-  DOUBLE_INDIVIDUAL: 0,
-  TRIPLE: 0,
-  QUADRUPLE: 0,
-  SINGLE: 0,
-};
+/** Habitación nueva sin camas: el operador elige qué crear (nada se registra por omisión). */
+const EMPTY_ROOM: RoomBeds = { matrimonialBeds: 0, singleBeds: 0 };
 
 interface RoomRegistrationFormProps {
   initialHotelName: string;
@@ -92,205 +89,350 @@ function RoomRegistrationForm({
 }: RoomRegistrationFormProps) {
   const { register, handleSubmit, setValue, control } = useForm<RegisterLodgingRoomsFormInput>({
     resolver: zodResolver(registerLodgingRoomsFormSchema),
-    defaultValues: { hotelName: initialHotelName, quantities: EMPTY_QUANTITIES },
+    defaultValues: { hotelName: initialHotelName, rooms: [EMPTY_ROOM] },
   });
+  const { fields, append, remove } = useFieldArray({ control, name: "rooms" });
   const hotelName = useWatch({ control, name: "hotelName" });
-  const quantities = useWatch({ control, name: "quantities" });
-  const [extraTypes, setExtraTypes] = useState<LodgingRoomType[]>([]);
-  const [isPickingExtra, setIsPickingExtra] = useState(false);
+  const rooms = useWatch({ control, name: "rooms" });
 
-  const visibleTypes = [...LODGING_BASE_ROOM_TYPES, ...extraTypes];
-  const availableExtras = LODGING_EXTRA_ROOM_TYPES.filter((type) => !extraTypes.includes(type));
-  const totalRooms = LODGING_ROOM_TYPES.reduce((sum, type) => sum + (quantities[type] ?? 0), 0);
-  const totalCapacity = LODGING_ROOM_TYPES.reduce(
-    (sum, type) => sum + (quantities[type] ?? 0) * LODGING_ROOM_CAPACITY[type],
-    0,
-  );
-  const canSubmit = hotelName.trim().length > 0 && totalRooms > 0 && !isSubmitting;
+  const totalRooms = rooms.length;
+  const totalCapacity = getRegisterableCapacity(rooms);
+  const firstIncomplete = rooms.findIndex((room) => !isValidBeds(room));
+  const allValid = firstIncomplete === -1;
+  const overLimit = exceedsRegisterLimits(rooms);
+  const canAddRoom = totalRooms < LODGING_LIMITS.totalRoomsMax;
+  const canSubmit = hotelName.trim().length > 0 && allValid && !overLimit && !isSubmitting;
 
-  const setQuantity = (type: LodgingRoomType, value: number) =>
-    setValue(`quantities.${type}`, Math.min(LODGING_LIMITS.quantityMax, Math.max(0, value)));
+  const setBeds = (index: number, field: keyof RoomBeds, value: number) =>
+    setValue(`rooms.${index}.${field}`, Math.max(0, value));
 
-  const addExtra = (type: LodgingRoomType) => {
-    setExtraTypes((prev) => [...prev, type]);
-    setQuantity(type, 1);
-    setIsPickingExtra(false);
-  };
-
-  const removeExtra = (type: LodgingRoomType) => {
-    setExtraTypes((prev) => prev.filter((item) => item !== type));
-    setQuantity(type, 0);
+  const duplicateLast = () => {
+    const last = rooms[rooms.length - 1];
+    if (last) append({ matrimonialBeds: last.matrimonialBeds, singleBeds: last.singleBeds });
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-6">
-      <div className="space-y-2">
-        <Label
-          htmlFor="lodging-hotel-name"
-          className="text-xs font-semibold tracking-wider text-slate-700 uppercase"
-        >
-          Nombre del hotel <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          id="lodging-hotel-name"
-          type="text"
-          autoComplete="off"
-          maxLength={LODGING_LIMITS.hotelNameMax}
-          placeholder="Ej. Hotel Sierra Huasteca Inn"
-          disabled={isSubmitting}
-          className="h-11 w-full rounded-xl border-slate-200 px-3.5 text-base text-slate-900 placeholder:text-slate-400 sm:text-sm"
-          {...register("hotelName")}
-        />
-      </div>
-
-      <div>
-        <div className="mb-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-          Habitaciones a registrar
+    <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
+        <div className="space-y-2">
+          <Label
+            htmlFor="lodging-hotel-name"
+            className="text-xs font-semibold tracking-wider text-slate-700 uppercase"
+          >
+            Nombre del hotel <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="lodging-hotel-name"
+            type="text"
+            autoComplete="off"
+            maxLength={LODGING_LIMITS.hotelNameMax}
+            placeholder="Ej. Hotel Sierra Huasteca Inn"
+            disabled={isSubmitting}
+            className="h-11 w-full rounded-xl border-slate-200 px-3.5 text-base text-slate-900 placeholder:text-slate-400 sm:text-sm"
+            {...register("hotelName")}
+          />
         </div>
 
-        <ul className="space-y-3">
-          {visibleTypes.map((type) => {
-            const config = LODGING_ROOM_TYPE_DICT[type];
-            const count = quantities[type] ?? 0;
-            const isExtra = extraTypes.includes(type);
-            return (
-              <li
-                key={type}
-                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 transition-colors hover:border-slate-300 hover:bg-white"
-              >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-900">{config.name}</span>
-                    <span className="rounded-full border border-slate-200/80 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                      {config.badgeLabel}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
-                    <BedDouble className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
-                    <span>{config.description}</span>
-                  </p>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  {isExtra && (
-                    <button
-                      type="button"
-                      onClick={() => removeExtra(type)}
-                      disabled={isSubmitting}
-                      aria-label={`Quitar el tipo ${config.name}`}
-                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  )}
-                  <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(type, count - 1)}
-                      disabled={isSubmitting || count === 0}
-                      aria-label={`Quitar una habitación ${config.name}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                    >
-                      <Minus className="h-3.5 w-3.5" aria-hidden="true" />
-                    </button>
-                    <span
-                      className="w-9 text-center text-sm font-bold text-slate-800"
-                      aria-label={`Habitaciones ${config.name}`}
-                    >
-                      {count}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(type, count + 1)}
-                      disabled={
-                        isSubmitting ||
-                        count >= LODGING_LIMITS.quantityMax ||
-                        totalRooms >= LODGING_LIMITS.totalRoomsMax
-                      }
-                      aria-label={`Agregar una habitación ${config.name}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                    >
-                      <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                    </button>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-
-        {availableExtras.length > 0 && (
-          <div className="mt-3">
-            {isPickingExtra ? (
-              <div className="space-y-2 rounded-xl border border-indigo-100 bg-indigo-50/70 p-3">
-                <div className="text-xs font-semibold text-indigo-950">
-                  Selecciona una configuración adicional:
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {availableExtras.map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => addExtra(type)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-900 shadow-sm transition-colors hover:bg-indigo-600 hover:text-white"
-                    >
-                      <Plus className="h-3 w-3" aria-hidden="true" />
-                      {LODGING_ROOM_TYPE_DICT[type].name} ({LODGING_ROOM_TYPE_DICT[type].badgeLabel}
-                      )
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setIsPickingExtra(false)}
-                    className="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-700"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsPickingExtra(true)}
-                className="flex items-center gap-1.5 rounded-md px-1 py-1 text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
-              >
-                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                Agregar otro tipo de habitación
-              </button>
-            )}
+        <div>
+          <div className="mb-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+            Habitaciones a registrar
           </div>
-        )}
+
+          <ul className="space-y-3">
+            {fields.map((field, index) => (
+              <RoomConfigCard
+                key={field.id}
+                index={index}
+                beds={rooms[index] ?? EMPTY_ROOM}
+                canRemove={fields.length > 1}
+                disabled={isSubmitting}
+                onChange={(bedField, value) => setBeds(index, bedField, value)}
+                onRemove={() => remove(index)}
+              />
+            ))}
+          </ul>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => append(EMPTY_ROOM)}
+              disabled={isSubmitting || !canAddRoom}
+              className="flex items-center gap-2 rounded-xl border border-dashed border-indigo-300 bg-indigo-50/50 px-4 py-2.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-50 disabled:opacity-50 md:text-sm"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Agregar otra habitación
+            </button>
+            <button
+              type="button"
+              onClick={duplicateLast}
+              disabled={isSubmitting || !canAddRoom}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 md:text-sm"
+            >
+              <Copy className="h-4 w-4" aria-hidden="true" />
+              Duplicar última
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-slate-600" aria-live="polite">
-          Se crearán{" "}
-          <strong className="font-bold text-slate-900">
-            {totalRooms} {totalRooms === 1 ? "habitación" : "habitaciones"}
-          </strong>{" "}
-          <span className="font-semibold text-emerald-700">
-            ({totalCapacity} {totalCapacity === 1 ? "lugar" : "lugares"})
-          </span>
-        </p>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="h-10 flex-1 rounded-xl border-slate-200 px-4 text-sm font-medium text-slate-700 sm:flex-none"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            disabled={!canSubmit}
-            className="h-10 flex-1 rounded-xl bg-indigo-600 px-5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 sm:flex-none"
-          >
-            {isSubmitting ? "Agregando..." : "Agregar al tablero"}
-          </Button>
+      <div className="shrink-0 space-y-3 border-t border-slate-100 p-4 sm:p-6">
+        <section
+          aria-label="Resumen de habitaciones"
+          className="rounded-xl border border-slate-200 bg-slate-50 p-3.5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h4 className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Resumen antes de agregar
+            </h4>
+            {allValid && !overLimit ? (
+              <span className="rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                Listo para registrar
+              </span>
+            ) : (
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                {overLimit
+                  ? `Máximo ${LODGING_LIMITS.quantityMax} habitaciones iguales por envío`
+                  : `Elige las camas de la Habitación ${firstIncomplete + 1}`}
+              </span>
+            )}
+          </div>
+          <ul className="mt-2 max-h-28 space-y-0.5 overflow-y-auto text-xs text-slate-600">
+            {rooms.map((room, index) => (
+              <li key={fields[index]?.id ?? index}>
+                <strong className="text-slate-800">Habitación {index + 1}:</strong>{" "}
+                {getBedsCapacity(room) > 0 ? describeBeds(room) : "sin camas todavía"}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div aria-live="polite">
+            <p className="text-xs text-slate-600">
+              Se crearán{" "}
+              <strong className="font-bold text-slate-900">
+                {totalRooms} {totalRooms === 1 ? "habitación" : "habitaciones"}
+              </strong>{" "}
+              <span className="font-semibold text-emerald-700">
+                ({totalCapacity} {totalCapacity === 1 ? "lugar" : "lugares"})
+              </span>
+            </p>
+            <p className="text-[11px] text-slate-500">
+              En el tablero capturas el número de cuarto y asignas a los pasajeros.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+              className="h-10 flex-1 rounded-xl border-slate-200 px-4 text-sm font-medium text-slate-700 sm:flex-none"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={!canSubmit}
+              className="h-10 flex-1 rounded-xl bg-indigo-600 px-5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 sm:flex-none"
+            >
+              {isSubmitting ? "Agregando..." : "Agregar al tablero"}
+            </Button>
+          </div>
         </div>
       </div>
     </form>
+  );
+}
+
+interface RoomConfigCardProps {
+  index: number;
+  beds: RoomBeds;
+  canRemove: boolean;
+  disabled: boolean;
+  onChange: (field: keyof RoomBeds, value: number) => void;
+  onRemove: () => void;
+}
+
+function RoomConfigCard({
+  index,
+  beds,
+  canRemove,
+  disabled,
+  onChange,
+  onRemove,
+}: RoomConfigCardProps) {
+  const title = `Habitación ${index + 1}`;
+  const capacity = getBedsCapacity(beds);
+  const hasBeds = isValidBeds(beds);
+
+  return (
+    <li className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition-all">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            <BedDouble className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <h3 className="text-sm font-bold text-slate-800 md:text-base">{title}</h3>
+          {hasBeds ? (
+            <span className="rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+              {getRoomKindLabel(beds)}
+            </span>
+          ) : (
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+              Elige las camas
+            </span>
+          )}
+        </div>
+        {canRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={disabled}
+            aria-label={`Eliminar ${title}`}
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <BedStepper
+          icon={BedDouble}
+          label="Camas matrimoniales"
+          hint="2 personas c/u"
+          noun="cama matrimonial"
+          title={title}
+          value={beds.matrimonialBeds}
+          disabled={disabled}
+          canAdd={canAddBed(beds, "MATRIMONIAL")}
+          onChange={(value) => onChange("matrimonialBeds", value)}
+        />
+        <BedStepper
+          icon={Bed}
+          label="Camas individuales"
+          hint="1 persona c/u"
+          noun="cama individual"
+          title={title}
+          value={beds.singleBeds}
+          disabled={disabled}
+          canAdd={canAddBed(beds, "SINGLE")}
+          onChange={(value) => onChange("singleBeds", value)}
+        />
+      </div>
+
+      <BedsPreview beds={beds} />
+      {capacity >= LODGING_BED_LIMITS.capacityMax && (
+        <p className="mt-2 text-[11px] text-slate-500">
+          Máximo {LODGING_BED_LIMITS.capacityMax} personas por habitación.
+        </p>
+      )}
+    </li>
+  );
+}
+
+/** Una pieza por cama: matrimonial (2 personas) o individual (1 persona). Solo decorativa. */
+function BedsPreview({ beds }: { beds: RoomBeds }) {
+  const pieces: { kind: BedKind; key: string }[] = [
+    ...Array.from({ length: beds.matrimonialBeds }, (_, i) => ({
+      kind: "MATRIMONIAL" as const,
+      key: `m${i}`,
+    })),
+    ...Array.from({ length: beds.singleBeds }, (_, i) => ({
+      kind: "SINGLE" as const,
+      key: `s${i}`,
+    })),
+  ];
+  if (pieces.length === 0) return null;
+  return (
+    <ul aria-hidden="true" className="mt-3 flex flex-wrap gap-2">
+      {pieces.map(({ kind, key }) =>
+        kind === "MATRIMONIAL" ? (
+          <li
+            key={key}
+            className="flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700"
+          >
+            <BedDouble className="h-4 w-4" />
+            Matrimonial · 2
+          </li>
+        ) : (
+          <li
+            key={key}
+            className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600"
+          >
+            <Bed className="h-4 w-4" />
+            Individual · 1
+          </li>
+        ),
+      )}
+    </ul>
+  );
+}
+
+interface BedStepperProps {
+  icon: LucideIcon;
+  label: string;
+  hint: string;
+  /** Para los aria-label: "cama matrimonial". */
+  noun: string;
+  title: string;
+  value: number;
+  disabled: boolean;
+  /** Cabe una cama más sin pasar los límites de la habitación. */
+  canAdd: boolean;
+  onChange: (value: number) => void;
+}
+
+function BedStepper({
+  icon: Icon,
+  label,
+  hint,
+  noun,
+  title,
+  value,
+  disabled,
+  canAdd,
+  onChange,
+}: BedStepperProps) {
+  return (
+    // flex-wrap: si no cabe, el contador baja a otra línea en lugar de cortar "Camas matrimoniales".
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
+      <div className="min-w-[9.5rem] flex-1">
+        <div className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap text-slate-800 md:text-sm">
+          <Icon className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+          {label}
+        </div>
+        <p className="text-[11px] text-slate-500">{hint}</p>
+      </div>
+      <div className="flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+        <button
+          type="button"
+          onClick={() => onChange(value - 1)}
+          disabled={disabled || value === 0}
+          aria-label={`Quitar una ${noun} de la ${title}`}
+          className="flex h-7 w-7 items-center justify-center rounded bg-white text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+        <span
+          className="w-6 text-center text-sm font-bold text-slate-800"
+          role="status"
+          aria-live="polite"
+          aria-label={`${label} de la ${title}`}
+        >
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={() => onChange(value + 1)}
+          disabled={disabled || !canAdd}
+          aria-label={`Agregar una ${noun} a la ${title}`}
+          className="flex h-7 w-7 items-center justify-center rounded bg-white text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
   );
 }

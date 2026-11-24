@@ -54,14 +54,26 @@ describe("boarding.util (RB-MAN-002)", () => {
     expect(filterBoardingItems(items, "all", "DIEGO").map((i) => i.id)).toEqual(["2"]);
   });
 
-  it("habitación: número o título por tipo, y hotel solo con varios hoteles", () => {
+  it("habitación: número o nombre por camas, y hotel solo con varios hoteles", () => {
     const room = {
       hotelName: "Hotel Sierra",
       roomNumber: null,
-      roomType: "MATRIMONIAL",
+      roomType: null,
+      matrimonialBeds: 0,
+      singleBeds: 2,
       typeIndex: 2,
     };
-    expect(formatBoardingRoom(room, false)).toBe("Matrimonial #2");
+    expect(formatBoardingRoom(room, false)).toBe("Doble · 2 individuales #2");
+    expect(formatBoardingRoom({ ...room, matrimonialBeds: 1, singleBeds: 0 }, false)).toBe(
+      "Matrimonial #2",
+    );
+    // Datos anteriores sin camas: el roomType heredado no se usa para mostrar.
+    expect(
+      formatBoardingRoom(
+        { ...room, roomType: "MATRIMONIAL", matrimonialBeds: 0, singleBeds: 0 },
+        false,
+      ),
+    ).toBe("Habitación #2");
     expect(formatBoardingRoom({ ...room, roomNumber: "102" }, true)).toBe(
       "Hab. 102 · Hotel Sierra",
     );

@@ -9,7 +9,7 @@ const passengersById = Object.fromEntries(PASSENGERS.map((p) => [p.bookingPassen
 
 function setup(
   room = makeRoom("r1", {
-    roomType: "DOUBLE_INDIVIDUAL",
+    singleBeds: 2,
     slots: [{ slotIndex: 1, bookingPassengerId: "p1" }],
   }),
   readOnly = false,
@@ -18,13 +18,12 @@ function setup(
     onAssign: vi.fn(),
     onUnassign: vi.fn(),
     onRoomNumberChange: vi.fn(),
-    onConfirm: vi.fn(),
   };
   render(
     <TooltipProvider>
       <RoomCard
         room={room}
-        title="Doble Individual #1"
+        title="Doble · 2 individuales #1"
         passengersById={passengersById}
         availablePassengers={[PASSENGERS[2], makePassenger("p9", "Zoe Díaz")]}
         {...(readOnly ? {} : handlers)}
@@ -35,19 +34,21 @@ function setup(
 }
 
 describe("RoomCard", () => {
-  it("muestra ocupante, etiquetas de cama, ocupación y estado", () => {
+  it("muestra ocupante, etiquetas de cama y ocupación", () => {
     setup();
-    expect(screen.getByText("Doble Individual #1")).toBeInTheDocument();
-    expect(screen.getByText("Consultada")).toBeInTheDocument();
+    expect(screen.getByText("Doble · 2 individuales #1")).toBeInTheDocument();
     expect(screen.getByText("Ana Pérez")).toBeInTheDocument();
     expect(screen.getByText("Asiento 4A")).toBeInTheDocument();
-    expect(screen.getByText("Cama A")).toBeInTheDocument();
+    expect(screen.getByText("Cama individual 1")).toBeInTheDocument();
+    expect(screen.getByText("2 camas individuales · 2 personas")).toBeInTheDocument();
     expect(screen.getByText("1/2 ocupados (1 libre)")).toBeInTheDocument();
   });
 
   it("asigna desde la cama libre con el selector", async () => {
     const { onAssign } = setup();
-    await userEvent.click(screen.getByRole("button", { name: "Asignar pasajero a Cama B" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Asignar pasajero a Cama individual 2" }),
+    );
     await userEvent.type(screen.getByLabelText("Buscar pasajero sin habitación"), "zoe");
     expect(screen.queryByText("Marta Ruiz")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /Zoe Díaz/ }));
@@ -56,7 +57,9 @@ describe("RoomCard", () => {
 
   it("desasigna con la X", async () => {
     const { onUnassign } = setup();
-    await userEvent.click(screen.getByRole("button", { name: "Quitar a Ana Pérez de Cama A" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Quitar a Ana Pérez de Cama individual 1" }),
+    );
     expect(onUnassign).toHaveBeenCalledWith(1);
   });
 
@@ -91,17 +94,12 @@ describe("RoomCard", () => {
     expect(onRoomNumberChange).toHaveBeenCalledWith(null);
   });
 
-  it("confirma solo una habitación Consultada", async () => {
-    const { onConfirm } = setup();
-    await userEvent.click(screen.getByRole("button", { name: "Marcar como Confirmada" }));
-    expect(onConfirm).toHaveBeenCalledTimes(1);
-  });
-
-  it("una habitación Confirmada no ofrece confirmar", () => {
-    setup(makeRoom("r1", { status: "CONFIRMED" }));
-    expect(screen.getByText("Confirmada")).toBeInTheDocument();
+  it("no muestra estado Consultada/Confirmada ni el botón para confirmar", () => {
+    setup();
+    expect(screen.queryByText("Consultada")).not.toBeInTheDocument();
+    expect(screen.queryByText("Confirmada")).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Marcar como Confirmada" }),
+      screen.queryByRole("button", { name: /Marcar como Confirmada/ }),
     ).not.toBeInTheDocument();
   });
 
@@ -123,7 +121,7 @@ describe("RoomCard", () => {
         <TooltipProvider>
           <RoomCard
             room={room}
-            title="Doble Individual #1"
+            title="Doble · 2 individuales #1"
             passengersById={passengersById}
             availablePassengers={[]}
             onUnassign={withHandlers ? vi.fn() : undefined}
@@ -136,40 +134,69 @@ describe("RoomCard", () => {
     }
 
     const occupied = makeRoom("r1", {
-      roomType: "DOUBLE_INDIVIDUAL",
+      singleBeds: 2,
       slots: [{ slotIndex: 1, bookingPassengerId: "p1" }],
     });
 
     it("ofrece eliminar la habitación y cada cama (libre u ocupada) con capacidad > 1", async () => {
       const { onDeleteRoom, onDeleteBed } = setupDelete(occupied);
-      await userEvent.click(screen.getByRole("button", { name: "Eliminar Doble Individual #1" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "Eliminar Doble · 2 individuales #1" }),
+      );
       expect(onDeleteRoom).toHaveBeenCalledTimes(1);
-      await userEvent.click(screen.getByRole("button", { name: "Eliminar Cama A" }));
-      await userEvent.click(screen.getByRole("button", { name: "Eliminar Cama B" }));
+      await userEvent.click(screen.getByRole("button", { name: "Eliminar Cama individual 1" }));
+      await userEvent.click(screen.getByRole("button", { name: "Eliminar Cama individual 2" }));
       expect(onDeleteBed).toHaveBeenNthCalledWith(1, 1);
       expect(onDeleteBed).toHaveBeenNthCalledWith(2, 2);
     });
 
     it("con una sola cama solo se puede eliminar la habitación", () => {
-      setupDelete(makeRoom("r1", { roomType: "SINGLE", capacity: 1 }));
+      setupDelete(makeRoom("r1", { singleBeds: 1 }));
       expect(
-        screen.getByRole("button", { name: "Eliminar Doble Individual #1" }),
+        screen.getByRole("button", { name: "Eliminar Doble · 2 individuales #1" }),
       ).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /^Eliminar Cama/ })).not.toBeInTheDocument();
-      // Una habitación de 1 lugar es Individual: etiqueta "Cama A" y descripción del tipo.
-      expect(screen.getByText("Cama A")).toBeInTheDocument();
-      expect(screen.getByText("1 cama individual · 1 pers.")).toBeInTheDocument();
+      expect(screen.getByText("Cama individual 1")).toBeInTheDocument();
+      expect(screen.getByText("1 cama individual · 1 persona")).toBeInTheDocument();
       expect(screen.getByText("0/1 ocupados (1 libre)")).toBeInTheDocument();
     });
 
     it("muestra los tooltips de quitar pasajero y eliminar cama", async () => {
       setupDelete(occupied);
-      await userEvent.hover(screen.getByRole("button", { name: "Quitar a Ana Pérez de Cama A" }));
+      await userEvent.hover(
+        screen.getByRole("button", { name: "Quitar a Ana Pérez de Cama individual 1" }),
+      );
       expect((await screen.findAllByText("Quitar pasajero de esta cama")).length).toBeGreaterThan(
         0,
       );
-      await userEvent.hover(screen.getByRole("button", { name: "Eliminar Cama B" }));
+      await userEvent.hover(screen.getByRole("button", { name: "Eliminar Cama individual 2" }));
       expect((await screen.findAllByText("Eliminar esta cama")).length).toBeGreaterThan(0);
+    });
+
+    it("una matrimonial muestra los dos lados y elimina la cama completa (2 lugares)", async () => {
+      const { onDeleteBed } = setupDelete(
+        makeRoom("r1", {
+          matrimonialBeds: 1,
+          singleBeds: 1,
+          slots: [
+            { slotIndex: 1, bookingPassengerId: "p1" },
+            { slotIndex: 2, bookingPassengerId: "p2" },
+          ],
+        }),
+      );
+      expect(screen.getByText("Cama matrimonial 1 · lado A")).toBeInTheDocument();
+      expect(screen.getByText("Cama matrimonial 1 · lado B")).toBeInTheDocument();
+      expect(screen.getByText("Cama individual 1")).toBeInTheDocument();
+      await userEvent.click(
+        screen.getByRole("button", { name: "Eliminar Cama matrimonial 1 · lado B" }),
+      );
+      expect(onDeleteBed).toHaveBeenCalledWith(2);
+      await userEvent.hover(
+        screen.getByRole("button", { name: "Eliminar Cama matrimonial 1 · lado A" }),
+      );
+      expect(
+        (await screen.findAllByText("Eliminar la cama matrimonial completa (2 lugares)")).length,
+      ).toBeGreaterThan(0);
     });
 
     it("sin callbacks (solo consulta) no hay botones de eliminar", () => {
