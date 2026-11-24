@@ -184,6 +184,13 @@ describe("Pre-reserva del folleto", () => {
     await user.type(phone, "228123");
     expect(submit).toBeDisabled(); // número incompleto
     await user.type(phone, "4567");
+    // Sin la declaración de mayoría de edad del titular sigue deshabilitado (2026-11-23).
+    expect(submit).toBeDisabled();
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: "Declaro ser mayor de 18 años y aceptar los términos como titular responsable de esta reserva",
+      }),
+    );
     expect(submit).toBeEnabled();
     expect(preBook).not.toHaveBeenCalled();
     await user.click(submit);
@@ -193,6 +200,7 @@ describe("Pre-reserva del folleto", () => {
       whatsapp: "+522281234567",
       whatsappCountry: "MX",
       numberPassengers: 1,
+      adultDeclarationAccepted: true,
       tourId: "t1",
     });
   });

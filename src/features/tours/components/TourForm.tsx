@@ -1,11 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch, FormProvider } from "react-hook-form";
+import { useForm, useWatch, FormProvider, type FieldErrors } from "react-hook-form";
 import { toast } from "sonner";
-import { Loader2, Save, AlertCircle } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Bus,
+  CalendarRange,
+  FileText,
+  Loader2,
+  Save,
+  Wallet,
+} from "lucide-react";
+import { Stepper, type StepperStep } from "@/components/ui/stepper";
 
 import { TOUR_FORM_COPY } from "../constants/copy";
 import { Button } from "@/components/ui/button";
@@ -33,15 +44,40 @@ import { TourAssetSection } from "./form-sections/TourAssetSection";
 import { TourFinanceSection } from "./form-sections/TourFinanceSection";
 import { TourInstructionsField } from "./form-sections/TourInstructionsField";
 import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { TourSummary } from "./form-sections/TourSummary";
+import {
+  TOUR_FORM_LAST_STEP,
+  TOUR_FORM_STEP_FIELDS,
+  TOUR_FORM_STEP_TITLES,
+  findFirstStepWithError,
+  hasPaymentMethodsIssue,
+} from "../utils/tour-form-steps.util";
 import { buildApiPublicFileUrl } from "@/shared/utils/share-links.util";
 
 interface TourFormProps {
   tour?: TourOutput;
 }
 
+/** Tiempo tras llegar al último paso en el que se ignora un envío (clic doble sobre "Siguiente"). */
+const SAVE_ARMING_DELAY_MS = 600;
+
+const STEP_ICONS = [CalendarRange, Bus, Wallet, FileText];
+const TOUR_FORM_STEPS: StepperStep[] = TOUR_FORM_STEP_TITLES.map((title, index) => ({
+  title,
+  icon: STEP_ICONS[index],
+}));
+
 export function TourForm({ tour }: TourFormProps) {
   const isEditing = !!tour;
   const router = useRouter();
+  // Wizard de 4 pasos sobre UN solo formulario: el paso solo decide qué sección se ve. Al editar
+  // todos los pasos están completos (los datos ya existen) y se puede saltar a cualquiera.
+  const [currentStep, setCurrentStep] = useState(0);
+  // Instante en que "Siguiente" llevó al último paso: un clic rezagado no debe guardar sin verlo.
+  const reachedLastStepAtRef = useRef(0);
+  const [completedSteps, setCompletedSteps] = useState<ReadonlySet<number>>(
+    () => new Set(isEditing ? [0, 1, 2, 3] : []),
+  );
 
   // La API sirve los archivos en `<origen>/public/...`, fuera del prefijo `/api`.
   const initialBrochureUrl = tour?.brochureUrl ? buildApiPublicFileUrl(tour.brochureUrl) : null;
@@ -69,8 +105,9 @@ export function TourForm({ tour }: TourFormProps) {
   // Regla de transferencia sin CLABE (OBS-038): solo cuando ya se conocen los datos de la agencia.
   const agencyHasClabe = agencyData ? Boolean(agencyData.clabeNumber?.trim()) : undefined;
 
+  const tourFormSchema = buildTourFormSchema(originalDepartureDate, { agencyHasClabe });
   const form = useForm<TourInput>({
-    resolver: zodResolver(buildTourFormSchema(originalDepartureDate, { agencyHasClabe })),
+    resolver: zodResolver(tourFormSchema),
     mode: "onChange",
     defaultValues: tour
       ? {
@@ -154,6 +191,47 @@ export function TourForm({ tour }: TourFormProps) {
     form.reset();
     setBrochureFile(null);
     setExistingBrochure(initialBrochureUrl);
+    if (!isEditing) {
+      setCurrentStep(0);
+      setCompletedSteps(new Set());
+    }
+  };
+
+  /**
+   * "Siguiente": valida SOLO los campos del paso actual (el error se ve en su campo y no se avanza).
+   * La regla de métodos de cobro es un error de raíz del schema: en el paso de finanzas se revisa
+   * aparte para mostrarla ahí y no al final.
+   */
+  const goToNextStep = async (): Promise<void> => {
+    let isStepValid = await form.trigger([...TOUR_FORM_STEP_FIELDS[currentStep]]);
+    if (currentStep === 2) {
+      const paymentIssue = hasPaymentMethodsIssue(tourFormSchema, form.getValues());
+      if (paymentIssue) {
+        form.setError("root.paymentMethods", { type: "custom", message: paymentIssue });
+        isStepValid = false;
+      } else {
+        form.clearErrors("root.paymentMethods");
+      }
+    }
+    if (!isStepValid) return;
+    setCompletedSteps((previous) => new Set(previous).add(currentStep));
+    if (currentStep + 1 >= TOUR_FORM_LAST_STEP) reachedLastStepAtRef.current = Date.now();
+    setCurrentStep((step) => Math.min(step + 1, TOUR_FORM_LAST_STEP));
+  };
+
+  const goToPreviousStep = (): void => setCurrentStep((step) => Math.max(step - 1, 0));
+
+  // Desde la barra: pasos ya completados (o, al editar, cualquiera) para corregir datos.
+  const isStepClickable = (index: number): boolean =>
+    isEditing || completedSteps.has(index) || index < currentStep;
+
+  /** Al guardar con errores (p. ej. se corrigió un paso anterior), lleva al primer paso afectado. */
+  const onInvalid = (errors: FieldErrors<TourInput>) => {
+    const step = findFirstStepWithError(errors);
+    if (step !== null) setCurrentStep(step);
+    toast.error("Revisa los datos del tour", {
+      description: "Hay campos por completar o corregir en el paso marcado.",
+    });
   };
 
   /**
@@ -223,63 +301,131 @@ export function TourForm({ tour }: TourFormProps) {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="px-6 pt-6 sm:px-8">
+      <CardContent className="space-y-6 px-6 pt-6 sm:px-8">
+        <Stepper
+          steps={TOUR_FORM_STEPS}
+          currentStep={currentStep}
+          completedSteps={completedSteps}
+          isStepClickable={isStepClickable}
+          onStepClick={setCurrentStep}
+        />
+
         <FormProvider {...form}>
-          <form id="tour-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <TourGeneralSection minDepartureDate={minDepartureDate} />
-            <TourBoardingSection />
-
-            <TourFinanceSection
-              isPricingFrozen={isPricingFrozen}
-              agency={agencyData}
-              agencyLoadFailed={agencyQuery.isError && !agencyData}
-              onRetryAgency={() => void agencyQuery.refetch()}
-              isRetryingAgency={agencyQuery.isFetching}
-            />
-            <TourInstructionsField />
-
-            <TourAssetSection
-              brochureFile={brochureFile}
-              setBrochureFile={setBrochureFile}
-              existingBrochure={existingBrochure}
-              setExistingBrochure={setExistingBrochure}
-              isProcessing={isProcessing}
-            />
+          <form
+            id="tour-form"
+            // Enter en un campo de un paso intermedio avanza (valida el paso), nunca guarda.
+            onSubmit={(event) => {
+              if (currentStep < TOUR_FORM_LAST_STEP) {
+                event.preventDefault();
+                void goToNextStep();
+                return;
+              }
+              // Un segundo clic rápido sobre "Siguiente" cae sobre "Guardar": no se envía.
+              if (Date.now() - reachedLastStepAtRef.current < SAVE_ARMING_DELAY_MS) {
+                event.preventDefault();
+                return;
+              }
+              // react-hook-form descarta los errores de raíz al enviar: la regla de métodos de
+              // cobro se revisa aquí para no guardar un tour sin forma de pago.
+              const paymentIssue = hasPaymentMethodsIssue(tourFormSchema, form.getValues());
+              if (paymentIssue) {
+                event.preventDefault();
+                form.setError("root.paymentMethods", { type: "custom", message: paymentIssue });
+                setCurrentStep(2);
+                toast.error("Revisa los métodos de cobro", { description: paymentIssue });
+                return;
+              }
+              void form.handleSubmit(onSubmit, onInvalid)(event);
+            }}
+            className="space-y-8"
+          >
+            {currentStep === 0 && <TourGeneralSection minDepartureDate={minDepartureDate} />}
+            {currentStep === 1 && <TourBoardingSection />}
+            {currentStep === 2 && (
+              <TourFinanceSection
+                isPricingFrozen={isPricingFrozen}
+                agency={agencyData}
+                agencyLoadFailed={agencyQuery.isError && !agencyData}
+                onRetryAgency={() => void agencyQuery.refetch()}
+                isRetryingAgency={agencyQuery.isFetching}
+              />
+            )}
+            {currentStep === 3 && (
+              <>
+                <TourInstructionsField />
+                <TourAssetSection
+                  brochureFile={brochureFile}
+                  setBrochureFile={setBrochureFile}
+                  existingBrochure={existingBrochure}
+                  setExistingBrochure={setExistingBrochure}
+                  isProcessing={isProcessing}
+                />
+                <TourSummary />
+              </>
+            )}
           </form>
         </FormProvider>
       </CardContent>
 
       <CardFooter className="flex flex-col-reverse justify-end gap-3 rounded-b-xl border-t border-slate-200 bg-slate-50/80 px-6 pt-5 pb-6 sm:flex-row sm:items-center sm:px-8">
-        {/* Explica por qué "Guardar" está deshabilitado (al editar, o cuando ya se capturó algo) */}
-        {!form.formState.isValid && (isEditing || form.formState.isDirty) && (
-          <p
-            role="status"
-            className="flex items-center gap-1.5 text-xs font-medium text-amber-700 sm:mr-auto"
+        {/* En el último paso explica por qué "Guardar" está deshabilitado. */}
+        {currentStep === TOUR_FORM_LAST_STEP &&
+          !form.formState.isValid &&
+          (isEditing || form.formState.isDirty) && (
+            <p
+              role="status"
+              className="flex items-center gap-1.5 text-xs font-medium text-amber-700 sm:mr-auto"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              Completa o corrige los campos marcados para poder guardar.
+            </p>
+          )}
+        {currentStep > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={goToPreviousStep}
+            disabled={isProcessing}
+            className="sm:mr-auto"
           >
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            Completa o corrige los campos marcados para poder guardar.
-          </p>
+            <ArrowLeft className="mr-1.5 h-4 w-4" /> Anterior
+          </Button>
         )}
         <Button type="button" variant="outline" onClick={handleReset} disabled={isProcessing}>
           {TOUR_FORM_COPY.actions.reset}
         </Button>
-        <Button
-          type="submit"
-          form="tour-form"
-          disabled={isProcessing || !form.formState.isValid}
-          className="flex h-11 min-w-[140px] items-center gap-2 rounded-xl bg-indigo-600 px-6 font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-[0.99] disabled:bg-slate-300 disabled:text-slate-500"
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Guardando...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4" />{" "}
-              {isEditing ? "Guardar Cambios" : TOUR_FORM_COPY.actions.submit}
-            </>
-          )}
-        </Button>
+        {currentStep < TOUR_FORM_LAST_STEP ? (
+          <Button
+            // `key` distinto del de "Guardar": React no reutiliza el mismo <button> cambiándole
+            // el `type`, así el clic que avanza nunca activa el envío nativo del formulario.
+            key="next-step"
+            type="button"
+            onClick={() => void goToNextStep()}
+            className="flex h-11 min-w-[140px] items-center gap-2 rounded-xl bg-indigo-600 px-6 font-semibold text-white shadow-sm hover:bg-indigo-700"
+          >
+            Siguiente <ArrowRight className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            key="save-tour"
+            type="submit"
+            form="tour-form"
+            // Solo mientras guarda: con un error en otro paso, el clic lleva a ese paso (onInvalid).
+            disabled={isProcessing}
+            className="flex h-11 min-w-[140px] items-center gap-2 rounded-xl bg-indigo-600 px-6 font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-[0.99] disabled:bg-slate-300 disabled:text-slate-500"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Guardando...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />{" "}
+                {isEditing ? "Guardar Cambios" : TOUR_FORM_COPY.actions.submit}
+              </>
+            )}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

@@ -38,6 +38,7 @@ async function fillAndSubmit(seats = 3) {
   const seatsInput = screen.getByLabelText("Cantidad de lugares");
   await user.clear(seatsInput);
   await user.type(seatsInput, String(seats));
+  await user.click(screen.getByRole("checkbox", { name: /Declaro ser mayor de 18 años/ }));
   await user.click(screen.getByRole("button", { name: "Enviar solicitud" }));
   return user;
 }

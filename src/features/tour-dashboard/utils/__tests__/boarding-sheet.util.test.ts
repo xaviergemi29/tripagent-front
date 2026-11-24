@@ -13,6 +13,7 @@ const passenger = (id: string, fullName: string, seatLabel: string | null, isTit
   emergencyContact: null,
   balance: 0,
   groupSize: 1,
+  isMinor: false,
 });
 
 const manifest: TourManifestOutput = {
@@ -20,6 +21,7 @@ const manifest: TourManifestOutput = {
   tourTitle: "Tour",
   departureDateTime: "2026-11-20",
   currency: "MXN",
+  hasMinors: false,
   boardingPoints: [
     {
       id: "a",

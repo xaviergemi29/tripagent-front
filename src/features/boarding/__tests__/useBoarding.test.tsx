@@ -24,6 +24,7 @@ const passenger = {
   boardingPointCode: null,
   rooms: [],
   boardedAt: null,
+  isMinor: false,
 };
 
 const setup = () => {
@@ -46,6 +47,7 @@ describe("useBoarding (marcas optimistas)", () => {
     const { queryClient, wrapper } = setup();
     const data: TourBoardingOutput = {
       canMarkBoarding: true,
+      hasMinors: false,
       temporalStatus: "EN CURSO",
       boardingPoints: [],
       passengers: [{ ...passenger, travelerId: "t-1" }],
@@ -78,6 +80,7 @@ describe("useBoarding (marcas optimistas)", () => {
     const { queryClient, wrapper } = setup();
     const data: StaffBoardingOutput = {
       canMarkBoarding: true,
+      hasMinors: false,
       temporalStatus: "EN CURSO",
       boardingPoints: [],
       passengers: [{ ...passenger, boardingKey: "clave-opaca-1234567890" }],

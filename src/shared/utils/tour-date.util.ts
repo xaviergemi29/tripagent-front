@@ -247,7 +247,18 @@ export const FUTURE_BIRTH_DATE_ERROR = "La fecha de nacimiento no puede ser futu
 export const PAST_DEPARTURE_ERROR = "La fecha de salida no puede ser anterior a hoy";
 
 /** Edad mínima de un adulto: debajo de ella se sugiere registrar como Niño (y al revés). */
-const ADULT_AGE = 18;
+export const ADULT_AGE = 18;
+
+/**
+ * ¿Quien nació en `birthDate` (`YYYY-MM-DD`) ya cumplió `years` años hoy en CDMX? Espejo de
+ * `hasReachedAge` de la API: compara como texto el cumpleaños número `years` con hoy.
+ */
+export const hasReachedAge = (birthDate: string, years: number, now: Date = new Date()): boolean =>
+  `${Number(birthDate.slice(0, 4)) + years}${birthDate.slice(4)}` <= getTodayInMexico(now);
+
+/** Un menor de 18 años nunca es titular de una reserva (mismo texto que la API, 2026-11-23). */
+export const MINOR_HOLDER_ERROR =
+  "El titular de la reserva debe ser mayor de edad (18 años o más). Registra a un adulto como titular y al menor como acompañante.";
 
 /**
  * Aviso (no bloquea) cuando la fecha de nacimiento no coincide con el tipo de pasajero: un

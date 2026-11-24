@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BedDouble, Check, Lock, MapPin, Search, Armchair } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { MinorBadge } from "@/components/shared/MinorTravelAlert";
 import { cn } from "@/lib/utils";
 import { formatPickupTime } from "@/shared/utils/tour-date.util";
 import type { BoardingListItem, BoardingPointOutput } from "../schemas/boarding.schema";
@@ -156,7 +157,10 @@ export function BoardingList({
                 )}
               >
                 <div className="min-w-0 flex-1 space-y-1">
-                  <p className="truncate text-base font-semibold text-slate-900">{item.fullName}</p>
+                  <p className="flex min-w-0 items-center gap-2 text-base font-semibold text-slate-900">
+                    <span className="truncate">{item.fullName}</span>
+                    {item.isMinor && <MinorBadge className="shrink-0" />}
+                  </p>
                   <p className="truncate text-xs text-slate-500">
                     {item.isTitular ? "Titular de la reserva" : `Titular: ${item.holderName}`}
                   </p>

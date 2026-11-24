@@ -24,6 +24,8 @@ export const manifestPassengerSchema = z.object({
     .catch(null),
   balance: z.coerce.number().nonnegative(),
   groupSize: z.number().int().positive().catch(1),
+  /** Niño o menor de 18 (lo calcula la API; la fecha no se imprime). */
+  isMinor: z.boolean().catch(false),
 });
 
 export const manifestBoardingPointSchema = z.object({
@@ -38,6 +40,8 @@ export const tourManifestOutputSchema = z.object({
   tourTitle: z.string(),
   departureDateTime: z.string(),
   currency: z.enum(CURRENCIES).catch(DEFAULT_CURRENCY),
+  /** Algún pasajero es menor: aviso del Art. 58, fr. X Ter, LGT. */
+  hasMinors: z.boolean().catch(false),
   boardingPoints: z.array(manifestBoardingPointSchema),
 });
 

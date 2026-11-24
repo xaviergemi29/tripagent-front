@@ -25,6 +25,8 @@ export interface PartialPaymentViewProps {
     method: string;
     reference?: string | null;
   }[];
+  /** Algún pasajero activo es Niño o menor de 18 (aviso del Art. 58, fr. X Ter, LGT). */
+  hasMinors?: boolean;
   passengers: {
     name: string;
     type: string;

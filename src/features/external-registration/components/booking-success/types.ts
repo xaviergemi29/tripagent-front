@@ -24,6 +24,8 @@ export interface BookingSuccessViewProps {
     acceptsCreditCard: boolean;
     acceptsCash: boolean;
     cashInstructions: string | null;
+    /** Algún pasajero activo es Niño o menor de 18 (aviso del Art. 58, fr. X Ter, LGT). */
+    hasMinors?: boolean;
   };
   tourInfo: { title: string; departureDateTime: string; currency?: Currency };
   titularName: string;

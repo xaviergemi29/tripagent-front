@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { StaffBoardingPanel } from "@/features/boarding/components/StaffBoardingPanel";
+import { MinorTravelAlert } from "@/components/shared/MinorTravelAlert";
 import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
 import { formatPickupTime } from "@/shared/utils/tour-date.util";
 import type { StaffShareOutput } from "../schemas/staff-share.schema";
@@ -164,6 +165,7 @@ export function StaffShareView({ data, token }: { data: StaffShareOutput; token:
 
   return (
     <div className="space-y-4">
+      {data.hasMinors && <MinorTravelAlert />}
       <div role="tablist" aria-label="Vista" className="flex gap-1 rounded-xl bg-slate-100 p-1">
         <button
           type="button"
@@ -190,6 +192,7 @@ export function StaffShareView({ data, token }: { data: StaffShareOutput; token:
           token={token}
           initialData={{
             canMarkBoarding: data.canMarkBoarding,
+            hasMinors: data.hasMinors,
             temporalStatus: data.tour.temporalStatus,
             boardingPoints: data.boardingPoints,
             passengers: data.passengers,

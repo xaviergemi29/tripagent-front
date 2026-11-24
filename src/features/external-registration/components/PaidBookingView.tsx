@@ -1,3 +1,4 @@
+import { MinorTravelAlert } from "@/components/shared/MinorTravelAlert";
 import type { ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
@@ -32,6 +33,7 @@ export function PaidBookingView({
   groupSize,
   paymentHistory = [],
   agencyLogoPath,
+  hasMinors = false,
 }: PaidBookingViewProps) {
   const currency = tourInfo.currency || DEFAULT_CURRENCY;
 
@@ -71,6 +73,8 @@ export function PaidBookingView({
       <p className="text-center text-sm text-slate-600">
         Revisa los detalles de cada viajero para abordar el día del viaje.
       </p>
+
+      {hasMinors && <MinorTravelAlert />}
 
       {/* Confirmación */}
       <section className="flex items-center gap-3.5 rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm">

@@ -4,11 +4,25 @@ import { toast } from "sonner";
 import { BookingInput, BookingOutput } from "../schemas/booking.schema";
 import { BOOKING_KEYS } from "@/shared/api/query-keys";
 
+/** Código con el que Fastify responde una validación de Zod fallida (400). */
+const VALIDATION_ERROR_CODE = "FST_ERR_VALIDATION";
+
 // ============================================================================
 // 1. CAPA DE RED (Axios API Client)
 // ============================================================================
 const createBookingApi = async (bookingData: BookingInput): Promise<BookingOutput> => {
   return apiClient.post<never, BookingOutput>(`/bookings/public/register`, bookingData);
+};
+
+/**
+ * Mensaje para el viajero. Un 400 de validación de la API trae los errores de Zod en inglés y con
+ * rutas internas (`body/mainClient/…`), que no sirven en pantalla: se sustituye por un aviso claro.
+ */
+export const describeRegisterError = (error: ApiError): string => {
+  if (error.code === VALIDATION_ERROR_CODE) {
+    return "Algún dato no cumple el formato esperado. Revisa tu información y la de tus acompañantes e inténtalo de nuevo.";
+  }
+  return error.message || "No se pudo guardar la información";
 };
 
 // ============================================================================
@@ -25,9 +39,7 @@ export const useCreateBooking = () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all });
     },
     onError: (error: ApiError) => {
-      toast.error("Error al crear la reserva", {
-        description: error.message || "No se pudo guardar la información",
-      });
+      toast.error("Error al crear la reserva", { description: describeRegisterError(error) });
     },
   });
 };

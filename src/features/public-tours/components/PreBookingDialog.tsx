@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
@@ -24,7 +25,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createPreBookingFormSchema, type PreBookingFormInput } from "../pre-booking.schema";
+import {
+  ADULT_DECLARATION_LABEL,
+  createPreBookingFormSchema,
+  type PreBookingFormInput,
+} from "../pre-booking.schema";
 import { usePreBooking } from "../hooks/usePreBooking";
 import { PhoneField } from "@/components/shared/PhoneField";
 import { SimplifiedPrivacyNotice } from "@/components/shared/SimplifiedPrivacyNotice";
@@ -72,6 +77,7 @@ export function PreBookingDialog({
     whatsapp: "",
     whatsappCountry: defaultPhoneCountry,
     numberPassengers: 1,
+    adultDeclarationAccepted: false,
   };
   const [outcome, setOutcome] = useState<DialogOutcome | null>(null);
   // Lugares que la API reportó al rechazar por cupo: el folleto de fondo se refresca, pero el tope
@@ -360,6 +366,33 @@ export function PreBookingDialog({
               </p>
             )}
           </div>
+
+          {/* Titular responsable y mayor de edad: un menor puede viajar, pero no apartar a su nombre. */}
+          <Controller
+            name="adultDeclarationAccepted"
+            control={control}
+            render={({ field, fieldState }) => (
+              <div className="space-y-1.5">
+                <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <Checkbox
+                    id="pre-booking-adult-declaration"
+                    checked={field.value === true}
+                    onCheckedChange={(checked) => field.onChange(checked === true)}
+                    disabled={isPending}
+                    aria-invalid={!!fieldState.error}
+                    className="mt-0.5"
+                  />
+                  <Label
+                    htmlFor="pre-booking-adult-declaration"
+                    className="text-sm leading-snug font-normal text-slate-700"
+                  >
+                    {ADULT_DECLARATION_LABEL}
+                  </Label>
+                </div>
+                {fieldState.error && <FieldError message={fieldState.error.message} />}
+              </div>
+            )}
+          />
 
           {generalError && (
             <div

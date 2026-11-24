@@ -19,6 +19,7 @@ const item = (overrides: Partial<BoardingListItem>): BoardingListItem => ({
   boardingPointCode: null,
   rooms: [],
   boardedAt: null,
+  isMinor: false,
   ...overrides,
 });
 

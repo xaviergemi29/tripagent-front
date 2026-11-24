@@ -3,7 +3,8 @@
 import { Controller, useFormContext, useFormState, useWatch } from "react-hook-form";
 import { useState, type ComponentProps } from "react";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
-import { AlertCircle, Info, Lock, Wallet } from "lucide-react";
+import { AlertCircle, AlertTriangle, Info, Lock, Wallet } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { NumericInput } from "@/components/shared/NumericInput";
@@ -172,26 +173,36 @@ export function TourFinanceSection({
                     {fieldState.error.message}
                   </p>
                 ) : (
-                  <div className="flex items-start gap-1.5 text-[11px] leading-tight">
-                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                    {Number(depositPerPerson) === 0 ? (
-                      <span className="text-slate-500">
-                        En <strong>{formatCurrency(0, { currency })}</strong> el cliente pagará el
-                        100% para asegurar lugares.
-                      </span>
-                    ) : (
+                  Number(depositPerPerson) > 0 && (
+                    <div className="flex items-start gap-1.5 text-[11px] leading-tight">
+                      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
                       <span className="font-medium text-indigo-600">
                         Pagará <strong>{formatCurrency(depositPerPerson, { currency })} hoy</strong>{" "}
                         y liquidará antes de salir.
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )
                 )}
               </div>
             </div>
           )}
         />
       </div>
+
+      {/* Anticipo $0: el cliente paga todo para asegurar su lugar. Antes era una línea gris de 11 px
+          que los operadores no leían; ahora es un aviso destacado debajo de los precios. */}
+      {Number(depositPerPerson) === 0 && (
+        <Alert className="border-sky-200 bg-sky-50 px-3.5 py-3 text-sky-950">
+          <Info className="text-sky-600" />
+          <AlertTitle className="font-semibold text-sky-950">Sin anticipo</AlertTitle>
+          <AlertDescription className="text-sky-900">
+            <p>
+              En <strong>{formatCurrency(0, { currency })}</strong> el cliente pagará el 100% para
+              asegurar lugares.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-3 pt-2">
         <Label className="font-semibold text-slate-700">Métodos de cobro habilitados</Label>
@@ -261,10 +272,16 @@ export function TourFinanceSection({
 
           {/* Tarjeta sin enlace de pago (2026-11-22): el Magic Link ofrece contactar a la agencia. */}
           {acceptsCreditCard && (
-            <p className="rounded-lg border border-slate-200 bg-white p-3 text-xs leading-relaxed text-slate-600">
-              Tus viajeros verán la opción de pagar con tarjeta y te escribirán por WhatsApp para
-              que les compartas cómo hacerlo.
-            </p>
+            <Alert className="border-amber-300 bg-amber-50 px-3.5 py-3 text-amber-950">
+              <AlertTriangle className="text-amber-600" />
+              <AlertTitle className="font-semibold text-amber-950">Pago con tarjeta</AlertTitle>
+              <AlertDescription className="text-amber-900">
+                <p>
+                  Tus viajeros verán la opción de pagar con tarjeta y te escribirán por WhatsApp
+                  para que les compartas cómo hacerlo.
+                </p>
+              </AlertDescription>
+            </Alert>
           )}
 
           {acceptsCash && (

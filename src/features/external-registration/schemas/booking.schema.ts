@@ -1,8 +1,11 @@
 import { z } from "zod";
 import {
+  ADULT_AGE,
   BIRTH_DATE_REQUIRED_ERROR,
   FUTURE_BIRTH_DATE_ERROR,
+  MINOR_HOLDER_ERROR,
   getTodayInMexico,
+  hasReachedAge,
 } from "@/shared/utils/tour-date.util";
 import { PASSENGER_TYPE, PASSENGER_TYPES } from "@/shared/constants/domain.constants";
 import { phoneCountrySchema, refinePhone } from "@/shared/schemas/phone.schema";
@@ -22,8 +25,17 @@ const isSameFullPhone = (
 // Teléfonos internacionales (2026-11-16): cada número se captura como número nacional + país
 // (PhoneField), se valida con `refinePhone` y se envía en E.164 con `toPublicRegisterInput`.
 const basePassengerSchema = z.object({
-  fullName: z.string().min(3, "El nombre completo es obligatorio").trim(),
-  emergencyContactName: z.string().min(3, "Nombre de emergencia requerido").trim(),
+  // `trim` antes de `min`/`max` (como la API): "   " o "Al " no pasan el front para fallar en la API.
+  fullName: z
+    .string()
+    .trim()
+    .min(3, "El nombre completo es obligatorio")
+    .max(255, "El nombre es demasiado largo"),
+  emergencyContactName: z
+    .string()
+    .trim()
+    .min(3, "Nombre de emergencia requerido")
+    .max(255, "El nombre es demasiado largo"),
   emergencyContactPhone: z.string().trim(),
   emergencyContactCountry: phoneCountrySchema,
   boardingPoint: z.string().min(1, "Debes seleccionar en qué punto subirás al autobús"),
@@ -47,6 +59,10 @@ export const mainClientSchema = basePassengerSchema
     email: z.email("Correo electrónico inválido").trim(),
   })
   .superRefine((data, ctx) => {
+    // Un menor de 18 años nunca es titular (decisión del usuario, 2026-11-23; la API también).
+    if (/^\d{4}-\d{2}-\d{2}$/.test(data.birthDate) && !hasReachedAge(data.birthDate, ADULT_AGE)) {
+      ctx.addIssue({ code: "custom", message: MINOR_HOLDER_ERROR, path: ["birthDate"] });
+    }
     refinePhone(
       ctx,
       data.whatsappPhone,

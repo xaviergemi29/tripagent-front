@@ -1,6 +1,7 @@
 "use client";
 
 import { useTourManifest } from "@/features/tour-dashboard/hooks/useTourManifest";
+import { MinorBadge, MinorTravelAlert } from "@/components/shared/MinorTravelAlert";
 import { useTourDashboardByTourId } from "@/features/tour-dashboard/hooks/useTourDashboard";
 import { useTourSeats } from "@/features/tour-dashboard/hooks/useTourSeats";
 import { ManifestSeatMap } from "@/features/tour-dashboard/components/manifest/ManifestSeatMap";
@@ -98,6 +99,8 @@ export default function ManifestPrintView({ params }: PageProps) {
         </p>
       )}
 
+      {manifest.hasMinors && <MinorTravelAlert className="mb-6 break-inside-avoid" />}
+
       {vehicle && <ManifestSeatTable sheet={sheet} />}
 
       {/* Clave con el índice: el schema da "sin-id" a un punto sin id y dos así se repetirían. */}
@@ -134,6 +137,7 @@ export default function ManifestPrintView({ params }: PageProps) {
                       >
                         {!p.isTitular && <span className="mr-2 text-slate-400">↳</span>}
                         {p.fullName}
+                        {p.isMinor && <MinorBadge className="ml-2 align-middle" />}
                       </span>
                       {p.emergencyContact && (
                         <span className="mt-1 text-[10px] font-semibold tracking-wider text-slate-600 uppercase">

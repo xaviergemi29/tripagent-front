@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TourRegistrationView } from "../TourRegistrationView";
 
-// Registro del grupo en el Magic Link: "Completar Registro" se habilita solo con el formulario
-// válido (incluida la casilla de políticas) y envía lo capturado, también con acompañante.
+// Registro del grupo en el Magic Link: "Completar Registro" solo envía con el formulario válido
+// (incluida la casilla de políticas) y envía lo capturado, también con acompañante.
 
 const createBooking = vi.fn<(body: Record<string, unknown>) => Promise<object>>(async () => ({}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
@@ -61,7 +61,6 @@ describe("Registro del Magic Link", () => {
     const user = userEvent.setup();
     renderView(1);
     const submit = screen.getByRole("button", { name: /Completar Registro/ });
-    expect(submit).toBeDisabled();
 
     await fillTitular(user);
     expect(submit).toBeEnabled();
@@ -92,7 +91,8 @@ describe("Registro del Magic Link", () => {
     expect(
       await screen.findByText("El contacto de emergencia debe ser un número distinto al tuyo"),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Completar Registro/ })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: /Completar Registro/ }));
+    expect(createBooking).not.toHaveBeenCalled();
   });
 
   it("con acompañante: envía al titular y al acompañante", async () => {
@@ -228,7 +228,8 @@ describe("Registro del Magic Link", () => {
     expect(
       await screen.findByText(/debe ser distinto al WhatsApp del acompañante.*Desmarca la casilla/),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Completar Registro/ })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: /Completar Registro/ }));
+    expect(createBooking).not.toHaveBeenCalled();
   });
 
   it("con la casilla marcada, el acompañante sigue los cambios posteriores del contacto del titular", async () => {

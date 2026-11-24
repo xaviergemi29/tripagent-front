@@ -30,6 +30,8 @@ const boardingPassengerBaseSchema = z.object({
   rooms: z.array(boardingRoomSchema).catch([]),
   /** ISO; `null` = aún no aborda. */
   boardedAt: z.string().nullable().catch(null),
+  /** Niño o menor de 18 (lo calcula la API). */
+  isMinor: z.boolean().catch(false),
 });
 
 export const tourBoardingPassengerSchema = boardingPassengerBaseSchema.extend({
@@ -43,6 +45,8 @@ export const staffBoardingPassengerSchema = boardingPassengerBaseSchema.extend({
 const boardingListBase = {
   /** Lo decide la API: tour PRÓXIMO o EN CURSO (y, en el enlace, agencia fuera de Solo Lectura). */
   canMarkBoarding: z.boolean().catch(false),
+  /** Algún pasajero es menor: aviso del Art. 58, fr. X Ter, LGT. */
+  hasMinors: z.boolean().catch(false),
   temporalStatus: z.string().catch(""),
   boardingPoints: z.array(boardingPointSchema).catch([]),
 };

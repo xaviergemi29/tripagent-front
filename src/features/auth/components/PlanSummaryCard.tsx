@@ -9,7 +9,7 @@ const PLAN_BENEFITS = [
   "Manifiesto de abordaje y contactos de emergencia en 1 clic",
 ];
 
-/** Resumen del plan: $0 MXN hoy y el precio mensual después de la prueba. */
+/** Resumen del plan: $999 MXN hoy y el precio mensual después de la prueba. */
 export function PlanSummaryCard() {
   return (
     <section className="space-y-5 rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm sm:p-8">
@@ -25,7 +25,7 @@ export function PlanSummaryCard() {
       <div>
         <p className="flex items-baseline gap-2">
           <span className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-            $0 MXN
+            $999 MXN
           </span>
           <span className="text-sm font-semibold text-slate-500">hoy</span>
         </p>

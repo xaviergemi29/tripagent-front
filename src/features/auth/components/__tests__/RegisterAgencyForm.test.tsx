@@ -101,9 +101,9 @@ describe("Registro de agencia (/registro)", () => {
     expect(screen.getByRole("button", { name: /Creando cuenta de agencia/ })).toBeDisabled();
   });
 
-  it("la página muestra el plan ($0 hoy, $999 al mes), las píldoras y los enlaces legales", () => {
+  it("la página muestra el plan ($999 hoy en la tarjeta, $999 al mes), las píldoras y los enlaces legales", () => {
     render(<RegisterAgencyPageContent plan="todo-incluido" />);
-    expect(screen.getByText("$0 MXN")).toBeInTheDocument();
+    expect(screen.getByText("$999 MXN")).toBeInTheDocument();
     expect(
       screen.getByText(
         /Después de 30 días: \$999 MXN\/mes\. Sin contratos ni cargos automáticos\./,

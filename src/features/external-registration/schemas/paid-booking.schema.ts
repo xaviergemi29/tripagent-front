@@ -16,6 +16,7 @@ export const paidPassengerOutputSchema = z.object({
   boardingPointDetails: z.object({ location: z.string(), time: z.string() }).nullable(),
   /** WhatsApp del pasajero (columna del estado de cuenta PDF). */
   phone: z.string().nullable().optional(),
+  isMinor: z.boolean().optional(),
 });
 
 export const paidBookingOutputSchema = z.object({
@@ -48,6 +49,8 @@ export const paidBookingOutputSchema = z.object({
     status: z.string(),
   }),
   passengers: z.array(paidPassengerOutputSchema),
+  /** Algún pasajero activo es Niño o menor de 18 (aviso del Art. 58, fr. X Ter, LGT). */
+  hasMinors: z.boolean().optional(),
   agency: z.object({
     name: z.string(),
     phone: z.string().nullable(),

@@ -2,6 +2,7 @@
 
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MinorTravelAlert } from "@/components/shared/MinorTravelAlert";
 import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
 import { useSetTourBoarding, useTourBoarding } from "../hooks/useBoarding";
 import { BoardingList } from "./BoardingList";
@@ -50,12 +51,15 @@ export function TourBoardingPanel({ tourId, readOnly }: TourBoardingPanelProps) 
         : "Tu cuenta está en modo solo lectura: puedes consultar la lista, pero no marcar el abordaje.";
 
   return (
-    <BoardingList
-      items={data.passengers.map((passenger) => ({ ...passenger, id: passenger.travelerId }))}
-      boardingPoints={data.boardingPoints}
-      temporalStatus={data.temporalStatus}
-      onToggle={canMark ? (id, boarded) => mutate({ id, boarded }) : undefined}
-      readOnlyMessage={readOnlyMessage}
-    />
+    <div className="space-y-3">
+      {data.hasMinors && <MinorTravelAlert />}
+      <BoardingList
+        items={data.passengers.map((passenger) => ({ ...passenger, id: passenger.travelerId }))}
+        boardingPoints={data.boardingPoints}
+        temporalStatus={data.temporalStatus}
+        onToggle={canMark ? (id, boarded) => mutate({ id, boarded }) : undefined}
+        readOnlyMessage={readOnlyMessage}
+      />
+    </div>
   );
 }

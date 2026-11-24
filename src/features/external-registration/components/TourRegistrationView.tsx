@@ -1,7 +1,8 @@
 "use client";
 
-import { useForm, FormProvider, useWatch, Controller } from "react-hook-form";
-import { getTodayInMexico } from "@/shared/utils/tour-date.util";
+import { useForm, FormProvider, useWatch, Controller, type FieldErrors } from "react-hook-form";
+import { ADULT_AGE, getTodayInMexico, hasReachedAge } from "@/shared/utils/tour-date.util";
+import { MinorTravelAlert } from "@/components/shared/MinorTravelAlert";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Edit2 } from "lucide-react";
 import { useState } from "react";
@@ -25,6 +26,9 @@ import { PoliciesCheckbox } from "./PoliciesCheckbox";
 import { PoliciesConsentModal } from "./PoliciesConsentModal";
 import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { isApiError } from "@/lib/api-error";
+import { FormFieldError, scrollToFirstFormError } from "./FormFieldError";
 import type { Currency } from "@/shared/constants/domain.constants";
 import { PhoneField } from "@/components/shared/PhoneField";
 import { SimplifiedPrivacyNotice } from "@/components/shared/SimplifiedPrivacyNotice";
@@ -117,6 +121,8 @@ export function TourRegistrationView({
   const methods = useForm<BookingInput>({
     resolver: zodResolver(bookingFormSchema),
     mode: "onChange",
+    // El foco y el scroll al primer error los resuelve `handleInvalidSubmit` (cubre acompañantes).
+    shouldFocusError: false,
     defaultValues: {
       token,
       mainClient: {
@@ -136,6 +142,28 @@ export function TourRegistrationView({
     },
   });
 
+  /**
+   * Revalida un campo ligado a otro (WhatsApp ↔ contacto de emergencia) solo si el viajero ya lo
+   * llenó o ya tiene error: validarlo vacío pintaría un error en un campo al que aún no llega.
+   */
+  const revalidateIfFilled = (...names: ("whatsappPhone" | "emergencyContactPhone")[]): void => {
+    const pending = names
+      .map((name) => `mainClient.${name}` as const)
+      .filter((path) => methods.getValues(path)?.trim() || methods.getFieldState(path).invalid);
+    if (pending.length > 0) void methods.trigger(pending);
+  };
+
+  // "Distinto al tuyo": al cambiar el WhatsApp se revalida el contacto de emergencia (si ya lo llenó).
+  const whatsappField = methods.register("mainClient.whatsappPhone");
+  const whatsappRegistration: typeof whatsappField = {
+    ...whatsappField,
+    onChange: async (event) => {
+      const result = await whatsappField.onChange(event);
+      revalidateIfFilled("emergencyContactPhone");
+      return result;
+    },
+  };
+
   const handlePhoneBlur = async (phoneValue: string): Promise<void> => {
     const phone = toE164(phoneValue, methods.getValues("mainClient.whatsappCountry"));
     if (!phone || isMainClientFound) return;
@@ -143,13 +171,22 @@ export function TourRegistrationView({
     setIsLookingUp(true);
     try {
       const traveler = await lookupTraveler(phone);
-      if (traveler) {
+      // Si el WhatsApp cambió mientras llegaba la respuesta, esos datos son de otro número.
+      const currentPhone = toE164(
+        methods.getValues("mainClient.whatsappPhone"),
+        methods.getValues("mainClient.whatsappCountry"),
+      );
+      if (traveler && currentPhone === phone) {
+        // Regla 3: lo guardado se respeta y solo se completa lo que falta. Un dato que el viajero
+        // ya escribió y que el registro previo no tiene se conserva (antes se pisaba con vacío).
         methods.setValue("mainClient.fullName", traveler.fullName, { shouldValidate: true });
-        methods.setValue("mainClient.email", traveler.email || "", { shouldValidate: true });
+        if (traveler.email) {
+          methods.setValue("mainClient.email", traveler.email, { shouldValidate: true });
+        }
         // La búsqueda pública no devuelve contactos de emergencia: el viajero los captura aquí.
-        methods.setValue("mainClient.birthDate", traveler.birthDate || "", {
-          shouldValidate: true,
-        });
+        if (traveler.birthDate) {
+          methods.setValue("mainClient.birthDate", traveler.birthDate, { shouldValidate: true });
+        }
         setSavedFields({ email: Boolean(traveler.email), birthDate: Boolean(traveler.birthDate) });
         setIsMainClientFound(true);
       }
@@ -173,14 +210,34 @@ export function TourRegistrationView({
   };
 
   const onSubmit = async (formData: BookingInput): Promise<void> => {
+    // Enter dentro del formulario también envía: sin esto, un doble envío daba un 409 falso.
+    if (isPending) return;
     try {
       // Los teléfonos viajan en E.164 con su país.
       await createBooking(toPublicRegisterInput(formData));
       router.refresh();
     } catch (error) {
-      console.error("Error procesando registro:", error);
+      // El hook ya mostró el aviso. Un 409 es que la reserva ya cambió de estado (p. ej. se registró
+      // desde otra pestaña): se recarga para mostrar la vista que corresponde.
+      if (isApiError(error) && error.status === 409) router.refresh();
     }
   };
+
+  /** Envío con errores: dice dónde están (titular, acompañante N) y lleva al primero. */
+  const handleInvalidSubmit = (errors: FieldErrors<BookingInput>): void => {
+    const pending: string[] = [];
+    if (errors.mainClient) pending.push("Titular");
+    errors.companions?.forEach?.((companionErrors, index) => {
+      if (companionErrors) pending.push(`Acompañante ${index + 1}`);
+    });
+    if (errors.privacyNoticeAccepted) pending.push("Aviso de privacidad");
+    toast.error("Revisa los campos marcados en rojo", {
+      description: pending.length > 0 ? `Pendiente en: ${pending.join(", ")}.` : undefined,
+    });
+    scrollToFirstFormError();
+  };
+
+  const submitForm = methods.handleSubmit(onSubmit, handleInvalidSubmit);
 
   const whatsappCountry = useWatch({
     control: methods.control,
@@ -197,12 +254,22 @@ export function TourRegistrationView({
     if (!methods.getValues("mainClient.emergencyContactPhone")) {
       methods.setValue("mainClient.emergencyContactCountry", country, { shouldDirty: true });
     }
-    void methods.trigger("mainClient.whatsappPhone");
+    // El esquema compara el WhatsApp con el contacto de emergencia: se revalidan los dos.
+    revalidateIfFilled("whatsappPhone", "emergencyContactPhone");
   };
 
   const watchedCompanions = useWatch({ control: methods.control, name: "companions" }) || [];
   const hasCompanions = useWatch({ control: methods.control, name: "hasCompanions" });
   const currentPassengersCount = 1 + (hasCompanions ? watchedCompanions.length : 0);
+  // Aviso de menores (Art. 58, fr. X Ter, LGT): algún acompañante es Niño o menor de 18 por su fecha.
+  const hasMinorCompanion =
+    Boolean(hasCompanions) &&
+    watchedCompanions.some(
+      (companion) =>
+        companion?.passengerType === "CHILD" ||
+        (/^\d{4}-\d{2}-\d{2}$/.test(companion?.birthDate ?? "") &&
+          !hasReachedAge(companion.birthDate, ADULT_AGE)),
+    );
   const lockedSeats = tourInfo.reservedSeats || currentPassengersCount;
   const maxAllowedCompanions = tourInfo.reservedSeats ? tourInfo.reservedSeats - 1 : undefined;
 
@@ -233,7 +300,7 @@ export function TourRegistrationView({
     >
       <FormProvider {...methods}>
         <form
-          onSubmit={methods.handleSubmit(onSubmit)}
+          onSubmit={submitForm}
           className="space-y-6"
           noValidate={true}
           suppressHydrationWarning
@@ -286,7 +353,7 @@ export function TourRegistrationView({
               <PhoneField
                 autoComplete="tel-national"
                 id="titular-mainclient-whatsappphone"
-                registration={methods.register("mainClient.whatsappPhone")}
+                registration={whatsappRegistration}
                 country={whatsappCountry}
                 onCountryChange={handleWhatsappCountryChange}
                 onBlur={handlePhoneBlur}
@@ -301,9 +368,9 @@ export function TourRegistrationView({
                 }`}
               />
               {methods.formState.errors.mainClient?.whatsappPhone && (
-                <p className="text-xs text-red-500">
+                <FormFieldError>
                   {methods.formState.errors.mainClient.whatsappPhone.message}
-                </p>
+                </FormFieldError>
               )}
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -318,6 +385,7 @@ export function TourRegistrationView({
                   id="titular-mainclient-fullname"
                   autoComplete="name"
                   {...methods.register("mainClient.fullName")}
+                  readOnly={isMainClientFound}
                   placeholder="Nombre y Apellidos"
                   className={`h-11 text-base transition-colors sm:text-sm ${
                     isMainClientFound
@@ -325,6 +393,11 @@ export function TourRegistrationView({
                       : "bg-white"
                   }`}
                 />
+                {methods.formState.errors.mainClient?.fullName && (
+                  <FormFieldError>
+                    {methods.formState.errors.mainClient.fullName.message}
+                  </FormFieldError>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -347,6 +420,11 @@ export function TourRegistrationView({
                       : "bg-white"
                   }`}
                 />
+                {methods.formState.errors.mainClient?.email && (
+                  <FormFieldError>
+                    {methods.formState.errors.mainClient.email.message}
+                  </FormFieldError>
+                )}
               </div>
             </div>
 
@@ -374,9 +452,9 @@ export function TourRegistrationView({
                   }`}
                 />
                 {methods.formState.errors.mainClient?.birthDate && (
-                  <p className="text-xs text-red-500">
+                  <FormFieldError>
                     {methods.formState.errors.mainClient.birthDate.message}
-                  </p>
+                  </FormFieldError>
                 )}
               </div>
             </div>
@@ -410,9 +488,9 @@ export function TourRegistrationView({
                   className="h-11 text-base sm:text-sm"
                 />
                 {methods.formState.errors.mainClient?.emergencyContactName && (
-                  <p className="text-xs text-red-500">
+                  <FormFieldError>
                     {methods.formState.errors.mainClient.emergencyContactName.message}
-                  </p>
+                  </FormFieldError>
                 )}
               </div>
 
@@ -431,7 +509,7 @@ export function TourRegistrationView({
                     methods.setValue("mainClient.emergencyContactCountry", country, {
                       shouldDirty: true,
                     });
-                    void methods.trigger("mainClient.emergencyContactPhone");
+                    revalidateIfFilled("emergencyContactPhone");
                   }}
                   placeholder="Teléfono"
                   aria-label="Teléfono de Emergencia"
@@ -439,9 +517,9 @@ export function TourRegistrationView({
                   inputClassName="h-11 text-base sm:text-sm"
                 />
                 {methods.formState.errors.mainClient?.emergencyContactPhone && (
-                  <p className="text-xs text-red-500">
+                  <FormFieldError>
                     {methods.formState.errors.mainClient.emergencyContactPhone.message}
-                  </p>
+                  </FormFieldError>
                 )}
               </div>
             </div>
@@ -451,6 +529,8 @@ export function TourRegistrationView({
             boardingPoints={boardingPoints}
             maxAllowedCompanions={maxAllowedCompanions}
           />
+
+          {hasMinorCompanion && <MinorTravelAlert />}
 
           {/* Políticas y aviso de privacidad (LFPDPPP): casilla obligatoria (regla 19). El modal
               muestra las políticas de la agencia; "Aceptar y continuar" marca la casilla. */}
@@ -492,8 +572,7 @@ export function TourRegistrationView({
             currency={tourInfo.currency}
             travelersCount={lockedSeats}
             isSubmitting={isPending}
-            disabled={!methods.formState.isValid}
-            onSubmit={methods.handleSubmit(onSubmit)}
+            onSubmit={submitForm}
           />
         </form>
       </FormProvider>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { FormFieldError } from "./FormFieldError";
 import { formatPickupTime } from "@/shared/utils/tour-date.util";
 
 export interface PickupPoint {
@@ -94,7 +95,7 @@ export function PickupPointSelector({ points, value, onChange, error }: PickupPo
         })}
       </div>
 
-      {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+      {error && <FormFieldError className="font-medium">{error}</FormFieldError>}
     </div>
   );
 }

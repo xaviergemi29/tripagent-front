@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 
 import { PassengerTypeSwitch, type PassengerCategory } from "./PassengerTypeSwitch";
 import { PickupPointSelector } from "./PickupPointSelector";
+import { FormFieldError } from "./FormFieldError";
 import { usePublicTravelerLookup } from "../hooks/usePublicTravelerLookup";
 import { PASSENGER_TYPE } from "@/shared/constants/domain.constants";
 import { PhoneField } from "@/components/shared/PhoneField";
@@ -53,6 +54,7 @@ export function CompanionsManager({
     setValue,
     getValues,
     trigger,
+    getFieldState,
     formState: { errors },
   } = useFormContext<BookingInput>();
 
@@ -86,7 +88,9 @@ export function CompanionsManager({
   useEffect(() => {
     const sync = (path: CompanionSyncPath, value: string): boolean => {
       if (getValues(path) === value) return false;
-      setValue(path, value, { shouldValidate: true });
+      // Copiar un contacto todavía vacío del titular no debe pintar errores en el acompañante (el
+      // viajero aún no llegó a ese campo): solo se valida con valor o si ya había un error.
+      setValue(path, value, { shouldValidate: value !== "" || getFieldState(path).invalid });
       return true;
     };
     fields.forEach((field, index) => {
@@ -117,6 +121,7 @@ export function CompanionsManager({
     mainEmergencyCountry,
     mainBoardingPoint,
     getValues,
+    getFieldState,
     setValue,
     trigger,
   ]);
@@ -178,7 +183,11 @@ export function CompanionsManager({
   ): void => {
     if (field === "whatsapp") {
       setValue(`companions.${index}.whatsappCountry`, country, { shouldDirty: true });
-      void trigger(`companions.${index}.whatsappPhone`);
+      // El esquema compara el WhatsApp con el contacto de emergencia: se revalidan los dos.
+      void trigger([
+        `companions.${index}.whatsappPhone`,
+        `companions.${index}.emergencyContactPhone`,
+      ]);
     } else {
       setValue(`companions.${index}.emergencyContactCountry`, country, { shouldDirty: true });
       void trigger(`companions.${index}.emergencyContactPhone`);
@@ -327,6 +336,15 @@ export function CompanionsManager({
                         if (val === PASSENGER_TYPE.CHILD) {
                           setValue(`companions.${index}.email`, "", { shouldValidate: true });
                         }
+                        // Las reglas dependen del tipo (WhatsApp, correo, mensaje del contacto de
+                        // emergencia): un error que ya no aplica no debe quedarse pegado. Solo se
+                        // revalidan los campos que ya tenían error; no se pintan errores nuevos.
+                        const stale = (
+                          ["whatsappPhone", "email", "emergencyContactPhone"] as const
+                        ).filter((name) => getFieldState(`companions.${index}.${name}`).invalid);
+                        if (stale.length > 0) {
+                          void trigger(stale.map((name) => `companions.${index}.${name}` as const));
+                        }
                       }}
                     />
                   )}
@@ -349,9 +367,7 @@ export function CompanionsManager({
                     className="h-11 bg-white text-base sm:text-sm"
                   />
                   {errors.companions?.[index]?.fullName && (
-                    <p className="text-xs text-red-500">
-                      {errors.companions[index]?.fullName?.message}
-                    </p>
+                    <FormFieldError>{errors.companions[index]?.fullName?.message}</FormFieldError>
                   )}
                 </div>
 
@@ -372,7 +388,9 @@ export function CompanionsManager({
                     </Label>
                     <PhoneField
                       id={`companion-${index}-whatsappphone`}
-                      registration={register(`companions.${index}.whatsappPhone`)}
+                      registration={register(`companions.${index}.whatsappPhone`, {
+                        deps: [`companions.${index}.emergencyContactPhone`],
+                      })}
                       country={currentCompanion.whatsappCountry ?? mainWhatsappCountry}
                       onCountryChange={(country) => setCompanionCountry(index, "whatsapp", country)}
                       placeholder="Número"
@@ -383,9 +401,9 @@ export function CompanionsManager({
                       onBlur={(value) => handleCompanionPhoneBlur(index, field.id, value)}
                     />
                     {errors.companions?.[index]?.whatsappPhone && (
-                      <p className="text-xs text-red-500">
+                      <FormFieldError>
                         {errors.companions?.[index]?.whatsappPhone?.message}
-                      </p>
+                      </FormFieldError>
                     )}
                   </div>
 
@@ -408,9 +426,9 @@ export function CompanionsManager({
                         className="h-11 bg-white text-base sm:text-sm"
                       />
                       {errors.companions?.[index]?.email && (
-                        <p className="text-xs text-red-500">
+                        <FormFieldError>
                           {errors.companions?.[index]?.email?.message}
-                        </p>
+                        </FormFieldError>
                       )}
                     </div>
                   )}
@@ -433,9 +451,9 @@ export function CompanionsManager({
                       className="w-max-full h-11 appearance-none bg-white text-base sm:text-sm"
                     />
                     {errors.companions?.[index]?.birthDate && (
-                      <p className="text-xs text-red-500">
+                      <FormFieldError>
                         {errors.companions[index]?.birthDate?.message}
-                      </p>
+                      </FormFieldError>
                     )}
                     {/* Aviso, no bloquea: la edad no coincide con Adulto / Niño (2026-11-17). */}
                     {getPassengerTypeAgeHint(
@@ -526,14 +544,16 @@ export function CompanionsManager({
                   </label>
 
                   {/* Con la casilla marcada los campos no se ven, pero pueden ser inválidos (p. ej.,
-                      el titular puso de emergencia al propio acompañante): el error debe verse. */}
+                      el titular puso de emergencia al propio acompañante): el error debe verse (si el titular ya lo capturó). */}
                   {isSameEmergency &&
                     !mainEmergencyHasErrors &&
+                    // Con el contacto del titular aún vacío, el aviso correcto es el del titular.
+                    Boolean(mainEmergencyName || mainEmergencyPhone) &&
                     (emergencyNameError || emergencyPhoneError) && (
-                      <p className="text-xs text-red-500">
+                      <FormFieldError>
                         {emergencyPhoneError ?? emergencyNameError} Desmarca la casilla para
                         capturar otro contacto.
-                      </p>
+                      </FormFieldError>
                     )}
 
                   {!isSameEmergency && (
@@ -545,9 +565,9 @@ export function CompanionsManager({
                           className="h-11 bg-white text-base sm:text-sm"
                         />
                         {errors.companions?.[index]?.emergencyContactName && (
-                          <p className="text-xs text-red-500">
+                          <FormFieldError>
                             {errors.companions?.[index]?.emergencyContactName.message}
-                          </p>
+                          </FormFieldError>
                         )}
                       </div>
                       <div className="space-y-1">
@@ -563,9 +583,9 @@ export function CompanionsManager({
                           inputClassName="h-11 bg-white text-base sm:text-sm"
                         />
                         {errors.companions?.[index]?.emergencyContactPhone && (
-                          <p className="text-xs text-red-500">
+                          <FormFieldError>
                             {errors.companions?.[index]?.emergencyContactPhone.message}
-                          </p>
+                          </FormFieldError>
                         )}
                       </div>
                     </div>

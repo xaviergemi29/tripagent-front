@@ -17,6 +17,7 @@ const items: BoardingListItem[] = [
       { hotelName: "Hotel Sierra", roomNumber: "102", roomType: "MATRIMONIAL", typeIndex: 1 },
     ],
     boardedAt: null,
+    isMinor: false,
   },
   {
     id: "t-2",
@@ -28,6 +29,7 @@ const items: BoardingListItem[] = [
     boardingPointCode: null,
     rooms: [],
     boardedAt: "2026-11-23T12:05:00.000Z",
+    isMinor: true,
   },
 ];
 const points = [{ code: "P1", location: "Plaza Xalapa", time: "06:00" }];
@@ -44,7 +46,7 @@ describe("BoardingList", () => {
     );
     expect(screen.getByText(/Abordados:/)).toHaveTextContent("Abordados: 1 de 2 pasajeros");
     expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "50");
-    const row = screen.getByText("Mariana Ruiz", { selector: "p" }).closest("li")!;
+    const row = screen.getByText("Mariana Ruiz", { selector: "span" }).closest("li")!;
     expect(within(row).getByText("Titular de la reserva")).toBeInTheDocument();
     expect(within(row).getByText(/P1 · Plaza Xalapa · 06:00 AM/)).toBeInTheDocument();
     expect(within(row).getByText("Asiento 4")).toBeInTheDocument();
@@ -70,7 +72,7 @@ describe("BoardingList", () => {
 
     await user.click(screen.getByRole("button", { name: "Abordados (1)" }));
     expect(screen.getByText("Diego Ruiz")).toBeInTheDocument();
-    expect(screen.queryByText("Mariana Ruiz", { selector: "p" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Mariana Ruiz", { selector: "span" })).not.toBeInTheDocument();
   });
 
   it("el botón grande marca y desmarca", async () => {
@@ -129,5 +131,20 @@ describe("BoardingList", () => {
       />,
     );
     expect(screen.getByText("¡Ya abordaron todos!")).toBeInTheDocument();
+  });
+
+  it("etiqueta 'Menor' en los pasajeros menores de edad", () => {
+    render(
+      <BoardingList
+        items={items}
+        boardingPoints={points}
+        temporalStatus="PRÓXIMO"
+        onToggle={vi.fn()}
+      />,
+    );
+    const diego = screen.getByText("Diego Ruiz").closest("li")!;
+    expect(within(diego).getByText("Menor")).toBeInTheDocument();
+    const mariana = screen.getByText("Mariana Ruiz", { selector: "span" }).closest("li")!;
+    expect(within(mariana).queryByText("Menor")).not.toBeInTheDocument();
   });
 });

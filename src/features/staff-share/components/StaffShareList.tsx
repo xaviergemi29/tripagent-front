@@ -1,3 +1,4 @@
+import { MinorBadge } from "@/components/shared/MinorTravelAlert";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatPickupTime } from "@/shared/utils/tour-date.util";
@@ -28,6 +29,7 @@ function PassengerCard({ row }: { row: StaffShareRow }) {
               Titular
             </Badge>
           )}
+          {passenger.isMinor && <MinorBadge />}
         </p>
         <p className="mt-0.5 text-xs text-slate-500">
           {STAFF_PASSENGER_TYPE_LABEL[passenger.passengerType]}

@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
-  allowedDevOrigins: ["192.168.1.87"],
+  allowedDevOrigins: ["192.168.1.66"],
   // Las páginas privadas no se guardan en la caché HTTP ni en la BFCache del navegador:
   // tras cerrar sesión, «Atrás» debe volver a pedirlas al servidor (y pasar por src/proxy.ts).
   async headers() {

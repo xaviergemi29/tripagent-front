@@ -1,6 +1,7 @@
 "use client";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { FormFieldError } from "./FormFieldError";
 
 export interface PoliciesCheckboxProps {
   checked: boolean;
@@ -60,7 +61,9 @@ export function PoliciesCheckbox({
           de {agencyName} para la organización de este viaje. *
         </label>
       </div>
-      {errorMessage && <p className="px-1 text-xs font-medium text-red-600">{errorMessage}</p>}
+      {errorMessage && (
+        <FormFieldError className="px-1 font-medium text-red-600">{errorMessage}</FormFieldError>
+      )}
     </div>
   );
 }

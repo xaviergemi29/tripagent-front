@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { TourForm } from "../TourForm";
@@ -20,7 +20,12 @@ describe("TourForm: modalidad de transporte", () => {
   it("al elegir 'Hiking' la sección pasa a punto de encuentro", async () => {
     const user = userEvent.setup();
     render(<TourForm />);
-    expect(screen.getByText("2. Puntos de Abordaje")).toBeInTheDocument();
+    // Paso 1 válido para llegar al Paso 2 (Transporte y Abordaje).
+    await user.type(screen.getByLabelText("Nombre del Tour"), "Cascadas de Cuetzalan");
+    fireEvent.change(screen.getByLabelText(/Fecha de Salida/), { target: { value: "2027-02-14" } });
+    await user.type(screen.getByLabelText(/Capacidad total del vehículo/), "20");
+    await user.click(screen.getByRole("button", { name: /Siguiente/ }));
+    expect(await screen.findByText("2. Puntos de Abordaje")).toBeInTheDocument();
 
     await user.click(screen.getByText("Hiking / Punto de encuentro"));
 

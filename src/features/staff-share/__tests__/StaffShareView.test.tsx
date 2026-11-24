@@ -84,4 +84,23 @@ describe("StaffShareView", () => {
     expect(screen.getByText(/Abordados:/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Faltan/ })).toHaveAttribute("aria-pressed", "true");
   });
+
+  it("con menores muestra el aviso legal arriba y la etiqueta 'Menor' en la lista", async () => {
+    const user = userEvent.setup();
+    const base = buildPayload();
+    const payload = buildPayload({
+      hasMinors: true,
+      passengers: base.passengers.map((passenger: Record<string, unknown>, index: number) => ({
+        ...passenger,
+        isMinor: index === 0,
+      })),
+    });
+    render(<StaffShareView data={staffShareOutputSchema.parse(payload)} token="tok" />);
+
+    expect(screen.getByRole("note", { name: "Reserva con menor de edad" })).toHaveTextContent(
+      "fracción X Ter",
+    );
+    await user.click(screen.getByRole("tab", { name: "Lista" }));
+    expect(screen.getAllByText("Menor")).toHaveLength(1);
+  });
 });

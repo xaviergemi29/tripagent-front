@@ -1,5 +1,6 @@
 "use client";
 
+import { MinorTravelAlert } from "@/components/shared/MinorTravelAlert";
 import { ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DEFAULT_CURRENCY, BOOKING_STATUS } from "@/shared/constants/domain.constants";
@@ -24,6 +25,7 @@ export function PartialPaymentView({
   paymentHistory = [],
   passengers = [],
   agency,
+  hasMinors = false,
 }: PartialPaymentViewProps) {
   const tourCurrency = tourInfo.currency || DEFAULT_CURRENCY;
   const totalCost = financials.totalAmount || 0;
@@ -71,6 +73,8 @@ export function PartialPaymentView({
           Aquí puedes ver tus pagos y la información de tu salida.
         </p>
       </div>
+
+      {hasMinors && <MinorTravelAlert />}
 
       <PaymentSummaryCard
         tourInfo={tourInfo}

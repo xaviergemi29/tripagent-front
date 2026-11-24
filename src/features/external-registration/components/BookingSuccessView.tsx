@@ -1,5 +1,6 @@
 "use client";
 
+import { MinorTravelAlert } from "@/components/shared/MinorTravelAlert";
 import { PublicBookingLayout } from "@/components/layout/public/PublicBookingLayout";
 import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
 import { ReservationConfirmedCard } from "./booking-success/ReservationConfirmedCard";
@@ -57,6 +58,7 @@ export function BookingSuccessView({
           passengers={normalizedPassengers}
           hasAdvancePayment={hasAdvancePayment}
         />
+        {booking.hasMinors && <MinorTravelAlert />}
 
         <PaymentOptionsCard
           booking={booking}
