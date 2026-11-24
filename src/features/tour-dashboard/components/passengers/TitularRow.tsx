@@ -8,7 +8,7 @@ import {
   type Currency,
   DEFAULT_CURRENCY,
 } from "@/shared/constants/domain.constants";
-import type { BookingWhatsAppBankDetails } from "@/shared/utils/booking-whatsapp.util";
+import type { BookingWhatsAppBankAccounts } from "@/shared/utils/booking-whatsapp.util";
 import { formatCurrency } from "@/shared/utils/currency.util";
 import {
   copyMagicLink,
@@ -33,7 +33,7 @@ interface TitularRowProps {
   tourCurrency?: Currency;
   tourTitle?: string;
   /** Datos de transferencia de la agencia para el mensaje de WhatsApp. */
-  bankDetails?: BookingWhatsAppBankDetails;
+  bankAccounts?: BookingWhatsAppBankAccounts;
   requiresSeats?: boolean;
   onRowClick: (id: string) => void;
   onAssignSeatClick: (passengerId: string) => void;
@@ -52,7 +52,7 @@ export function TitularRow({
   isAuditMode,
   tourCurrency,
   tourTitle = "",
-  bankDetails,
+  bankAccounts,
   requiresSeats,
   onRowClick,
   onAssignSeatClick,
@@ -199,7 +199,7 @@ export function TitularRow({
                 titular={titular}
                 tourTitle={tourTitle}
                 tourCurrency={tourCurrency || DEFAULT_CURRENCY}
-                bankDetails={bankDetails}
+                bankAccounts={bankAccounts}
               />
             )}
             {/* Magic Link permanente (registro y estado de cuenta) */}

@@ -3,14 +3,13 @@
 import { FormProvider, useForm, useFormState } from "react-hook-form";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Info } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAgency, useUpdateAgency } from "../hooks/useAgency";
 import { useSubscriptionAccess } from "../hooks/useSubscriptionAccess";
 import { AgencyInput, updateAgencyFormSchema } from "../schemas/agency.schema";
-import { AgencyBankDetailsForm } from "./agency/AgencyBankDetailsForm";
 import { AgencyPublicProfileForm } from "./agency/AgencyPublicProfileForm";
 import { SaveSettingsButton } from "./agency/SaveSettingsButton";
+import { AgencyBankAccountsSection } from "./bank-accounts/AgencyBankAccountsSection";
 import { parseStoredPhone, toE164 } from "@/shared/utils/phone.util";
 
 function AgencyTabSkeleton() {
@@ -35,10 +34,9 @@ function AgencyTabSkeleton() {
 }
 
 /**
- * Configuración → Agencia (`?tab=agency`): contenedor del formulario (`PATCH /agencies`).
- * Celular: tarjetas apiladas y botón de ancho completo; desde `lg`, dos columnas.
- * Las tarjetas (`agency/`) leen el formulario con `useFormContext`; el schema, el hook y el payload
- * son los mismos de siempre.
+ * Configuración → Agencia (`?tab=agency`): formulario del perfil público (`PATCH /agencies`) y, a su
+ * lado, la sección "Cuentas bancarias" con sus propias mutaciones (fuera del `<form>` del perfil:
+ * sus diálogos no deben enviarlo). Celular: tarjetas apiladas; desde `lg`, dos columnas.
  */
 export function AgencyTab() {
   const { canWrite } = useSubscriptionAccess();
@@ -65,7 +63,6 @@ export function AgencyTab() {
   // leer `form.formState` en el render queda memorizado y el botón no se actualizaba.
   const { isDirty, isValid } = useFormState({ control: form.control });
 
-  // El schema ya quitó espacios y guiones de la CLABE y la tarjeta (`stripAccountSeparators`).
   const onSubmit = async (formData: AgencyInput): Promise<void> => {
     try {
       // La API recibe el WhatsApp en E.164 con su país.
@@ -100,31 +97,20 @@ export function AgencyTab() {
   const isFormLocked = isFetching || isUpdating || isReadOnly;
 
   return (
-    <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-2 lg:items-start">
+      <FormProvider {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6">
           <AgencyPublicProfileForm disabled={isFormLocked} />
-          <AgencyBankDetailsForm disabled={isFormLocked} />
-        </div>
-
-        <div className="mt-5 flex flex-col gap-4 sm:mt-6 lg:flex-row-reverse lg:items-center">
-          {/* Deshabilitado sin cambios, con algún campo inválido (p. ej. la tarjeta incompleta) o
-              mientras carga o guarda. */}
-          <SaveSettingsButton
-            disabled={isFormLocked || !isDirty || !isValid}
-            isSaving={isUpdating}
-          />
-          {/* Solo lo que pasa de verdad: el Magic Link y el estado de cuenta PDF leen los datos
-              bancarios vigentes (el folleto público no los muestra). */}
-          <div className="flex flex-1 items-start gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden />
-            <p className="text-xs leading-relaxed text-indigo-900">
-              Cualquier actualización en los datos bancarios se refleja de inmediato en los enlaces
-              de reserva (Magic Link) y en los estados de cuenta PDF de tus clientes.
-            </p>
+          <div className="flex justify-end">
+            {/* Deshabilitado sin cambios, con algún campo inválido o mientras carga o guarda. */}
+            <SaveSettingsButton
+              disabled={isFormLocked || !isDirty || !isValid}
+              isSaving={isUpdating}
+            />
           </div>
-        </div>
-      </form>
-    </FormProvider>
+        </form>
+      </FormProvider>
+      <AgencyBankAccountsSection canWrite={canWrite} />
+    </div>
   );
 }

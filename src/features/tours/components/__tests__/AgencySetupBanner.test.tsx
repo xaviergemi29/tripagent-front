@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AgencySetupBanner } from "../AgencySetupBanner";
 
-/** Banner de `/tours` mientras la agencia no tenga CLABE (OBS-038, 2026-11-17). */
+/** Banner de `/tours` mientras la agencia no tenga cuentas bancarias (OBS-038, regla 22). */
 let agency: Record<string, unknown> | undefined;
 vi.mock("@/features/settings/hooks/useAgency", () => ({
   useAgency: () => ({ data: agency }),
@@ -13,8 +13,8 @@ describe("AgencySetupBanner", () => {
     agency = undefined;
   });
 
-  it("sin CLABE: invita a completar la agencia con enlace a Configuración", () => {
-    agency = { clabeNumber: null };
+  it("sin cuentas bancarias: invita a completar la agencia con enlace a Configuración", () => {
+    agency = { bankAccounts: [] };
     render(<AgencySetupBanner />);
 
     expect(screen.getByRole("status")).toHaveTextContent(
@@ -26,8 +26,17 @@ describe("AgencySetupBanner", () => {
     );
   });
 
-  it("con CLABE no se muestra", () => {
-    agency = { clabeNumber: "012180001234567891" };
+  it("con al menos una cuenta bancaria no se muestra", () => {
+    agency = {
+      bankAccounts: [
+        {
+          bankName: "BBVA",
+          accountHolder: "Bruji Tours SA",
+          clabeNumber: "012180001234567891",
+          cardNumber: null,
+        },
+      ],
+    };
     render(<AgencySetupBanner />);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });

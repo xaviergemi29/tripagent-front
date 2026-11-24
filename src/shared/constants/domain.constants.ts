@@ -202,6 +202,12 @@ export const TOUR_TEMPORAL_STATUS = {
 export const POLICIES_MAX_LENGTH = 5000;
 
 /**
+ * Máximo de cuentas bancarias por agencia (Configuración → Agencia). Espejo de
+ * `AGENCY_BANK_ACCOUNTS_MAX` en `tripagent-api/src/shared/constants/domain.constants.ts`.
+ */
+export const AGENCY_BANK_ACCOUNTS_MAX = 2;
+
+/**
  * Motivo de cancelación de un tour por la agencia (decisión del PM, 2026-11-14): lista fija. Espejo
  * de `TOUR_CANCELLATION_REASONS` en `tripagent-api/src/shared/constants/domain.constants.ts`. Las
  * etiquetas viven en `TOUR_CANCELLATION_REASON_DICT`.

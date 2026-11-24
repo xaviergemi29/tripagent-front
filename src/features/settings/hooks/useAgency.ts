@@ -1,13 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient, type ApiError } from "@/lib/api-client";
-import type {
-  AgencyInput,
-  AgencyOutput,
-  AgencyPoliciesInput,
-  BankAccountInput,
-  BankAccountOutput,
-} from "../schemas/agency.schema";
+import type { AgencyInput, AgencyOutput, AgencyPoliciesInput } from "../schemas/agency.schema";
 import { AGENCY_KEYS } from "@/shared/api/query-keys";
 
 // ============================================================================
@@ -25,10 +19,6 @@ const updateAgencyPoliciesApi = async (
   body: AgencyPoliciesInput,
 ): Promise<{ policies: string | null }> => {
   return apiClient.patch<never, { policies: string | null }>(`/agencies/policies`, body);
-};
-
-const updateBankAccountApi = async (body: BankAccountInput): Promise<BankAccountOutput> => {
-  return apiClient.patch<never, BankAccountOutput>(`/agencies/bank-account`, body);
 };
 
 // ============================================================================
@@ -77,31 +67,6 @@ export function useUpdateAgencyPolicies() {
     },
     onError: (error) => {
       toast.error("No se pudieron guardar las políticas", { description: error.message });
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: AGENCY_KEYS.all }),
-  });
-}
-
-/**
- * Guarda solo la cuenta para transferencias (banco, titular y CLABE) desde el formulario de tours
- * (OBS-038, 2026-11-17). Actualiza la caché de la agencia para que el formulario y el banner de
- * `/tours` reflejen la CLABE sin recargar.
- */
-export function useUpdateAgencyBankAccount() {
-  const queryClient = useQueryClient();
-
-  return useMutation<BankAccountOutput, ApiError, BankAccountInput>({
-    mutationFn: updateBankAccountApi,
-    onSuccess: (bankAccount) => {
-      queryClient.setQueryData<AgencyOutput>(AGENCY_KEYS.all, (agency) =>
-        agency ? { ...agency, ...bankAccount } : agency,
-      );
-      toast.success("Cuenta bancaria guardada", {
-        description: "Tus viajeros verán estos datos para transferir.",
-      });
-    },
-    onError: (error) => {
-      toast.error("No se pudo guardar la cuenta bancaria", { description: error.message });
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: AGENCY_KEYS.all }),
   });

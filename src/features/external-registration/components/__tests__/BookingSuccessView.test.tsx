@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { BookingSuccessView } from "../BookingSuccessView";
@@ -6,6 +6,19 @@ import { BookingSuccessView } from "../BookingSuccessView";
 const copy = vi.fn<(text: string) => Promise<boolean>>(async () => true);
 vi.mock("@/shared/utils/clipboard", () => ({ copyToClipboard: (t: string) => copy(t) }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+
+const BBVA = {
+  bankName: "BBVA",
+  accountHolder: "Viajes Xalapa SA",
+  clabeNumber: "012345678901234567",
+  cardNumber: "4152313412345678",
+};
+const SANTANDER = {
+  bankName: "Santander",
+  accountHolder: "Ana Torres",
+  clabeNumber: "014180655012345678",
+  cardNumber: null,
+};
 
 /** Payload de PENDING_PAYMENT (`GET /magic-tokens/:token/validate`). */
 const booking = (over: Record<string, unknown> = {}) => ({
@@ -17,10 +30,7 @@ const booking = (over: Record<string, unknown> = {}) => ({
   totalAmount: 3000,
   depositAmount: 500,
   acceptsBankTransfer: true,
-  bankName: "BBVA",
-  accountHolder: "Viajes Xalapa SA",
-  clabeNumber: "012345678901234567",
-  cardNumber: "4152313412345678",
+  bankAccounts: [BBVA],
   acceptsCreditCard: false,
   acceptsCash: false,
   cashInstructions: null,
@@ -47,33 +57,38 @@ describe("BookingSuccessView: métodos y opciones de pago", () => {
     await waitFor(() => expect(copy).toHaveBeenCalledWith("4152313412345678"));
   });
 
-  it("sin tarjeta no muestra la fila; solo con tarjeta sí muestra la transferencia", () => {
-    const { unmount } = renderView({ cardNumber: null });
+  it("una cuenta sin tarjeta no muestra la fila de tarjeta", () => {
+    renderView({ bankAccounts: [{ ...BBVA, cardNumber: null }] });
     expect(screen.getByText("CLABE Interbancaria")).toBeInTheDocument();
     expect(screen.queryByText("Número de Tarjeta")).not.toBeInTheDocument();
-    unmount();
-
-    renderView({ clabeNumber: null });
-    expect(screen.queryByText("CLABE Interbancaria")).not.toBeInTheDocument();
-    expect(screen.getByText("4152 3134 1234 5678")).toBeInTheDocument();
+    expect(screen.queryByText(/cualquiera de estas cuentas/)).not.toBeInTheDocument();
   });
 
-  it("transferencia sin CLABE: botón para pedir los datos por WhatsApp en lugar de un bloque vacío (OBS-038)", () => {
-    renderView({ clabeNumber: null, cardNumber: null });
+  it("dos cuentas: cada una en su bloque, en orden, con su propio botón de copiar", async () => {
+    renderView({ bankAccounts: [BBVA, SANTANDER] });
 
-    expect(screen.queryByText("CLABE Interbancaria")).not.toBeInTheDocument();
-    const link = screen.getByRole("link", {
-      name: "Contactar a la agencia por WhatsApp para pedir datos de transferencia",
-    });
-    expect(link.getAttribute("href")).toMatch(/^https:\/\/wa\.me\/522281234567\?text=/);
-    expect(decodeURIComponent(link.getAttribute("href") ?? "")).toContain("Cuetzalan");
-    // Ya no cae en el aviso genérico de "sin métodos de pago".
     expect(
-      screen.queryByText(/para recibir las instrucciones y opciones de pago/),
-    ).not.toBeInTheDocument();
+      screen.getByText("Puedes transferir a cualquiera de estas cuentas."),
+    ).toBeInTheDocument();
+    const first = screen.getByRole("listitem", { name: "Cuenta 1: BBVA" });
+    const second = screen.getByRole("listitem", { name: "Cuenta 2: Santander" });
+    expect(within(first).getByText("4152 3134 1234 5678")).toBeInTheDocument();
+    expect(within(second).getByText("014 180 65501234567 8")).toBeInTheDocument();
+    expect(within(second).queryByText("Número de Tarjeta")).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Copiar CLABE Interbancaria de la cuenta 2" }),
+    );
+    await waitFor(() => expect(copy).toHaveBeenCalledWith("014180655012345678"));
   });
 
-  it("con CLABE no muestra el botón de pedir datos", () => {
+  it("cuenta migrada sin banco ni titular: textos de respaldo, sin huecos", () => {
+    renderView({ bankAccounts: [{ ...SANTANDER, bankName: "", accountHolder: "" }] });
+    expect(screen.getByText("Banco sin capturar")).toBeInTheDocument();
+    expect(screen.getByText("Titular sin capturar")).toBeInTheDocument();
+  });
+
+  it("con cuentas no muestra el botón de pedir datos", () => {
     renderView();
     expect(
       screen.queryByRole("link", {

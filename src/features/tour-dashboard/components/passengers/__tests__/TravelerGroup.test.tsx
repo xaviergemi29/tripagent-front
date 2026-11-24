@@ -263,7 +263,12 @@ describe("TravelerGroup: Enviar por WhatsApp", () => {
     "aparece con %s y abre wa.me con el Magic Link",
     (bookingStatus) => {
       renderGroup(
-        { tourTitle: "Zacatlán", bankDetails: { clabeNumber: "012345678901234567" } },
+        {
+          tourTitle: "Zacatlán",
+          bankAccounts: [
+            { bankName: "BBVA", accountHolder: "", clabeNumber: "012345678901234567" },
+          ],
+        },
         titular({ bookingStatus, requiredDeposit: 3000, paidAmount: 1000 }),
       );
       const href = getLink().getAttribute("href") ?? "";

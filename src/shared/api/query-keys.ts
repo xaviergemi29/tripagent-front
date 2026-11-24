@@ -25,6 +25,11 @@ export const AGENCY_BRANDING_KEYS = {
   all: ["agency-branding"] as const,
 };
 
+/** `GET /agencies/bank-accounts` (Configuración → Agencia → Cuentas bancarias). */
+export const AGENCY_BANK_ACCOUNT_KEYS = {
+  all: ["agency-bank-accounts"] as const,
+};
+
 export const TOUR_KEYS = {
   all: ["tours"] as const,
   lists: (search?: string) => [...TOUR_KEYS.all, { search }] as const,

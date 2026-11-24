@@ -13,7 +13,7 @@ interface PaymentOptionsCardProps {
   hasAdvancePayment: boolean;
   amountDueToday: number;
   remainingBalance: number;
-  /** WhatsApp de la agencia: pedir los datos de transferencia si aún no tiene CLABE. */
+  /** WhatsApp de la agencia: pedir los datos de transferencia si aún no tiene cuentas. */
   agencyPhone: string;
   tourTitle: string;
 }
@@ -31,12 +31,11 @@ export function PaymentOptionsCard({
   agencyPhone,
   tourTitle,
 }: PaymentOptionsCardProps) {
-  const clabeNumber = booking.clabeNumber?.trim() || null;
-  const cardNumber = booking.cardNumber?.trim() || null;
-  const showBankTransfer = booking.acceptsBankTransfer && Boolean(clabeNumber || cardNumber);
-  // El tour acepta transferencia, pero la agencia aún no captura su CLABE (OBS-038, 2026-11-17): en
-  // lugar de un bloque en blanco, el cliente pide los datos por WhatsApp.
-  const needsTransferData = booking.acceptsBankTransfer && !clabeNumber;
+  const bankAccounts = (booking.bankAccounts ?? []).filter((account) => account.clabeNumber.trim());
+  const showBankTransfer = booking.acceptsBankTransfer && bankAccounts.length > 0;
+  // El tour acepta transferencia, pero la agencia no tiene cuentas (regla 22): en lugar de un bloque
+  // en blanco, el cliente pide los datos por WhatsApp.
+  const needsTransferData = booking.acceptsBankTransfer && bankAccounts.length === 0;
 
   // Solo se muestra la tarjeta de pagos si el tour acepta al menos un método con sus datos.
   const hasAnyPaymentMethod =
@@ -93,14 +92,7 @@ export function PaymentOptionsCard({
       {/* Contenedores Modulares de Pagos */}
       <div className="space-y-3">
         {/* OPCIÓN 1: TRANSFERENCIA BANCARIA */}
-        {showBankTransfer && (
-          <BankTransferDetails
-            bankName={booking.bankName}
-            accountHolder={booking.accountHolder}
-            clabeNumber={clabeNumber}
-            cardNumber={cardNumber}
-          />
-        )}
+        {showBankTransfer && <BankTransferDetails accounts={bankAccounts} />}
 
         {needsTransferData && (
           <div className="rounded-2xl border border-slate-200/90 bg-slate-50 p-4 transition-all">

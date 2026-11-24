@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { Settings, Info, Building2, ArrowRight } from "lucide-react";
+import type { PublicBankAccountOutput } from "@/shared/schemas/bank-account.schema";
+import {
+  formatAccountHolderForDisplay,
+  formatBankNameForDisplay,
+  formatClabeForDisplay,
+  maskCardNumber,
+} from "@/shared/utils/bank-account.util";
 
 interface AgencyBankDetailsBannerProps {
-  bankName?: string | null;
-  accountHolder?: string | null;
-  clabe?: string | null;
-  cardNumber?: string | null;
+  /** Cuentas de la agencia (Configuración → Agencia), en el orden en que las ve el viajero. */
+  bankAccounts: readonly PublicBankAccountOutput[];
   settingsUrl?: string;
   /** Abre el modal "Configurar cuenta ahora" (sin salir del formulario). Sin él, enlaza a Configuración. */
   onConfigure?: () => void;
@@ -15,19 +20,14 @@ interface AgencyBankDetailsBannerProps {
 }
 
 export function AgencyBankDetailsBanner({
-  bankName,
-  accountHolder,
-  clabe,
-  cardNumber,
+  bankAccounts,
   settingsUrl = "/settings",
   onConfigure,
   className = "",
 }: AgencyBankDetailsBannerProps) {
-  // Lo que el viajero necesita para transferir es la CLABE (OBS-038, 2026-11-17): sin ella se muestra
-  // la alerta aunque haya banco o titular. La tarjeta es opcional (decisión del PM, 2026-11-14): no
-  // cuenta como cuenta configurada y su recuadro solo aparece si la agencia la capturó.
-  const hasBankData = Boolean(clabe?.trim());
-  const card = cardNumber?.trim() || null;
+  // Regla 22: "tiene cuenta para transferencias" = al menos una cuenta (cada una trae su CLABE). La
+  // tarjeta es opcional y solo se muestra si la agencia la capturó.
+  const hasBankData = bankAccounts.length > 0;
 
   return (
     <div
@@ -59,43 +59,29 @@ export function AgencyBankDetailsBanner({
       </div>
 
       {hasBankData ? (
-        <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 sm:gap-4">
-          <div className="flex flex-col justify-center rounded-lg border border-slate-100 bg-white/90 p-3 shadow-sm">
-            <span className="mb-1 block text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-              Banco
-            </span>
-            <span className="text-sm font-bold text-slate-800">{bankName || "No registrado"}</span>
-          </div>
-
-          <div className="flex flex-col justify-center rounded-lg border border-slate-100 bg-white/90 p-3 shadow-sm">
-            <span className="mb-1 block text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-              Titular de la Cuenta
-            </span>
-            <span className="line-clamp-2 text-sm leading-tight font-bold text-slate-800">
-              {accountHolder || "No registrado"}
-            </span>
-          </div>
-
-          <div className="flex flex-col justify-center rounded-lg border border-slate-100 bg-white/90 p-3 shadow-sm">
-            <span className="mb-1 block text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-              CLABE Interbancaria
-            </span>
-            <span className="font-mono text-sm font-bold tracking-widest break-all text-slate-800">
-              {clabe || "No registrada"}
-            </span>
-          </div>
-
-          {card && (
-            <div className="flex flex-col justify-center rounded-lg border border-slate-100 bg-white/90 p-3 shadow-sm">
-              <span className="mb-1 block text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-                Número de Tarjeta
+        <ul className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 sm:gap-4">
+          {bankAccounts.map((account) => (
+            <li
+              key={account.clabeNumber}
+              className="flex flex-col gap-0.5 rounded-lg border border-slate-100 bg-white/90 p-3 shadow-sm"
+            >
+              <span className="text-sm font-bold text-slate-800">
+                {formatBankNameForDisplay(account.bankName)}
               </span>
-              <span className="font-mono text-sm font-bold tracking-widest break-all text-slate-800">
-                {card}
+              <span className="line-clamp-2 leading-tight text-slate-600">
+                {formatAccountHolderForDisplay(account.accountHolder)}
               </span>
-            </div>
-          )}
-        </div>
+              <span className="font-mono font-bold tracking-wide break-all text-slate-800">
+                CLABE {formatClabeForDisplay(account.clabeNumber)}
+              </span>
+              {account.cardNumber && (
+                <span className="font-mono text-slate-500">
+                  Tarjeta {maskCardNumber(account.cardNumber)}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
       ) : (
         <div
           role="status"

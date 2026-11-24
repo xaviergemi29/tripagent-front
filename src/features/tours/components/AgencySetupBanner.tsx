@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useAgency } from "@/features/settings/hooks/useAgency";
 
 /**
- * Aviso delgado en `/tours` mientras la agencia no tenga CLABE (OBS-038, decisión del PM,
+ * Aviso delgado en `/tours` mientras la agencia no tenga ninguna cuenta bancaria (OBS-038, decisión del PM,
  * 2026-11-17): no interrumpe al entrar (no es un modal al iniciar sesión) y recuerda el beneficio
- * de completar la agencia. Desaparece en cuanto se guarda la CLABE (Configuración → Agencia o el
+ * de completar la agencia. Desaparece en cuanto se agrega una cuenta (Configuración → Agencia o el
  * modal del formulario de tours). Mientras carga o si falla la consulta, no se muestra.
  */
 export function AgencySetupBanner() {
   const { data: agency } = useAgency();
-  if (!agency || agency.clabeNumber?.trim()) return null;
+  if (!agency || agency.bankAccounts.length > 0) return null;
 
   return (
     <div

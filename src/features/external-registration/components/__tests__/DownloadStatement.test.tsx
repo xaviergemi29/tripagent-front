@@ -77,10 +77,14 @@ const payload = (amountPaid: number) => ({
     phone: "2288492011",
     email: "hola@brujitours.mx",
     address: null,
-    bankName: "BBVA",
-    accountHolder: "Bruji Tours SA",
-    clabeNumber: "012180001234567891",
-    cardNumber: "4152313412345678",
+    bankAccounts: [
+      {
+        bankName: "BBVA",
+        accountHolder: "Bruji Tours SA",
+        clabeNumber: "012180001234567891",
+        cardNumber: "4152313412345678",
+      },
+    ],
     logoPath: "/uploads/logos/agency-1.png",
     primaryColor: "#059669",
     secondaryColor: "#047857",
@@ -139,11 +143,9 @@ describe("Descargar Estado de Cuenta en PDF (Magic Link)", () => {
     const data = generate.mock.calls[0]![0];
     expect(data.financials).toMatchObject({ paidAmount: 2000, balanceDue: 2000 });
     // Solo banco, titular y CLABE: el número de tarjeta nunca llega al PDF del cliente.
-    expect(data.agency.bankInfo).toEqual({
-      bankName: "BBVA",
-      accountHolder: "Bruji Tours SA",
-      clabe: "012180001234567891",
-    });
+    expect(data.agency.bankAccounts).toEqual([
+      { bankName: "BBVA", accountHolder: "Bruji Tours SA", clabe: "012180001234567891" },
+    ]);
     expect(data.agency.policies).toBe("El anticipo no es reembolsable.");
     expect(data.tour.postPaymentInstructions).toBe("Llevar botas de montaña.");
   });
@@ -158,13 +160,11 @@ describe("PartialPaymentView: Dónde hacer tus próximos pagos", () => {
     expect(screen.getByRole("button", { name: "Copiar Número de Tarjeta" })).toBeInTheDocument();
   });
 
-  it("solo con tarjeta (sin CLABE) también muestra la sección", () => {
+  it("sin cuentas bancarias no muestra la sección", () => {
     const data = payload(2500);
-    render(<PartialPaymentView {...data} agency={{ ...data.agency, clabeNumber: null }} />);
+    render(<PartialPaymentView {...data} agency={{ ...data.agency, bankAccounts: [] }} />);
 
-    expect(screen.getByText("Dónde hacer tus próximos pagos")).toBeInTheDocument();
-    expect(screen.queryByText("CLABE Interbancaria")).not.toBeInTheDocument();
-    expect(screen.getByText("4152 3134 1234 5678")).toBeInTheDocument();
+    expect(screen.queryByText("Dónde hacer tus próximos pagos")).not.toBeInTheDocument();
   });
 });
 

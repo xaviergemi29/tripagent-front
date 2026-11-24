@@ -21,7 +21,7 @@ interface TourFinanceSectionProps {
   /** Con pagos registrados, la moneda y el precio no se editan (regla 15; la API responde 409). */
   isPricingFrozen: boolean;
   /** Datos bancarios de la agencia (Configuración → Agencia) para el aviso de transferencia. */
-  agency?: Pick<AgencyOutput, "bankName" | "bankAccountHolder" | "clabeNumber" | "cardNumber">;
+  agency?: Pick<AgencyOutput, "bankAccounts">;
   /** La consulta de la agencia falló sin datos: no se afirma que "no hay cuentas configuradas". */
   agencyLoadFailed?: boolean;
   onRetryAgency?: () => void;
@@ -87,7 +87,7 @@ export function TourFinanceSection({
   // Misma condición que `buildTourFormSchema` (solo con los datos de la agencia ya cargados).
   const transferWithoutClabe =
     !!agency &&
-    !agency.clabeNumber?.trim() &&
+    agency.bankAccounts.length === 0 &&
     !!acceptsBankTransfer &&
     !acceptsCreditCard &&
     !acceptsCash;
@@ -260,11 +260,8 @@ export function TourFinanceSection({
           )}
           {acceptsBankTransfer && !agencyLoadFailed && (
             <AgencyBankDetailsBanner
-              bankName={agency?.bankName}
-              accountHolder={agency?.bankAccountHolder}
-              clabe={agency?.clabeNumber}
               // Dato de la agencia (Configuración → Agencia), no del tour.
-              cardNumber={agency?.cardNumber}
+              bankAccounts={agency?.bankAccounts ?? []}
               settingsUrl="/settings?tab=agency"
               onConfigure={() => setIsBankModalOpen(true)}
             />
@@ -312,14 +309,7 @@ export function TourFinanceSection({
           )}
         </div>
       )}
-      <BankAccountQuickModal
-        isOpen={isBankModalOpen}
-        onClose={() => setIsBankModalOpen(false)}
-        defaultValues={{
-          bankName: agency?.bankName ?? "",
-          bankAccountHolder: agency?.bankAccountHolder ?? "",
-        }}
-      />
+      <BankAccountQuickModal isOpen={isBankModalOpen} onClose={() => setIsBankModalOpen(false)} />
     </div>
   );
 }

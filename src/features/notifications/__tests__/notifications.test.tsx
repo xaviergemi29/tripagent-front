@@ -59,9 +59,16 @@ const routeGet = (notifications: () => unknown) => {
       return Promise.resolve({ isReadOnly: subscriptionReadOnly, status: "active" });
     if (url === "/agencies")
       return Promise.resolve({
-        bankName: "BBVA",
-        bankAccountHolder: "Viajes SA",
-        clabeNumber: "012180001234567897",
+        bankAccounts: [
+          {
+            id: "b1",
+            position: 1,
+            bankName: "BBVA",
+            accountHolder: "Viajes SA",
+            clabeNumber: "012180001234567897",
+            cardNumber: null,
+          },
+        ],
       });
     return Promise.reject({ status: 404, message: "no" });
   });

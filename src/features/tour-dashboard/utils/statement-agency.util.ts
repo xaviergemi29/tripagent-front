@@ -19,8 +19,9 @@ import { toast } from "sonner";
 
 /**
  * Datos de la agencia para el estado de cuenta PDF que descarga el operador desde el Centro de
- * Control (equivalente a `buildMagicLinkStatement` en el portal del cliente). Sin número de
- * tarjeta: el PDF solo lleva banco, titular y CLABE (decisión del PM, regla 16).
+ * Control (equivalente a `buildMagicLinkStatement` en el portal del cliente). Todas las cuentas de
+ * la agencia, sin número de tarjeta: el PDF solo lleva banco, titular y CLABE (decisión del PM,
+ * regla 16).
  */
 export function buildOperatorStatementAgency(
   agency: AgencyOutput | undefined,
@@ -34,14 +35,11 @@ export function buildOperatorStatementAgency(
     primaryColor: branding?.primaryColor ?? null,
     secondaryColor: branding?.secondaryColor ?? null,
     accentColor: branding?.accentColor ?? null,
-    bankInfo:
-      agency?.bankName || agency?.clabeNumber
-        ? {
-            bankName: agency.bankName ?? "",
-            accountHolder: agency.bankAccountHolder ?? "",
-            clabe: agency.clabeNumber ?? "",
-          }
-        : null,
+    bankAccounts: (agency?.bankAccounts ?? []).map((account) => ({
+      bankName: account.bankName,
+      accountHolder: account.accountHolder,
+      clabe: account.clabeNumber,
+    })),
     policies: agency?.policies ?? null,
   };
 }

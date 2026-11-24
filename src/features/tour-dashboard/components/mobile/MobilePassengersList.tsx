@@ -8,7 +8,7 @@ import {
   downloadOperatorStatement,
   type OperatorStatementDownloadContext,
 } from "@/features/tour-dashboard/utils/statement-agency.util";
-import type { BookingWhatsAppBankDetails } from "@/shared/utils/booking-whatsapp.util";
+import type { BookingWhatsAppBankAccounts } from "@/shared/utils/booking-whatsapp.util";
 import { SyncingBookingCard } from "@/features/tour-dashboard/components/passengers/PassengersSkeleton";
 import { BookingCard } from "./BookingCard";
 
@@ -24,7 +24,7 @@ interface MobilePassengersListProps {
   /** Datos del tour y la agencia para el estado de cuenta PDF (los mismos que en escritorio). */
   statementContext: OperatorStatementDownloadContext;
   /** Datos de transferencia de la agencia para "Enviar por WhatsApp" (sin tarjeta). */
-  bankDetails?: BookingWhatsAppBankDetails;
+  bankAccounts?: BookingWhatsAppBankAccounts;
   onAssignSeatClick: (passengerId: string) => void;
   onRowClick: (id: string) => void;
   /** Reserva a la que llevó una notificación (`?bookingId=`): su tarjeta se resalta. */
@@ -46,7 +46,7 @@ export function MobilePassengersList({
   requiresSeats,
   freeSeatsCount,
   statementContext,
-  bankDetails,
+  bankAccounts,
   onAssignSeatClick,
   onRowClick,
   highlightedBookingId = null,
@@ -66,7 +66,7 @@ export function MobilePassengersList({
               titular={titular}
               tourCurrency={tourCurrency}
               tourTitle={statementContext.tourTitle}
-              bankDetails={bankDetails}
+              bankAccounts={bankAccounts}
               requiresSeats={requiresSeats}
               onAssignSeatClick={onAssignSeatClick}
               onRowClick={onRowClick}

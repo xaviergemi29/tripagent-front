@@ -12,11 +12,13 @@ const statement = (overrides: Partial<StatementPDFData["financials"]> = {}): Sta
     whatsapp: "+522288492011",
     primaryColor: "#059669",
     secondaryColor: "#047857",
-    bankInfo: {
-      bankName: "BBVA México",
-      accountHolder: "Bruji Tours SA",
-      clabe: "012180001234567891",
-    },
+    bankAccounts: [
+      {
+        bankName: "BBVA México",
+        accountHolder: "Bruji Tours SA",
+        clabe: "012180001234567891",
+      },
+    ],
   },
   tour: {
     title: "Zacatlán de las Manzanas",
@@ -65,6 +67,16 @@ const statement = (overrides: Partial<StatementPDFData["financials"]> = {}): Sta
 
 /** Texto del PDF (jsPDF no comprime los streams por defecto). */
 const pdfText = (data: StatementPDFData) => createPaymentReceiptDocument(data).output();
+/** Altura (pt desde el borde inferior) del primer texto impreso que contiene `fragment`. */
+const printedY = (text: string, fragment: string): number => {
+  const lines = text.split("\n");
+  const index = lines.findIndex((line) => line.endsWith("Tj") && line.includes(fragment));
+  const position = lines
+    .slice(0, index)
+    .reverse()
+    .find((line) => line.endsWith(" Td"));
+  return Number(position?.split(" ")[1]);
+};
 /** ¿Algún texto impreso (operador Tj) contiene `fragment`? */
 const printed = (text: string, fragment: string) =>
   text.split("\n").some((line) => line.endsWith("Tj") && line.includes(fragment));
@@ -83,6 +95,64 @@ describe("Estado de Cuenta del Viajero (PDF)", () => {
     // Decisión del PM: el PDF del cliente no imprime el número de tarjeta (solo banco, titular y CLABE).
     expect(text).not.toContain("Número de Tarjeta");
     expect(text).not.toContain("Viaje 100% Liquidado");
+  });
+
+  it("una cuenta: banco, titular y CLABE sin 'Cuenta 1'", () => {
+    const text = pdfText(statement());
+    expect(printed(text, "BBVA M")).toBe(true);
+    expect(printed(text, "Bruji Tours SA")).toBe(true);
+    expect(text).not.toContain("Cuenta 1");
+  });
+
+  it("varias cuentas: todas en orden y numeradas, sin tarjeta; banco o titular vacíos con texto", () => {
+    const data = statement();
+    data.agency.bankAccounts = [
+      { bankName: "BBVA México", accountHolder: "Bruji Tours SA", clabe: "012180001234567891" },
+      { bankName: "", accountHolder: " ", clabe: "014180655012345678" },
+    ];
+    const text = pdfText(data);
+
+    expect(text.indexOf("Cuenta 1")).toBeGreaterThan(-1);
+    expect(text.indexOf("Cuenta 2")).toBeGreaterThan(text.indexOf("Cuenta 1"));
+    expect(text.indexOf("014 180 65501234567 8")).toBeGreaterThan(
+      text.indexOf("012 180 00123456789 1"),
+    );
+    expect(text).toContain("Banco sin capturar");
+    expect(text).toContain("Titular sin capturar");
+    expect(text).not.toContain("Número de Tarjeta");
+  });
+
+  it("cinco cuentas después de muchos abonos: el bloque pasa completo a otra página", () => {
+    const data = statement({
+      payments: buildStatementPayments(
+        Array.from({ length: 14 }, (_, i) => ({
+          id: `p${i}`,
+          date: `2026-11-${String(i + 1).padStart(2, "0")}T19:10:00Z`,
+          amount: 100,
+          method: "TRANSFER",
+          reference: `SPEI ${i}`,
+        })),
+      ),
+    });
+    data.agency.bankAccounts = [1, 2, 3, 4, 5].map((n) => ({
+      bankName: `Banco ${n}`,
+      accountHolder: "Bruji Tours SA",
+      clabe: `01218000123456789${n}`,
+    }));
+    // Cada página es un stream de contenido: el título y las cinco CLABE van en el mismo.
+    const pages = pdfText(data).split("endstream");
+    const closingPage = pages.find((page) => page.includes("Cuentas Bancarias Oficiales"));
+    expect(closingPage).toBeDefined();
+    for (const n of [1, 2, 3, 4, 5]) {
+      expect(closingPage).toContain(`012 180 00123456789 ${n}`);
+    }
+    expect(pages.indexOf(closingPage!)).toBeGreaterThan(0);
+    // El recuadro crece con las cuentas: la nota final queda debajo de la última y todo sobre el
+    // espacio del pie de página (20 mm ≈ 56.7 pt).
+    const lastClabeY = printedY(closingPage!, "012 180 00123456789 5");
+    const noteY = printedY(closingPage!, "tu comprobante");
+    expect(noteY).toBeLessThan(lastClabeY);
+    expect(noteY).toBeGreaterThan(56.7);
   });
 
   it("liquidado: insignias verdes, $0.00, sin límite ni banco y con mensaje cordial", () => {
@@ -173,7 +243,7 @@ describe("Estado de Cuenta del Viajero (PDF)", () => {
     const data = statement({ currency: "USD" });
     data.tour.totalPassengers = 4;
     data.tour.returnDate = null;
-    data.agency.bankInfo = null;
+    data.agency.bankAccounts = [];
     data.agency.primaryColor = "no-es-color";
 
     const text = pdfText(data);

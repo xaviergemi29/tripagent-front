@@ -94,6 +94,7 @@ describe("Pre-reserva del folleto", () => {
       <PreBookingDialog
         tourId="t1"
         tourTitle="Zacatlán de las manzanas con cascadas"
+        tourDepartureDate="2026-12-12"
         availableSeats={1}
         open
         onOpenChange={vi.fn()}
@@ -112,6 +113,7 @@ describe("Pre-reserva del folleto", () => {
       <PreBookingDialog
         tourId="t1"
         tourTitle="Huasteca"
+        tourDepartureDate="2026-12-12"
         availableSeats={10}
         open
         onOpenChange={vi.fn()}
@@ -127,6 +129,7 @@ describe("Pre-reserva del folleto", () => {
       <PreBookingDialog
         tourId="t1"
         tourTitle="Huasteca"
+        tourDepartureDate="2026-12-12"
         availableSeats={10}
         agencyName="Viajes Xalapa"
         agencyAddress="Av. Xalapa 100, Xalapa, Ver."
@@ -152,6 +155,7 @@ describe("Pre-reserva del folleto", () => {
       <PreBookingDialog
         tourId="t1"
         tourTitle="Huasteca"
+        tourDepartureDate="2026-12-12"
         availableSeats={10}
         open
         onOpenChange={vi.fn()}
@@ -169,6 +173,7 @@ describe("Pre-reserva del folleto", () => {
       <PreBookingDialog
         tourId="t1"
         tourTitle="Huasteca"
+        tourDepartureDate="2026-12-12"
         availableSeats={10}
         open
         onOpenChange={vi.fn()}

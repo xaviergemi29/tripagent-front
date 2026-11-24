@@ -39,7 +39,7 @@ vi.mock("../../hooks/useLodging", () => ({
   useRegisterLodgingRooms: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 vi.mock("@/features/settings/hooks/useAgency", () => ({
-  useAgency: () => ({ data: { name: "Viajes Xalapa", bankName: "BBVA", clabeNumber: "012" } }),
+  useAgency: () => ({ data: { name: "Viajes Xalapa", bankAccounts: [] } }),
 }));
 vi.mock("@/features/settings/hooks/useAgencyBranding", () => ({
   useAgencyBranding: () => ({ data: undefined }),

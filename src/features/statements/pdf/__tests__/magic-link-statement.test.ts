@@ -43,9 +43,10 @@ const source = (overrides: Partial<MagicLinkStatementSource> = {}): MagicLinkSta
     name: "Viajes Xalapa",
     phone: "2281112222",
     email: "hola@viajesxalapa.mx",
-    bankName: "BBVA",
-    accountHolder: "Viajes Xalapa SA",
-    clabeNumber: "012180001234567891",
+    bankAccounts: [
+      { bankName: "BBVA", accountHolder: "Viajes Xalapa SA", clabeNumber: "012180001234567891" },
+      { bankName: "Santander", accountHolder: "Ana Pérez", clabeNumber: "014180655012345678" },
+    ],
     logoPath: "/uploads/logos/agency-1.png",
     primaryColor: "#059669",
     secondaryColor: "#047857",
@@ -89,23 +90,22 @@ describe("buildMagicLinkStatement", () => {
     ]);
   });
 
-  it("datos bancarios sin número de tarjeta; logo servido desde /public", () => {
+  it("todas las cuentas en orden, sin número de tarjeta; logo servido desde /public", () => {
     const { agency } = buildMagicLinkStatement(source());
-    expect(agency.bankInfo).toEqual({
-      bankName: "BBVA",
-      accountHolder: "Viajes Xalapa SA",
-      clabe: "012180001234567891",
-    });
+    expect(agency.bankAccounts).toEqual([
+      { bankName: "BBVA", accountHolder: "Viajes Xalapa SA", clabe: "012180001234567891" },
+      { bankName: "Santander", accountHolder: "Ana Pérez", clabe: "014180655012345678" },
+    ]);
     expect(agency.logoUrl).toBe("http://localhost:3001/public/uploads/logos/agency-1.png");
     expect(agency.policies).toBe("Anticipo no reembolsable.");
   });
 
-  it("sin banco ni CLABE no hay bloque bancario; sin logo, null", () => {
+  it("sin cuentas (o sin el campo) no hay bloque bancario; sin logo, null", () => {
     const base = source();
     const { agency } = buildMagicLinkStatement(
-      source({ agency: { ...base.agency, bankName: null, clabeNumber: null, logoPath: null } }),
+      source({ agency: { ...base.agency, bankAccounts: undefined, logoPath: null } }),
     );
-    expect(agency.bankInfo).toBeNull();
+    expect(agency.bankAccounts).toEqual([]);
     expect(agency.logoUrl).toBeNull();
   });
 

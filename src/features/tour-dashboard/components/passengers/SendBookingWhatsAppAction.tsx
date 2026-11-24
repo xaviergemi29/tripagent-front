@@ -7,7 +7,7 @@ import type { TitularRowOutput } from "@/features/tour-dashboard/schemas/tour-da
 import { BOOKING_STATUS, type Currency } from "@/shared/constants/domain.constants";
 import {
   buildBookingWhatsAppUrl,
-  type BookingWhatsAppBankDetails,
+  type BookingWhatsAppBankAccounts,
 } from "@/shared/utils/booking-whatsapp.util";
 import { buildMagicLinkUrl } from "@/shared/utils/share-links.util";
 import { ROW_ACTION_TONE } from "./traveler-row-cells";
@@ -22,7 +22,7 @@ interface SendBookingWhatsAppActionProps {
   titular: TitularRowOutput;
   tourTitle: string;
   tourCurrency: Currency;
-  bankDetails?: BookingWhatsAppBankDetails;
+  bankAccounts?: BookingWhatsAppBankAccounts;
   /** Clases de tamaño según escritorio o celular. */
   className?: string;
 }
@@ -36,7 +36,7 @@ export function SendBookingWhatsAppAction({
   titular,
   tourTitle,
   tourCurrency,
-  bankDetails,
+  bankAccounts,
   className = "h-9 w-9",
 }: SendBookingWhatsAppActionProps) {
   const label = "Enviar por WhatsApp";
@@ -50,7 +50,7 @@ export function SendBookingWhatsAppAction({
         magicLinkUrl: buildMagicLinkUrl(titular.magicToken),
         requiredDeposit: Math.max(0, titular.requiredDeposit - titular.paidAmount),
         currency: tourCurrency,
-        bankDetails,
+        bankAccounts,
         // PENDING: el grupo ya se registró y solo falta el anticipo.
         isRegistered: titular.bookingStatus === BOOKING_STATUS.PENDING,
       })

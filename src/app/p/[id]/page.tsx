@@ -4,7 +4,6 @@ import { FileText, FileDown, Bus, Footprints } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  formatLocalDate,
   formatPickupTime,
   formatSpanishLongDate,
   getEarliestBoardingTime,
@@ -17,31 +16,16 @@ import { notFound } from "next/navigation";
 import { BrochureAvailability } from "@/features/public-tours/components/BrochureAvailability";
 import { BrochureCallToAction } from "@/features/public-tours/components/BrochureCallToAction";
 import { DEFAULT_CURRENCY } from "@/shared/constants/domain.constants";
+import { buildApiPublicFileUrl } from "@/shared/utils/share-links.util";
 import {
-  buildApiPublicFileUrl,
-  buildWhatsAppUrl,
-  toPhoneDigits,
-} from "@/shared/utils/share-links.util";
+  BROCHURE_UNAVAILABLE_LABEL,
+  buildBrochureWhatsAppUrl,
+  getBrochureBookingState,
+} from "@/features/public-tours/utils/brochure-whatsapp.util";
 import { getStoredPhoneCountry } from "@/shared/utils/phone.util";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { API_BASE_URL } from "@/lib/api-config";
 import { getForwardedClientIpHeaders } from "@/lib/forwarded-client-ip";
-
-/** Chat con un asesor para resolver dudas antes de reservar (CTA secundario). */
-function buildWhatsAppAdvisorUrl({
-  agencyPhone,
-  tourName,
-  departureDate,
-}: {
-  agencyPhone: string | null;
-  tourName: string;
-  departureDate: string;
-}) {
-  if (!toPhoneDigits(agencyPhone)) return null;
-
-  const message = `¡Hola! Vi el folleto digital de *${tourName}* (${departureDate}) y tengo algunas dudas antes de reservar.`;
-  return buildWhatsAppUrl(agencyPhone, { message });
-}
 
 // `cache`: `generateMetadata` y la página piden el mismo tour en una sola llamada a la API.
 const getPublicTour = cache(async (tourId: string): Promise<PublicTourOutput | null> => {
@@ -100,24 +84,25 @@ export default async function PublicTourLanding({ params }: PublicTourLanding) {
 
   const currency = tour.currency || DEFAULT_CURRENCY;
   const isHiking = tour.transportModality === "INDEPENDENT_ACCESS";
-  const formattedDepartureDate = formatLocalDate(tour.departureDateTime);
 
   // El folleto se sirve en <origen de la API>/public/… (sin /api), igual que en TourForm.
   const pdfUrl = tour.brochureUrl ? buildApiPublicFileUrl(tour.brochureUrl) : null;
 
-  const whatsappUrl = buildWhatsAppAdvisorUrl({
-    agencyPhone: tour.agency.phone,
-    tourName: tour.title,
-    departureDate: formattedDepartureDate,
-  });
-  const { isBookable, hasDeparted, acceptsOnlineBookings } = tour.availability;
+  const { isBookable } = tour.availability;
   // Decisión del PM: un tour que ya salió se ve "Finalizado" (no "Agotado") y no acepta reservas.
   // Agencia en Modo Solo Lectura (2026-11-18): "Reservas en pausa"; el WhatsApp sigue disponible.
-  const unavailableLabel = hasDeparted
-    ? "Finalizado"
-    : acceptsOnlineBookings === false
-      ? "Reservas en pausa"
-      : "Agotado";
+  // El mensaje de WhatsApp cambia con el mismo estado (reservar, lista de espera, próximas salidas o
+  // información para reservar).
+  const bookingState = getBrochureBookingState(tour.availability);
+  // Solo se muestra con `isBookable` falso; sin otro motivo, es "Agotado".
+  const unavailableLabel =
+    BROCHURE_UNAVAILABLE_LABEL[bookingState === "AVAILABLE" ? "SOLD_OUT" : bookingState];
+  const whatsappUrl = buildBrochureWhatsAppUrl({
+    agencyPhone: tour.agency.phone,
+    tourTitle: tour.title,
+    departureDate: tour.departureDateTime,
+    state: bookingState,
+  });
 
   // Hora más temprana sin reordenar la lista "Puntos de Abordaje", que conserva el orden capturado
   // por el operador (misma regla que el listado de /tours).
@@ -303,6 +288,7 @@ export default async function PublicTourLanding({ params }: PublicTourLanding) {
       <BrochureCallToAction
         tourId={tour.id}
         tourTitle={tour.title}
+        tourDepartureDate={tour.departureDateTime}
         whatsappUrl={whatsappUrl}
         agencyPhone={tour.agency.phone}
         agencyName={tour.agency.name}

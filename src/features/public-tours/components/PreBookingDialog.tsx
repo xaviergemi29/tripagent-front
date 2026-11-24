@@ -36,12 +36,15 @@ import { SimplifiedPrivacyNotice } from "@/components/shared/SimplifiedPrivacyNo
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { DEFAULT_PHONE_COUNTRY, toE164, type PhoneCountry } from "@/shared/utils/phone.util";
 import { buildWhatsAppUrl, toPhoneDigits } from "@/shared/utils/share-links.util";
+import { buildBrochureWhatsAppUrl } from "../utils/brochure-whatsapp.util";
 import { CONFLICT_CODE } from "@/shared/constants/domain.constants";
 import type { ApiError } from "@/lib/api-client";
 
 interface PreBookingDialogProps {
   tourId: string;
   tourTitle: string;
+  /** Salida `YYYY-MM-DD` (mensaje de WhatsApp de los avisos). */
+  tourDepartureDate: string;
   availableSeats: number;
   /** Teléfono de la agencia para el WhatsApp de los avisos (sin teléfono no se ofrece el botón). */
   agencyPhone?: string | null;
@@ -64,6 +67,7 @@ type DialogOutcome = "SUBMITTED" | "SOLD_OUT" | "CLOSED";
 export function PreBookingDialog({
   tourId,
   tourTitle,
+  tourDepartureDate,
   availableSeats,
   agencyPhone = null,
   agencyName = "La agencia",
@@ -184,11 +188,14 @@ export function PreBookingDialog({
 
     if (outcome === "SOLD_OUT" || outcome === "CLOSED") {
       const isSoldOut = outcome === "SOLD_OUT";
-      const whatsappUrl = agencyWhatsAppUrl(
-        isSoldOut
-          ? `¡Hola! Quise apartar lugar en *${tourTitle}* desde el folleto, pero se agotaron. ¿Me avisan si se libera alguno?`
-          : `¡Hola! Vi el folleto de *${tourTitle}* y me gustaría apartar lugar. ¿Me pueden ayudar?`,
-      );
+      // Mismo mensaje que el WhatsApp del folleto: lista de espera (agotado) o pedir información
+      // para reservar (ya no recibe solicitudes en línea).
+      const whatsappUrl = buildBrochureWhatsAppUrl({
+        agencyPhone,
+        tourTitle,
+        departureDate: tourDepartureDate,
+        state: isSoldOut ? "SOLD_OUT" : "PAUSED",
+      });
       return (
         <OutcomeView
           tone="neutral"

@@ -36,13 +36,7 @@ export function NotificationCenter() {
   const { canWrite } = useSubscriptionAccess();
   // La consulta de la agencia ya está en caché por el panel; sin ella el mensaje sale sin bloque bancario.
   const { data: agency } = useAgency();
-  const bankDetails = agency
-    ? {
-        bankName: agency.bankName,
-        bankAccountHolder: agency.bankAccountHolder,
-        clabeNumber: agency.clabeNumber,
-      }
-    : undefined;
+  const bankAccounts = agency?.bankAccounts;
 
   const items = data?.items ?? [];
   const unreadCount = data?.unreadCount ?? 0;
@@ -63,7 +57,7 @@ export function NotificationCenter() {
 
   // Sin escritura (Modo Solo Lectura, regla 20) no se ofrece el despacho del acceso.
   const getWhatsAppUrl = (notification: NotificationOutput): string | null =>
-    canWrite ? buildNotificationWhatsAppUrl(notification, bankDetails) : null;
+    canWrite ? buildNotificationWhatsAppUrl(notification, bankAccounts) : null;
 
   // El panel se deja abierto: el enlace se abre en otra pestaña y desmontar el <a> durante el
   // clic puede cancelar la navegación; además permite despachar varios avisos seguidos.

@@ -276,14 +276,6 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
     if (!agency) void agencyQuery.refetch();
     if (!branding) void brandingQuery.refetch();
   };
-  // Datos de transferencia para el mensaje de WhatsApp (sin tarjeta: decisión del PM).
-  const whatsappBankDetails = agency
-    ? {
-        bankName: agency.bankName,
-        bankAccountHolder: agency.bankAccountHolder,
-        clabeNumber: agency.clabeNumber,
-      }
-    : undefined;
   const statementContext = {
     agency: statementAgency,
     onAgencyMissing: retryStatementAgency,
@@ -358,7 +350,7 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
                     tourReturnDate={tour.returnDate ?? null}
                     tourPostPaymentInstructions={tour.postPaymentInstructions ?? null}
                     statementAgency={statementAgency}
-                    bankDetails={whatsappBankDetails}
+                    bankAccounts={agency?.bankAccounts}
                     onStatementAgencyMissing={retryStatementAgency}
                     travelers={tour.travelers}
                     cancelledTravelers={tour.cancelledTravelers}
@@ -480,7 +472,7 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
                 tourCurrency={tour.currency}
                 isAuditMode={isListReadOnly}
                 statementContext={statementContext}
-                bankDetails={whatsappBankDetails}
+                bankAccounts={agency?.bankAccounts}
                 onAssignSeatClick={handleAssignSeatIntent}
                 onRowClick={(id) => setSelectedTravelerId(id)}
                 highlightedBookingId={highlightedBookingId}

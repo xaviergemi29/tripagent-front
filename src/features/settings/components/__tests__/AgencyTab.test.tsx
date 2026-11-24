@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AgencyTab } from "../AgencyTab";
 
 // Cuenta operativa: estas pruebas no cubren el Modo Solo Lectura por suscripción
-// (ver SubscriptionReadOnly.test.tsx).
+// (ver SubscriptionReadOnly.test.tsx y AgencyBankAccountsSection.test.tsx).
 vi.mock("@/features/settings/hooks/useSubscriptionAccess", () => ({
   SUBSCRIPTION_SETTINGS_HREF: "/settings?tab=subscription",
   useSubscriptionAccess: () => ({
@@ -22,10 +22,7 @@ const agency = {
   phone: "2288492011",
   email: "hola@brujitours.mx",
   address: null,
-  bankName: "BBVA",
-  bankAccountHolder: "Bruji Tours SA",
-  clabeNumber: "012180001234567891",
-  cardNumber: "4111111111111111",
+  bankAccounts: [],
   logoPath: null,
   policies: null,
   subscriptionStatus: "trialing",
@@ -39,83 +36,31 @@ vi.mock("../../hooks/useAgency", () => ({
   useAgency: () => ({ data: agency, isLoading: false, isError: false }),
   useUpdateAgency: () => ({ mutateAsync: updateAgency, isPending: false }),
 }));
+vi.mock("../../hooks/useBankAccounts", () => ({
+  useBankAccounts: () => ({ data: [], isLoading: false, isError: false }),
+  useCreateBankAccount: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateBankAccount: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteBankAccount: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 
-describe("Configuración → Agencia: número de tarjeta opcional", () => {
-  it("borrar la tarjeta envía cardNumber vacío (la API lo guarda como null)", async () => {
-    const user = userEvent.setup();
-    render(<AgencyTab />);
-
-    expect(screen.getByLabelText(/Número de Tarjeta/)).toHaveAccessibleName(/opcional/);
-    await user.clear(screen.getByLabelText(/Número de Tarjeta/));
-    await user.click(screen.getByRole("button", { name: /Guardar/ }));
-
-    await waitFor(() => expect(updateAgency).toHaveBeenCalledTimes(1));
-    expect(updateAgency.mock.calls[0]).toEqual([
-      expect.objectContaining({ cardNumber: "", clabeNumber: "012180001234567891" }),
-    ]);
-  });
-
-  it("captura la tarjeta como en el ejemplo (con espacios) y la guarda solo con dígitos", async () => {
-    updateAgency.mockClear();
-    const user = userEvent.setup();
-    render(<AgencyTab />);
-
-    const card = screen.getByLabelText(/Número de Tarjeta/);
-    await user.clear(card);
-    await user.type(card, "4152 3134 1234 5678");
-    expect(card).toHaveValue("4152 3134 1234 5678"); // ya no se corta a 16 caracteres
-    await user.click(screen.getByRole("button", { name: /Guardar/ }));
-
-    await waitFor(() => expect(updateAgency).toHaveBeenCalledTimes(1));
-    expect(updateAgency.mock.calls[0]).toEqual([
-      expect.objectContaining({ cardNumber: "4152313412345678" }),
-    ]);
-  });
-
-  it("una CLABE pegada agrupada se guarda solo con dígitos", async () => {
-    updateAgency.mockClear();
-    const user = userEvent.setup();
-    render(<AgencyTab />);
-
-    const clabe = screen.getByLabelText(/CLABE Interbancaria/);
-    await user.clear(clabe);
-    await user.type(clabe, "012 180 00123456789 1");
-    await user.click(screen.getByRole("button", { name: /Guardar/ }));
-
-    await waitFor(() => expect(updateAgency).toHaveBeenCalledTimes(1));
-    expect(updateAgency.mock.calls[0]).toEqual([
-      expect.objectContaining({ clabeNumber: "012180001234567891" }),
-    ]);
-  });
-
-  it("una tarjeta incompleta muestra el error y no se envía", async () => {
-    updateAgency.mockClear();
-    const user = userEvent.setup();
-    render(<AgencyTab />);
-
-    const card = screen.getByLabelText(/Número de Tarjeta/);
-    await user.clear(card);
-    await user.type(card, "4152 3134");
-    await user.click(screen.getByRole("button", { name: /Guardar/ }));
-
-    expect(
-      await screen.findByText("La tarjeta debe contener exactamente 16 números"),
-    ).toBeInTheDocument();
-    expect(updateAgency).not.toHaveBeenCalled();
-  });
-
-  it("ya no captura el aviso de privacidad ni lo envía (la API conserva el valor guardado)", async () => {
+describe("Configuración → Agencia: perfil público", () => {
+  it("ya no captura datos bancarios ni el aviso de privacidad, y no los envía", async () => {
     updateAgency.mockClear();
     const user = userEvent.setup();
     render(<AgencyTab />);
 
     expect(screen.queryByLabelText(/aviso de privacidad/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/CLABE/i)).not.toBeInTheDocument();
     // Sin cambios "Guardar" está deshabilitado: se edita un campo para poder guardar.
     await user.type(screen.getByLabelText(/Nombre Comercial/), " MX");
     await user.click(screen.getByRole("button", { name: /Guardar/ }));
 
     await waitFor(() => expect(updateAgency).toHaveBeenCalledTimes(1));
-    expect((updateAgency.mock.calls[0] as unknown[])[0]).not.toHaveProperty("privacyNoticeUrl");
+    const body = (updateAgency.mock.calls[0] as unknown[])[0];
+    expect(body).toMatchObject({ name: "Bruji Tours MX", phone: "+522288492011" });
+    for (const field of ["privacyNoticeUrl", "bankAccounts", "clabeNumber", "cardNumber"]) {
+      expect(body).not.toHaveProperty(field);
+    }
   });
 });
 
@@ -127,42 +72,16 @@ describe("Configuración → Agencia: botón Guardar", () => {
     expect(saveButton()).toBeDisabled();
   });
 
-  it("con la tarjeta inválida se deshabilita y se vuelve a habilitar al corregirla", async () => {
+  it("con un campo inválido (teléfono, correo) se deshabilita", async () => {
     const user = userEvent.setup();
     render(<AgencyTab />);
-    const card = screen.getByLabelText(/Número de Tarjeta/);
-
-    await user.clear(card);
-    await user.type(card, "4152 3134");
-    expect(
-      await screen.findByText("La tarjeta debe contener exactamente 16 números"),
-    ).toBeInTheDocument();
-    expect(saveButton()).toBeDisabled();
-
-    await user.type(card, " 1234 5678");
-    await waitFor(() => expect(saveButton()).toBeEnabled());
-    expect(
-      screen.queryByText("La tarjeta debe contener exactamente 16 números"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("con cualquier otro campo inválido también se deshabilita (CLABE, teléfono, correo)", async () => {
-    const user = userEvent.setup();
-    render(<AgencyTab />);
-
-    await user.clear(screen.getByLabelText(/CLABE Interbancaria/));
-    await user.type(screen.getByLabelText(/CLABE Interbancaria/), "0121");
-    expect(await screen.findByText(/exactamente 18 números/)).toBeInTheDocument();
-    expect(saveButton()).toBeDisabled();
-    await user.clear(screen.getByLabelText(/CLABE Interbancaria/));
-    await user.type(screen.getByLabelText(/CLABE Interbancaria/), "012180001234567899");
-    await waitFor(() => expect(saveButton()).toBeEnabled());
 
     await user.clear(screen.getByLabelText(/WhatsApp Oficial/));
     await user.type(screen.getByLabelText(/WhatsApp Oficial/), "228");
     await waitFor(() => expect(saveButton()).toBeDisabled());
     await user.clear(screen.getByLabelText(/WhatsApp Oficial/));
-    await user.type(screen.getByLabelText(/WhatsApp Oficial/), "2288492011");
+    await user.type(screen.getByLabelText(/WhatsApp Oficial/), "2288492012");
+    await waitFor(() => expect(saveButton()).toBeEnabled());
 
     await user.clear(screen.getByLabelText(/Correo Electrónico/));
     await user.type(screen.getByLabelText(/Correo Electrónico/), "hola@");
@@ -171,20 +90,19 @@ describe("Configuración → Agencia: botón Guardar", () => {
 });
 
 describe("Configuración → Agencia: estructura responsive", () => {
-  it("dos tarjetas (Perfil Público y Datos Bancarios) con los textos de siempre y la nota", () => {
+  it("Perfil Público y Cuentas bancarias como tarjetas independientes", () => {
     render(<AgencyTab />);
 
     expect(screen.getByRole("heading", { name: "Perfil Público" })).toBeInTheDocument();
     expect(
       screen.getByText("Estos datos aparecerán en tus folletos digitales y mensajes de WhatsApp."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Datos Bancarios" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Cuentas bancarias" })).toBeInTheDocument();
     expect(screen.getByText("Transferencias SPEI")).toBeInTheDocument();
-    expect(screen.getByText("18 dígitos SPEI")).toBeInTheDocument();
-    // "+52" es solo visual: el campo conserva los 10 dígitos guardados.
-    expect(screen.getByText("+52")).toBeInTheDocument();
     expect(screen.getByLabelText(/WhatsApp Oficial/)).toHaveValue("2288492011");
     expect(screen.getByText(/se refleja de inmediato en los enlaces/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Guardar Configuración/ })).toHaveClass("w-full");
+    // La sección de cuentas no vive dentro del formulario del perfil (sus diálogos no lo envían).
+    expect(screen.getByRole("heading", { name: "Cuentas bancarias" }).closest("form")).toBeNull();
   });
 });

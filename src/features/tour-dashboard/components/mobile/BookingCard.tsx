@@ -21,7 +21,7 @@ import {
   FORM_STATUS,
   PAYMENT_STATUS,
 } from "@/shared/constants/domain.constants";
-import type { BookingWhatsAppBankDetails } from "@/shared/utils/booking-whatsapp.util";
+import type { BookingWhatsAppBankAccounts } from "@/shared/utils/booking-whatsapp.util";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   canSendBookingWhatsApp,
@@ -46,7 +46,7 @@ interface BookingCardProps {
   tourCurrency?: Currency;
   tourTitle?: string;
   /** Datos de transferencia de la agencia para el mensaje de WhatsApp. */
-  bankDetails?: BookingWhatsAppBankDetails;
+  bankAccounts?: BookingWhatsAppBankAccounts;
   requiresSeats?: boolean;
   onAssignSeatClick: (passengerId: string) => void;
   /** Modo Auditoría (tour finalizado, pausado o cancelado): sin acciones sobre asientos. */
@@ -84,7 +84,7 @@ export function BookingCard({
   titular,
   tourCurrency = DEFAULT_CURRENCY,
   tourTitle = "",
-  bankDetails,
+  bankAccounts,
   requiresSeats,
   onAssignSeatClick,
   isAuditMode = false,
@@ -409,7 +409,7 @@ export function BookingCard({
                 titular={titular}
                 tourTitle={tourTitle}
                 tourCurrency={tourCurrency}
-                bankDetails={bankDetails}
+                bankAccounts={bankAccounts}
               />
             </TooltipProvider>
           )}

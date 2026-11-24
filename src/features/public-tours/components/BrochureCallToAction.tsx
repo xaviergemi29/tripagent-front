@@ -10,6 +10,9 @@ import type { PhoneCountry } from "@/shared/utils/phone.util";
 interface BrochureCallToActionProps {
   tourId: string;
   tourTitle: string;
+  /** Salida `YYYY-MM-DD` (mensajes de WhatsApp del modal). */
+  tourDepartureDate: string;
+  /** WhatsApp a la agencia con el mensaje según el estado del tour (`buildBrochureWhatsAppUrl`). */
   whatsappUrl: string | null;
   /** Teléfono de la agencia: el modal arma su propio mensaje de WhatsApp si ya no hay lugares. */
   agencyPhone: string | null;
@@ -27,6 +30,7 @@ interface BrochureCallToActionProps {
 export function BrochureCallToAction({
   tourId,
   tourTitle,
+  tourDepartureDate,
   whatsappUrl,
   agencyPhone,
   agencyName,
@@ -70,6 +74,7 @@ export function BrochureCallToAction({
       <PreBookingDialog
         tourId={tourId}
         tourTitle={tourTitle}
+        tourDepartureDate={tourDepartureDate}
         availableSeats={availableSeats}
         agencyPhone={agencyPhone}
         agencyName={agencyName}

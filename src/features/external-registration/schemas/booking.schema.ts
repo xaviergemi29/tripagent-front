@@ -10,6 +10,7 @@ import {
 import { PASSENGER_TYPE, PASSENGER_TYPES } from "@/shared/constants/domain.constants";
 import { phoneCountrySchema, refinePhone } from "@/shared/schemas/phone.schema";
 import { toE164, type PhoneCountry } from "@/shared/utils/phone.util";
+import { publicBankAccountOutputSchema } from "@/shared/schemas/bank-account.schema";
 
 /** `true` si ambos números (nacional + país) son el mismo teléfono completo. */
 const isSameFullPhone = (
@@ -164,9 +165,8 @@ export const bookingOutputSchema = z.object({
   companionNames: z.array(z.string()).optional(),
   acceptsBankTransfer: z.boolean(),
   bankDetails: z.string().nullable(),
-  bankName: z.string().optional(),
-  clabeNumber: z.string().optional(),
-  accountHolder: z.string().optional(),
+  /** Cuentas de la agencia, en orden. */
+  bankAccounts: z.array(publicBankAccountOutputSchema).optional(),
   depositAmount: z.number().nullable().optional(),
   totalAmount: z.number().nonnegative().optional(),
   acceptsCreditCard: z.boolean(),

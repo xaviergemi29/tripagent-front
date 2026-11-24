@@ -4,12 +4,15 @@ import { formatCurrency } from "./currency.util";
 import { buildWhatsAppUrl } from "./share-links.util";
 import { toInternationalDigits } from "./phone.util";
 
-/** Datos de transferencia de la agencia que viajan en el mensaje (sin número de tarjeta, regla del PM). */
-export interface BookingWhatsAppBankDetails {
-  bankName?: string | null;
-  bankAccountHolder?: string | null;
-  clabeNumber?: string | null;
-}
+/**
+ * Cuentas de transferencia de la agencia que viajan en el mensaje, en orden (`bankAccounts` de
+ * `GET /agencies`). Sin número de tarjeta (regla del PM): se ignora aunque venga.
+ */
+export type BookingWhatsAppBankAccounts = readonly {
+  bankName: string;
+  accountHolder: string;
+  clabeNumber: string;
+}[];
 
 export interface BookingWhatsAppParams {
   /** WhatsApp del titular tal como está guardado (E.164 o los 10 dígitos de un registro anterior). */
@@ -21,7 +24,7 @@ export interface BookingWhatsAppParams {
   /** Anticipo por cubrir; con 0 o un valor no positivo se omite la línea. */
   requiredDeposit: number;
   currency: Currency;
-  bankDetails?: BookingWhatsAppBankDetails;
+  bankAccounts?: BookingWhatsAppBankAccounts;
   /**
    * El grupo ya completó su registro en el Magic Link (reserva `PENDING`): el mensaje se enfoca en
    * el pago y el portal se ofrece como estado de cuenta. Por defecto, mensaje de registro.
@@ -32,8 +35,8 @@ export interface BookingWhatsAppParams {
 const clean = (value?: string | null): string => (value ?? "").trim();
 
 /**
- * @description Mensaje de WhatsApp del operador al titular: saludo, Magic Link, anticipo y, si hay
- * CLABE, datos de transferencia. Omite cualquier línea cuyo valor falte. Con `isRegistered`
+ * @description Mensaje de WhatsApp del operador al titular: saludo, Magic Link, anticipo y, si la
+ * agencia tiene cuentas, los datos de transferencia de todas (numeradas si hay más de una). Omite cualquier línea cuyo valor falte. Con `isRegistered`
  * (reserva `PENDING`) se enfoca en el pago en lugar del registro.
  */
 export function buildBookingWhatsAppMessage({
@@ -42,7 +45,7 @@ export function buildBookingWhatsAppMessage({
   magicLinkUrl,
   requiredDeposit,
   currency,
-  bankDetails,
+  bankAccounts = [],
   isRegistered = false,
 }: Omit<BookingWhatsAppParams, "phone">): string {
   const hasDeposit = Number.isFinite(requiredDeposit) && requiredDeposit > 0;
@@ -66,14 +69,22 @@ export function buildBookingWhatsAppMessage({
         ...(hasDeposit ? ["", `Para asegurar tus lugares, el anticipo es de ${deposit}.`] : []),
       ];
 
-  const clabe = clean(bankDetails?.clabeNumber);
-  if (clabe) {
-    const bank = clean(bankDetails?.bankName);
-    const holder = clean(bankDetails?.bankAccountHolder);
-    lines.push("", "Datos para transferencia:");
-    if (bank) lines.push(`Banco: ${bank}`);
-    if (holder) lines.push(`Titular: ${holder}`);
-    lines.push(`CLABE: ${formatClabeForDisplay(clabe)}`);
+  const accounts = bankAccounts.filter((account) => clean(account.clabeNumber));
+  if (accounts.length > 0) {
+    lines.push(
+      "",
+      accounts.length > 1
+        ? "Puedes transferir a cualquiera de estas cuentas:"
+        : "Datos para transferencia:",
+    );
+    accounts.forEach((account, index) => {
+      const bank = clean(account.bankName);
+      const holder = clean(account.accountHolder);
+      if (accounts.length > 1) lines.push(...(index > 0 ? [""] : []), `Cuenta ${index + 1}:`);
+      if (bank) lines.push(`Banco: ${bank}`);
+      if (holder) lines.push(`Titular: ${holder}`);
+      lines.push(`CLABE: ${formatClabeForDisplay(account.clabeNumber)}`);
+    });
   }
 
   if (isRegistered)

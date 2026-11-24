@@ -15,7 +15,11 @@ import {
   formatSpanishLongDate,
 } from "@/shared/utils/tour-date.util";
 import { formatPhoneForDisplay, toPhoneDigits } from "@/shared/utils/share-links.util";
-import { formatClabeForDisplay } from "@/shared/utils/bank-account.util";
+import {
+  formatAccountHolderForDisplay,
+  formatBankNameForDisplay,
+  formatClabeForDisplay,
+} from "@/shared/utils/bank-account.util";
 import {
   getPaymentMethodText,
   PASSENGER_ROLE_DICT,
@@ -62,14 +66,15 @@ export interface StatementPDFData {
     /** Acento (marcas de sección, línea del cierre). Nulo → secundario. */
     accentColor?: string | null;
     /**
-     * Solo cuentas para depósito SPEI. El número de tarjeta NO se imprime (decisión del PM,
-     * 2026-11-13: el PDF lo descarga y reenvía el cliente).
+     * Cuentas para depósito SPEI, en el orden de la agencia ("Cuentas Bancarias Oficiales"). El
+     * número de tarjeta NO se imprime (decisión del PM, 2026-11-13: el PDF lo descarga y reenvía el
+     * cliente). Banco o titular vacíos (cuentas migradas) → "Banco/Titular sin capturar".
      */
-    bankInfo?: {
+    bankAccounts: Array<{
       bankName: string;
       accountHolder: string;
       clabe: string;
-    } | null;
+    }>;
     /**
      * Políticas generales de la agencia (Configuración → Políticas), texto libre ≤ 5000 caracteres.
      * Se imprimen al final en la tarjeta "POLÍTICAS DE LA AGENCIA". Vacías o nulas → no se imprime.
@@ -747,7 +752,21 @@ export function createPaymentReceiptDocument(
   // ==========================================================================
   // F. Cierre: totales finales + cuentas bancarias (o mensaje de liquidado)
   // ==========================================================================
-  const closingHeight = 48;
+  // Con saldo, una fila de banco, titular y CLABE por cuenta (todas las de la agencia, en su orden);
+  // con varias, cada una lleva "Cuenta N". El bloque crece con las cuentas y, si no cabe, pasa
+  // completo a la página siguiente (con el máximo de cuentas sigue cabiendo en una página).
+  const bankAccounts = isFullyPaid
+    ? []
+    : agency.bankAccounts.filter((account) => account.clabe.trim());
+  const isMultiAccount = bankAccounts.length > 1;
+  const bankRowHeight = 5.6;
+  const accountLabelHeight = isMultiAccount ? 5 : 0;
+  const accountBlockHeight = accountLabelHeight + 3 * bankRowHeight + 2.5;
+  const totalsHeight = 48;
+  const closingHeight = Math.max(
+    totalsHeight,
+    14.5 + bankAccounts.length * accountBlockHeight + 12,
+  );
   if (y + closingHeight > pageHeight - FOOTER_SPACE) {
     doc.addPage();
     y = CONTINUATION_TOP + 4;
@@ -760,7 +779,7 @@ export function createPaymentReceiptDocument(
   // F.1 Resumen de cierre consolidado (alineado a la derecha).
   setFill(WHITE);
   setDraw(SLATE_200);
-  doc.roundedRect(totalsX, y, totalsWidth, closingHeight, 2.5, 2.5, "FD");
+  doc.roundedRect(totalsX, y, totalsWidth, totalsHeight, 2.5, 2.5, "FD");
   const totalsRow = (
     label: string,
     value: string,
@@ -830,27 +849,36 @@ export function createPaymentReceiptDocument(
     setText(secondary);
     doc.text("Cuentas Bancarias Oficiales de la Agencia", MARGIN + 5, y + 7.5);
 
-    const bank = agency.bankInfo;
-    const bankRows: Array<[string, string]> = [];
-    if (bank?.bankName?.trim()) bankRows.push(["Banco Emisor", bank.bankName.trim()]);
-    if (bank?.accountHolder?.trim()) bankRows.push(["Titular", bank.accountHolder.trim()]);
-    if (bank?.clabe?.trim()) {
-      bankRows.push(["CLABE Interbancaria", formatClabeForDisplay(bank.clabe)]);
-    }
-
-    if (bankRows.length === 0) {
+    if (bankAccounts.length === 0) {
       font("normal", 8.5);
       setText(SLATE_500);
       doc.text("Consulta con la agencia los medios de pago disponibles.", MARGIN + 5, y + 15);
     } else {
-      bankRows.forEach(([label, value], i) => {
-        const rowY = y + 14.5 + i * 5.6;
-        font("normal", 8);
-        setText(SLATE_500);
-        doc.text(label, MARGIN + 5, rowY);
-        font("bold", 8.5);
-        setText(SLATE_900);
-        doc.text(fitText(value, infoWidth - 44), MARGIN + 39, rowY);
+      bankAccounts.forEach((account, index) => {
+        const blockY = y + 14.5 + index * accountBlockHeight;
+        if (index > 0) {
+          setDraw(SLATE_200);
+          doc.line(MARGIN + 5, blockY - 4, MARGIN + infoWidth - 5, blockY - 4);
+        }
+        if (isMultiAccount) {
+          font("bold", 7.5);
+          setText(SLATE_500);
+          doc.text(`Cuenta ${index + 1}`, MARGIN + 5, blockY);
+        }
+        const rows: Array<[string, string]> = [
+          ["Banco Emisor", formatBankNameForDisplay(account.bankName)],
+          ["Titular", formatAccountHolderForDisplay(account.accountHolder)],
+          ["CLABE Interbancaria", formatClabeForDisplay(account.clabe)],
+        ];
+        rows.forEach(([label, value], row) => {
+          const rowY = blockY + accountLabelHeight + row * bankRowHeight;
+          font("normal", 8);
+          setText(SLATE_500);
+          doc.text(label, MARGIN + 5, rowY);
+          font("bold", 8.5);
+          setText(SLATE_900);
+          doc.text(fitText(toPdfSafeText(value), infoWidth - 44), MARGIN + 39, rowY);
+        });
       });
     }
 

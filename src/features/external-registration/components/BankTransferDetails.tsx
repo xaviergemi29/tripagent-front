@@ -4,7 +4,10 @@ import { useState } from "react";
 import { Building2, Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { copyToClipboard } from "@/shared/utils/clipboard";
+import type { PublicBankAccountOutput } from "@/shared/schemas/bank-account.schema";
 import {
+  formatAccountHolderForDisplay,
+  formatBankNameForDisplay,
   formatCardNumberForDisplay,
   formatClabeForDisplay,
 } from "@/shared/utils/bank-account.util";
@@ -14,11 +17,14 @@ const BANK_FIELD_LABEL: Record<BankField, string> = { clabe: "CLABE", card: "Nú
 
 function BankAccountRow({
   label,
+  copyLabel,
   value,
   isCopied,
   onCopy,
 }: {
   label: string;
+  /** Texto del `aria-label` del botón ("Copiar CLABE Interbancaria de la cuenta 2"). */
+  copyLabel: string;
   value: string;
   isCopied: boolean;
   onCopy: () => void;
@@ -37,7 +43,7 @@ function BankAccountRow({
       <button
         type="button"
         onClick={onCopy}
-        aria-label={`Copiar ${label}`}
+        aria-label={`Copiar ${copyLabel}`}
         className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-700 active:scale-95"
       >
         {isCopied ? (
@@ -57,36 +63,28 @@ function BankAccountRow({
 }
 
 interface BankTransferDetailsProps {
-  bankName?: string | null;
-  accountHolder?: string | null;
-  clabeNumber?: string | null;
-  /** Tarjeta de la agencia (opcional, decisión del PM): sin ella no se muestra la fila. */
-  cardNumber?: string | null;
+  /** Cuentas de la agencia en el orden de la API; la tarjeta es opcional por cuenta. */
+  accounts: readonly PublicBankAccountOutput[];
 }
 
 /**
- * Bloque "Transferencia Bancaria" del Magic Link: banco, beneficiario, CLABE y tarjeta con su
- * botón de copiar, y la nota del concepto de pago. Mismo formato en "Métodos y opciones de pago"
- * (`PaymentOptionsCard`) y en "Dónde hacer tus próximos pagos" (`NextPaymentsCard`).
- * Sin CLABE ni tarjeta no se dibuja.
+ * Bloque "Transferencia Bancaria" del Magic Link: una tarjeta por cuenta (banco, beneficiario,
+ * CLABE y tarjeta si existe, cada una con su botón de copiar) y la nota del concepto de pago. Mismo
+ * formato en "Métodos y opciones de pago" (`PaymentOptionsCard`) y en "Dónde hacer tus próximos
+ * pagos" (`NextPaymentsCard`). Sin cuentas no se dibuja.
  */
-export function BankTransferDetails({
-  bankName,
-  accountHolder,
-  clabeNumber: rawClabe,
-  cardNumber: rawCard,
-}: BankTransferDetailsProps) {
-  /** Dato bancario recién copiado (para el estado visual de su botón). */
-  const [copiedField, setCopiedField] = useState<BankField | null>(null);
-  const clabeNumber = rawClabe?.trim() || null;
-  const cardNumber = rawCard?.trim() || null;
-  if (!clabeNumber && !cardNumber) return null;
+export function BankTransferDetails({ accounts }: BankTransferDetailsProps) {
+  /** Dato recién copiado, `"<índice>:<campo>"` (para el estado visual de su botón). */
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const visibleAccounts = accounts.filter((account) => account.clabeNumber.trim());
+  if (visibleAccounts.length === 0) return null;
+  const isMultiAccount = visibleAccounts.length > 1;
 
-  const handleCopy = async (field: BankField, value: string): Promise<void> => {
+  const handleCopy = async (key: string, field: BankField, value: string): Promise<void> => {
     const success = await copyToClipboard(value.replace(/\s+/g, ""));
     if (success) {
-      setCopiedField(field);
-      setTimeout(() => setCopiedField(null), 2000);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
       toast.success(`${BANK_FIELD_LABEL[field]} copiado al portapapeles`, {
         description: "Abre la app de tu banco y pégalo para transferir.",
       });
@@ -105,48 +103,70 @@ export function BankTransferDetails({
           Transferencia Bancaria
         </h3>
       </div>
+      {isMultiAccount && (
+        <p className="mb-3 text-xs text-slate-500">
+          Puedes transferir a cualquiera de estas cuentas.
+        </p>
+      )}
 
-      <div className="space-y-3 rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm">
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div>
-            <span className="block text-[10px] font-medium tracking-wider text-slate-400 uppercase">
-              Banco Receptor
-            </span>
-            <span className="block truncate text-xs font-bold text-slate-800">
-              {bankName || "No especificado"}
-            </span>
-          </div>
-          <div>
-            <span className="block text-[10px] font-medium tracking-wider text-slate-400 uppercase">
-              Beneficiario
-            </span>
-            <span
-              className="block truncate text-xs font-bold text-slate-800"
-              title={accountHolder || ""}
+      <ul className="space-y-3">
+        {visibleAccounts.map((account, index) => {
+          const bankName = formatBankNameForDisplay(account.bankName);
+          const accountHolder = formatAccountHolderForDisplay(account.accountHolder);
+          const cardNumber = account.cardNumber?.trim() || null;
+          const accountLabel = isMultiAccount ? ` de la cuenta ${index + 1}` : "";
+          return (
+            <li
+              key={`${index}-${account.clabeNumber}`}
+              className="space-y-3 rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm"
+              aria-label={isMultiAccount ? `Cuenta ${index + 1}: ${bankName}` : undefined}
             >
-              {accountHolder}
-            </span>
-          </div>
-        </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="min-w-0">
+                  <span className="block text-[10px] font-medium tracking-wider text-slate-400 uppercase">
+                    Banco Receptor
+                  </span>
+                  <span
+                    className="block truncate text-xs font-bold text-slate-800"
+                    title={bankName}
+                  >
+                    {bankName}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <span className="block text-[10px] font-medium tracking-wider text-slate-400 uppercase">
+                    Beneficiario
+                  </span>
+                  <span
+                    className="block truncate text-xs font-bold text-slate-800"
+                    title={accountHolder}
+                  >
+                    {accountHolder}
+                  </span>
+                </div>
+              </div>
 
-        {clabeNumber && (
-          <BankAccountRow
-            label="CLABE Interbancaria"
-            value={formatClabeForDisplay(clabeNumber)}
-            isCopied={copiedField === "clabe"}
-            onCopy={() => handleCopy("clabe", clabeNumber)}
-          />
-        )}
+              <BankAccountRow
+                label="CLABE Interbancaria"
+                copyLabel={`CLABE Interbancaria${accountLabel}`}
+                value={formatClabeForDisplay(account.clabeNumber)}
+                isCopied={copiedKey === `${index}:clabe`}
+                onCopy={() => handleCopy(`${index}:clabe`, "clabe", account.clabeNumber)}
+              />
 
-        {cardNumber && (
-          <BankAccountRow
-            label="Número de Tarjeta"
-            value={formatCardNumberForDisplay(cardNumber)}
-            isCopied={copiedField === "card"}
-            onCopy={() => handleCopy("card", cardNumber)}
-          />
-        )}
-      </div>
+              {cardNumber && (
+                <BankAccountRow
+                  label="Número de Tarjeta"
+                  copyLabel={`Número de Tarjeta${accountLabel}`}
+                  value={formatCardNumberForDisplay(cardNumber)}
+                  isCopied={copiedKey === `${index}:card`}
+                  onCopy={() => handleCopy(`${index}:card`, "card", cardNumber)}
+                />
+              )}
+            </li>
+          );
+        })}
+      </ul>
 
       <p className="mt-2.5 text-center text-[11px] text-slate-400 italic">
         *En concepto de pago ingresa tu nombre o teléfono registrado

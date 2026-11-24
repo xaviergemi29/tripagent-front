@@ -23,3 +23,18 @@ export const formatClabeForDisplay = (clabe: string): string => groupDigits(clab
 /** @description Número de tarjeta (16 dígitos) agrupado 4-4-4-4. */
 export const formatCardNumberForDisplay = (cardNumber: string): string =>
   groupDigits(cardNumber, [4, 4, 4, 4]);
+
+/** @description Últimos 4 dígitos de una tarjeta ("•••• 2345"), para listados del operador. */
+export const maskCardNumber = (cardNumber: string): string =>
+  `•••• ${toPhoneDigits(cardNumber).slice(-4)}`;
+
+/**
+ * @description Banco de una cuenta para mostrar. Las cuentas migradas pueden traerlo vacío: nunca
+ * se dibuja un hueco.
+ */
+export const formatBankNameForDisplay = (bankName: string | null | undefined): string =>
+  bankName?.trim() || "Banco sin capturar";
+
+/** @description Titular de una cuenta para mostrar (vacío en cuentas migradas). */
+export const formatAccountHolderForDisplay = (accountHolder: string | null | undefined): string =>
+  accountHolder?.trim() || "Titular sin capturar";

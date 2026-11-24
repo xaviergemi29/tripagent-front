@@ -46,29 +46,62 @@ describe("buildBookingWhatsAppUrl", () => {
     expect(parse({ currency: "USD", requiredDeposit: 300 }).text).toContain("$300.00 USD");
   });
 
-  it("con banco completo agrega Banco, Titular y CLABE agrupada, sin tarjeta", () => {
+  it("una cuenta: Banco, Titular y CLABE agrupada, sin tarjeta ni numeración", () => {
     const { text } = parse({
-      bankDetails: {
-        bankName: "BBVA",
-        bankAccountHolder: "Brújula Tours",
-        clabeNumber: "012345678901234567",
-      },
+      bankAccounts: [
+        { bankName: "BBVA", accountHolder: "Brújula Tours", clabeNumber: "012345678901234567" },
+      ],
     });
     expect(text).toContain("Datos para transferencia:");
     expect(text).toContain("Banco: BBVA");
     expect(text).toContain("Titular: Brújula Tours");
     expect(text).toContain("CLABE: 012 345 67890123456 7");
+    expect(text).not.toContain("Cuenta 1");
   });
 
-  it("sin CLABE no hay bloque de transferencia ni 'undefined'", () => {
-    const { text } = parse({ bankDetails: { bankName: "BBVA", bankAccountHolder: null } });
-    expect(text).not.toContain("transferencia");
-    expect(text).not.toContain("BBVA");
-    expect(text).not.toMatch(/undefined|null/);
+  it("varias cuentas: todas en orden, numeradas, sin tarjeta", () => {
+    // Misma forma que `agency.bankAccounts`: la tarjeta viene, pero el mensaje no la usa.
+    const santander = {
+      bankName: "Santander",
+      accountHolder: "Ana Brújula",
+      clabeNumber: "014180655012345678",
+      cardNumber: "4152313412345678",
+    };
+    const { text } = parse({
+      bankAccounts: [
+        { bankName: "BBVA", accountHolder: "Brújula Tours", clabeNumber: "012345678901234567" },
+        santander,
+      ],
+    });
+    expect(text).toContain(
+      [
+        "Puedes transferir a cualquiera de estas cuentas:",
+        "Cuenta 1:",
+        "Banco: BBVA",
+        "Titular: Brújula Tours",
+        "CLABE: 012 345 67890123456 7",
+        "",
+        "Cuenta 2:",
+        "Banco: Santander",
+        "Titular: Ana Brújula",
+        "CLABE: 014 180 65501234567 8",
+      ].join("\n"),
+    );
+    expect(text).not.toContain("4152");
   });
 
-  it("omite las líneas bancarias que faltan", () => {
-    const { text } = parse({ bankDetails: { clabeNumber: "012345678901234567" } });
+  it("sin cuentas no hay bloque de transferencia ni 'undefined'", () => {
+    for (const bankAccounts of [undefined, []]) {
+      const { text } = parse({ bankAccounts });
+      expect(text).not.toContain("transferencia");
+      expect(text).not.toMatch(/undefined|null/);
+    }
+  });
+
+  it("omite las líneas de banco o titular vacíos (cuentas migradas)", () => {
+    const { text } = parse({
+      bankAccounts: [{ bankName: "", accountHolder: " ", clabeNumber: "012345678901234567" }],
+    });
     expect(text).toContain("CLABE:");
     expect(text).not.toContain("Banco:");
     expect(text).not.toContain("Titular:");
@@ -84,7 +117,7 @@ describe("buildBookingWhatsAppUrl", () => {
   it("reserva PENDING (isRegistered): se enfoca en el pago, sin pedir el registro", () => {
     const { text } = parse({
       isRegistered: true,
-      bankDetails: { bankName: "BBVA", clabeNumber: "012345678901234567" },
+      bankAccounts: [{ bankName: "BBVA", accountHolder: "", clabeNumber: "012345678901234567" }],
     });
     expect(text).toContain("Gracias por completar tu registro");
     expect(text).toContain("solo falta tu anticipo de $1,500.00 MXN");

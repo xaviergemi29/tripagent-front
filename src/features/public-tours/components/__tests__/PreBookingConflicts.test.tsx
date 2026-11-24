@@ -21,6 +21,7 @@ function renderDialog(availableSeats = 5, agencyPhone: string | null = AGENCY_PH
       <PreBookingDialog
         tourId="tour-1"
         tourTitle="Zacatlán de las manzanas"
+        tourDepartureDate="2026-12-12"
         availableSeats={availableSeats}
         agencyPhone={agencyPhone}
         open
@@ -66,7 +67,9 @@ describe("Iniciar Reserva: respuestas de la API sin cupo o cerrada", () => {
     expect(screen.queryByLabelText("Nombre completo")).not.toBeInTheDocument();
     const whatsapp = screen.getByRole("link", { name: /Pedir que me avisen/ });
     expect(whatsapp.getAttribute("href")).toMatch(/^https:\/\/wa\.me\/522281234567\?text=/);
-    expect(decodeURIComponent(whatsapp.getAttribute("href")!)).toContain("se agotaron");
+    expect(decodeURIComponent(whatsapp.getAttribute("href")!)).toContain(
+      "¿Podrían avisarme si se libera algún lugar?",
+    );
     // El folleto de fondo se actualiza (contador y botón "Agotado").
     expect(refresh).toHaveBeenCalled();
 
@@ -107,7 +110,10 @@ describe("Iniciar Reserva: respuestas de la API sin cupo o cerrada", () => {
     await fillAndSubmit();
 
     expect(await screen.findByText("Ya no recibimos solicitudes en línea")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Escribir por WhatsApp/ })).toBeInTheDocument();
+    const whatsapp = screen.getByRole("link", { name: /Escribir por WhatsApp/ });
+    expect(decodeURIComponent(whatsapp.getAttribute("href")!)).toContain(
+      "¿Me pueden dar información para reservar?",
+    );
     expect(screen.queryByRole("button", { name: "Enviar solicitud" })).not.toBeInTheDocument();
   });
 

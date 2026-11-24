@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CURRENCIES, PASSENGER_STATUSES } from "@/shared/constants/domain.constants";
+import { publicBankAccountOutputSchema } from "@/shared/schemas/bank-account.schema";
 
 /**
  * Respuesta de `GET /magic-tokens/:token/validate` cuando `flowState = "PAID"`
@@ -57,10 +58,8 @@ export const paidBookingOutputSchema = z.object({
     address: z.string().nullable().optional(),
     // Datos para el estado de cuenta PDF (mismo payload que PARTIAL_PAYMENT).
     email: z.string().nullable().optional(),
-    bankName: z.string().nullable().optional(),
-    accountHolder: z.string().nullable().optional(),
-    clabeNumber: z.string().nullable().optional(),
-    cardNumber: z.string().nullable().optional(),
+    /** Cuentas de la agencia, en orden (sin `id` ni `position`). */
+    bankAccounts: z.array(publicBankAccountOutputSchema).optional(),
     logoPath: z.string().nullable().optional(),
     primaryColor: z.string().nullable().optional(),
     secondaryColor: z.string().nullable().optional(),

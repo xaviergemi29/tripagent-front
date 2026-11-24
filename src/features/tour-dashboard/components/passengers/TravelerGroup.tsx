@@ -6,7 +6,7 @@ import {
   type PassengerRole,
   FORM_STATUS,
 } from "@/shared/constants/domain.constants";
-import type { BookingWhatsAppBankDetails } from "@/shared/utils/booking-whatsapp.util";
+import type { BookingWhatsAppBankAccounts } from "@/shared/utils/booking-whatsapp.util";
 import { TitularRow } from "./TitularRow";
 import { CompanionRow } from "./CompanionRow";
 import { SyncingGroupRow } from "./PassengersSkeleton";
@@ -17,7 +17,7 @@ interface TravelerGroupProps {
   isAuditMode?: boolean;
   tourCurrency?: Currency;
   tourTitle?: string;
-  bankDetails?: BookingWhatsAppBankDetails;
+  bankAccounts?: BookingWhatsAppBankAccounts;
   isAdding?: boolean;
   isRemovingGhost?: boolean;
   freeSeatsCount?: number;
@@ -51,7 +51,7 @@ export function TravelerGroup({
   isAuditMode,
   tourCurrency,
   tourTitle,
-  bankDetails,
+  bankAccounts,
   isAdding,
   isRemovingGhost,
   freeSeatsCount,
@@ -85,7 +85,7 @@ export function TravelerGroup({
         isAuditMode={isAuditMode}
         tourCurrency={tourCurrency}
         tourTitle={tourTitle}
-        bankDetails={bankDetails}
+        bankAccounts={bankAccounts}
         requiresSeats={requiresSeats}
         onRowClick={onRowClick}
         onAssignSeatClick={onAssignSeatClick}

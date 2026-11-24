@@ -5,6 +5,13 @@ import type { PartialPaymentViewProps } from "../types";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
+const BBVA = {
+  bankName: "BBVA",
+  accountHolder: "Bruji Tours SA",
+  clabeNumber: "012180001234567891",
+  cardNumber: null,
+};
+
 /** Payload de PARTIAL_PAYMENT (`GET /magic-tokens/:token/validate`) con ajustes por caso. */
 const renderView = (overrides: Partial<PartialPaymentViewProps> = {}) =>
   render(
@@ -32,9 +39,7 @@ const renderView = (overrides: Partial<PartialPaymentViewProps> = {}) =>
       agency={{
         name: "Bruji Tours",
         phone: "+522288492011",
-        bankName: "BBVA",
-        accountHolder: "Bruji Tours SA",
-        clabeNumber: "012180001234567891",
+        bankAccounts: [BBVA],
       }}
       {...overrides}
     />,
@@ -106,13 +111,49 @@ describe("PartialPaymentView: enviar comprobante por WhatsApp", () => {
       agency: {
         name: "Bruji Tours",
         phone: "",
-        bankName: "BBVA",
-        accountHolder: "Bruji Tours SA",
-        clabeNumber: "012180001234567891",
+        bankAccounts: [BBVA],
       },
     });
     expect(
       screen.queryByRole("button", { name: /Enviar comprobante por WhatsApp/ }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("PartialPaymentView: dónde hacer tus próximos pagos", () => {
+  const nextPayments = () => screen.queryByText("Dónde hacer tus próximos pagos");
+
+  it("una cuenta: banco, titular y CLABE con su botón de copiar", () => {
+    renderView();
+    expect(nextPayments()).toBeInTheDocument();
+    expect(screen.getByText("012 180 00123456789 1")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copiar CLABE Interbancaria" })).toBeInTheDocument();
+  });
+
+  it("dos cuentas: ambas en orden, la tarjeta solo en la que la tiene", () => {
+    renderView({
+      agency: {
+        name: "Bruji Tours",
+        phone: "+522288492011",
+        bankAccounts: [
+          BBVA,
+          {
+            bankName: "Nu",
+            accountHolder: "Ana Torres",
+            clabeNumber: "638180000123456789",
+            cardNumber: "5555666677778888",
+          },
+        ],
+      },
+    });
+    const first = screen.getByRole("listitem", { name: "Cuenta 1: BBVA" });
+    const second = screen.getByRole("listitem", { name: "Cuenta 2: Nu" });
+    expect(within(first).queryByText("Número de Tarjeta")).not.toBeInTheDocument();
+    expect(within(second).getByText("5555 6666 7777 8888")).toBeInTheDocument();
+  });
+
+  it("sin cuentas no se dibuja la tarjeta de próximos pagos", () => {
+    renderView({ agency: { name: "Bruji Tours", phone: "+522288492011", bankAccounts: [] } });
+    expect(nextPayments()).not.toBeInTheDocument();
   });
 });

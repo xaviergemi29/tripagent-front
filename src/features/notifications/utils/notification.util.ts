@@ -1,7 +1,7 @@
 import { BOOKING_STATUS, NOTIFICATION_TYPE } from "@/shared/constants/domain.constants";
 import {
   buildBookingWhatsAppUrl,
-  type BookingWhatsAppBankDetails,
+  type BookingWhatsAppBankAccounts,
 } from "@/shared/utils/booking-whatsapp.util";
 import { buildMagicLinkUrl } from "@/shared/utils/share-links.util";
 import type { NotificationFilter, NotificationOutput } from "../schemas/notification.schema";
@@ -36,7 +36,7 @@ export const buildNotificationHref = (notification: NotificationOutput): string 
  */
 export function buildNotificationWhatsAppUrl(
   notification: NotificationOutput,
-  bankDetails?: BookingWhatsAppBankDetails,
+  bankAccounts?: BookingWhatsAppBankAccounts,
 ): string | null {
   const { booking } = notification;
   if (notification.type !== NOTIFICATION_TYPE.PRE_BOOKING || !booking?.magicToken) return null;
@@ -53,7 +53,7 @@ export function buildNotificationWhatsAppUrl(
     magicLinkUrl: buildMagicLinkUrl(booking.magicToken),
     requiredDeposit: booking.pendingDeposit,
     currency: booking.currency,
-    bankDetails,
+    bankAccounts,
     isRegistered: booking.status === BOOKING_STATUS.PENDING,
   });
 }

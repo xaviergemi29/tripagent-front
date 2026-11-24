@@ -1,4 +1,5 @@
 import type { Currency, PassengerStatus } from "@/shared/constants/domain.constants";
+import type { PublicBankAccountOutput } from "@/shared/schemas/bank-account.schema";
 
 export interface PassengerDTO {
   name: string;
@@ -19,10 +20,8 @@ export interface BookingSuccessViewProps {
     totalAmount: number;
     depositAmount: number | null;
     acceptsBankTransfer: boolean;
-    bankName: string | null;
-    accountHolder: string | null;
-    clabeNumber: string | null;
-    cardNumber?: string | null;
+    /** Cuentas de la agencia, en orden. La API no valida el payload: puede faltar. */
+    bankAccounts?: PublicBankAccountOutput[];
     acceptsCreditCard: boolean;
     acceptsCash: boolean;
     cashInstructions: string | null;

@@ -1,4 +1,5 @@
 import type { Currency } from "@/shared/constants/domain.constants";
+import type { PublicBankAccountOutput } from "@/shared/schemas/bank-account.schema";
 
 /** Payload del Magic Link en PARTIAL_PAYMENT (`GET /magic-tokens/:token/validate`). */
 export interface PartialPaymentViewProps {
@@ -44,10 +45,8 @@ export interface PartialPaymentViewProps {
     phone: string;
     email?: string | null;
     address?: string | null;
-    bankName: string | null;
-    accountHolder: string | null;
-    clabeNumber: string | null;
-    cardNumber?: string | null;
+    /** Cuentas de la agencia, en orden. La API no valida el payload: puede faltar. */
+    bankAccounts?: PublicBankAccountOutput[];
     logoPath?: string | null;
     primaryColor?: string | null;
     secondaryColor?: string | null;

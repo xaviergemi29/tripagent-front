@@ -5,10 +5,12 @@ import type { PartialPaymentViewProps } from "./types";
 
 /**
  * "Dónde hacer tus próximos pagos": los datos de transferencia de la agencia con el mismo formato
- * que "Métodos y opciones de pago" (`BankTransferDetails`). Sin CLABE ni tarjeta no se dibuja.
+ * que "Métodos y opciones de pago" (`BankTransferDetails`): todas las cuentas, en orden. Sin
+ * cuentas no se dibuja.
  */
 export function NextPaymentsCard({ agency }: { agency: PartialPaymentViewProps["agency"] }) {
-  if (!agency.clabeNumber?.trim() && !agency.cardNumber?.trim()) return null;
+  const bankAccounts = (agency.bankAccounts ?? []).filter((account) => account.clabeNumber.trim());
+  if (bankAccounts.length === 0) return null;
 
   return (
     <Card className="rounded-2xl border-indigo-100/70 bg-white shadow-sm">
@@ -19,12 +21,7 @@ export function NextPaymentsCard({ agency }: { agency: PartialPaymentViewProps["
         <p className="text-xs text-slate-600">
           Puedes ir liquidando poco a poco antes del día de salida con los siguientes datos:
         </p>
-        <BankTransferDetails
-          bankName={agency.bankName}
-          accountHolder={agency.accountHolder}
-          clabeNumber={agency.clabeNumber}
-          cardNumber={agency.cardNumber}
-        />
+        <BankTransferDetails accounts={bankAccounts} />
       </CardContent>
     </Card>
   );

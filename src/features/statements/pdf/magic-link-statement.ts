@@ -44,9 +44,8 @@ export interface MagicLinkStatementSource {
     name: string;
     phone?: string | null;
     email?: string | null;
-    bankName?: string | null;
-    accountHolder?: string | null;
-    clabeNumber?: string | null;
+    /** Cuentas de la agencia ya ordenadas (`agency.bankAccounts` del payload). */
+    bankAccounts?: Array<{ bankName: string; accountHolder: string; clabeNumber: string }>;
     logoPath?: string | null;
     primaryColor?: string | null;
     secondaryColor?: string | null;
@@ -64,8 +63,6 @@ export interface MagicLinkStatementSource {
 export function buildMagicLinkStatement(source: MagicLinkStatementSource): StatementPDFData {
   const { tourInfo, financials, agency } = source;
   const activePassengers = getActivePassengersTitularFirst(source.passengers);
-  // Sin número de tarjeta (decisión del PM): el PDF solo lleva banco, titular y CLABE.
-  const hasBankInfo = Boolean(agency.bankName || agency.clabeNumber);
 
   return {
     agency: {
@@ -76,13 +73,12 @@ export function buildMagicLinkStatement(source: MagicLinkStatementSource): State
       primaryColor: agency.primaryColor ?? null,
       secondaryColor: agency.secondaryColor ?? null,
       accentColor: agency.accentColor ?? null,
-      bankInfo: hasBankInfo
-        ? {
-            bankName: agency.bankName ?? "",
-            accountHolder: agency.accountHolder ?? "",
-            clabe: agency.clabeNumber ?? "",
-          }
-        : null,
+      // Sin número de tarjeta (decisión del PM): el PDF solo lleva banco, titular y CLABE.
+      bankAccounts: (agency.bankAccounts ?? []).map((account) => ({
+        bankName: account.bankName,
+        accountHolder: account.accountHolder,
+        clabe: account.clabeNumber,
+      })),
       policies: agency.policies ?? null,
     },
     tour: {

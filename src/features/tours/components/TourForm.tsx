@@ -103,7 +103,7 @@ export function TourForm({ tour }: TourFormProps) {
     originalDepartureDate && originalDepartureDate < today ? originalDepartureDate : today;
 
   // Regla de transferencia sin CLABE (OBS-038): solo cuando ya se conocen los datos de la agencia.
-  const agencyHasClabe = agencyData ? Boolean(agencyData.clabeNumber?.trim()) : undefined;
+  const agencyHasClabe = agencyData ? agencyData.bankAccounts.length > 0 : undefined;
 
   const tourFormSchema = buildTourFormSchema(originalDepartureDate, { agencyHasClabe });
   const form = useForm<TourInput>({

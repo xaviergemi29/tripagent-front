@@ -24,17 +24,26 @@ vi.mock("../../hooks/useTours", () => ({
 }));
 
 const AGENCY_WITH_CLABE = {
-  bankName: "BBVA",
-  bankAccountHolder: "Bruji Tours SA",
-  clabeNumber: "012180001234567891",
-  cardNumber: "4152313412345678",
+  bankAccounts: [
+    {
+      id: "0b8f3a6e-2c1d-4e5f-9a8b-7c6d5e4f3a2b",
+      position: 1,
+      bankName: "BBVA",
+      accountHolder: "Bruji Tours SA",
+      clabeNumber: "012180001234567891",
+      cardNumber: "4152313412345678",
+    },
+  ],
 };
-// Mutable por prueba: con o sin CLABE (OBS-038).
+// Mutable por prueba: con o sin cuentas bancarias (regla 22).
 let agencyData: Record<string, unknown> = AGENCY_WITH_CLABE;
 const saveBankAccount = vi.fn();
 vi.mock("@/features/settings/hooks/useAgency", () => ({
   useAgency: () => ({ data: agencyData }),
-  useUpdateAgencyBankAccount: () => ({ mutate: saveBankAccount, isPending: false }),
+}));
+vi.mock("@/features/settings/hooks/useBankAccounts", () => ({
+  useCreateBankAccount: () => ({ mutate: saveBankAccount, isPending: false }),
+  useUpdateBankAccount: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 const toastWarning = vi.fn();
@@ -280,15 +289,15 @@ describe("TourForm — finanzas", () => {
     expect(screen.getByText(/y liquidará antes de salir/)).toBeInTheDocument();
   });
 
-  it("Transferencia muestra los datos bancarios de la agencia, incluido el número de tarjeta", async () => {
+  it("Transferencia muestra las cuentas bancarias de la agencia, con la tarjeta enmascarada", async () => {
     const user = userEvent.setup();
     render(<TourForm />);
     await goToFinance(user);
 
-    expect(screen.queryByText("012180001234567891")).not.toBeInTheDocument();
+    expect(screen.queryByText("CLABE 012 180 00123456789 1")).not.toBeInTheDocument();
     await user.click(screen.getByRole("checkbox", { name: "Transferencia" }));
-    expect(screen.getByText("012180001234567891")).toBeInTheDocument();
-    expect(screen.getByText("4152313412345678")).toBeInTheDocument();
+    expect(screen.getByText("CLABE 012 180 00123456789 1")).toBeInTheDocument();
+    expect(screen.getByText("Tarjeta •••• 5678")).toBeInTheDocument();
   });
 
   it("Tarjeta muestra un aviso de advertencia destacado y Efectivo exige instrucciones", async () => {
@@ -495,7 +504,7 @@ describe("TourForm — edición", () => {
 // OBS-038 (decisión del PM, 2026-11-17): la CLABE se pide cuando el operador activa la
 // transferencia, sin sacarlo del formulario; solo transferencia sin CLABE no se puede guardar.
 describe("TourForm — transferencia sin CLABE en la agencia", () => {
-  const AGENCY_WITHOUT_CLABE = { bankName: null, bankAccountHolder: null, clabeNumber: null };
+  const AGENCY_WITHOUT_CLABE = { bankAccounts: [] };
 
   it("avisa debajo de Transferencia y abre el modal sin perder lo capturado", async () => {
     agencyData = AGENCY_WITHOUT_CLABE;
@@ -511,15 +520,18 @@ describe("TourForm — transferencia sin CLABE en la agencia", () => {
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Configurar cuenta ahora" }));
-    expect(await screen.findByText("Cuenta para transferencias")).toBeInTheDocument();
-    await user.type(screen.getByLabelText("Banco"), "BBVA");
+    expect(await screen.findByText("Agregar cuenta bancaria")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Banco *"), "BBVA");
+    await user.type(screen.getByLabelText("Titular de la cuenta *"), "Bruji Tours SA");
     await user.type(screen.getByLabelText("CLABE interbancaria *"), "012 180 001234567891");
     await user.click(screen.getByRole("button", { name: "Guardar cuenta" }));
 
     await waitFor(() => expect(saveBankAccount).toHaveBeenCalledTimes(1));
-    expect(saveBankAccount.mock.calls[0]?.[0]).toMatchObject({
+    expect(saveBankAccount.mock.calls[0]?.[0]).toEqual({
       bankName: "BBVA",
+      accountHolder: "Bruji Tours SA",
       clabeNumber: "012180001234567891",
+      cardNumber: null,
     });
     expect(createTour).not.toHaveBeenCalled(); // el modal no envía el formulario del tour
     await user.keyboard("{Escape}");

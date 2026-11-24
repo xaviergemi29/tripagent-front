@@ -14,11 +14,8 @@ const AGENCY = {
   name: "Bruji Tours",
   phone: "2294378318",
   email: "alfredo@brujitours.com",
-  bankName: "BBVA Bancomer",
-  bankAccountHolder: "Alfredo Villgas",
   address: "Calle california #22",
-  clabeNumber: "111111111111111111",
-  cardNumber: "7777777777777777",
+  bankAccounts: [],
   privacyNoticeUrl: null,
   logoPath: null,
   policies: null,
@@ -34,7 +31,10 @@ let stored: Record<string, unknown>;
 const patch = vi.fn();
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
-    get: vi.fn(async () => structuredClone(stored)),
+    // La sección "Cuentas bancarias" pide su propia lista.
+    get: vi.fn(async (url: string) =>
+      url === "/agencies/bank-accounts" ? [] : structuredClone(stored),
+    ),
     patch: vi.fn(async (_url: string, body: Record<string, unknown>) => {
       patch(body);
       stored = { ...stored, ...body };
@@ -53,7 +53,7 @@ const renderTab = async () => {
   );
   const address = await screen.findByLabelText(/Dirección Física/);
   await waitFor(() => expect(address).toHaveValue("Calle california #22"));
-  return { address, card: screen.getByLabelText(/Número de Tarjeta/) };
+  return { address, name: screen.getByLabelText(/Nombre Comercial/) };
 };
 
 beforeEach(() => {
@@ -62,21 +62,29 @@ beforeEach(() => {
 });
 
 describe("AgencyTab: guarda lo que el usuario escribe", () => {
-  it("envía la dirección y la tarjeta editadas, no las cargadas", async () => {
+  it("envía la dirección y el nombre editados, no los cargados, y ningún dato bancario", async () => {
     const user = userEvent.setup();
-    const { address, card } = await renderTab();
+    const { address, name } = await renderTab();
 
     await user.clear(address);
     await user.type(address, "Calle california #100");
-    await user.clear(card);
-    await user.type(card, "6666 6666 6666 6666");
+    await user.clear(name);
+    await user.type(name, "Bruji Tours MX");
     await user.click(screen.getByRole("button", { name: /Guardar/ }));
 
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(1));
-    expect(patch.mock.calls[0]![0]).toMatchObject({
-      address: "Calle california #100",
-      cardNumber: "6666666666666666",
-    });
+    const body = patch.mock.calls[0]![0] as Record<string, unknown>;
+    expect(body).toMatchObject({ address: "Calle california #100", name: "Bruji Tours MX" });
+    // Las cuentas tienen su propia sección: `PATCH /agencies` ya no las recibe.
+    for (const field of [
+      "bankAccounts",
+      "bankName",
+      "bankAccountHolder",
+      "clabeNumber",
+      "cardNumber",
+    ]) {
+      expect(body).not.toHaveProperty(field);
+    }
   });
 
   it("un segundo guardado (después de recargar los datos) también envía lo escrito", async () => {
@@ -95,16 +103,16 @@ describe("AgencyTab: guarda lo que el usuario escribe", () => {
     expect(patch.mock.calls[1]![0]).toMatchObject({ address: "Calle california #200" });
   });
 
-  it("una tarjeta de 19 dígitos muestra el error, deshabilita Guardar y no se envía", async () => {
+  it("un nombre demasiado corto muestra el error, deshabilita Guardar y no se envía", async () => {
     const user = userEvent.setup();
-    const { card } = await renderTab();
+    const { name } = await renderTab();
 
-    await user.clear(card);
-    await user.type(card, "6666666666666666666");
+    await user.clear(name);
+    await user.type(name, "Br");
     await user.click(screen.getByRole("button", { name: /Guardar/ }));
 
     expect(
-      await screen.findByText("La tarjeta debe contener exactamente 16 números"),
+      await screen.findByText("La agencia debe tener al menos 3 caracteres"),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Guardar/ })).toBeDisabled();
     expect(patch).not.toHaveBeenCalled();
