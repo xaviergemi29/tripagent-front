@@ -41,6 +41,12 @@ export const TOUR_DASHBOARD_KEYS = {
   detail: (tourId: string) => [...TOUR_DASHBOARD_KEYS.all, tourId] as const,
 };
 
+/** Pase de lista de abordaje (RB-MAN-002): Centro de Control y enlace de staff. */
+export const BOARDING_KEYS = {
+  byTour: (tourId: string) => ["boarding", "tour", tourId] as const,
+  byStaffToken: (token: string) => ["boarding", "staff", token] as const,
+};
+
 export const TOUR_MANIFEST_KEYS = {
   byTour: (tourId: string) => ["tour-manifest", tourId] as const,
 };

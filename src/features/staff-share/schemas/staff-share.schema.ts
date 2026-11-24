@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PASSENGER_TYPE, PASSENGER_TYPES } from "@/shared/constants/domain.constants";
+import { boardingRoomSchema } from "@/features/boarding/schemas/boarding.schema";
 import {
   layoutMapSchema,
   vehicleCapacityOutputSchema,
@@ -31,6 +32,12 @@ export const staffSharePassengerSchema = z.object({
   isTitular: z.boolean().catch(false),
   boardingPointCode: z.string().nullable().catch(null),
   seatRightStatus: z.enum(STAFF_SEAT_RIGHT_STATUSES).catch(STAFF_SEAT_RIGHT_STATUS.PENDING_DEPOSIT),
+  // Pase de lista (RB-MAN-002): clave opaca del enlace (sin ids internos), titular, habitaciones y
+  // hora de abordaje (`null` = aún no sube).
+  boardingKey: z.string().catch(""),
+  holderName: z.string().catch(""),
+  rooms: z.array(boardingRoomSchema).catch([]),
+  boardedAt: z.string().nullable().catch(null),
 });
 
 export const staffShareOutputSchema = z.object({
@@ -56,6 +63,8 @@ export const staffShareOutputSchema = z.object({
     .catch(null),
   blockedSeats: z.array(z.string()).catch([]),
   boardingPoints: z.array(staffSharePointSchema).catch([]),
+  /** Lo decide la API: tour PRÓXIMO o EN CURSO y agencia fuera del Modo Solo Lectura. */
+  canMarkBoarding: z.boolean().catch(false),
   passengers: z.array(staffSharePassengerSchema).catch([]),
 });
 

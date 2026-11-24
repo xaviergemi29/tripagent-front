@@ -5,6 +5,8 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { StaffBoardingPanel } from "@/features/boarding/components/StaffBoardingPanel";
+import { TOUR_TEMPORAL_STATUS } from "@/shared/constants/domain.constants";
 import { formatPickupTime } from "@/shared/utils/tour-date.util";
 import type { StaffShareOutput } from "../schemas/staff-share.schema";
 import {
@@ -16,13 +18,18 @@ import { StaffShareList } from "./StaffShareList";
 import { StaffShareSeatMap } from "./StaffShareSeatMap";
 
 type StaffShareTab = "map" | "list";
+type StaffShareSection = "boarding" | "seating";
 
 /**
  * Contenido interactivo de `/s/[token]` (pestaña, filtro por punto y búsqueda). Recibe solo datos
  * planos del Server Component: ninguna función como prop.
  */
-export function StaffShareView({ data }: { data: StaffShareOutput }) {
+export function StaffShareView({ data, token }: { data: StaffShareOutput; token: string }) {
   const hasVehicle = data.vehicle !== null;
+  // Al pie del autobús (viaje EN CURSO) se abre directo el pase de lista.
+  const [section, setSection] = useState<StaffShareSection>(
+    data.tour.temporalStatus === TOUR_TEMPORAL_STATUS.IN_PROGRESS ? "boarding" : "seating",
+  );
   const [tab, setTab] = useState<StaffShareTab>(hasVehicle ? "map" : "list");
   const [filters, setFilters] = useState<StaffShareFilters>({ pointCode: null, query: "" });
 
@@ -44,7 +51,7 @@ export function StaffShareView({ data }: { data: StaffShareOutput }) {
         : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
     );
 
-  return (
+  const seatingContent = (
     <div className="space-y-4">
       {data.boardingPoints.length > 0 && (
         <section
@@ -145,6 +152,51 @@ export function StaffShareView({ data }: { data: StaffShareOutput }) {
           </p>
           <StaffShareList seatedRows={seatedRows} unseatedRows={unseatedRows} />
         </div>
+      )}
+    </div>
+  );
+
+  const sectionClass = (active: boolean) =>
+    cn(
+      "flex-1 rounded-lg py-2 text-sm font-semibold transition-colors",
+      active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700",
+    );
+
+  return (
+    <div className="space-y-4">
+      <div role="tablist" aria-label="Vista" className="flex gap-1 rounded-xl bg-slate-100 p-1">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={section === "boarding"}
+          className={sectionClass(section === "boarding")}
+          onClick={() => setSection("boarding")}
+        >
+          Pase de lista
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={section === "seating"}
+          className={sectionClass(section === "seating")}
+          onClick={() => setSection("seating")}
+        >
+          Croquis y pasajeros
+        </button>
+      </div>
+
+      {section === "boarding" ? (
+        <StaffBoardingPanel
+          token={token}
+          initialData={{
+            canMarkBoarding: data.canMarkBoarding,
+            temporalStatus: data.tour.temporalStatus,
+            boardingPoints: data.boardingPoints,
+            passengers: data.passengers,
+          }}
+        />
+      ) : (
+        seatingContent
       )}
     </div>
   );

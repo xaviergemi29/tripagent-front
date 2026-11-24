@@ -41,6 +41,7 @@ import { MobileHeader } from "./mobile/MobileHeader";
 import { MobileKpiCards } from "./mobile/MobileKpiCards";
 import { MobileTabsNav } from "./mobile/MobileTabsNav";
 import { LodgingTabContent } from "./lodging/LodgingTabContent";
+import { TourBoardingPanel } from "@/features/boarding/components/TourBoardingPanel";
 import { useTourLodging } from "../hooks/useLodging";
 import {
   countActiveRegisteredPassengers,
@@ -379,6 +380,10 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
               </div>
             )}
 
+            {currentTab === "boarding" && (
+              <TourBoardingPanel tourId={tourId} readOnly={isAuditMode} />
+            )}
+
             {currentTab === "lodging" && (
               <LodgingTabContent
                 tourId={tourId}
@@ -439,7 +444,9 @@ export function TourDashboardView({ tourId, focusBookingId = null }: TourDashboa
           />
         </div>
 
-        {currentTab === "lodging" ? (
+        {currentTab === "boarding" ? (
+          <TourBoardingPanel tourId={tourId} readOnly={isAuditMode} />
+        ) : currentTab === "lodging" ? (
           <LodgingTabContent
             tourId={tourId}
             tourTitle={tour.title}

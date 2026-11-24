@@ -36,7 +36,7 @@ describe("/s/[token]", () => {
 
     expect(screen.getByRole("heading", { name: "Zacatlán de las manzanas" })).toBeInTheDocument();
     expect(screen.getByText("Viajes Xalapa")).toBeInTheDocument();
-    expect(screen.getByText("Enlace para staff · solo lectura")).toBeInTheDocument();
+    expect(screen.getByText("Enlace para staff")).toBeInTheDocument();
     expect(
       screen.getByText(/Vigente hasta 15 de diciembre de 2026 a las 11:59/),
     ).toBeInTheDocument();

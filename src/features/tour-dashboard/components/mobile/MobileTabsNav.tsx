@@ -1,4 +1,4 @@
-import { Users, Armchair, Bed } from "lucide-react";
+import { Users, Armchair, Bed, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DashboardTab } from "@/features/tour-dashboard/constants/dashboard-tabs";
 
@@ -23,8 +23,8 @@ export function MobileTabsNav({
   totalBookedPax,
   onTabChange,
 }: MobileTabsNavProps) {
-  if (!requiresSeats && !showLodging) return null;
-  const tabCount = 1 + (requiresSeats ? 1 : 0) + (showLodging ? 1 : 0);
+  // "Abordaje" siempre está: la barra se muestra en todo tour.
+  const tabCount = 2 + (requiresSeats ? 1 : 0) + (showLodging ? 1 : 0);
   return (
     <div
       className={cn(
@@ -81,6 +81,18 @@ export function MobileTabsNav({
           )}
         </button>
       )}
+      <button
+        onClick={() => onTabChange("boarding")}
+        className={cn(
+          "flex items-center justify-center gap-2 rounded-lg py-2.5 transition-all",
+          activeTab === "boarding"
+            ? "bg-white text-slate-900 shadow-sm"
+            : "text-slate-500 hover:text-slate-700",
+        )}
+      >
+        <ClipboardCheck className="h-4 w-4" />
+        <span className="truncate">Abordaje</span>
+      </button>
     </div>
   );
 }

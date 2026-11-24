@@ -5,7 +5,7 @@
  * `TourDashboardView`: así una acción ("Asignar asiento", asignar vehículo) lleva a la misma
  * pestaña sin importar el tamaño de pantalla, y al redimensionar no se pierde la vista activa.
  */
-export const DASHBOARD_TABS = ["passengers", "seatmap", "lodging"] as const;
+export const DASHBOARD_TABS = ["passengers", "seatmap", "lodging", "boarding"] as const;
 export type DashboardTab = (typeof DASHBOARD_TABS)[number];
 
 /** Pestaña con la que abre el Centro de Control. */

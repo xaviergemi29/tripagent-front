@@ -1,4 +1,4 @@
-import { Users, Bus, Bed } from "lucide-react";
+import { Users, Bus, Bed, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { VehicleOutput } from "@/features/tour-dashboard/schemas/tour-dashboard.schema";
 import type { DashboardTab } from "@/features/tour-dashboard/constants/dashboard-tabs";
@@ -87,6 +87,19 @@ export function TourTabsNav({
             )}
           </button>
         )}
+
+        <button
+          onClick={() => onTabChange("boarding")}
+          className={cn(
+            "flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all",
+            activeTab === "boarding"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-500 hover:text-slate-800",
+          )}
+        >
+          <ClipboardCheck className="mr-2 h-4 w-4" />
+          Abordaje
+        </button>
       </div>
     </div>
   );

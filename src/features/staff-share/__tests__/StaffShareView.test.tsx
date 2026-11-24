@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
@@ -6,7 +7,9 @@ import { staffShareOutputSchema } from "../schemas/staff-share.schema";
 import { buildPayload } from "./staff-share.fixtures";
 
 const renderView = (overrides: Record<string, unknown> = {}) =>
-  render(<StaffShareView data={staffShareOutputSchema.parse(buildPayload(overrides))} />);
+  render(
+    <StaffShareView data={staffShareOutputSchema.parse(buildPayload(overrides))} token="tok" />,
+  );
 
 describe("StaffShareView", () => {
   it("dibuja el croquis con nombre corto, punto y estatus; sin teléfonos ni montos", () => {
@@ -60,7 +63,25 @@ describe("StaffShareView", () => {
   it("sin vehículo avisa y muestra solo la lista", () => {
     renderView({ vehicle: null });
     expect(screen.getByRole("note")).toHaveTextContent(/sin vehículo|no tiene vehículo/i);
-    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Croquis" })).not.toBeInTheDocument();
     expect(screen.getByText("Ana Torres Ruiz")).toBeInTheDocument();
+  });
+
+  it("con el viaje EN CURSO abre en 'Pase de lista' y permite palomear si la API lo autoriza", () => {
+    const payload = buildPayload({
+      tour: { ...buildPayload().tour, temporalStatus: "EN CURSO" },
+      canMarkBoarding: true,
+    });
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <StaffShareView data={staffShareOutputSchema.parse(payload)} token="tok" />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole("tab", { name: "Pase de lista" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByText(/Abordados:/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Faltan/ })).toHaveAttribute("aria-pressed", "true");
   });
 });

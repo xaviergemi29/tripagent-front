@@ -34,7 +34,7 @@ export default async function StaffSharePage({ params }: StaffSharePageProps) {
         <PublicBookingHeader
           agencyName={data.agency.name}
           agencyLogoPath={data.agency.logoPath}
-          statusBadgeText="Enlace para staff · solo lectura"
+          statusBadgeText="Enlace para staff"
           statusVariant="neutral"
           tourTitle={data.tour.title}
           departureDate={data.tour.departureDate}
@@ -56,7 +56,7 @@ export default async function StaffSharePage({ params }: StaffSharePageProps) {
         </div>
 
         <main className="w-full min-w-0 flex-1">
-          <StaffShareView data={data} />
+          <StaffShareView data={data} token={token} />
         </main>
 
         <footer className="mt-8 text-center text-[11px] font-medium text-slate-400">

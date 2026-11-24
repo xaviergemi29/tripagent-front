@@ -65,7 +65,7 @@ export function StaffShareDialog({
   const whatsappUrl = url
     ? // Sin teléfono: wa.me abre el selector de contacto de WhatsApp.
       buildWhatsAppUrl(null, {
-        message: `Croquis y lista de pasajeros de *${tourTitle}* (solo lectura): ${url}`,
+        message: `Croquis, lista y pase de lista de *${tourTitle}*: ${url}`,
       })
     : null;
 
@@ -76,8 +76,10 @@ export function StaffShareDialog({
           <DialogHeader>
             <DialogTitle>Compartir con staff</DialogTitle>
             <DialogDescription>
-              El coordinador ve el croquis y la lista: asiento, nombre, Adulto/Niño, punto y hora de
-              abordaje y estatus. Sin montos ni teléfonos, y sin necesidad de cuenta.
+              El coordinador ve el croquis y la lista (asiento, nombre, Adulto/Niño, punto y hora de
+              abordaje, habitación y estatus) y pasa lista marcando quién ya subió. Sin montos ni
+              teléfonos, y sin necesidad de cuenta. Compártelo solo con tu staff: quien tenga el
+              enlace puede marcar el abordaje.
             </DialogDescription>
           </DialogHeader>
 
